@@ -11,8 +11,5 @@ test.py
 twinkle systems-edit.txt
 /.cache
 /.local
-<<<<<<< Updated upstream
-=======
 /static/general_imgs
 /static/globalchat_img
->>>>>>> Stashed changes
