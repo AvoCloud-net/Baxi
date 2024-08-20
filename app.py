@@ -1,55 +1,112 @@
-def unnötig_komplizierte_funktion():
-    nachricht = ""
-    buchstaben = [
-        'C', 'o', 'd', 'e', ' ', 'n', 'i', 'c', 'h', 't', ' ', 
-        'ö', 'f', 'f', 'e', 'n', 't', 'l', 'i', 'c', 'h', ' ', 
-        'a', 'u', 'f', ' ', 'G', 'i', 't', 'H', 'u', 'b'
-    ]
+import time
+import random
+import sys
 
-    for i in range(len(buchstaben)):
-        nachricht += buchstaben[i]
-    
-    geheime_funktion_1(nachricht)
+def matrix_style_erscheinung(text, delay=0.1, max_random_delay=0.2):
+    for char in text:
+        random_delay = random.uniform(0, max_random_delay)
+        time.sleep(delay + random_delay)
+        sys.stdout.write(char)
+        sys.stdout.flush()
 
+def unnötig_lange_funktion_1():
+    return ["C", "o", "d", "e", " ", "n", "i", "c", "h", "t"]
 
-def geheime_funktion_1(nachricht):
-    if isinstance(nachricht, str):
-        geheime_funktion_2(nachricht)
+def unnötig_lange_funktion_2():
+    return [" ", "ö", "f", "f", "e", "n", "t", "l", "i", "c", "h"]
+
+def unnötig_lange_funktion_3():
+    return [" ", "a", "u", "f", " ", "G", "i", "t", "H", "u", "b"]
+
+def unnötig_lange_funktion_4():
+    text = ""
+    text += "".join(unnötig_lange_funktion_1())
+    text += "".join(unnötig_lange_funktion_2())
+    text += "".join(unnötig_lange_funktion_3())
+    return text
+
+def unnötig_lange_funktion_5():
+    text = unnötig_lange_funktion_4()
+    if "GitHub" in text:
+        return text
     else:
-        print("Fehler: Erwartet einen String")
+        return "Fehler: 'GitHub' nicht in der Nachricht gefunden"
 
-def geheime_funktion_2(nachricht):
-    def verschlüsseln(text):
-        verschlüsselte_nachricht = ""
-        for char in text:
-            verschlüsselte_nachricht += chr(ord(char) + 1)
-        return verschlüsselte_nachricht
+def unnötig_lange_funktion_6():
+    return "Finale Nachricht: " + unnötig_lange_funktion_5()
 
-    entschlüsselte_nachricht = verschlüsseln(nachricht)
+def unnötig_lange_funktion_7():
+    text = unnötig_lange_funktion_6()
+    matrix_style_erscheinung(text)
 
-    if entschlüsselte_nachricht != "":
-        geheime_funktion_3(nachricht)
+def unnötig_lange_funktion_8():
+    text = unnötig_lange_funktion_7()
 
-def geheime_funktion_3(nachricht):
-    rückwärts_nachricht = nachricht[::-1]
-    
-    def zufällige_operation(text):
-        text_ohne_leerzeichen = text.replace(" ", "")
-        return text_ohne_leerzeichen
+def unnötig_lange_funktion_9():
+    unnötig_lange_funktion_8()
 
-    rückwärts_nachricht = zufällige_operation(rückwärts_nachricht)
+def unnötig_lange_funktion_10():
+    unnötig_lange_funktion_9()
 
-    if rückwärts_nachricht:
-        geheime_funktion_4(nachricht)
+def unnötig_lange_funktion_11():
+    unnötig_lange_funktion_10()
 
-def geheime_funktion_4(nachricht):
-    if "GitHub" in nachricht:
-        letzte_funktion(nachricht)
-    else:
-        print("Fehler: 'GitHub' nicht in der Nachricht gefunden")
+def unnötig_lange_funktion_12():
+    unnötig_lange_funktion_11()
 
-def letzte_funktion(nachricht):
-    print(nachricht)
+def unnötig_lange_funktion_13():
+    unnötig_lange_funktion_12()
+
+def unnötig_lange_funktion_14():
+    unnötig_lange_funktion_13()
+
+def unnötig_lange_funktion_15():
+    unnötig_lange_funktion_14()
+
+def unnötig_lange_funktion_16():
+    unnötig_lange_funktion_15()
+
+def unnötig_lange_funktion_17():
+    unnötig_lange_funktion_16()
+
+def unnötig_lange_funktion_18():
+    unnötig_lange_funktion_17()
+
+def unnötig_lange_funktion_19():
+    unnötig_lange_funktion_18()
+
+def unnötig_lange_funktion_20():
+    unnötig_lange_funktion_19()
+
+def unnötig_lange_funktion_21():
+    unnötig_lange_funktion_20()
+
+def unnötig_lange_funktion_22():
+    unnötig_lange_funktion_21()
+
+def unnötig_lange_funktion_23():
+    unnötig_lange_funktion_22()
+
+def unnötig_lange_funktion_24():
+    unnötig_lange_funktion_23()
+
+def unnötig_lange_funktion_25():
+    unnötig_lange_funktion_24()
+
+def unnötig_lange_funktion_26():
+    unnötig_lange_funktion_25()
+
+def unnötig_lange_funktion_27():
+    unnötig_lange_funktion_26()
+
+def unnötig_lange_funktion_28():
+    unnötig_lange_funktion_27()
+
+def unnötig_lange_funktion_29():
+    unnötig_lange_funktion_28()
+
+def unnötig_lange_funktion_30():
+    unnötig_lange_funktion_29()
 
 if __name__ == "__main__":
-    unnötig_komplizierte_funktion()
+    unnötig_lange_funktion_30()
