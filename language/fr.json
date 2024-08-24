@@ -264,6 +264,7 @@
   "security_chatfilter_badword_reason": "Mauvais mot",
   "security_chatfilter_banned_message": "Message spam",
   "security_chatfilter_bot_message": "Activité du robot",
+  "security_chatfilter_footer": "Si cela est une erreur, veuillez nous le signaler en utilisant la commande /report !",
   "security_chatfilter_info_tag": "Info:",
   "security_chatfilter_introduction": "Le dernier message de l'utilisateur suivant a été supprimé :",
   "security_chatfilter_nonascci": "Police non autorisée",

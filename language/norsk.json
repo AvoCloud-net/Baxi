@@ -264,6 +264,7 @@
   "security_chatfilter_badword_reason": "Dårlig ord",
   "security_chatfilter_banned_message": "Spammelding",
   "security_chatfilter_bot_message": "Botaktivitet",
+  "security_chatfilter_footer": "Hvis dette er en feil, vennligst meld fra til oss ved hjelp av /report kommandoen!",
   "security_chatfilter_info_tag": "Info:",
   "security_chatfilter_introduction": "Den siste meldingen fra følgende bruker ble slettet:",
   "security_chatfilter_nonascci": "Utillatt skrifttype",
