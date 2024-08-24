@@ -264,7 +264,7 @@
   "security_chatfilter_badword_reason": "Bad word",
   "security_chatfilter_banned_message": "Spam Nachricht",
   "security_chatfilter_bot_message": "Bot aktivitäten",
-  "security_chatfilter_footer": "Sollte dies ein Fehler sein, melded uns dies bitte mithilfe des /report Befehls!",
+  "security_chatfilter_footer": "Sollte dies ein Fehler sein, meldet uns dies bitte mithilfe des /report Befehls!",
   "security_chatfilter_info_tag": "Info:",
   "security_chatfilter_introduction": "Die letzte Nachricht des folgenden Benutzers wurde gelöscht:",
   "security_chatfilter_nonascci": "Unerlaubte Schriftart",
