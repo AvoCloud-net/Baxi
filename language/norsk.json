@@ -314,7 +314,7 @@
   "userstatus_reason_tag": "Grunnen til",
   "userstatus_time_tag": "Tidsstempel",
   "verify_already-verified_error": "Du er allerede bekreftet!",
-  "verify_role_info": "Vær oppmerksom på at rollen til {bot} må være over rollen {role}.",
+  "verify_role_info": "Vær oppmerksom på at rollen {bot} må ligge over rollen {role}. Rettighetene til den valgte kanalen har også blitt revidert. (Se revisjonsloggen)",
   "verify_role_missing_error": "Den angitte rollen eksisterer ikke! ",
   "verify_success": "Bekreftelsen var vellykket! ",
   "verify_task": "Skriv bokstavene fra feltet:",
