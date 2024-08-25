@@ -13,3 +13,4 @@ twinkle systems-edit.txt
 /.local
 /static/general_imgs
 /static/globalchat_img
+config/auth0.conf
