@@ -302,7 +302,7 @@
   "ticket_menu": "Brauchst du Hilfe? Klicke einfach auf die Schaltflächen unten, um ein Ticket zu erstellen. \n\n<:question:1244724909481922791> Frage – Für einfache Fragen/Probleme. \n<:mod:1244728840803192933> Melden – Zum melden von Benutzer/Bots. \n<:person_wave:1244725776671314031> Andere – Für andere Anliegen.",
   "ticket_menu_title": "{server}-Unterstützung",
   "ticket_title": "Ticket",
-  "ticket_title_apply": "Andere",
+  "ticket_title_other": "Andere",
   "ticket_title_question": "Frage",
   "ticket_title_report": "Melden",
   "ticket_welcome_message": "Willkommen beim Support! Das Team wird sich in Kürze um dich kümmern.",

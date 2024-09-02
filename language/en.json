@@ -302,7 +302,7 @@
   "ticket_menu": "Need help? Just click the buttons below to create a ticket. \n\n<:question:1244724909481922791> Question - For simple questions/issues. \n<:mod:1244728840803192933> Report - To report users/bots. \n<:person_wave:1244725776671314031> Other - For other concerns.",
   "ticket_menu_title": "{server} Support",
   "ticket_title": "Ticket",
-  "ticket_title_apply": "apply",
+  "ticket_title_other": "other",
   "ticket_title_question": "question",
   "ticket_title_report": "report",
   "ticket_welcome_message": "Welcome to Support! The team will take care of you shortly.",
