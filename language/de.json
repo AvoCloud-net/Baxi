@@ -14,7 +14,7 @@
   "bot_rule_note": "Diese Regeln gelten für den Bot, nicht den Server. Um die Serverregeln zu sehen, suche den Kanal mit den Regeln (möglicherweise „Regeln“). Beachte, dass die folgenden Regeln auf allen Systemen befolgt werden müssen, besonders im globalen Chat.",
   "bot_rules_footer": "PyroPixle-Sicherheit",
   "bot_rules_title": "Discord-Bot-Regeln",
-  "bot_stats_servers": "Servers: ",
+  "bot_stats_servers": "Server: ",
   "bot_stats_title": "Bot stats",
   "bot_stats_users": "Benutzer: ",
   "cool_random_text": [
