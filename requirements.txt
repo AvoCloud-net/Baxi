@@ -1,6 +1,0 @@
-discord.py
-numpy
-requests~=2.31.0
-pytz~=2023.4
-Flask~=3.0.2
-authlib
