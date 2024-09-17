@@ -1,6 +1,7 @@
 from reds_simple_logger import Logger
 import configparser
 import discord
+from cryptography.fernet import Fernet
 
 import assets.get_saves as get_saves
 
