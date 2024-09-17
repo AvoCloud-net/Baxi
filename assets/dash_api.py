@@ -2,6 +2,8 @@ from reds_simple_logger import Logger
 import configparser
 import discord
 from cryptography.fernet import Fernet
+from quart import Quart, render_template, request, send_from_directory, jsonify, url_for
+from quart_cors import cors
 
 import assets.get_saves as get_saves
 
@@ -9,6 +11,12 @@ logger = Logger()
 
 
 async def sync_baxi_data(request, channel: discord.TextChannel):
+    """
+
+    :param request:
+    :param channel:
+    :return:
+    """
     auth0 = configparser.ConfigParser()
     auth0.read("config/auth0.conf")
     key = request.headers.get("Authorization")
@@ -43,6 +51,12 @@ async def sync_baxi_data(request, channel: discord.TextChannel):
 
 
 async def load_antiraid_settings(request, guild: discord.Guild):
+    """
+
+    :param request:
+    :param guild:
+    :return:
+    """
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
@@ -81,6 +95,12 @@ async def load_antiraid_settings(request, guild: discord.Guild):
 
 
 async def save_antiraid_settings(request, guild: discord.Guild):
+    """
+
+    :param request:
+    :param guild:
+    :return:
+    """
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
@@ -119,6 +139,12 @@ async def save_antiraid_settings(request, guild: discord.Guild):
 
 
 async def load_globalchat_settings(request, guild: discord.Guild):
+    """
+
+    :param request:
+    :param guild:
+    :return:
+    """
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
