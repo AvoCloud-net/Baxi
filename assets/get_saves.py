@@ -1,3 +1,5 @@
+import json
+
 def load_data(file_path):  # noqa
     try:
         with open(file_path, "r", encoding="utf-8") as file:
