@@ -1,11 +1,14 @@
 from reds_simple_logger import Logger
+import configparser
 import get_saves as get_saves
 import discord
 
 logger = Logger()
 
 
-async def sync_baxi_data(request, auth0, channel: discord.abc.TextChannel):
+async def sync_baxi_data(request, channel: discord.abc.TextChannel):
+    auth0 = configparser.ConfigParser()
+    auth0.read("config/auth0.conf")
     key = request.headers.get("Authorization")
     if str(key) != str(auth0["DASH"]["baxi_token_key"]):
         return jsonify({'error': "Invalid API KEY"}), 401
@@ -37,7 +40,9 @@ async def sync_baxi_data(request, auth0, channel: discord.abc.TextChannel):
          "app_verified": bool(bot.user.verified)})
 
 
-async def load_antiraid_settings(request, config, guild: discord.abc.Guild):
+async def load_antiraid_settings(request, guild: discord.abc.Guild):
+    config = configparser.ConfigParser()
+    config.read("config/runtime.conf")
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -73,7 +78,9 @@ async def load_antiraid_settings(request, config, guild: discord.abc.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
-async def save_antiraid_settings(request, config, guild: discord.abc.Guild):
+async def save_antiraid_settings(request, guild: discord.abc.Guild):
+    config = configparser.ConfigParser()
+    config.read("config/runtime.conf")
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -109,7 +116,9 @@ async def save_antiraid_settings(request, config, guild: discord.abc.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
-async def load_globalchat_settings(request, config, guild: discord.abc.Guild):
+async def load_globalchat_settings(request, guild: discord.abc.Guild):
+    config = configparser.ConfigParser()
+    config.read("config/runtime.conf")
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
