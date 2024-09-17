@@ -41,7 +41,7 @@ async def sync_baxi_data(request, channel: discord.TextChannel):
          "app_verified": bool(bot.user.verified)})
 
 
-async def load_antiraid_settings(request, guild: discord.abc.Guild):
+async def load_antiraid_settings(request, guild: discord.Guild):
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
@@ -79,7 +79,7 @@ async def load_antiraid_settings(request, guild: discord.abc.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
-async def save_antiraid_settings(request, guild: discord.abc.Guild):
+async def save_antiraid_settings(request, guild: discord.Guild):
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
@@ -117,7 +117,7 @@ async def save_antiraid_settings(request, guild: discord.abc.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
-async def load_globalchat_settings(request, guild: discord.abc.Guild):
+async def load_globalchat_settings(request, guild: discord.Guild):
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     try:
