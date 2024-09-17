@@ -7,7 +7,7 @@ import assets.get_saves as get_saves
 logger = Logger()
 
 
-async def sync_baxi_data(request, channel: discord.abc.TextChannel):
+async def sync_baxi_data(request, channel: discord.TextChannel):
     auth0 = configparser.ConfigParser()
     auth0.read("config/auth0.conf")
     key = request.headers.get("Authorization")
