@@ -1,6 +1,7 @@
 import json
+import os
 
-def load_data(file_path):  # noqa
+def load_data(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -9,7 +10,7 @@ def load_data(file_path):  # noqa
         return {}
 
 
-def save_data(file_path, data):  # noqa
+def save_data(file_path, data):
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4, ensure_ascii=False)
 
