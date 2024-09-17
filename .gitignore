@@ -23,3 +23,5 @@ key_gen.py
 **/*.xml
 **/*.iml
 **/*.idea\modules.xml
+assets\__pycache__\dash_api.cpython-312.pyc
+assets\__pycache__\get_saves.cpython-312.pyc

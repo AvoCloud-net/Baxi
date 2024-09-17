@@ -1,7 +1,8 @@
 from reds_simple_logger import Logger
 import configparser
-import get_saves as get_saves
 import discord
+
+import assets.get_saves as get_saves
 
 logger = Logger()
 
