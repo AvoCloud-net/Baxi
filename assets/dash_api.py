@@ -20,6 +20,8 @@ async def sync_baxi_data(request, channel: discord.TextChannel, bot):
     """
     auth0 = configparser.ConfigParser()
     auth0.read("config/auth0.conf")
+    config = configparser.ConfigParser()
+    config.read("config/runtime.conf")
     key = request.headers.get("Authorization")
     if str(key) != str(auth0["DASH"]["baxi_token_key"]):
         return jsonify({'error': "Invalid API KEY"}), 401
