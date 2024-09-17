@@ -18,3 +18,8 @@ test.json
 dash.md
 key_gen.py
 *.txt
+
+**/*.idea\workspace.xml
+**/*.xml
+**/*.iml
+**/*.idea\modules.xml
