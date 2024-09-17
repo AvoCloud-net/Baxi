@@ -10,9 +10,10 @@ import assets.get_saves as get_saves
 logger = Logger()
 
 
-async def sync_baxi_data(request, channel: discord.TextChannel):
+async def sync_baxi_data(request, channel: discord.TextChannel, bot):
     """
 
+    :param bot:
     :param request:
     :param channel:
     :return:
@@ -24,6 +25,8 @@ async def sync_baxi_data(request, channel: discord.TextChannel):
         return jsonify({'error': "Invalid API KEY"}), 401
 
     fernet = Fernet(auth0["FLASK"]["key"])
+    CLIENT_ID = auth0["DISCORD"]["client_id"]
+    REDIRECT_URI = config["DASH"]["callback_url"]
 
     BOT_TOKEN = auth0["DISCORD"]["token"]
     CLIENT_SECRET = auth0["DISCORD"]["client_secret"]
