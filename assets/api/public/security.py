@@ -56,14 +56,15 @@ async def load_chatfilterrequest_info(request, bot):
 
                     data = json.load(file)
                     result = data.get(str(requestid))
-                    guild = bot.get_guild(int(result["serverid"]))
-                    user = guild.get_member(int(result["userid"]))
+
                     if result:
+                        guild = bot.get_guild(int(result["serverid"]))
+                        user = guild.get_member(int(result["userid"]))
                         return await render_template('info.html', result=result, guild=guild, user=user)  # noqa
                     else:
                         return await render_template("chatfiltererror.html", msg="RequestID not found")  # noqa
-            except FileNotFoundError:
-                return await render_template("chatfiltererror.html", msg="Unknwon error")  # noqa
+            except:
+                return await render_template("chatfiltererror.html", msg="RequestID not found in system")  # noqa
         else:
             return await render_template("chatfiltererror.html", msg="Missing information in your request")  # noqa
     else:
