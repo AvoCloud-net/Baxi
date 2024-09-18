@@ -1,3 +1,16 @@
+##################################
+# This is the original source code
+# of the Discord Bot's Baxi.
+#
+# When using the code (copy, change)
+# all policies and licenses must be adhered to.
+#
+# Developer: Red_Wolf2467
+# Original App: Baxi
+##################################
+
+
+
 import json
 import os
 
