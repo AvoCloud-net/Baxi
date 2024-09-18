@@ -16,7 +16,7 @@ import discord
 from cryptography.fernet import Fernet
 from quart import jsonify
 
-from assets.get_saves import *
+from assets.general.get_saves import *
 
 async def check_api_key(request):
     keys = load_data("json/api_keys.json")
