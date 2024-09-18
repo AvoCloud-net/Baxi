@@ -17,7 +17,7 @@ from cryptography.fernet import Fernet
 from quart import Quart, render_template, request, send_from_directory, jsonify, url_for
 from quart_cors import cors
 
-import assets.get_saves as get_saves
+from assets.general.get_saves import *
 
 logger = Logger()
 

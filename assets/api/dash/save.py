@@ -16,7 +16,7 @@ import discord
 from cryptography.fernet import Fernet
 from quart import jsonify
 
-import assets.get_saves as get_saves
+from assets.general.get_saves import *
 
 logger = Logger()
 
