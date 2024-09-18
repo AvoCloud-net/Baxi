@@ -42,7 +42,7 @@ async def load_error_page():
         return await render_template("503.html"), 503  # noqa
 
 
-async def load_chatfilterrequest_info(request):
+async def load_chatfilterrequest_info(request, bot):
     auth0 = configparser.ConfigParser()
     auth0.read("config/auth0.conf")
     config = configparser.ConfigParser()
@@ -70,7 +70,7 @@ async def load_chatfilterrequest_info(request):
         return await render_template("503.html"), 503  # noqa
 
 
-async def load_user_info(request):
+async def load_user_info(request, bot):
     if bool(config["WEB"]["api_online"]):
         requestid = request.args.get('idInput')
 
