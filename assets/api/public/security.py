@@ -18,6 +18,7 @@ import discord
 from cryptography.fernet import Fernet
 from quart import Quart, render_template, request, send_from_directory, jsonify, url_for
 from quart_cors import cors
+import json
 
 auth0 = configparser.ConfigParser()
 auth0.read("config/auth0.conf")
