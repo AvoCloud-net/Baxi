@@ -99,6 +99,7 @@ async def get_user_badges(user_id, bot):  # noqa
 
 async def handel_gc(booted: bool, emergency_mode: bool, message: discord.Message, user_api, bot):
     language = load_language_model(message.guild.id)
+    message_content = message.content
     tenor_link_pattern = r'https?:\/\/tenor\.com\/view\/[a-zA-Z0-9\-]+'
     # noinspection SpellCheckingInspection
     discord_img_pattern = r"https?://(?:images-ext-\d\.discordapp\.net/external|cdn\.discordapp\.com)/.*"
