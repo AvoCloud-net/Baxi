@@ -12,6 +12,22 @@
 
 import json
 import os
+import random
+import string
+
+
+async def save_globalchat_image(attachment):
+    filename = ''.join(random.choices(string.ascii_letters + string.digits, k=10)) + \
+               os.path.splitext(attachment.filename)[1]
+    await attachment.save(os.path.join(app.config["global_img_folder"], filename))
+    return filename
+
+
+async def save_general_image(attachment):
+    filename = ''.join(random.choices(string.ascii_letters + string.digits, k=15)) + \
+               os.path.splitext(attachment.filename)[1]
+    await attachment.save(os.path.join(app.config["general_img_folder"], filename))
+    return filename
 
 
 def load_data(file_path):
@@ -63,7 +79,8 @@ files_and_functions = [
     ("json/log_channels.json", load_data, save_data),
     ("json/anti_raid.json", load_data, save_data),
     ("json/spamdb_bypass.json", load_data, save_data),
-    ("json/auto_roles.json", load_data, save_data)
+    ("json/auto_roles.json", load_data, save_data),
+    ("filter/nsfw_words.json", load_data, save_data)
 ]
 
 for file_path, load_func, save_func in files_and_functions:
