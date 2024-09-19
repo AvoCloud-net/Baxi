@@ -12,6 +12,7 @@ import asyncio
 import configparser
 
 import discord
+from discord import Interaction
 from reds_simple_logger import Logger
 
 logger = Logger()
