@@ -29,8 +29,9 @@ embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(c
                                     int(config["BOT"]["embed_color_blue"]))  # FF5733
 
 
-async def check_message_sec(message: discord.Message):
+async def check_message_sec(message: discord.Message, bot):
     global message_content
+    nsfw_content_words = load_data("filter/nsfw_words.json")
     timestamp = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
     settings_chatfilter = load_data("json/chatfilter.json")
     settings_counting = load_data("json/countgame_data.json")
@@ -69,6 +70,23 @@ async def check_message_sec(message: discord.Message):
         else:
             logger.info("Server has enabled advanced privacy, images not saved!")
 
+    invite_pattern = re.compile(r'(https?://)?(www\.)?(discord\.(gg|io|me|li|com)|discordapp\.com/invite)/(\w+)',
+                                re.IGNORECASE)
+    for match in invite_pattern.findall(message.content):
+        invite_code = match[-1]
+        try:
+            invite = await bot.fetch_invite(invite_code)
+            server_name = invite.guild.name
+            for word in server_name.split():
+                if word.lower() in nsfw_content_words:
+                    CHATFILTER_nsfw_server = True
+        except discord.errors.NotFound:
+            CHATFILTER_nsfw_server = False
+        except discord.errors.HTTPException:
+            CHATFILTER_nsfw_server = False
+        except Exception:
+            CHATFILTER_nsfw_server = False
+
     if not (message_content is None or message_content == "") and (
             int(message.channel.id) not in settings_chatfilter[chatfilter_server_index]["bypass_channels"]):
         try:
@@ -97,21 +115,24 @@ async def check_message_sec(message: discord.Message):
             response = {"response": chatfilter_request.result,
                         "reason": chatfilter_request.reason,
                         "pair": chatfilter_request.levenshteinPair,
-                        "timestamp": timestamp}
+                        "timestamp": timestamp,
+                        "nsfw_server": CHATFILTER_nsfw_server}
 
 
         except:
             response = {"response": 0,
                         "reason": None,
                         "pair": None,
-                        "timestamp": timestamp}
+                        "timestamp": timestamp,
+                        "nsfw_server": CHATFILTER_nsfw_server}
 
 
     else:
         response = {"response": 0,
                     "reason": None,
                     "pair": None,
-                    "timestamp": timestamp}
+                    "timestamp": timestamp,
+                    "nsfw_server": CHATFILTER_nsfw_server}
     return response
 
 
