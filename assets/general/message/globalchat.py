@@ -18,7 +18,7 @@ from reds_simple_logger import Logger
 from assets.dc.embed.embeds import *
 from assets.general.routine_events import *
 
-icons_url = config["WEB"]["icons_url"]
+icons_url = config["WEB"]["icon_url"]
 logger=Logger()
 
 config = configparser.ConfigParser()

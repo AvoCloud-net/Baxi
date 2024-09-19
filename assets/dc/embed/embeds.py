@@ -19,7 +19,7 @@ config.read("config/runtime.conf")
 
 
 def lock_embed():
-    icons_url = config["WEB"]["icons_url"]
+    icons_url = config["WEB"]["icon_url"]
     embed_lock = discord.Embed(
         title="Emergency stop",
         description="> This is a Universal message, so it is in English.\n\nEmergency mode has been activated! The bot is in lockdown and all systems are unavailable.")
