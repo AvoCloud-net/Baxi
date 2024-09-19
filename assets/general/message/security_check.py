@@ -31,6 +31,7 @@ embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(c
 
 async def check_message_sec(message: discord.Message, bot):
     message_content = message.content
+    CHATFILTER_nsfw_server = False
     nsfw_content_words = load_data("filter/nsfw_words.json")
     timestamp = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
     settings_chatfilter = load_data("json/chatfilter.json")
