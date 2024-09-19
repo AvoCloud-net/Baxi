@@ -10,6 +10,7 @@
 ##################################
 
 import discord
+from discord import Interaction
 
 
 class GuidelinesButton(discord.ui.View):
