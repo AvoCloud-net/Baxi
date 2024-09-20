@@ -15,6 +15,7 @@ import discord
 from reds_simple_logger import Logger
 
 from assets.general.get_saves import *
+from assets.general.routine_events import load_language_model
 from main import *
 
 logger = Logger()
@@ -214,6 +215,7 @@ async def ticket_claim(interaction: discord.Interaction):
         else:
             await interaction.response.send_message(language["permission_denied"], ephemeral=True)  # noqa
     except Exception as e:  # noqa
+        logger.error(str(e))
         try:
             await interaction.response.send_message(language["unknown_error"])  # noqa
             await interaction.channel.send(f"{e}")
