@@ -8,7 +8,7 @@
 # Developer: Red_Wolf2467
 # Original App: Baxi
 ##################################
-
+import configparser
 import datetime
 
 import discord
@@ -20,14 +20,12 @@ from main import *
 
 logger = Logger()
 
-
-
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
 
-
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
                                     int(config["BOT"]["embed_color_blue"]))  # FF5733
+
 
 async def other_button(interaction: discord.Interaction):
     try:
@@ -222,6 +220,17 @@ async def ticket_claim(interaction: discord.Interaction):
         except:  # noqa
             await interaction.edit_original_response(content=language["unknown_error"])
 
+
+class TicketClaimQuestionButton(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Yes", custom_id="yes_claim", style=discord.ButtonStyle.green,
+                       emoji="<:check:1244724215274405979>")
+    async def yes_claim_button(self, interaction: Interaction, Button: discord.ui.Button):  # noqa
+        await claim_yes_ticket(interaction=interaction)
+
+
 async def ticket_claim_close(interaction: discord.Interaction):
     language = load_language_model(str(interaction.guild.id))
     ticketdata = load_data("json/ticketdata.json")
@@ -234,19 +243,24 @@ async def ticket_claim_close(interaction: discord.Interaction):
     else:
         await interaction.response.send_message(language["permission_denied"], ephemeral=True)  # noqa
 
+
 async def claim_yes_ticket(interaction: discord.Interaction):
-    ticketdata = load_data("json/ticketinfo.json")
-    language = load_language_model(str(interaction.guild.id))
-    if ticketdata[str(interaction.channel.id)]["claimed"] == str(interaction.user.id):
-        await interaction.response.send_message(language["ticket_a_claimed"], ephemeral=True)  # noqa
-    else:
-        ticketdata[str(interaction.channel.id)]["claimed"] = str(interaction.user.id)
-        save_data("json/ticketinfo.json", ticketdata)
-        embed2 = discord.Embed(title="Claimed",
-                               description=f"{language['ticket_claim_success']}{interaction.user.mention}",
-                               color=embedColor, timestamp=datetime.datetime.now()).set_thumbnail(
-            url=interaction.user.avatar)
-        await interaction.response.send_message(embed=embed2)  # noqa
+    try:
+        ticketdata = load_data("json/ticketinfo.json")
+        language = load_language_model(str(interaction.guild.id))
+        if ticketdata[str(interaction.channel.id)]["claimed"] == str(interaction.user.id):
+            await interaction.response.send_message(language["ticket_a_claimed"], ephemeral=True)  # noqa
+        else:
+            ticketdata[str(interaction.channel.id)]["claimed"] = str(interaction.user.id)
+            save_data("json/ticketinfo.json", ticketdata)
+            embed2 = discord.Embed(title="Claimed",
+                                   description=f"{language['ticket_claim_success']}{interaction.user.mention}",
+                                   color=embedColor, timestamp=datetime.datetime.now()).set_thumbnail(
+                url=interaction.user.avatar)
+            await interaction.response.send_message(embed=embed2)  # noqa
+    except Exception as e:
+        logger.error(str(e))
+
 
 async def delete_yes(interaction: discord.Interaction):
     language = load_language_model(str(interaction.guild.id))
@@ -257,6 +271,7 @@ async def delete_yes(interaction: discord.Interaction):
         logger.error(str(e))
     save_data("json/ticketinfo.json", ticketdata)
     await interaction.channel.delete()
+
 
 async def delete_no(interaction: discord.Interaction):
     language = load_language_model(str(interaction.guild.id))
