@@ -222,7 +222,7 @@ async def ticket_claim(interaction: discord.Interaction):
         except:  # noqa
             await interaction.edit_original_response(content=language["unknown_error"])
 
-async def ticket_claim_colose(interaction: discord.Interaction):
+async def ticket_claim_close(interaction: discord.Interaction):
     language = load_language_model(str(interaction.guild.id))
     ticketdata = load_data("json/ticketdata.json")
     embed = discord.Embed(title=language["ticket_title"],
