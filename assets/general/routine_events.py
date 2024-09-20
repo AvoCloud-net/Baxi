@@ -14,6 +14,9 @@ import datetime
 
 from assets.general.get_saves import *
 
+def generate_random_string(length=5):
+    all_characters = string.ascii_letters
+    return ''.join(random.choice(all_characters) for _ in range(length))
 
 def load_language_model(server_id):
     language_settings = load_data("json/language.json")
