@@ -22,14 +22,15 @@ config.read("config/runtime.conf")
 
 logger = Logger()
 
-
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
                                     int(config["BOT"]["embed_color_blue"]))  # FF5733
 icons_url = config["WEB"]["icon_url"]
 
+
 def generate_random_string(length=5):
     all_characters = string.ascii_letters
     return ''.join(random.choice(all_characters) for _ in range(length))
+
 
 def load_language_model(server_id):
     language_settings = load_data("json/language.json")
@@ -72,6 +73,7 @@ def handle_log_event(command, guild, username):
         f.write(f"{timestamp} - {command} - {username}\n")
     f.close()
 
+
 async def log_action(guild_id, user_id, action_type, action_counts):
     current_time = int(time.time())
     action_counts[guild_id][user_id]["actions"] += 1
@@ -92,7 +94,6 @@ async def check_actions_antiraid(action_counts, bot):
                     await quarantine_user(guild, member)
                     logger.success("User quarantined on Guild" + str(guild.name) + "; User: " + str(member.name))
                 del action_counts[guild_id][user_id]
-
 
 
 async def quarantine_user(guild: discord.Guild, member: discord.Member):

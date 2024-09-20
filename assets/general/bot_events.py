@@ -15,7 +15,7 @@ from reds_simple_logger import Logger
 
 from assets.dc.embed.buttons import *
 from assets.general.routine_events import *
-from main import InviteUndWebUndDiscordundDocsButton
+from main import *
 
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")

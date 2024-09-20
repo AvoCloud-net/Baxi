@@ -18,6 +18,7 @@ from assets.general.routine_events import *
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
 
+
 async def run_guessing(message: discord.Message, booted: bool):
     icons_url = config["WEB"]["icon_url"]
     language = load_language_model(message.guild.id)
