@@ -153,3 +153,72 @@ async def check_user_sec(user: discord.User):
                     "reason": None}
 
     return response
+
+
+async def del_message(message: discord.Message):
+    logger.info("Message marked as spam!")
+    chatfiltler_requestID: int = random.randint(1000000, 9999999)
+
+    if message_api["response"] != 0:
+        chatfilter_response_reason = message_api["reason"]
+    else:
+        chatfilter_response_reason = language["security_chatfilter_nsfw_link_reason"]
+
+    embed = discord.Embed(title=language["security_title"],
+                          description=f"{language['security_chatfilter_introduction']} {message.author.mention}\n"
+                                      f"> **{language['security_chatfilter_reason_tag']}** `{chatfilter_response_reason}`\n"
+                                      f"> **{language['security_chatfilter_request_tag']}** `{chatfiltler_requestID}`\n"
+                                      f"> **Info:** [security.pyropixle.com](https://security.pyropixle.com/chatfilterinfo?requestid={chatfiltler_requestID})",
+                          # noqa
+                          color=discord.Color.red()).set_thumbnail(url=icons_url + "warn.png").set_footer(
+        text=language["security_chatfilter_footer"])
+
+    logger.working("Saving data to json/chatfilterrequest.json...")
+
+    chatfilterrequest[chatfiltler_requestID] = {
+        "response": message_api["response"],
+        "user": message.author.name,
+        "userid": message.author.id,
+        "channelid": message.channel.id,
+        "channel": message.channel.name,
+        "message": message.content,
+        "timestamp": message_api["timestamp"],
+        "reason": chatfilter_response_reason,
+        "requestid": chatfiltler_requestID,
+        "server": message.guild.name,
+        "serverid": message.guild.id,
+        "userisspammer": user_api["isSpammer"],
+        "isspammerreason": user_api["reason"],
+        "levenshteinPair": message_api["pair"]
+    }
+
+    save_data("json/chatfilterrequest.json", chatfilterrequest)
+    logger.info("Data saved!")
+
+    await save_log_entry_logged_server(guild=message.guild, message=message,
+                                       chatfilter_response=message_api["response"])
+
+    if not get_globalchat(message.guild.id, message.channel.id):
+        if message.guild.id in filter_server_ids:
+            if message.guild.id in log_channels:
+                await message.guild.get_channel(int(log_channels[str(message.guild.id)]["channel_id"])).send(
+                    embed=embed)
+
+            def check(message_in):
+                return message_in.id == message.id
+
+            await message.channel.purge(limit=5, check=check,
+                                        reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}")
+            await message.channel.send(embed=embed)
+            logger.success("Message processed! (Chatfilter action)")
+            return
+    else:
+        await message.channel.send(embed=embed)
+
+        def check(message_in):
+            return message_in.id == message.id
+
+        await message.channel.purge(limit=5, check=check,
+                                    reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}")
+        logger.success("Message processed! (Chatfilter action)")
+        return

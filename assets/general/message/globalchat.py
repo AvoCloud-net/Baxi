@@ -10,6 +10,7 @@
 ##################################
 import re
 
+import discord
 import pytz
 import requests
 from bs4 import BeautifulSoup
@@ -19,7 +20,7 @@ from assets.dc.embed.embeds import *
 from assets.general.routine_events import *
 
 icons_url = config["WEB"]["icon_url"]
-logger=Logger()
+logger = Logger()
 
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
@@ -29,6 +30,7 @@ botadmin = list(map(int, auth0['DISCORD']['admins'].split(',')))
 
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
                                     int(config["BOT"]["embed_color_blue"]))
+
 
 def get_user_role(user_id):
     staff_user = load_data("json/staff_users.json")
@@ -373,3 +375,105 @@ async def handel_gc(booted: bool, emergency_mode: bool, message: discord.Message
         save_data("json/gc_messages.json", gc_messages)
     except Exception as e:
         await message.channel.send(str(e))
+
+
+def get_globalchat(guild_id, channelid=None):
+    global_chat = None
+    servers = load_data("json/servers.json")
+    for server in servers:
+        if int(server["guildid"]) == int(guild_id):
+            if channelid:
+                if int(server["channelid"]) == int(channelid):
+                    global_chat = server
+            else:
+                global_chat = server
+    return global_chat
+
+
+def get_globalchat_id(guild_id):
+    servers = load_data("json/servers.json")
+    globalchat = -1
+    i = 0
+    for server in servers:
+        if int(server["guildid"]) == int(guild_id):
+            globalchat = i
+        i += 1
+    return globalchat
+
+
+async def delete_gc_messages_cmd(interaction: discord.Interaction, msg_id: str, bot):
+    try:
+        gc_messages = load_data("json/gc_messages.json")
+        language = load_language_model(interaction.guild.id)
+        deleted_count: int = 0
+        await interaction.response.defer(ephemeral=True)
+
+        if msg_id in gc_messages:
+            if interaction.user.id == gc_messages[msg_id]["user_id"] or interaction.user.id in botadmin:
+                for reply_info in gc_messages[msg_id]["replies"]:
+                    try:
+                        guild: discord.Guild = bot.get_guild(reply_info["guild_id"])
+                        if guild:
+                            channel: discord.TextChannel = guild.get_channel(reply_info["channel_id"])
+                            if channel:
+                                try:
+                                    try:
+                                        reply_message = await channel.fetch_message(reply_info["message_id"])
+                                    except discord.NotFound:
+                                        continue
+                                    except discord.Forbidden:
+                                        continue
+                                    except Exception as e:
+                                        logger.warn(f"Error fetching reply {reply_info['message_id']}: {e}")
+                                        continue
+
+                                    # Aktualisiere den Embed der Antwortnachricht
+                                    embed = reply_message.embeds[0]
+                                    for i, field in enumerate(embed.fields):
+                                        if "Reply to" in field.name:
+                                            embed.set_field_at(i, name=field.name, value="[DELETED]",
+                                                               inline=field.inline)
+                                            break
+                                    else:
+                                        embed.add_field(
+                                            name="Reply Update",
+                                            value="[DELETED]",
+                                            inline=False
+                                        )
+                                    await reply_message.edit(embed=embed)
+                                except discord.NotFound:
+                                    continue
+                                except discord.Forbidden:
+                                    continue
+                    except Exception as e:
+                        await interaction.edit_original_response(content=language["unknown_error"] + str(e))
+                        return
+
+                for message_info in gc_messages[msg_id]["messages"]:
+                    try:
+                        guild = bot.get_guild(message_info["guild_id"])
+                        if guild:
+                            channel = guild.get_channel(message_info["channel_id"])
+                            if channel:
+                                try:
+                                    message = await channel.fetch_message(message_info["message_id"])
+                                    await message.delete()
+                                    deleted_count += 1
+                                except discord.NotFound:
+                                    continue
+                                except discord.Forbidden:
+                                    continue
+                    except Exception as e:
+                        await interaction.edit_original_response(content=language["unknown_error"] + str(e))
+                        return
+
+                del gc_messages[msg_id]
+                save_data("json/gc_messages.json", gc_messages)
+                await interaction.edit_original_response(content=f"{language['delete_success']}: {deleted_count}")
+            else:
+                await interaction.edit_original_response(
+                    content=language["global_chat_missing_perms"] + "\n> Author of message")
+        else:
+            await interaction.edit_original_response(content="404")
+    except Exception:
+        pass
