@@ -81,4 +81,5 @@ async def run_counting(message: discord.Message, booted: bool):
                                                            description=language["counting_not_math"],
                                                            color=discord.Color.random()), delete_after=5)
     except Exception as e:
+        logger.error(str(e))
         await message.channel.send(str(e))

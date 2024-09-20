@@ -49,4 +49,5 @@ async def run_guessing(message: discord.Message, booted: bool):
                                                     description=language["guessing_correct_number"],
                                                     color=discord.Color.green()))
     except Exception as e:
+        logger.error(str(e))
         await message.reply("Error in guessing.py:  " + str(e))
