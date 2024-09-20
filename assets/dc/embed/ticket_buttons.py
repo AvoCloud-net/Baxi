@@ -256,13 +256,6 @@ async def delete_yes(interaction: discord.Interaction):
     except Exception as e:
         logger.error(str(e))
     save_data("json/ticketinfo.json", ticketdata)
-    embed = discord.Embed(
-        title=language["ticket_deleting_title"],
-        description=language["ticket_deleting"],
-        color=embedColor
-    )
-    await interaction.response.send_message(embed=embed)  # noqa
-    await asyncio.sleep(3)
     await interaction.channel.delete()
 
 async def delete_no(interaction: discord.Interaction):
@@ -275,3 +268,14 @@ async def delete_no(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)  # noqa
     await interaction.message.edit(view=TicketChannelDeleteButtonsDisabled())
     return
+
+
+class TicketChannelDeleteButtonsDisabled(discord.ui.View):  # noqa
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(label="Delete", custom_id="yes_ticket-disabled",
+                                        style=discord.ButtonStyle.danger, emoji="<:trash:1244723837233397772>",
+                                        disabled=True))
+        self.add_item(discord.ui.Button(label="Cancel", custom_id="no_ticket-disabled",
+                                        style=discord.ButtonStyle.gray, emoji="<:trash:1244723837233397772>",
+                                        disabled=True))
