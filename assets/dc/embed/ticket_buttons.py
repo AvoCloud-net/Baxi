@@ -294,3 +294,33 @@ class TicketChannelDeleteButtonsDisabled(discord.ui.View):  # noqa
         self.add_item(discord.ui.Button(label="Cancel", custom_id="no_ticket-disabled",
                                         style=discord.ButtonStyle.gray, emoji="<:trash:1244723837233397772>",
                                         disabled=True))
+
+
+class TicketChannelButtons(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Close", custom_id="close", style=discord.ButtonStyle.danger,
+                       emoji="<:trash:1244723837233397772> ")
+    async def close_button(self, interaction: discord.Interaction, Button: discord.ui.Button):  # noqa
+        await ticket_claim_close(interaction=interaction)
+
+    @discord.ui.button(label="Claim", custom_id="claim", style=discord.ButtonStyle.blurple,
+                       emoji="<:claim:1244724683421778070>")
+    async def claim_button(self, interaction: discord.Interaction, Button: discord.ui.Button):  # noqa
+        await ticket_claim(interaction=interaction)
+
+
+class TicketChannelDeleteButtons(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Delete", custom_id="yes_ticket", style=discord.ButtonStyle.danger,
+                       emoji="<:trash:1244723837233397772>")
+    async def yes_button(self, interaction: discord.Interaction, Button: discord.ui.Button):  # noqa
+        await delete_yes(interaction=interaction)
+
+    @discord.ui.button(label="Cancel", custom_id="no_ticket", style=discord.ButtonStyle.gray,
+                       emoji="<:x_mark:1244724199529124002>")
+    async def no_button(self, interaction: discord.Interaction, Button: discord.ui.Button):  # noqa
+        await delete_no(interaction=interaction)
