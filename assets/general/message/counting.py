@@ -18,6 +18,7 @@ from assets.general.routine_events import *
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
 async def run_counting(message: discord.Message, booted: bool):
+    logger.debug.info("counting.py")
     settings_counting = load_data("json/countgame_data.json")
     icons_url = config["WEB"]["icon_url"]
     language = load_language_model(message.guild.id)
