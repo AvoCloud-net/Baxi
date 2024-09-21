@@ -246,10 +246,12 @@ async def load_security_settings(request, guild: discord.Guild):
 
 async def load_welcome_settings(request, guild: discord.Guild):
     try:
+        logger.debug.info("load_welc")
         key = request.headers.get("Authorization")
-        logger.info(str(key))
+        logger.debug.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
+        logger.debug.info("Key valid")
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             logger.info(request_data)
