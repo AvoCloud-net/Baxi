@@ -177,9 +177,10 @@ async def load_security_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             chatfilter_data = load_data("json/chatfilter.json")
             font_options = {str(1) + "-send": "Block-show", str(0) + "-send": "Allow-show"}
-
-            server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id), None)
-
+            try:
+                server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id), None)
+            except:
+                server_index = None
             if server_index is not None:
                 server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                    guild.text_channels if
