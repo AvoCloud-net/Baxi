@@ -196,9 +196,9 @@ async def load_security_settings(request, guild: discord.Guild):
                     if int(channel.id) in chatfilter_data[server_index]["bypass_channels"]:
                         channels[str(channel.id) + "-send"] = str(channel.name) + "-show"
 
-                for guild in chatfilter_data:
-                    if guild.id == guild["guildid"]:
-                        block_fonts = guild["block_ascci"]
+                for server_data in chatfilter_data:
+                    if server_data["guildid"] == guild.id:
+                        block_fonts = server_data["block_ascci"]
                         if block_fonts:
                             block_fonts = 1
                             block_fonts_txt = "Block"
