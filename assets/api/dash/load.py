@@ -253,6 +253,7 @@ async def load_welcome_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         logger.debug.info("Key valid")
         if bool(config["WEB"]["api_online"]):
+            logger.debug.info(request.text)
             request_data = await request.get_json()
             logger.info(request_data)
             welcomelist = load_data("json/welcome.json")
