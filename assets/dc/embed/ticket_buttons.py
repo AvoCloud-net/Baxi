@@ -38,7 +38,8 @@ async def other_button(interaction: discord.Interaction):
         if any(v.get('owner') == interaction.user.id for v in matching_guilds):
             await interaction.response.send_message(embed=discord.Embed(title=language["ticket_title"],
                                                                         description=language["ticket_already"],
-                                                                        color=embedColor))
+                                                                        color=embedColor),
+                                                    ephemeral=True)
             return
 
         role = discord.utils.get(interaction.guild.roles, id=int(ticketdata[str(interaction.guild.id)]["roleid"]))
@@ -90,7 +91,8 @@ async def report_button(interaction: discord.Interaction):
             # noinspection PyUnresolvedReferences
             await interaction.response.send_message(embed=discord.Embed(title=language["ticket_title"],
                                                                         description=language["ticket_already"],
-                                                                        color=embedColor))
+                                                                        color=embedColor),
+                                                    ephemeral=True)
             return
 
         role = discord.utils.get(interaction.guild.roles, id=int(ticketdata[str(interaction.guild.id)]["roleid"]))
