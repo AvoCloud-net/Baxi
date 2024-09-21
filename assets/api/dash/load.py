@@ -258,15 +258,6 @@ async def load_welcome_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         logger.debug.info("Key valid")
         if bool(config["WEB"]["api_online"]):
-            logger.debug.info(request.body)
-            try:
-                request_data = await request.get_json()
-                logger.debug.info("VALID REQUEST BODY")
-            except Exception:
-                logger.debug.info("INVALID REQUEST BODY")
-                return jsonify({'notify-error': "Invalid request body"}), 400
-
-            logger.info(request_data)
             welcomelist = load_data("json/welcome.json")
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                guild.text_channels}
