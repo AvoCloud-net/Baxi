@@ -249,14 +249,21 @@ async def load_security_settings(request, guild: discord.Guild):
 async def load_welcome_settings(request, guild: discord.Guild):
     try:
         logger.debug.info("load_welc")
-        key = request.headers.get("Authorization")
+        if "Authorization" in request.headers:
+            key = request.headers.get("Authorization")
+        else:
+            return jsonify({"notify-error": "No Auth header was found in the request! Please report this to the DEV team."})
         logger.debug.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         logger.debug.info("Key valid")
         if bool(config["WEB"]["api_online"]):
             logger.debug.info(request.body)
-            request_data = await request.get_json()
+            try:
+                request_data = await request.get_json()
+            except ValueError:
+                return jsonify({'notify-error': "Invalid request body"}), 400
+
             logger.info(request_data)
             welcomelist = load_data("json/welcome.json")
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
