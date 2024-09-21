@@ -178,7 +178,7 @@ async def load_security_settings(request, guild: discord.Guild):
             chatfilter_data = load_data("json/chatfilter.json")
             font_options = {str(1) + "-send": "Block-show", str(0) + "-send": "Allow-show"}
             try:
-                server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id), None)
+                server_index = next((index for (index, d) in enumerate(chatfilter_data) if str(d["guildid"]) == str(guild.id)), None)
                 logger.debug.info(server_index)
             except Exception:
                 server_index = None
