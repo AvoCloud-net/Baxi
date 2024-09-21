@@ -261,7 +261,9 @@ async def load_welcome_settings(request, guild: discord.Guild):
             logger.debug.info(request.body)
             try:
                 request_data = await request.get_json()
+                logger.debug.info("VALID REQUEST BODY")
             except ValueError:
+                logger.debug.info("INVALID REQUEST BODY")
                 return jsonify({'notify-error': "Invalid request body"}), 400
 
             logger.info(request_data)
