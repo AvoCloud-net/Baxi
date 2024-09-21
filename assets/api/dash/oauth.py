@@ -23,7 +23,6 @@ logger = Logger()
 
 async def sync_baxi_data(request, channel: discord.TextChannel, bot):
     """
-
     :param bot:
     :param request:
     :param channel:

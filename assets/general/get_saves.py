@@ -8,25 +8,29 @@
 # Developer: Red_Wolf2467
 # Original App: Baxi
 ##################################
-
-
+import configparser
 import json
 import os
 import random
 import string
 
+config = configparser.ConfigParser()
+config.read("config/runtime.conf")
+auth0 = configparser.ConfigParser()
+auth0.read("config/auth0.conf")
+
 
 async def save_globalchat_image(attachment):
     filename = ''.join(random.choices(string.ascii_letters + string.digits, k=10)) + \
                os.path.splitext(attachment.filename)[1]
-    await attachment.save(os.path.join(app.config["global_img_folder"], filename))
+    await attachment.save(os.path.join(config["FLASK"]["global_img_folder"], filename))
     return filename
 
 
 async def save_general_image(attachment):
     filename = ''.join(random.choices(string.ascii_letters + string.digits, k=15)) + \
                os.path.splitext(attachment.filename)[1]
-    await attachment.save(os.path.join(app.config["general_img_folder"], filename))
+    await attachment.save(os.path.join(config["FLASK"]["global_img_folder"], filename))
     return filename
 
 

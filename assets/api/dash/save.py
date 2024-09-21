@@ -35,7 +35,7 @@ async def save_antiraid_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            anti_raid_settings = get_saves.load_data("json/anti_raid.json")
+            anti_raid_settings = load_data("json/anti_raid.json")
             request_data = await request.get_json()
             print(request_data["active"])
             if int(request_data["active"]) == 1:
@@ -44,13 +44,13 @@ async def save_antiraid_settings(request, guild: discord.Guild):
                     return {"notify-warn": "Please fill out all fields!"}
 
                 anti_raid_settings[str(guild.id)] = {"role_id": int(roleid)}
-                get_saves.save_data("json/anti_raid.json", anti_raid_settings)
+                save_data("json/anti_raid.json", anti_raid_settings)
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 # noinspection PyBroadException
                 try:
                     del anti_raid_settings[str(guild.id)]
-                    get_saves.save_data("json/anti_raid.json", anti_raid_settings)
+                    save_data("json/anti_raid.json", anti_raid_settings)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:  # noqa
                     return {"notify-info": "The system is already deactivated!"}
@@ -71,7 +71,7 @@ async def save_globalchat_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
-            servers = get_saves.load_data("json/servers.json")
+            servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
             if int(request_data["active"]) == 1:
                 if request_data["channels-drop"] is None:
@@ -80,14 +80,14 @@ async def save_globalchat_settings(request, guild: discord.Guild):
                 server_to_remove = next((server for server in servers if server["guildid"] == guild.id), None)
                 if server_to_remove is not None:  # Überprüfung, ob die Guild-ID vorhanden ist
                     servers.remove(server_to_remove)
-                    get_saves.save_data("json/servers.json", servers)
-                    servers = get_saves.load_data("json/servers.json")
+                    save_data("json/servers.json", servers)
+                    servers = load_data("json/servers.json")
                     server = {"guildid": int(guild.id),
                               "channelid": int(int(request_data["channels-drop"])),
                               "name": guild.nam
                               }
                     servers.append(server)
-                    get_saves.save_data("json/servers.json", servers)
+                    save_data("json/servers.json", servers)
                     return {"notify-success": "System has been successfully activated / edited."}, 200
                 else:
                     return {"notify-warn": "Guild ID not found in the server list!"}, 404
@@ -97,7 +97,7 @@ async def save_globalchat_settings(request, guild: discord.Guild):
                     server_to_remove = next((server for server in servers if server["guildid"] == guild.id), None)
                     if server_to_remove is not None:  # Überprüfung, ob die Guild-ID vorhanden ist
                         servers.remove(server_to_remove)
-                        get_saves.save_data("json/servers.json", servers)
+                        save_data("json/servers.json", servers)
                         return {"notify-success": "The system has been successfully deactivated."}, 200
                     else:
                         return {"notify-info": "The system is already deactivated!"}, 200
@@ -120,7 +120,7 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             logger.info(request_data)
-            guessinggame_data = get_saves.load_data("json/guessing.json")
+            guessinggame_data = load_data("json/guessing.json")
             if int(request_data["active"]) == 1:
 
                 if request_data["channels-drop"] is None:
@@ -135,12 +135,12 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
                 else:
                     guessinggame_data[str(guild.id)]["channel_id"] = channel.id
 
-                get_saves.save_data("json/guessing.json", guessinggame_data)
+                save_data("json/guessing.json", guessinggame_data)
                 return {"notify-success": "System has been successfully activated / edited."}, 200
             else:
                 try:
                     del guessinggame_data[str(guild.id)]
-                    get_saves.save_data("json/guessing.json", guessinggame_data)
+                    save_data("json/guessing.json", guessinggame_data)
                     return {"notify-success": "The system has been successfully deactivated."}, 200
                 except Exception:
                     return {"notify-info": "The system is already deactivated!"}, 200
@@ -160,7 +160,7 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
-            countinggame_data = get_saves.load_data("json/countgame_data.json")
+            countinggame_data = load_data("json/countgame_data.json")
             logger.info(request_data)
             if int(request_data["active"]) == 1:
 
@@ -177,12 +177,12 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
                 else:
                     countinggame_data[str(guild.id)]["channel_id"] = channel.id
 
-                get_saves.save_data("json/countgame_data.json", countinggame_data)
+                save_data("json/countgame_data.json", countinggame_data)
                 return {"notify-success": "System has been successfully activated / edited."}, 200
             else:
                 try:
                     del countinggame_data[str(guild.id)]
-                    get_saves.save_data("json/countgame_data.json", countinggame_data)
+                    save_data("json/countgame_data.json", countinggame_data)
                     return {"notify-success": "The system has been successfully deactivated."}, 200
                 except NotFound:
                     return {"notify-info": "The system is already deactivated!"}, 200
@@ -203,7 +203,7 @@ async def save_security_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             logger.info(request_data)
-            chatfilter_data = get_saves.load_data("json/chatfilter.json")
+            chatfilter_data = load_data("json/chatfilter.json")
             if int(request_data["active"]) == 1:
                 if int(request_data["block_unknown_symbols-drop"]) == 1:
                     block_fonts = True
@@ -256,14 +256,14 @@ async def save_security_settings(request, guild: discord.Guild):
                             pass
                     chatfilter_data.append(server)
 
-                get_saves.save_data("json/chatfilter.json", chatfilter_data)
+                save_data("json/chatfilter.json", chatfilter_data)
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 try:
                     server_to_remove = next((server for server in chatfilter_data if server["guildid"] == guild.id),
                                             None)
                     chatfilter_data.remove(server_to_remove)
-                    get_saves.save_data("json/chatfilter.json", chatfilter_data)
+                    save_data("json/chatfilter.json", chatfilter_data)
                     return {"notify-success": "The system has been successfully deactivated."}, 200
                 except:
                     return {"notify-info": "The system is already deactivated!"}, 200
@@ -284,7 +284,7 @@ async def save_welcome_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             logger.info(request_data)
-            welcomelist = get_saves.load_data("json/welcome.json")
+            welcomelist = load_data("json/welcome.json")
             if int(request_data["active"]) == 1:
 
                 if request_data["message-input"] is None or request_data["image-input"] is None or request_data[
@@ -299,12 +299,12 @@ async def save_welcome_settings(request, guild: discord.Guild):
                                               "message": message,
                                               "color": color,
                                               "image": image_link}
-                get_saves.save_data("json/welcome.json", welcomelist)
+                save_data("json/welcome.json", welcomelist)
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 try:
                     del welcomelist[str(guild.id)]
-                    get_saves.save_data("json/welcome.json", welcomelist)
+                    save_data("json/welcome.json", welcomelist)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}
@@ -329,7 +329,7 @@ async def save_verify_settings(request, guild: discord.Guild):
             logger.info(request_data)  # Hier await hinzufügen
             request_data = await request.get_json()  # Hier await hinzufügen
 
-            verifylist = get_saves.load_data("json/verify.json")
+            verifylist = load_data("json/verify.json")
 
             if int(request_data["active"]) == 1:
 
@@ -377,12 +377,12 @@ async def save_verify_settings(request, guild: discord.Guild):
                                              "message": message,
                                              "task": int(task) + 1
                                              }
-                get_saves.save_data("json/verify.json", verifylist)
+                save_data("json/verify.json", verifylist)
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 try:
                     del verifylist[str(guild.id)]
-                    get_saves.save_data("json/verify.json", verifylist)
+                    save_data("json/verify.json", verifylist)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}
@@ -403,7 +403,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
 
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
-            suggestion_data = get_saves.load_data("json/suggestion.json")
+            suggestion_data = load_data("json/suggestion.json")
 
             if request_data["channels_add-drop"] == "placeholder_none" and request_data[
                 "channels_rem-drop"] == "placeholder_none":
@@ -449,12 +449,12 @@ async def save_sugg_settings(request, guild: discord.Guild):
                 if not found:
                     del suggestion_data[str(guild.id)]
 
-                get_saves.save_data("json/suggestion.json", suggestion_data)
+                save_data("json/suggestion.json", suggestion_data)
                 return {"notify-success": "Successfully saved!"}
             else:
                 try:
                     del suggestion_data[str(guild.id)]
-                    get_saves.save_data("json/suggestion.json", suggestion_data)
+                    save_data("json/suggestion.json", suggestion_data)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}
@@ -477,7 +477,7 @@ async def save_ticket_settings(request, guild: discord.Guild):
 
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
-            ticketdata = get_saves.load_data("json/ticketdata.json")
+            ticketdata = load_data("json/ticketdata.json")
 
             if int(request_data["active"]) == 1:
 
@@ -508,12 +508,12 @@ async def save_ticket_settings(request, guild: discord.Guild):
                                              "roleid": role.id,
                                              "ticket_owners": []
                                              }
-                get_saves.save_data("json/ticketdata.json", ticketdata)
+                save_data("json/ticketdata.json", ticketdata)
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 try:
                     del ticketdata[str(guild.id)]
-                    get_saves.save_data("json/ticketdata.json", ticketdata)
+                    save_data("json/ticketdata.json", ticketdata)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}
@@ -527,7 +527,7 @@ async def save_ticket_settings(request, guild: discord.Guild):
 
 async def save_log_settings(request, guild: discord.Guild):
     try:
-        log_channels = get_saves.load_data("json/log_channels.json")
+        log_channels = load_data("json/log_channels.json")
         key = request.headers.get("Authorization")
         logger.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
@@ -542,12 +542,12 @@ async def save_log_settings(request, guild: discord.Guild):
             if int(request_data["active"]) == 1:
                 channel = guild.get_channel(int(request_data["channels-drop"]))
                 log_channels[str(guild.id)] = {"channel_id": int(channel.id)}
-                get_saves.save_data("json/log_channels.json", log_channels)
+                save_data("json/log_channels.json", log_channels)
                 return {"notify-success": "System successfully activated / edited."}
             else:
                 try:
                     del log_channels[str(guild.id)]
-                    get_saves.save_data("json/log_channels.json", log_channels)
+                    save_data("json/log_channels.json", log_channels)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}
@@ -561,7 +561,7 @@ async def save_log_settings(request, guild: discord.Guild):
 
 async def save_autoroles_guild(request, guild: discord.Guild):
     try:
-        auto_roles = get_saves.load_data("json/auto_roles.json")
+        auto_roles = load_data("json/auto_roles.json")
         request_data = await request.get_json()
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -604,12 +604,12 @@ async def save_autoroles_guild(request, guild: discord.Guild):
                         found = True
                 if not found:
                     del auto_roles[str(guild.id)]
-                get_saves.save_data("json/auto_roles.json", auto_roles)
+                save_data("json/auto_roles.json", auto_roles)
                 return {"notify-success": "System successfully activated / edited."}
             else:
                 try:
                     del auto_roles[str(guild.id)]
-                    get_saves.save_data("json/auto_roles.json", auto_roles)
+                    save_data("json/auto_roles.json", auto_roles)
                     return {"notify-success": "The system has been successfully deactivated."}
                 except:
                     return {"notify-info": "The system is already deactivated!"}

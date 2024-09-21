@@ -19,6 +19,8 @@ from assets.general.get_saves import *
 
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
+auth0 = configparser.ConfigParser()
+auth0.read("config/auth0.conf")
 
 logger = Logger()
 
