@@ -83,8 +83,8 @@ files_and_functions = [
     ("filter/nsfw_words.json", load_data, save_data)
 ]
 
-for file_path, load_func, save_func in files_and_functions:
-    globals()[f"{os.path.basename(file_path).split('.')[0]}_data"] = load_func(file_path)
+for file_path, load_data, save_data in files_and_functions:
+    globals()[f"{os.path.basename(file_path).split('.')[0]}_data"] = load_data(file_path)
 
 
 
