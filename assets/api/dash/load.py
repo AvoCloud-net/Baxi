@@ -35,7 +35,7 @@ async def load_antiraid_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            anti_raid_settings = get_saves.load_data("json/anti_raid.json")
+            anti_raid_settings = load_data("json/anti_raid.json")
 
             server_roles = {str(role.id) + "-send": str(role.name) + "-show" for role in guild.roles if
                             role != guild.default_role}
@@ -78,9 +78,8 @@ async def load_globalchat_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            servers = get_saves.load_data("json/servers.json")
+            servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
-            guild = bot.get_guild(guild.id)
             server_channels = {str(channel.id) + "-send": str(channel.name + "-show") for channel in
                                guild.text_channels}
             if guild.id in gserver_ids:
@@ -111,7 +110,7 @@ async def load_minigame_guessing_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            guessinggame_data = get_saves.load_data("json/guessing.json")
+            guessinggame_data = load_data("json/guessing.json")
             server_channels = {str(channel.id) + "-send": str(channel.name + "-show") for channel in
                                guild.text_channels}
             if guild.id in guessinggame_data or str(guild.id) in guessinggame_data:
@@ -145,7 +144,7 @@ async def load_minigame_counting_game(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            countinggame_data = get_saves.load_data("json/countgame_data.json")
+            countinggame_data = load_data("json/countgame_data.json")
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                guild.text_channels}
             if str(guild.id) in countinggame_data:
@@ -176,7 +175,7 @@ async def load_security_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            chatfilter_data = get_saves.load_data("json/chatfilter.json")
+            chatfilter_data = load_data("json/chatfilter.json")
             font_options = {str(1) + "-send": "Block-show", str(0) + "-send": "Allow-show"}
 
             server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id), None)
@@ -254,7 +253,7 @@ async def load_welcome_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             logger.info(request_data)
-            welcomelist = get_saves.load_data("json/welcome.json")
+            welcomelist = load_data("json/welcome.json")
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                guild.text_channels}
             colors = {
@@ -309,7 +308,7 @@ async def load_verify_settings(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            verifylist = get_saves.load_data("json/verify.json")
+            verifylist = load_data("json/verify.json")
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                guild.text_channels}
             server_roles = {str(role.id) + "-send": str(role.name) + "-show" for role in guild.roles if
@@ -329,7 +328,7 @@ async def load_verify_settings(request, guild: discord.Guild):
 
                 print(task)
                 print(task_str)
-                news_channels = get_saves.load_data("json/newschannel.json")
+                news_channels = load_data("json/newschannel.json")
                 baxi_new_channel = guild.get_channel(int(news_channels[str(guild.id)]["channelid"]))
 
                 return {"active-switch": 1,
@@ -375,7 +374,7 @@ async def load_sugg_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
 
         if bool(config["WEB"]["api_online"]):
-            suggestion_data = get_saves.load_data("json/suggestion.json")
+            suggestion_data = load_data("json/suggestion.json")
 
             if str(guild.id) in suggestion_data:
                 server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
@@ -440,8 +439,8 @@ async def load_ticket_settings(request, guild: discord.Guild):
                                 guild.categories}
             server_roles = {str(role.id) + "-send": str(role.name) + "-show" for role in guild.roles if
                             role != guild.default_role}
-            ticketdata = get_saves.load_data("json/ticketdata.json")
-            news_channels = get_saves.load_data("json/newschannel.json")
+            ticketdata = load_data("json/ticketdata.json")
+            news_channels = load_data("json/newschannel.json")
 
             if str(guild.id) in ticketdata:
                 category = guild.get_channel(int(ticketdata[str(guild.id)]["categoryid"]))
@@ -479,7 +478,7 @@ async def load_ticket_settings(request, guild: discord.Guild):
 
 async def load_log_settings(request, guild: discord.Guild):
     try:
-        log_channels = get_saves.load_data("json/log_channels.json")
+        log_channels = load_data("json/log_channels.json")
         key = request.headers.get("Authorization")
         logger.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
@@ -509,7 +508,7 @@ async def load_log_settings(request, guild: discord.Guild):
 
 async def load_autoroles_guild(request, guild: discord.Guild):
     try:
-        auto_roles = get_saves.load_data("json/auto_roles.json")
+        auto_roles = load_data("json/auto_roles.json")
         key = request.headers.get("Authorization")
         logger.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
@@ -568,7 +567,7 @@ async def load_send_channels(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             server_channels = {str(channel.id) + "-send": str(channel.name) + "-show" for channel in
                                guild.text_channels}
-            news_channels = get_saves.load_data("json/newschannel.json")
+            news_channels = load_data("json/newschannel.json")
             baxi_new_channel = guild.get_channel(int(news_channels[str(guild.id)]["channelid"]))
 
             return {"channels-label": "Channel",

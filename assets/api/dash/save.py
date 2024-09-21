@@ -8,18 +8,23 @@
 # Developer: Red_Wolf2467
 # Original App: Baxi
 ##################################
-
+import datetime
 
 from reds_simple_logger import Logger
 import configparser
 import discord
 from cryptography.fernet import Fernet
 from quart import jsonify
+from wavelink.lfu import NotFound
 
 from assets.general.get_saves import *
+from assets.general.routine_events import load_language_model
+from main import VerifyButton, TicketMenuButtons
 
 logger = Logger()
-
+embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
+                                    int(config["BOT"]["embed_color_blue"]))
+icons_url = config["WEB"]["icon_url"]
 
 async def save_antiraid_settings(request, guild: discord.Guild):
     """
