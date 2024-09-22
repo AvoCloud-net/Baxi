@@ -295,6 +295,7 @@ async def save_security_settings(request, guild: discord.Guild):
             return {
                 "notify-warn": "Unfortunately, our backend server is currently unavailable. Please try again later!"}
     except Exception as e:
+        logger.error(str(e))
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
