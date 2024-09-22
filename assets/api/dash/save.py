@@ -225,10 +225,11 @@ async def save_security_settings(request, guild: discord.Guild):
             chatfilter_data = load_data("json/chatfilter.json")
             block_fonts_setting: int = int(str(list(request_data["block_unknown_symbols-activedrop"].keys())[0]))
             if int(request_data["active-switch"]) == 1:
+                logger.debug.info("Block-Drop: " + str(block_fonts_setting))
                 if block_fonts_setting == 0:
-                    block_fonts: bool = True
-                else:
                     block_fonts: bool = False
+                else:
+                    block_fonts: bool = True
 
                 channel_add_id: int = int(str(list(request_data["channels_add-activedrop"].keys())[0]))
                 channel_rem_id: int = int(str(list(request_data["channels_rem-activedrop"].keys())[0]))
@@ -236,22 +237,24 @@ async def save_security_settings(request, guild: discord.Guild):
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
 
-                if channel_rem_id != 0:
-                    channel = guild.get_channel(channel_rem_id)
-                    if channel:
-                        if channel.id in chatfilter_data[server_index]["bypass_channels"]:
-                            try:
-                                chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
-                            except ValueError:
-                                logger.warn("Channel not found: " + channel.name)
-                if channel_add_id != 0:
-                    channel = guild.get_channel(channel_add_id)
-                    if channel:
-                        if channel.id not in chatfilter_data[server_index]["bypass_channels"]:
-                            try:
-                                chatfilter_data[server_index]["bypass_channels"].append(channel.id)
-                            except ValueError:
-                                logger.warn("Channel not found: " + channel.name)
+                if server_index is not None:
+                    chatfilter_data[server_index]["block_ascci"] = block_fonts
+                    if channel_rem_id != 0:
+                        channel = guild.get_channel(channel_rem_id)
+                        if channel:
+                            if channel.id in chatfilter_data[server_index]["bypass_channels"]:
+                                try:
+                                    chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
+                                except ValueError:
+                                    logger.warn("Channel not found: " + channel.name)
+                    if channel_add_id != 0:
+                        channel = guild.get_channel(channel_add_id)
+                        if channel:
+                            if channel.id not in chatfilter_data[server_index]["bypass_channels"]:
+                                try:
+                                    chatfilter_data[server_index]["bypass_channels"].append(channel.id)
+                                except ValueError:
+                                    logger.warn("Channel not found: " + channel.name)
                 else:
                     server = {
                         "guildid": guild.id,
