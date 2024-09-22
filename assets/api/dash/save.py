@@ -242,20 +242,20 @@ async def save_security_settings(request, guild: discord.Guild):
                     chatfilter_data[server_index]["block_ascci"] = block_fonts
 
                     if channel_rem_re != 0:
-                        try:
-                            channel = guild.get_channel(int(channel_rem_re))
-                            chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
-                        except:
-                            pass
+                        channel = guild.get_channel(int(channel_rem_re))
+                        if channel:
+                            try:
+                                chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
+                            except:
+                                pass
                     if channel_add_re != 0:
-                        # noinspection PyBroadException
-                        try:
-                            channel = guild.get_channel(int(channel_add_re))
-                            chatfilter_data[server_index]["bypass_channels"].append(channel.id)
-                        except:
-                            pass
+                        channel = guild.get_channel(int(channel_add_re))
+                        if channel:
+                            try:
+                                chatfilter_data[server_index]["bypass_channels"].append(channel.id)
+                            except:
+                                pass
                 else:
-                    # Wenn der Server nicht existiert, füge ihn hinzu
                     server = {
                         "guildid": guild.id,
                         "name": guild.name,
@@ -263,17 +263,19 @@ async def save_security_settings(request, guild: discord.Guild):
                         "bypass_channels": []
                     }
                     if channel_rem_re != 0:
-                        try:
-                            channel = guild.get_channel(int(channel_rem_re))
-                            chatfilter_data[server_index]["bypass_channels"].append(channel.id)
-                        except:
-                            pass
+                        channel = guild.get_channel(int(channel_rem_re))
+                        if channel:
+                            try:
+                                chatfilter_data[server_index]["bypass_channels"].append(channel.id)
+                            except:
+                                pass
                     if channel_add_re != 0:
-                        try:
-                            channel = guild.get_channel(int(channel_add_re))
-                            chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
-                        except:
-                            pass
+                        channel = guild.get_channel(int(channel_add_re))
+                        if channel:
+                            try:
+                                chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
+                            except:
+                                pass
                     chatfilter_data.append(server)
 
                 save_data("json/chatfilter.json", chatfilter_data)
