@@ -47,7 +47,7 @@ async def save_antiraid_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             print(request_data["active-switch"])
             if int(request_data["active-switch"]) == 1:
-                role_id: int = int(list(request_data["roles-activedrop"].keys())[0])
+                role_id: int = int(list(request_data["role-activedrop"].keys())[0])
                 if role_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -364,7 +364,7 @@ async def save_verify_settings(request, guild: discord.Guild):
 
             if int(request_data["active-switch"]) == 1:
                 channel_id: int = int(list(request_data["channels-activedrop"].keys())[0])
-                role_id: int = int(list(request_data["roles-activedrop"].keys())[0])
+                role_id: int = int(list(request_data["role-activedrop"].keys())[0])
                 if role_id is None or request_data["message-input"] is None or request_data[
                     "task-activedrop"] is None or channel_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -508,13 +508,13 @@ async def save_ticket_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             ticketdata = load_data("json/ticketdata.json")
             channel_id: int = int(list(request_data["channels-activedrop"].keys())[0])
-            role_id: int = int(list(request_data["roles-activedrop"].keys())[0])
+            role_id: int = int(list(request_data["role-activedrop"].keys())[0])
             category_id: int = int(list(request_data["category-activedrop"].keys())[0])
             if int(request_data["active-switch"]) == 1:
 
                 if channel_id is None or category_id is None or \
                         request_data[
-                            "roles-activedrop"] is None:
+                            "role-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
                 channel = guild.get_channel(int(channel_id))

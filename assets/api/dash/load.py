@@ -76,13 +76,13 @@ async def load_antiraid_settings(request, guild: discord.Guild):
                 return {"active-switch": 1,
                         "role-label": "Quarantine role",
                         "role-activedrop": {str(role.id): str(role.name)},
-                        "roles-drop": server_roles
+                        "role-drop": server_roles
                         }
             else:
                 return {"active-switch": 0,
                         "role-label": "Quarantine role",
                         "role-activedrop": None,
-                        "roles-drop": server_roles
+                        "role-drop": server_roles
                         }
 
         else:
@@ -367,7 +367,7 @@ async def load_verify_settings(request, guild: discord.Guild):
                             str(baxi_new_channel.id): str(baxi_new_channel.name)},
                         "role-label": "Member role",
                         "role-activedrop": {str(role.id): str(role.name)},
-                        "roles-drop": server_roles,
+                        "role-drop": server_roles,
                         "message-label": "Message",
                         "message-input": message,
                         "task-label": "Task",
@@ -381,7 +381,7 @@ async def load_verify_settings(request, guild: discord.Guild):
                         "channels-activedrop": None,
                         "role-label": "Member role",
                         "role-activedrop": None,
-                        "roles-drop": server_roles,
+                        "role-drop": server_roles,
                         "message-label": "Message",
                         "message-input": None,
                         "task-label": "Task",
@@ -485,7 +485,7 @@ async def load_ticket_settings(request, guild: discord.Guild):
                         "category-activedrop": {str(category.id): str(category.name)},
                         "role-label": "Staff role",
                         "role-activedrop": {str(role.id): str(role.name)},
-                        "roles-drop": server_roles}
+                        "role-drop": server_roles}
             else:
                 return {"active-switch": 0,
                         "channels-label": "Channel",
@@ -496,7 +496,7 @@ async def load_ticket_settings(request, guild: discord.Guild):
                         "category-activedrop": None,
                         "role-label": "Staff role",
                         "role-activedrop": None,
-                        "roles-drop": server_roles}
+                        "role-drop": server_roles}
 
         else:
             return {
