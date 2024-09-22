@@ -442,7 +442,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
                             suggestion_data[str(guild.id)]["channels"].remove(int(rem_channel.id))
 
                         except:
-                            pass
+                            logger.warn("Channel not found: " + rem_channel.name)
                     else:
                         pass
 
@@ -451,7 +451,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
                         try:
                             suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
                         except:
-                            pass
+                            logger.warn("Channel not found: " + add_channel.name)
                     else:
                         pass
 
