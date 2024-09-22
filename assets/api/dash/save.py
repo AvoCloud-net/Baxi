@@ -246,15 +246,15 @@ async def save_security_settings(request, guild: discord.Guild):
                         if channel:
                             try:
                                 chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
-                            except:
-                                pass
+                            except ValueError:
+                                logger.warn("Channel not found: " + channel.name)
                     if channel_add_re != 0:
                         channel = guild.get_channel(int(channel_add_re))
                         if channel:
                             try:
                                 chatfilter_data[server_index]["bypass_channels"].append(channel.id)
-                            except:
-                                pass
+                            except ValueError:
+                                logger.warn("Channel not found: " + channel.name)
                 else:
                     server = {
                         "guildid": guild.id,
@@ -266,15 +266,15 @@ async def save_security_settings(request, guild: discord.Guild):
                         channel = guild.get_channel(int(channel_rem_re))
                         if channel:
                             try:
-                                chatfilter_data[server_index]["bypass_channels"].append(channel.id)
-                            except:
+                                server["bypass_channels"].remove(channel.id)
+                            except ValueError:
                                 pass
                     if channel_add_re != 0:
                         channel = guild.get_channel(int(channel_add_re))
                         if channel:
                             try:
-                                chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
-                            except:
+                                server["bypass_channels"].append(channel.id)
+                            except ValueError:
                                 pass
                     chatfilter_data.append(server)
 
