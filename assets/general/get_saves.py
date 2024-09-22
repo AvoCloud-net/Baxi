@@ -49,6 +49,7 @@ def save_data(file_path, data):
 
 
 files_and_functions = [
+    ("json/servers.json", load_data, save_data),
     ("json/staff_users.json", load_data, save_data),
     ("json/newschannel.json", load_data, save_data),
     ("json/banned_server.json", load_data, save_data),

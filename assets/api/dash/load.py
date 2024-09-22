@@ -21,11 +21,45 @@ from assets.general.get_saves import *
 logger = Logger()
 
 
+async def get_active_systems(request, guild: discord.Guild):
+    key = request.headers.get("Authorization")
+    if str(key) != auth0["DASH"]["key"]:
+        return jsonify({'error': "Invalid API KEY"}), 401
+
+    data = {}
+    anti_raid = load_data("json/anti_raid.json")
+    guessing = load_data("json/guessing.json")
+    counting = load_data("json/countgame_data.json")
+    gc = load_data("json/servers")
+    gserver_ids = [item["guildid"] for item in gc]
+    welcome = load_data("json/welcome.json")
+    verify = load_data("json/verify.json")
+    suggestion = load_data("json/suggestion.json")
+    ticket = load_data("json/ticketdata.json")
+    log = load_data("json/log_channels.json")
+    chatfilter = load_data("json/chatfilter.json")
+    auto_role = load_data("json/auto_roles.json")
+
+    data["anti_raid"] = 1 if str(guild.id) in anti_raid else 0
+    data["mgg"] = 1 if str(guild.id) in guessing else 0
+    data["mgc"] = 1 if str(guild.id) in counting else 0
+    data["gc"] = 1 if str(guild.id) in gserver_ids else 0
+    data["welc"] = 1 if str(guild.id) in welcome else 0
+    data["verify"] = 1 if str(guild.id) in verify else 0
+    data["sugg"] = 1 if str(guild.id) in suggestion else 0
+    data["ticket"] = 1 if str(guild.id) in ticket else 0
+    data["log"] = 1 if str(guild.id) in log else 0
+    data["sec"] = 1 if str(guild.id) in chatfilter else 0
+    data["auto_roles"] = 1 if str(guild.id) in auto_role else 0
+
+    return data
+
+
 async def load_antiraid_settings(request, guild: discord.Guild):
     """
 
     :param request:
-    :param guild:
+    :param guild: discord.Guild
     :return:
     """
     config = configparser.ConfigParser()
@@ -178,7 +212,8 @@ async def load_security_settings(request, guild: discord.Guild):
             chatfilter_data = load_data("json/chatfilter.json")
             font_options = {str(1) + "-send": "Block-show", str(0) + "-send": "Allow-show"}
             try:
-                server_index = next((index for (index, d) in enumerate(chatfilter_data) if str(d["guildid"]) == str(guild.id)), None)
+                server_index = next(
+                    (index for (index, d) in enumerate(chatfilter_data) if str(d["guildid"]) == str(guild.id)), None)
                 logger.debug.info(server_index)
             except Exception:
                 server_index = None
@@ -252,7 +287,8 @@ async def load_welcome_settings(request, guild: discord.Guild):
         if "Authorization" in request.headers:
             key = request.headers.get("Authorization")
         else:
-            return jsonify({"notify-error": "No Auth header was found in the request! Please report this to the DEV team."})
+            return jsonify(
+                {"notify-error": "No Auth header was found in the request! Please report this to the DEV team."})
         logger.debug.info(str(key))
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
