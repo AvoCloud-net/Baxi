@@ -44,9 +44,9 @@ async def save_antiraid_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             anti_raid_settings = load_data("json/anti_raid.json")
             request_data = await request.get_json()
-            print(request_data["active-switch"])
-            if int(request_data["active-switch"]) == 1:
-                roleid = request_data["roles-drop"]
+            print(request_data["active"])
+            if int(request_data["active"]) == 1:
+                roleid = request_data["roles-activedrop"]
                 if roleid is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -82,8 +82,8 @@ async def save_globalchat_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
-            if int(request_data["active-switch"]) == 1:
-                if request_data["channels-drop"] is None:
+            if int(request_data["active"]) == 1:
+                if request_data["channels-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
                 server_to_remove = next((server for server in servers if server["guildid"] == guild.id), None)
@@ -92,15 +92,15 @@ async def save_globalchat_settings(request, guild: discord.Guild):
                     save_data("json/servers.json", servers)
                     servers = load_data("json/servers.json")
                     server = {"guildid": int(guild.id),
-                              "channelid": int(int(request_data["channels-drop"])),
-                              "name": guild.nam
+                              "channelid": int(int(request_data["channels-activedrop"])),
+                              "name": guild.name
                               }
                     servers.append(server)
                     save_data("json/servers.json", servers)
                     return {"notify-success": "System has been successfully activated / edited."}, 200
                 else:
                     return {"notify-warn": "Guild ID not found in the server list!"}, 404
-            elif int(request_data["active-switch"]) == 0 and guild.id in gserver_ids:
+            elif int(request_data["active"]) == 0 and guild.id in gserver_ids:
                 # noinspection PyBroadException
                 try:
                     server_to_remove = next((server for server in servers if server["guildid"] == guild.id), None)
@@ -132,12 +132,12 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             guessinggame_data = load_data("json/guessing.json")
-            if int(request_data["active-switch"]) == 1:
+            if int(request_data["active"]) == 1:
 
-                if request_data["channels-drop"] is None:
+                if request_data["channels-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
-                channel = guild.get_channel(int(request_data["channels-drop"]))
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
                 if str(guild.id) not in guessinggame_data:
                     number = random.randint(0, 10000)
                     guessinggame_data[str(guild.id)] = {"number": number,
@@ -175,12 +175,12 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             countinggame_data = load_data("json/countgame_data.json")
             logger.info(request_data)
-            if int(request_data["active-switch"]) == 1:
+            if int(request_data["active"]) == 1:
 
-                if request_data["channels-drop"] is None:
+                if request_data["channels-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
-                channel = guild.get_channel(int(request_data["channels-drop"]))
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
                 if str(guild.id) not in countinggame_data:
                     countinggame_data[str(guild.id)] = {"channel_id": channel.id,
                                                         "count": 0,
@@ -219,14 +219,14 @@ async def save_security_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             chatfilter_data = load_data("json/chatfilter.json")
-            if int(request_data["active-switch"]) == 1:
-                if int(request_data["block_unknown_symbols-drop"]) == 1:
+            if int(request_data["active"]) == 1:
+                if int(request_data["block_unknown_symbols-activedrop"]) == 1:
                     block_fonts = True
                 else:
                     block_fonts = False
 
-                channel_add_re = request_data["channels_add-drop"]
-                channel_rem_re = request_data["channels_rem-drop"]
+                channel_add_re = request_data["channels_add-activedrop"]
+                channel_rem_re = request_data["channels_rem-activedrop"]
 
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
@@ -302,16 +302,16 @@ async def save_welcome_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             welcomelist = load_data("json/welcome.json")
-            if int(request_data["active-switch"]) == 1:
+            if int(request_data["active"]) == 1:
 
                 if request_data["message-input"] is None or request_data["image-input"] is None or request_data[
-                    "channels-drop"] is None or request_data["color-drop"] is None:
+                    "channels-activedrop"] is None or request_data["color-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
                 message = str(request_data["message-input"])
                 image_link = str(request_data["image-input"])
-                channel = guild.get_channel(int(request_data["channels-drop"]))
-                color = str(request_data["color-drop"])
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
+                color = str(request_data["color-activedrop"])
                 welcomelist[str(guild.id)] = {"channel_id": channel.id,
                                               "message": message,
                                               "color": color,
@@ -350,16 +350,16 @@ async def save_verify_settings(request, guild: discord.Guild):
 
             verifylist = load_data("json/verify.json")
 
-            if int(request_data["active-switch"]) == 1:
+            if int(request_data["active"]) == 1:
 
-                if request_data["roles-drop"] is None or request_data["message-input"] is None or request_data[
-                    "task-drop"] is None or request_data["channels-drop"] is None:
+                if request_data["roles-activedrop"] is None or request_data["message-input"] is None or request_data[
+                    "task-activedrop"] is None or request_data["channels-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
-                role = guild.get_role(int(request_data["roles-drop"]))
+                role = guild.get_role(int(request_data["roles-activedrop"]))
                 message = request_data["message-input"]
-                task = int(request_data["task-drop"])
-                channel = guild.get_channel(int(request_data["channels-drop"]))
+                task = int(request_data["task-activedrop"])
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
 
                 if int(task) == 0:
                     pass
@@ -426,16 +426,16 @@ async def save_sugg_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             suggestion_data = load_data("json/suggestion.json")
 
-            if request_data["channels_add-drop"] == "placeholder_none" and request_data[
-                "channels_rem-drop"] == "placeholder_none":
+            if request_data["channels_add-activedrop"] == "placeholder_none" and request_data[
+                "channels_rem-activedrop"] == "placeholder_none":
                 return {"notify-warn": "Please fill out all fields!"}
 
-            channel_add_re = request_data["channels_add-drop"]
-            channel_rem_re = request_data["channels_rem-drop"]
-            if request_data["active-switch"] == 1:
+            channel_add_re = request_data["channels_add-activedrop"]
+            channel_rem_re = request_data["channels_rem-activedrop"]
+            if request_data["active"] == 1:
                 if str(guild.id) in suggestion_data:
                     if channel_rem_re != "placeholder_none":
-                        rem_channel = guild.get_channel(int(request_data["channels_rem-drop"]))
+                        rem_channel = guild.get_channel(int(request_data["channels_rem-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].remove(int(rem_channel.id))
 
@@ -445,7 +445,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
                         pass
 
                     if channel_add_re != "placeholder_none":
-                        add_channel = guild.get_channel(int(request_data["channels_add-drop"]))
+                        add_channel = guild.get_channel(int(request_data["channels_add-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
                         except:
@@ -456,7 +456,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
                 else:
                     suggestion_data[str(guild.id)] = {"channels": []}
                     if channel_add_re != "placeholder_none":
-                        add_channel = guild.get_channel(int(request_data["channels_add-drop"]))
+                        add_channel = guild.get_channel(int(request_data["channels_add-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
                         except:
@@ -502,15 +502,15 @@ async def save_ticket_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             ticketdata = load_data("json/ticketdata.json")
 
-            if int(request_data["active-switch"]) == 1:
+            if int(request_data["active"]) == 1:
 
-                if request_data["channels-drop"] is None or request_data["category-drop"] is None or request_data[
-                    "roles-drop"] is None:
+                if request_data["channels-activedrop"] is None or request_data["category-activedrop"] is None or request_data[
+                    "roles-activedrop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
-                channel = guild.get_channel(int(request_data["channels-drop"]))
-                category = guild.get_channel(int(request_data["category-drop"]))
-                role = guild.get_role(int(request_data["roles-drop"]))
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
+                category = guild.get_channel(int(request_data["category-activedrop"]))
+                role = guild.get_role(int(request_data["roles-activedrop"]))
 
                 if str(guild.id) not in ticketdata:
                     embed = discord.Embed(title=language["ticket_menu_title"].format(server=guild.name),
@@ -561,11 +561,11 @@ async def save_log_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()  #
 
-            if request_data["channels-drop"] is None:
+            if request_data["channels-activedrop"] is None:
                 return {"notify-warn": "Please fill out all fields!"}
 
-            if int(request_data["active-switch"]) == 1:
-                channel = guild.get_channel(int(request_data["channels-drop"]))
+            if int(request_data["active"]) == 1:
+                channel = guild.get_channel(int(request_data["channels-activedrop"]))
                 log_channels[str(guild.id)] = {"channel_id": int(channel.id)}
                 save_data("json/log_channels.json", log_channels)
                 return {"notify-success": "System successfully activated / edited."}
@@ -597,9 +597,9 @@ async def save_autoroles_guild(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         print(request_data)
         if bool(config["WEB"]["api_online"]):
-            if int(request_data["active-switch"]) == 1:
-                rem_role = request_data["roles_to_remove-drop"]
-                add_role = request_data["roles_to_add-drop"]
+            if int(request_data["active"]) == 1:
+                rem_role = request_data["roles_to_remove-activedrop"]
+                add_role = request_data["roles_to_add-activedrop"]
                 if str(guild.id) in auto_roles:
 
                     if rem_role != "placeholder_none":
