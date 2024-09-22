@@ -65,7 +65,7 @@ async def load_antiraid_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             anti_raid_settings = load_data("json/anti_raid.json")
 
-            server_roles = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+            server_roles = {str(role.id): str(role.name) for role in guild.roles if
                             role != guild.default_role}
             if str(guild.id) in anti_raid_settings:
                 try:
@@ -75,7 +75,7 @@ async def load_antiraid_settings(request, guild: discord.Guild):
                     return jsonify({"notify-error": "An error occurred while loading the role information."})
                 return {"active-switch": 1,
                         "role-label": "Quarantine role",
-                        "role-activedrop": {str(role.id) + "-send": str(role.name)},
+                        "role-activedrop": {str(role.id): str(role.name)},
                         "roles-drop": server_roles
                         }
             else:
@@ -102,7 +102,7 @@ async def load_globalchat_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
             if guild.id in gserver_ids:
                 for server in servers:
@@ -110,7 +110,7 @@ async def load_globalchat_settings(request, guild: discord.Guild):
                         channel = guild.get_channel(int(server["channelid"]))
                         return {"active-switch": 1,
                                 "channels-label": "Channel",
-                                "channels-activedrop": {str(channel.id) + "-send": str(channel.name)},
+                                "channels-activedrop": {str(channel.id): str(channel.name)},
                                 "channels-drop": server_channels
                                 }
             else:
@@ -133,7 +133,7 @@ async def load_minigame_guessing_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             guessinggame_data = load_data("json/guessing.json")
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
             if guild.id in guessinggame_data or str(guild.id) in guessinggame_data:
                 # noinspection PyBroadException
@@ -143,7 +143,7 @@ async def load_minigame_guessing_settings(request, guild: discord.Guild):
                     channel = guild.get_channel(int(guessinggame_data[str(guild.id)]["channel_id"]))
                 return {"active-switch": 1,
                         "channels-label": "Channel",
-                        "channels-activedrop": {str(channel.id) + "-send": str(channel.name)},
+                        "channels-activedrop": {str(channel.id): str(channel.name)},
                         "channels-drop": server_channels
                         }
             else:
@@ -167,14 +167,14 @@ async def load_minigame_counting_game(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             countinggame_data = load_data("json/countgame_data.json")
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
             if str(guild.id) in countinggame_data:
                 channel = guild.get_channel(int(countinggame_data[str(guild.id)]["channel_id"]))
                 print(channel.name)
                 return {"active-switch": 1,
                         "channels-label": "Channel",
-                        "channels-activedrop": {str(channel.id) + "-send": str(channel.name)},
+                        "channels-activedrop": {str(channel.id): str(channel.name)},
                         "channels-drop": server_channels
                         }
             else:
@@ -198,7 +198,7 @@ async def load_security_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             chatfilter_data = load_data("json/chatfilter.json")
-            font_options = {str(1) + "-send": "Block", str(0) + "-send": "Allow"}
+            font_options = {str(1): "Block", str(0): "Allow"}
             try:
                 server_index = next(
                     (index for (index, d) in enumerate(chatfilter_data) if str(d["guildid"]) == str(guild.id)), None)
@@ -206,18 +206,18 @@ async def load_security_settings(request, guild: discord.Guild):
             except Exception:
                 server_index = None
             if server_index is not None:
-                server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+                server_channels = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels if
                                    int(channel.id) not in chatfilter_data[server_index]["bypass_channels"]}
-                server_channels["placeholder_none-send"] = "Please select"
+                server_channels["0"] = "Please select"
                 channels = {}
-                channels_to_rem = {str(channel.id) + "-send": str(channel.name) for channel in
+                channels_to_rem = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels if
                                    int(channel.id) in chatfilter_data[server_index]["bypass_channels"]}
-                channels_to_rem["placeholder_none-send"] = "Please select"
+                channels_to_rem["0"] = "Please select"
                 for channel in guild.text_channels:
                     if int(channel.id) in chatfilter_data[server_index]["bypass_channels"]:
-                        channels[str(channel.id) + "-send"] = str(channel.name)
+                        channels[str(channel.id)] = str(channel.name)
 
                 for server_data in chatfilter_data:
                     if server_data["guildid"] == guild.id:
@@ -232,7 +232,7 @@ async def load_security_settings(request, guild: discord.Guild):
                                 "block_unknown_symbols-label": "Allow unknown symbols?",
                                 "block_unknown_symbols-drop": font_options,
                                 "block_unknown_symbols-activedrop": {
-                                    str(block_fonts) + "-send": str(block_fonts_txt)},
+                                    str(block_fonts): str(block_fonts_txt)},
                                 "channels_add-label": "Add chatfilter bypass",
                                 "channels_add-drop": server_channels,
                                 "channels_add-activedrop": None,
@@ -243,11 +243,11 @@ async def load_security_settings(request, guild: discord.Guild):
                                 "channels-table": channels
                                 }
             else:
-                server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+                server_channels = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels}
-                server_channels["placeholder_none-send"] = "Please select"
+                server_channels["0"] = "Please select"
                 channels = {}
-                channels_to_rem = {"placeholder_none-send": "Please select"}
+                channels_to_rem = {"0": "Please select"}
                 return {"active-switch": 0,
                         "block_unknown_symbols-label": "Allow unknown symbols?",
                         "block_unknown_symbols-drop": font_options,
@@ -283,15 +283,15 @@ async def load_welcome_settings(request, guild: discord.Guild):
         logger.debug.info("Key valid")
         if bool(config["WEB"]["api_online"]):
             welcomelist = load_data("json/welcome.json")
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
             colors = {
-                "Red": "rot-send",
-                "Blue": "blau-send",
-                "Green": "grün-send",
-                "Purple": "lila-send",
-                "Crimson": "crimson-send",
-                "Random": "zufall-send"
+                "Red": "rot",
+                "Blue": "blau",
+                "Green": "grün",
+                "Purple": "lila",
+                "Crimson": "crimson",
+                "Random": "zufall"
             }
             if str(guild.id) in welcomelist:
                 channel = guild.get_channel(int(welcomelist[str(guild.id)]["channel_id"]))
@@ -300,7 +300,7 @@ async def load_welcome_settings(request, guild: discord.Guild):
 
                 return {"active-switch": 1,
                         "channels-label": "Channel",
-                        "channels-activedrop": {str(channel.id) + "-send": str(channel.name)},
+                        "channels-activedrop": {str(channel.id): str(channel.name)},
                         "channels-drop": server_channels,
                         "color-label": "Embed color",
                         "color-activedrop": None,
@@ -338,9 +338,9 @@ async def load_verify_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
             verifylist = load_data("json/verify.json")
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
-            server_roles = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+            server_roles = {str(role.id): str(role.name) for role in guild.roles if
                             role != guild.default_role}
             task_drop = {
                 0: "None",
@@ -364,15 +364,15 @@ async def load_verify_settings(request, guild: discord.Guild):
                         "channels-label": "Channel",
                         "channels-drop": server_channels,
                         "channels-activedrop": {
-                            str(baxi_new_channel.id) + "-send": str(baxi_new_channel.name)},
+                            str(baxi_new_channel.id): str(baxi_new_channel.name)},
                         "role-label": "Member role",
-                        "role-activedrop": {str(role.id) + "-send": str(role.name)},
+                        "role-activedrop": {str(role.id): str(role.name)},
                         "roles-drop": server_roles,
                         "message-label": "Message",
                         "message-input": message,
                         "task-label": "Task",
                         "task-drop": task_drop,
-                        "task-activedrop": {str(task) + "-send": str(task_str)}
+                        "task-activedrop": {str(task): str(task_str)}
                         }
             else:
                 return {"active-switch": 0,
@@ -406,17 +406,17 @@ async def load_sugg_settings(request, guild: discord.Guild):
             suggestion_data = load_data("json/suggestion.json")
 
             if str(guild.id) in suggestion_data:
-                server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+                server_channels = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels if
                                    int(channel.id) not in suggestion_data[str(guild.id)]["channels"]}
-                server_channels["placeholder_none-send"] = "Please select"
+                server_channels["0"] = "Please select"
                 channels = {}
-                channels_to_rem = {str(channel.id) + "-send": str(channel.name) for channel in
+                channels_to_rem = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels if int(channel.id) in suggestion_data[str(guild.id)]["channels"]}
-                channels_to_rem["placeholder_none-send"] = "Please select"
+                channels_to_rem["0"] = "Please select"
                 for channel in guild.text_channels:
                     if int(channel.id) in suggestion_data[str(guild.id)]["channels"]:
-                        channels[str(channel.id) + "-send"] = str(channel.name)
+                        channels[str(channel.id)] = str(channel.name)
 
                 return {
                     "active-switch": 1,
@@ -429,11 +429,11 @@ async def load_sugg_settings(request, guild: discord.Guild):
                     "channels-table": channels
                 }
             else:
-                server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+                server_channels = {str(channel.id): str(channel.name) for channel in
                                    guild.text_channels}
-                server_channels["placeholder_none-send"] = "Please select"
+                server_channels["0"] = "Please select"
                 channels = {}
-                channels_to_rem = {"placeholder_none-send": "Please select"}
+                channels_to_rem = {"0": "Please select"}
 
                 return {
                     "active-switch": 0,
@@ -462,11 +462,11 @@ async def load_ticket_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
 
         if bool(config["WEB"]["api_online"]):
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
-            server_categorys = {str(category.id) + "-send": str(category.name) for category in
+            server_categorys = {str(category.id): str(category.name) for category in
                                 guild.categories}
-            server_roles = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+            server_roles = {str(role.id): str(role.name) for role in guild.roles if
                             role != guild.default_role}
             ticketdata = load_data("json/ticketdata.json")
             news_channels = load_data("json/newschannel.json")
@@ -479,12 +479,12 @@ async def load_ticket_settings(request, guild: discord.Guild):
                         "channels-label": "Channel",
                         "channels-drop": server_channels,
                         "channels-activedrop": {
-                            str(baxi_new_channel.id) + "-send": str(baxi_new_channel.name)},
+                            str(baxi_new_channel.id): str(baxi_new_channel.name)},
                         "category-label": "Category",
                         "category-drop": server_categorys,
-                        "category-activedrop": {str(category.id) + "-send": str(category.name)},
+                        "category-activedrop": {str(category.id): str(category.name)},
                         "role-label": "Staff role",
-                        "role-activedrop": {str(role.id) + "-send": str(role.name)},
+                        "role-activedrop": {str(role.id): str(role.name)},
                         "roles-drop": server_roles}
             else:
                 return {"active-switch": 0,
@@ -514,7 +514,7 @@ async def load_log_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
 
         if bool(config["WEB"]["api_online"]):
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
 
             if str(guild.id) in log_channels:
@@ -522,7 +522,7 @@ async def load_log_settings(request, guild: discord.Guild):
                 return {"active-switch": 1,
                         "channels-label": "Channel",
                         "channels-drop": server_channels,
-                        "channels-activedrop": {str(channel.id) + "-send": str(channel.name)}}
+                        "channels-activedrop": {str(channel.id): str(channel.name)}}
             else:
                 return {"active-switch": 0,
                         "channels-label": "Channel",
@@ -546,17 +546,17 @@ async def load_autoroles_guild(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
 
             if str(guild.id) in auto_roles:
-                server_roles = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+                server_roles = {str(role.id): str(role.name) for role in guild.roles if
                                 int(role.id) not in auto_roles[str(guild.id)]["roles"] and role != guild.default_role}
-                server_roles["placeholder_none-send"] = "Please select"
+                server_roles["0"] = "Please select"
                 roles = {}
-                roles_to_rem = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+                roles_to_rem = {str(role.id): str(role.name) for role in guild.roles if
                                 int(role.id) in auto_roles[str(guild.id)]["roles"] and role != guild.default_role}
-                roles_to_rem["placeholder_none-send"] = "Please select"
+                roles_to_rem["0"] = "Please select"
 
                 for role in guild.roles:
                     if int(role.id) in auto_roles[str(guild.id)]["roles"]:
-                        roles[str(role.id) + "-send"] = str(role.name)
+                        roles[str(role.id)] = str(role.name)
                 return {"active-switch": 1,
                         "roles-label": "Auto roles",
                         "roles-table": roles,
@@ -566,11 +566,11 @@ async def load_autoroles_guild(request, guild: discord.Guild):
                         "roles_to_remove-drop": roles_to_rem
                         }
             else:
-                server_roles = {str(role.id) + "-send": str(role.name) for role in guild.roles if
+                server_roles = {str(role.id): str(role.name) for role in guild.roles if
                                 role != guild.default_role}
-                server_roles["placeholder_none-send"] = "Please select"
+                server_roles["0"] = "Please select"
                 roles = {}
-                roles_to_rem = {"placeholder_none-send": "Please select"}
+                roles_to_rem = {"0": "Please select"}
                 return {"active-switch": 0,
                         "roles-label": "Auto roles",
                         "roles-table": roles,
@@ -594,14 +594,14 @@ async def load_send_channels(request, guild: discord.Guild):
         if str(key) != auth0["DASH"]["key"]:
             return jsonify({'error': "Invalid API KEY"}), 401
         if bool(config["WEB"]["api_online"]):
-            server_channels = {str(channel.id) + "-send": str(channel.name) for channel in
+            server_channels = {str(channel.id): str(channel.name) for channel in
                                guild.text_channels}
             news_channels = load_data("json/newschannel.json")
             baxi_new_channel = guild.get_channel(int(news_channels[str(guild.id)]["channelid"]))
 
             return {"channels-label": "Channel",
                     "channels-drop": server_channels,
-                    "channels-activedrop": {str(baxi_new_channel.id) + "-send": str(baxi_new_channel.name)},
+                    "channels-activedrop": {str(baxi_new_channel.id): str(baxi_new_channel.name)},
                     "message-label": "Message",
                     "message-input": None
                     }

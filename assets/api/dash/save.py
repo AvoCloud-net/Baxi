@@ -239,13 +239,13 @@ async def save_security_settings(request, guild: discord.Guild):
                     chatfilter_data[server_index]["name"] = guild.name
                     chatfilter_data[server_index]["block_ascci"] = block_fonts
 
-                    if channel_rem_re != "placeholder_none":
+                    if channel_rem_re != "0":
                         try:
                             channel = guild.get_channel(int(channel_rem_re))
                             chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
                         except:
                             pass
-                    if channel_add_re != "placeholder_none":
+                    if channel_add_re != "0":
                         # noinspection PyBroadException
                         try:
                             channel = guild.get_channel(int(channel_add_re))
@@ -260,13 +260,13 @@ async def save_security_settings(request, guild: discord.Guild):
                         "block_ascci": block_fonts,
                         "bypass_channels": []
                     }
-                    if channel_rem_re != "placeholder_none":
+                    if channel_rem_re != "0":
                         try:
                             channel = guild.get_channel(int(channel_rem_re))
                             chatfilter_data[server_index]["bypass_channels"].append(channel.id)
                         except:
                             pass
-                    if channel_add_re != "placeholder_none":
+                    if channel_add_re != "0":
                         try:
                             channel = guild.get_channel(int(channel_add_re))
                             chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
@@ -429,16 +429,16 @@ async def save_sugg_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             suggestion_data = load_data("json/suggestion.json")
+            channel_add_re: int = int(str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
+            channel_rem_re: int = int(str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
 
-            if request_data["channels_add-activedrop"] == "placeholder_none" and request_data[
-                "channels_rem-activedrop"] == "placeholder_none":
+            if channel_add_re == "0" and channel_rem_re == "0":
                 return {"notify-warn": "Please fill out all fields!"}
 
-            channel_add_re = request_data["channels_add-activedrop"]
-            channel_rem_re = request_data["channels_rem-activedrop"]
+
             if request_data["active-switch"] == 1:
                 if str(guild.id) in suggestion_data:
-                    if channel_rem_re != "placeholder_none":
+                    if channel_rem_re != "0":
                         rem_channel = guild.get_channel(int(request_data["channels_rem-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].remove(int(rem_channel.id))
@@ -448,7 +448,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
                     else:
                         pass
 
-                    if channel_add_re != "placeholder_none":
+                    if channel_add_re != "0":
                         add_channel = guild.get_channel(int(request_data["channels_add-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
@@ -459,7 +459,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
 
                 else:
                     suggestion_data[str(guild.id)] = {"channels": []}
-                    if channel_add_re != "placeholder_none":
+                    if channel_add_re != "0":
                         add_channel = guild.get_channel(int(request_data["channels_add-activedrop"]))
                         try:
                             suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
@@ -609,14 +609,14 @@ async def save_autoroles_guild(request, guild: discord.Guild):
                 add_role = request_data["roles_to_add-activedrop"]
                 if str(guild.id) in auto_roles:
 
-                    if rem_role != "placeholder_none":
+                    if rem_role != "0":
                         rem_role = guild.get_role(int(rem_role))
                         print(rem_role.name)
                         try:
                             auto_roles[str(guild.id)]["roles"].remove(rem_role.id)
                         except Exception as e:
                             logger.warn("/API/DASH/SETTINGS/SAVE/AUTO_RULES/ID - EXCEPTION - " + str(e))
-                    if add_role != "placeholder_none":
+                    if add_role != "0":
                         add_role = guild.get_role(int(add_role))
                         print(add_role.name)
                         try:
@@ -626,7 +626,7 @@ async def save_autoroles_guild(request, guild: discord.Guild):
 
                 else:
                     auto_roles[str(guild.id)] = {"roles": []}
-                    if add_role != "placeholder_none":
+                    if add_role != "0":
                         add_role = guild.get_role(int(add_role))
                         try:
                             auto_roles[str(guild.id)]["roles"].append(add_role.id)
