@@ -101,7 +101,14 @@ async def save_globalchat_settings(request, guild: discord.Guild):
                     save_data("json/servers.json", servers)
                     return {"notify-success": "System has been successfully activated / edited."}, 200
                 else:
-                    return {"notify-warn": "Guild ID not found in the server list!"}, 404
+                    servers = load_data("json/servers.json")
+                    server = {"guildid": int(guild.id),
+                              "channelid": channel_id,
+                              "name": guild.name
+                              }
+                    servers.append(server)
+                    save_data("json/servers.json", servers)
+                    return {"notify-success": "System has been successfully activated / edited."}, 200
             elif int(request_data["active-switch"]) == 0 and guild.id in gserver_ids:
                 # noinspection PyBroadException
                 try:
