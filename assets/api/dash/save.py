@@ -232,7 +232,8 @@ async def save_security_settings(request, guild: discord.Guild):
                     str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
                 channel_rem_re: int = int(
                     str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
-
+                logger.debug.info(channel_rem_re)
+                logger.debug.info(channel_add_re)
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
 
