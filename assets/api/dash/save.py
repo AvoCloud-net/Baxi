@@ -236,21 +236,18 @@ async def save_security_settings(request, guild: discord.Guild):
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
 
-                if server_index is not None:
-                    # Wenn der Server existiert, aktualisiere die Daten
-                    chatfilter_data[server_index]["name"] = guild.name
-                    chatfilter_data[server_index]["block_ascci"] = block_fonts
-
-                    if channel_rem_re != 0:
-                        channel = guild.get_channel(int(channel_rem_re))
-                        if channel:
+                if channel_rem_re != 0:
+                    channel = guild.get_channel(int(channel_rem_re))
+                    if channel:
+                        if channel.id in chatfilter_data[server_index]["bypass_channels"]:
                             try:
                                 chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
                             except ValueError:
                                 logger.warn("Channel not found: " + channel.name)
-                    if channel_add_re != 0:
-                        channel = guild.get_channel(int(channel_add_re))
-                        if channel:
+                if channel_add_re != 0:
+                    channel = guild.get_channel(int(channel_add_re))
+                    if channel:
+                        if channel.id not in chatfilter_data[server_index]["bypass_channels"]:
                             try:
                                 chatfilter_data[server_index]["bypass_channels"].append(channel.id)
                             except ValueError:
@@ -265,17 +262,20 @@ async def save_security_settings(request, guild: discord.Guild):
                     if channel_rem_re != 0:
                         channel = guild.get_channel(int(channel_rem_re))
                         if channel:
-                            try:
-                                server["bypass_channels"].remove(channel.id)
-                            except ValueError:
-                                pass
+                            if channel.id in server["bypass_channels"]:
+                                try:
+                                    server["bypass_channels"].remove(channel.id)
+                                except ValueError:
+                                    pass
                     if channel_add_re != 0:
                         channel = guild.get_channel(int(channel_add_re))
                         if channel:
-                            try:
-                                server["bypass_channels"].append(channel.id)
-                            except ValueError:
-                                pass
+                            if channel.id not in server["bypass_channels"]:
+                                try:
+                                    server["bypass_channels"].append(channel.id)
+                                except ValueError:
+                                    pass
+
                     chatfilter_data.append(server)
 
                 save_data("json/chatfilter.json", chatfilter_data)
