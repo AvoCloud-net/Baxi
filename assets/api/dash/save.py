@@ -223,13 +223,13 @@ async def save_security_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             chatfilter_data = load_data("json/chatfilter.json")
-            block_fonts: int = int(str(list(request_data["block_unknown_symbols-activedrop"].keys())[0]))
+            block_fonts_setting: int = int(str(list(request_data["block_unknown_symbols-activedrop"].keys())[0]))
             if int(request_data["active-switch"]) == 1:
-                logger.debug.info(block_fonts)
-                if block_fonts == 1:
-                    block_fonts = True
+                logger.debug.info(block_fonts_setting)
+                if block_fonts_setting == 1:
+                    block_fonts: bool = True
                 else:
-                    block_fonts = False
+                    block_fonts: bool = False
 
                 channel_add_id: int = int(str(list(request_data["channels_add-activedrop"].keys())[0]))
                 channel_rem_id: int = int(str(list(request_data["channels_rem-activedrop"].keys())[0]))
