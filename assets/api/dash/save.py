@@ -27,7 +27,8 @@ embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(c
 icons_url = config["WEB"]["icon_url"]
 
 async def save_antiraid_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     """
 
     :param request:
@@ -71,7 +72,8 @@ async def save_antiraid_settings(request, guild: discord.Guild):
 
 
 async def save_globalchat_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         if str(key) != auth0["DASH"]["key"]:
@@ -120,7 +122,8 @@ async def save_globalchat_settings(request, guild: discord.Guild):
 
 
 async def save_minigame_guessing_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         if str(key) != auth0["DASH"]["key"]:
@@ -161,7 +164,8 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
 
 
 async def save_minigame_counting_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -204,7 +208,8 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
 
 
 async def save_security_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -286,7 +291,8 @@ async def save_security_settings(request, guild: discord.Guild):
 
 
 async def save_welcome_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -328,7 +334,8 @@ async def save_welcome_settings(request, guild: discord.Guild):
 
 
 async def save_verify_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         language = load_language_model(guild.id)
         key = request.headers.get("Authorization")
@@ -407,7 +414,8 @@ async def save_verify_settings(request, guild: discord.Guild):
 
 
 async def save_sugg_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         key = request.headers.get("Authorization")
         logger.info(str(key))
@@ -481,7 +489,8 @@ async def save_sugg_settings(request, guild: discord.Guild):
 
 
 async def save_ticket_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         language = load_language_model(guild.id)
         key = request.headers.get("Authorization")
@@ -540,7 +549,8 @@ async def save_ticket_settings(request, guild: discord.Guild):
 
 
 async def save_log_settings(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         log_channels = load_data("json/log_channels.json")
         key = request.headers.get("Authorization")
@@ -575,7 +585,8 @@ async def save_log_settings(request, guild: discord.Guild):
 
 
 async def save_autoroles_guild(request, guild: discord.Guild):
-    logger.debug.info(request.get_json())
+    data = await request.get_json()
+    logger.debug.info(data)
     try:
         auto_roles = load_data("json/auto_roles.json")
         request_data = await request.get_json()
