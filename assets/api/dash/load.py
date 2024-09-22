@@ -43,7 +43,7 @@ async def get_active_systems(request, guild: discord.Guild):
     data["anti_raid"] = 1 if str(guild.id) in anti_raid else 0
     data["mgg"] = 1 if str(guild.id) in guessing else 0
     data["mgc"] = 1 if str(guild.id) in counting else 0
-    data["gc"] = 1 if str(guild.id) in gserver_ids else 0
+    data["gc"] = 1 if int(guild.id) in gserver_ids else 0
     data["welc"] = 1 if str(guild.id) in welcome else 0
     data["verify"] = 1 if str(guild.id) in verify else 0
     data["sugg"] = 1 if str(guild.id) in suggestion else 0
