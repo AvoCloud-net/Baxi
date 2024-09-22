@@ -47,7 +47,7 @@ async def save_antiraid_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             print(request_data["active-switch"])
             if int(request_data["active-switch"]) == 1:
-                role_id: int = int(str(list(request_data["roles-activedrop"].keys())[0]).replace("-send", ""))
+                role_id: int = int(list(request_data["roles-activedrop"].values())[0])
                 if role_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -84,7 +84,7 @@ async def save_globalchat_settings(request, guild: discord.Guild):
             servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
             if int(request_data["active-switch"]) == 1:
-                channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
+                channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
                 if channel_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -136,7 +136,7 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
             guessinggame_data = load_data("json/guessing.json")
 
             if int(request_data["active-switch"]) == 1:
-                channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
+                channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
                 if channel_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -180,7 +180,7 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
             logger.info(request_data)
 
             if int(request_data["active-switch"]) == 1:
-                channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
+                channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
                 if channel_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -228,25 +228,22 @@ async def save_security_settings(request, guild: discord.Guild):
                     block_fonts = True
                 else:
                     block_fonts = False
-                channel_add_re: int = int(
-                    str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
-                channel_rem_re: int = int(
-                    str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
-                logger.debug.info(channel_rem_re)
-                logger.debug.info(channel_add_re)
+
+                channel_add_id: int = int(list(request_data["channels_add-activedrop"].values())[0])
+                channel_rem_id: int = int(list(request_data["channels_rem-activedrop"].values())[0])
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
 
-                if channel_rem_re != 0:
-                    channel = guild.get_channel(int(channel_rem_re))
+                if channel_rem_id != 0:
+                    channel = guild.get_channel(channel_rem_id)
                     if channel:
                         if channel.id in chatfilter_data[server_index]["bypass_channels"]:
                             try:
                                 chatfilter_data[server_index]["bypass_channels"].remove(channel.id)
                             except ValueError:
                                 logger.warn("Channel not found: " + channel.name)
-                if channel_add_re != 0:
-                    channel = guild.get_channel(int(channel_add_re))
+                if channel_add_id != 0:
+                    channel = guild.get_channel(channel_add_id)
                     if channel:
                         if channel.id not in chatfilter_data[server_index]["bypass_channels"]:
                             try:
@@ -260,16 +257,16 @@ async def save_security_settings(request, guild: discord.Guild):
                         "block_ascci": block_fonts,
                         "bypass_channels": []
                     }
-                    if channel_rem_re != 0:
-                        channel = guild.get_channel(int(channel_rem_re))
+                    if channel_rem_id != 0:
+                        channel = guild.get_channel(channel_rem_id)
                         if channel:
                             if channel.id in server["bypass_channels"]:
                                 try:
                                     server["bypass_channels"].remove(channel.id)
                                 except ValueError:
                                     pass
-                    if channel_add_re != 0:
-                        channel = guild.get_channel(int(channel_add_re))
+                    if channel_add_id != 0:
+                        channel = guild.get_channel(channel_add_id)
                         if channel:
                             if channel.id not in server["bypass_channels"]:
                                 try:
@@ -313,8 +310,8 @@ async def save_welcome_settings(request, guild: discord.Guild):
             welcomelist = load_data("json/welcome.json")
 
             if int(request_data["active-switch"]) == 1:
-                channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
-                color: str = str(list(request_data["color-activedrop"].keys())[0]).replace("-send", "")
+                channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
+                color: str = str(list(request_data["color-activedrop"].values())[0])
                 if request_data["message-input"] is None or request_data[
                     "image-input"] is None or channel_id is None or color is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -361,8 +358,8 @@ async def save_verify_settings(request, guild: discord.Guild):
             verifylist = load_data("json/verify.json")
 
             if int(request_data["active-switch"]) == 1:
-                channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
-                role_id: int = int(str(list(request_data["roles-activedrop"].keys())[0]).replace("-send", ""))
+                channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
+                role_id: int = int(list(request_data["roles-activedrop"].values())[0])
                 if role_id is None or request_data["message-input"] is None or request_data[
                     "task-activedrop"] is None or channel_id is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -438,10 +435,8 @@ async def save_sugg_settings(request, guild: discord.Guild):
             suggestion_data = load_data("json/suggestion.json")
 
             if request_data["active-switch"] == 1:
-                channel_add_re: int = int(
-                    str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
-                channel_rem_re: int = int(
-                    str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
+                channel_add_re: int = int(list(request_data["channels_add-activedrop"].values())[0])
+                channel_rem_re: int = int(list(request_data["channels_rem-activedrop"].values())[0])
                 if str(guild.id) in suggestion_data:
                     if channel_rem_re != 0:
                         rem_channel = guild.get_channel(channel_rem_re)  # Use channel_rem_re here
@@ -507,9 +502,9 @@ async def save_ticket_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
             ticketdata = load_data("json/ticketdata.json")
-            channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
-            role_id: int = int(str(list(request_data["roles-activedrop"].keys())[0]).replace("-send", ""))
-            category_id: int = int(str(list(request_data["category-activedrop"].keys())[0]).replace("-send", ""))
+            channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
+            role_id: int = int(list(request_data["roles-activedrop"].values())[0])
+            category_id: int = int(list(request_data["category-activedrop"].values())[0])
             if int(request_data["active-switch"]) == 1:
 
                 if channel_id is None or category_id is None or \
@@ -568,8 +563,9 @@ async def save_log_settings(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
 
         if bool(config["WEB"]["api_online"]):
-            request_data = await request.get_json()  #
-            channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
+            request_data = await request.get_json()
+            channel_id: int = int(list(request_data["channels-activedrop"].values())[0])
+
             if channel_id is None:
                 return {"notify-warn": "Please fill out all fields!"}
 
@@ -607,8 +603,8 @@ async def save_autoroles_guild(request, guild: discord.Guild):
         print(request_data)
         if bool(config["WEB"]["api_online"]):
             if int(request_data["active-switch"]) == 1:
-                rem_role = request_data["roles_to_remove-activedrop"]
-                add_role = request_data["roles_to_add-activedrop"]
+                rem_role: int = int(list(request_data["roles_to_remove-activedrop"].values())[0])
+                add_role: int = int(list(request_data["roles_to_add-activedrop"].values())[0])
                 if str(guild.id) in auto_roles:
 
                     if rem_role != 0:
