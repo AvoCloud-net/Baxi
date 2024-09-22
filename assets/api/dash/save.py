@@ -228,8 +228,10 @@ async def save_security_settings(request, guild: discord.Guild):
                     block_fonts = True
                 else:
                     block_fonts = False
-                channel_add_re: int = int(str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
-                channel_rem_re: int = int(str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
+                channel_add_re: int = int(
+                    str(list(request_data["channels_add-activedrop"].keys())[0]).replace("-send", ""))
+                channel_rem_re: int = int(
+                    str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
 
                 server_index = next((index for (index, d) in enumerate(chatfilter_data) if d["guildid"] == guild.id),
                                     None)
@@ -309,7 +311,8 @@ async def save_welcome_settings(request, guild: discord.Guild):
             if int(request_data["active-switch"]) == 1:
                 channel_id: int = int(str(list(request_data["channels-activedrop"].keys())[0]).replace("-send", ""))
                 color: str = str(list(request_data["color-activedrop"].keys())[0]).replace("-send", "")
-                if request_data["message-input"] is None or request_data["image-input"] is None or channel_id is None or color is None:
+                if request_data["message-input"] is None or request_data[
+                    "image-input"] is None or channel_id is None or color is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
                 message = str(request_data["message-input"])
@@ -437,37 +440,34 @@ async def save_sugg_settings(request, guild: discord.Guild):
                     str(list(request_data["channels_rem-activedrop"].keys())[0]).replace("-send", ""))
                 if str(guild.id) in suggestion_data:
                     if channel_rem_re != 0:
-                        rem_channel = guild.get_channel(channel_add_re)
-                        try:
-                            suggestion_data[str(guild.id)]["channels"].remove(int(rem_channel.id))
-
-                        except:
-                            logger.warn("Channel not found: " + rem_channel.name)
-                    else:
-                        pass
-
+                        rem_channel = guild.get_channel(channel_rem_re)  # Use channel_rem_re here
+                        if rem_channel:
+                            try:
+                                suggestion_data[str(guild.id)]["channels"].remove(rem_channel.id)
+                            except ValueError:
+                                logger.warn("Channel not found: " + rem_channel.name)
                     if channel_add_re != 0:
                         add_channel = guild.get_channel(channel_add_re)
-                        try:
-                            suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
-                        except:
-                            logger.warn("Channel not found: " + add_channel.name)
-                    else:
-                        pass
-
+                        if add_channel:
+                            try:
+                                suggestion_data[str(guild.id)]["channels"].append(add_channel.id)
+                            except ValueError:
+                                logger.warn("Channel not found: " + add_channel.name)
                 else:
                     suggestion_data[str(guild.id)] = {"channels": []}
                     if channel_add_re != 0:
                         add_channel = guild.get_channel(channel_add_re)
-                        try:
-                            suggestion_data[str(guild.id)]["channels"].append(int(add_channel.id))
-                        except:
-                            pass
+                        if add_channel:
+                            try:
+                                suggestion_data[str(guild.id)]["channels"].append(add_channel.id)
+                            except ValueError:
+                                pass
 
                 found = False
                 for channel in guild.text_channels:
                     if int(channel.id) in suggestion_data[str(guild.id)]["channels"]:
                         found = True
+                        break
 
                 if not found:
                     del suggestion_data[str(guild.id)]
