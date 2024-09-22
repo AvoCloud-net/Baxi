@@ -44,8 +44,8 @@ async def save_antiraid_settings(request, guild: discord.Guild):
         if bool(config["WEB"]["api_online"]):
             anti_raid_settings = load_data("json/anti_raid.json")
             request_data = await request.get_json()
-            print(request_data["active"])
-            if int(request_data["active"]) == 1:
+            print(request_data["active-switch"])
+            if int(request_data["active-switch"]) == 1:
                 roleid = request_data["roles-drop"]
                 if roleid is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -82,7 +82,7 @@ async def save_globalchat_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             servers = load_data("json/servers.json")
             gserver_ids = [item["guildid"] for item in servers]
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
                 if request_data["channels-drop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
 
@@ -100,7 +100,7 @@ async def save_globalchat_settings(request, guild: discord.Guild):
                     return {"notify-success": "System has been successfully activated / edited."}, 200
                 else:
                     return {"notify-warn": "Guild ID not found in the server list!"}, 404
-            elif int(request_data["active"]) == 0 and guild.id in gserver_ids:
+            elif int(request_data["active-switch"]) == 0 and guild.id in gserver_ids:
                 # noinspection PyBroadException
                 try:
                     server_to_remove = next((server for server in servers if server["guildid"] == guild.id), None)
@@ -132,7 +132,7 @@ async def save_minigame_guessing_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             guessinggame_data = load_data("json/guessing.json")
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
 
                 if request_data["channels-drop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -175,7 +175,7 @@ async def save_minigame_counting_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             countinggame_data = load_data("json/countgame_data.json")
             logger.info(request_data)
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
 
                 if request_data["channels-drop"] is None:
                     return {"notify-warn": "Please fill out all fields!"}
@@ -219,7 +219,7 @@ async def save_security_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             chatfilter_data = load_data("json/chatfilter.json")
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
                 if int(request_data["block_unknown_symbols-drop"]) == 1:
                     block_fonts = True
                 else:
@@ -302,7 +302,7 @@ async def save_welcome_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             logger.info(request_data)
             welcomelist = load_data("json/welcome.json")
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
 
                 if request_data["message-input"] is None or request_data["image-input"] is None or request_data[
                     "channels-drop"] is None or request_data["color-drop"] is None:
@@ -350,7 +350,7 @@ async def save_verify_settings(request, guild: discord.Guild):
 
             verifylist = load_data("json/verify.json")
 
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
 
                 if request_data["roles-drop"] is None or request_data["message-input"] is None or request_data[
                     "task-drop"] is None or request_data["channels-drop"] is None:
@@ -432,7 +432,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
 
             channel_add_re = request_data["channels_add-drop"]
             channel_rem_re = request_data["channels_rem-drop"]
-            if request_data["active"] == 1:
+            if request_data["active-switch"] == 1:
                 if str(guild.id) in suggestion_data:
                     if channel_rem_re != "placeholder_none":
                         rem_channel = guild.get_channel(int(request_data["channels_rem-drop"]))
@@ -502,7 +502,7 @@ async def save_ticket_settings(request, guild: discord.Guild):
             request_data = await request.get_json()
             ticketdata = load_data("json/ticketdata.json")
 
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
 
                 if request_data["channels-drop"] is None or request_data["category-drop"] is None or request_data[
                     "roles-drop"] is None:
@@ -564,7 +564,7 @@ async def save_log_settings(request, guild: discord.Guild):
             if request_data["channels-drop"] is None:
                 return {"notify-warn": "Please fill out all fields!"}
 
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
                 channel = guild.get_channel(int(request_data["channels-drop"]))
                 log_channels[str(guild.id)] = {"channel_id": int(channel.id)}
                 save_data("json/log_channels.json", log_channels)
@@ -597,7 +597,7 @@ async def save_autoroles_guild(request, guild: discord.Guild):
             return jsonify({'error': "Invalid API KEY"}), 401
         print(request_data)
         if bool(config["WEB"]["api_online"]):
-            if int(request_data["active"]) == 1:
+            if int(request_data["active-switch"]) == 1:
                 rem_role = request_data["roles_to_remove-drop"]
                 add_role = request_data["roles_to_add-drop"]
                 if str(guild.id) in auto_roles:
