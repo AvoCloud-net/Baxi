@@ -10,6 +10,7 @@
 ##################################
 import datetime
 
+import requests
 from reds_simple_logger import Logger
 import configparser
 import discord
@@ -17,9 +18,10 @@ from cryptography.fernet import Fernet
 from quart import jsonify
 from wavelink.lfu import NotFound
 
+from assets.general.bot_events import message_edit
 from assets.general.get_saves import *
 from assets.general.routine_events import load_language_model
-from main import VerifyButton, TicketMenuButtons
+from main import VerifyButton, TicketMenuButtons, send_message_on_settings_save
 
 logger = Logger()
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
@@ -353,6 +355,7 @@ async def save_welcome_settings(request, guild: discord.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
+# noinspection PyDunderSlots,PyUnresolvedReferences
 async def save_verify_settings(request, guild: discord.Guild):
     data = await request.get_json()
     logger.debug.info(data)
@@ -395,12 +398,21 @@ async def save_verify_settings(request, guild: discord.Guild):
                         description=f"{message.replace(';', '\n')}",
                         color=embedColor
                     ).set_thumbnail(url=icons_url + "lock.png")
+                    headers = {"Authorization": f"{config['DASH']['key']}"}
+                    data = {
+                        "embed": embedverify,
+                        "guild_id": guild.id,
+                        "channel_id": channel.id,
+                        "button": "verify"
+                    }
 
-                    await channel.send(embed=embedverify, view=VerifyButton())
+                    request_send_msg = requests.post("https://baxi-backend.pyropixle.com/api/dash/send/message/system", json=data, headers=headers)
+
+                    if request_send_msg.status_code != 200:
+                        return {"notify-error": "Unfortunately, an error occurred while sending the message to the specified channel! Please try again."}
 
                     perms1 = discord.PermissionOverwrite()
                     perms1.view_channel = True
-                    # noinspection PyDunderSlots
                     perms1.send_messages = False
                     perms1.read_message_history = True
                     perms1.read_messages = True
@@ -502,6 +514,7 @@ async def save_sugg_settings(request, guild: discord.Guild):
         return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
 
 
+# noinspection PyDunderSlots,PyUnresolvedReferences
 async def save_ticket_settings(request, guild: discord.Guild):
     data = await request.get_json()
     logger.debug.info(data)
@@ -534,11 +547,22 @@ async def save_ticket_settings(request, guild: discord.Guild):
                                           description=language["ticket_menu"],
                                           color=embedColor, timestamp=datetime.datetime.now()).set_thumbnail(
                         url=icons_url + "ticket.png")
-                    await channel.send(embed=embed, view=TicketMenuButtons())
+                    headers = {"Authorization": f"{config['DASH']['key']}"}
+                    data = {
+                        "embed": embed,
+                        "guild_id": guild.id,
+                        "channel_id": channel.id,
+                        "button": "ticket"
+                    }
 
+                    request_send_msg = requests.post("https://baxi-backend.pyropixle.com/api/dash/send/message/system",
+                                                     json=data, headers=headers)
+
+                    if request_send_msg.status_code != 200:
+                        return {
+                            "notify-error": "Unfortunately, an error occurred while sending the message to the specified channel! Please try again."}
                     perms = discord.PermissionOverwrite()
                     perms.view_channel = True
-                    # noinspection PyUnresolvedReferences
                     perms.read_message_history = True
                     perms.read_messages = True
                     perms.send_messages = False
