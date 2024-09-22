@@ -228,12 +228,8 @@ async def save_security_settings(request, guild: discord.Guild):
                     block_fonts = True
                 else:
                     block_fonts = False
-
-                channel_add_id_t = list(request_data["channels_add-activedrop"].keys())[0]
-                logger.debug.info(channel_add_id_t)
-
-                channel_add_id: int = int(list(request_data["channels_add-activedrop"].keys())[0])
-                channel_rem_id: int = int(list(request_data["channels_rem-activedrop"].keys())[0])
+                channel_add_id: int = int(next(iter(request_data["channels_add-activedrop"].keys())))
+                channel_rem_id: int = int(next(iter(request_data["channels_rem-activedrop"].keys())))
 
                 logger.debug.info(channel_add_id)
                 logger.debug.info(channel_rem_id)
