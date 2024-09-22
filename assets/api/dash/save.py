@@ -225,6 +225,7 @@ async def save_security_settings(request, guild: discord.Guild):
             chatfilter_data = load_data("json/chatfilter.json")
             block_fonts: int = int(str(list(request_data["block_unknown_symbols-activedrop"].keys())[0]))
             if int(request_data["active-switch"]) == 1:
+                logger.debug.info(block_fonts)
                 if block_fonts == 1:
                     block_fonts = True
                 else:
