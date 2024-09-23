@@ -368,29 +368,23 @@ async def save_verify_settings(request, guild: discord.Guild):
 
         if bool(config["WEB"]["api_online"]):
             request_data = await request.get_json()
-            logger.info(request_data)  # Hier await hinzufügen
-            request_data = await request.get_json()  # Hier await hinzufügen
 
             verifylist = load_data("json/verify.json")
 
             if int(request_data["active-switch"]) == 1:
                 channel_id: int = int(list(request_data["channels-activedrop"].keys())[0])
                 role_id: int = int(list(request_data["role-activedrop"].keys())[0])
-                if role_id is None or request_data["message-input"] is None or request_data[
-                    "task-activedrop"] is None or channel_id is None:
-                    return {"notify-warn": "Please fill out all fields!"}
 
                 role = guild.get_role(int(role_id))
                 message = request_data["message-input"]
                 task = int(request_data["task-activedrop"])
                 channel = guild.get_channel(int(channel_id))
 
-                if int(task) == 0:
-                    pass
-                elif int(task) == 1:
-                    pass
-                else:
-                    return {"notify-warn": f"TASK not permitted. 0 or 1 expected, {task} received."}
+                verifylist[str(guild.id)] = {"role_id": role.id,
+                                             "message": message,
+                                             "task": int(task) + 1
+                                             }
+                save_data("json/verify.json", verifylist)
 
                 if str(guild.id) not in verifylist:
                     embedverify = discord.Embed(
@@ -419,11 +413,7 @@ async def save_verify_settings(request, guild: discord.Guild):
 
                     await channel.set_permissions(role, overwrite=perms2)
 
-                verifylist[str(guild.id)] = {"role_id": role.id,
-                                             "message": message,
-                                             "task": int(task) + 1
-                                             }
-                save_data("json/verify.json", verifylist)
+
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
                 try:
@@ -435,9 +425,9 @@ async def save_verify_settings(request, guild: discord.Guild):
 
         else:
             return {
-                "notify-warn": "Unfortunately, our backend server is currently unavailable. Please try again later!"}
+                "notify-warn": "Unfortunately, our backend server is currently unavailable. Please try again later!"}, 504
     except Exception as e:
-        return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}
+        return {"notify-warn": f"An unknown error has occurred! Check that all settings are correct.\n{str(e)}"}, 500
 
 
 async def save_sugg_settings(request, guild: discord.Guild):
