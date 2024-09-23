@@ -403,7 +403,7 @@ async def save_verify_settings(request, guild: discord.Guild):
                     await send_message_on_settings_save(guild=guild,
                                                         channel=channel,
                                                         button="verify",
-                                                        embed=embed)
+                                                        embed=embedverify)
 
                     perms1 = discord.PermissionOverwrite()
                     perms1.view_channel = True
