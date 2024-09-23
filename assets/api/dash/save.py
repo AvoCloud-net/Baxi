@@ -358,7 +358,6 @@ async def save_welcome_settings(request, guild: discord.Guild):
 # noinspection PyDunderSlots,PyUnresolvedReferences
 async def save_verify_settings(request, guild: discord.Guild):
     data = await request.get_json()
-    logger.debug.info(data)
     try:
         language = load_language_model(guild.id)
         key = request.headers.get("Authorization")
@@ -380,19 +379,12 @@ async def save_verify_settings(request, guild: discord.Guild):
                 message = request_data["message-input"]
                 channel = guild.get_channel(int(channel_id))
 
-                verifylist[str(guild.id)] = {"role_id": role.id,
-                                             "message": message,
-                                             "task": int(task) + 1
-                                             }
-                save_data("json/verify.json", verifylist)
-
                 if str(guild.id) not in verifylist:
                     embedverify = discord.Embed(
                         title=language["verify_title_btn"],
                         description=f"{message.replace(';', '\n')}",
                         color=embedColor
                     ).set_thumbnail(url=icons_url + "lock.png")
-
 
                     await send_message_on_settings_save(guild=guild,
                                                         channel=channel,
@@ -413,6 +405,11 @@ async def save_verify_settings(request, guild: discord.Guild):
 
                     await channel.set_permissions(role, overwrite=perms2)
 
+                verifylist[str(guild.id)] = {"role_id": role.id,
+                                             "message": message,
+                                             "task": int(task) + 1
+                                             }
+                save_data("json/verify.json", verifylist)
 
                 return {"notify-success": "The system has been successfully activated / edited."}
             else:
