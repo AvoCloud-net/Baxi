@@ -398,18 +398,12 @@ async def save_verify_settings(request, guild: discord.Guild):
                         description=f"{message.replace(';', '\n')}",
                         color=embedColor
                     ).set_thumbnail(url=icons_url + "lock.png")
-                    headers = {"Authorization": f"{config['DASH']['key']}"}
-                    data = {
-                        "embed": embedverify,
-                        "guild_id": guild.id,
-                        "channel_id": channel.id,
-                        "button": "verify"
-                    }
 
-                    request_send_msg = requests.post("https://baxi-backend.pyropixle.com/api/dash/send/message/system", json=data, headers=headers)
 
-                    if request_send_msg.status_code != 200:
-                        return {"notify-error": "Unfortunately, an error occurred while sending the message to the specified channel! Please try again."}
+                    await send_message_on_settings_save(guild=guild,
+                                                        channel=channel,
+                                                        button="verify",
+                                                        embed=embed)
 
                     perms1 = discord.PermissionOverwrite()
                     perms1.view_channel = True
@@ -548,28 +542,11 @@ async def save_ticket_settings(request, guild: discord.Guild):
                                           color=embedColor, timestamp=datetime.datetime.now()).set_thumbnail(
                         url=icons_url + "ticket.png")
 
-                    headers = {"Authorization": f"{config['DASH']['key']}"}
-                    data = {
-                        "embed": embed.to_dict(),  # Convert embed to dictionary
-                        "guild_id": guild.id,
-                        "channel_id": channel.id,
-                        "button": "ticket"
-                    }
+                    await send_message_on_settings_save(guild=guild,
+                                                        channel=channel,
+                                                        button="ticket",
+                                                        embed=embed)
 
-                    logging.debug("Sending request to API endpoint")
-                    try:
-                        request_send_msg = requests.post(
-                            "https://baxi-backend.pyropixle.com/api/dash/send/message/system",
-                            json=data, headers=headers)
-                        logging.debug("Request sent successfully")
-                    except requests.exceptions.RequestException as e:
-                        logging.error("Error sending request: %s", e)
-                        return {"notify-error": "Error sending request to API endpoint"}
-
-                    if request_send_msg.status_code != 200:
-                        logging.error("Error response from API endpoint: %s", request_send_msg.text)
-                        return {
-                            "notify-error": "Unfortunately, an error occurred while sending the message to the specified channel! Please try again."}
                     perms = discord.PermissionOverwrite()
                     perms.view_channel = True
                     perms.read_message_history = True
