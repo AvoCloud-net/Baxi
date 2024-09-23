@@ -374,7 +374,7 @@ async def save_verify_settings(request, guild: discord.Guild):
             if int(request_data["active-switch"]) == 1:
                 channel_id: int = int(list(request_data["channels-activedrop"].keys())[0])
                 role_id: int = int(list(request_data["role-activedrop"].keys())[0])
-                task: int = int(str(list(request_data["block_unknown_symbols-activedrop"].keys())[0]))
+                task: int = int(str(list(request_data["task-activedrop"].keys())[0]))
 
                 role = guild.get_role(int(role_id))
                 message = request_data["message-input"]
