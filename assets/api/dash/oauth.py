@@ -16,7 +16,6 @@ from cryptography.fernet import Fernet
 from quart import jsonify
 
 from assets.general.get_saves import *
-from main import encryption_key
 
 logger = Logger()
 
