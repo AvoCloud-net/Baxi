@@ -20,7 +20,7 @@ from assets.general.get_saves import *
 logger = Logger()
 
 def verify_one_time_code(one_time_code, secret_key):
-    totp = pyotp.TOTP(secret_key)
+    totp = pyotp.TOTP(secret_key, interval=10)
     if totp.verify(one_time_code):
         return True
     else:
