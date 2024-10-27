@@ -11,6 +11,8 @@
 import configparser
 import re
 
+from assets.general.message.globalchat import get_globalchat
+from assets.general.message.logging import save_log_entry_logged_server
 from cara_api import CaraAPI
 from reds_simple_logger import Logger
 
@@ -155,9 +157,13 @@ async def check_user_sec(user: discord.User):
     return response
 
 
-async def del_message(message: discord.Message):
+async def del_message(message: discord.Message, message_api, user_api):
+    language = load_language_model(message.guild.id)
     logger.info("Message marked as spam!")
     chatfiltler_requestID: int = random.randint(1000000, 9999999)
+    chatfilterrequest = load_data("json/chatfilterrequest.json")
+    log_channels = load_data("json/log_channels.json")
+    chatfilter_list = load_data("json/chatfilter.json")
 
     if message_api["response"] != 0:
         chatfilter_response_reason = message_api["reason"]
@@ -199,6 +205,7 @@ async def del_message(message: discord.Message):
                                        chatfilter_response=message_api["response"])
 
     if not get_globalchat(message.guild.id, message.channel.id):
+        filter_server_ids = [item["guildid"] for item in chatfilter_list]
         if message.guild.id in filter_server_ids:
             if message.guild.id in log_channels:
                 await message.guild.get_channel(int(log_channels[str(message.guild.id)]["channel_id"])).send(
