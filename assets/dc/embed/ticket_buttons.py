@@ -46,6 +46,9 @@ async def other_button(interaction: discord.Interaction):
         channel = await interaction.guild.create_text_channel(
             name=f"🎫-{language['ticket_title_other']}-{interaction.user.name}")
 
+        if channel is None:
+            return await interaction.response.send_message("Channel not found", ephemeral=True)
+
         ticket_info[str(channel.id)] = {"claimed": None,
                                         "owner": interaction.user.id,
                                         "guild_id": interaction.guild.id
@@ -73,6 +76,8 @@ async def other_button(interaction: discord.Interaction):
                                                 ephemeral=True)
         category = discord.utils.get(interaction.guild.categories,
                                      id=int(ticketdata[str(interaction.guild.id)]["categoryid"]))
+        if category is None:
+            return await interaction.response.send_message("Category not found", ephemeral=True)
         await channel.edit(category=category)
     except Exception as e:
         logger.error(str(e))
@@ -98,6 +103,9 @@ async def report_button(interaction: discord.Interaction):
         role = discord.utils.get(interaction.guild.roles, id=int(ticketdata[str(interaction.guild.id)]["roleid"]))
         channel = await interaction.guild.create_text_channel(
             name=f"🎫-{language['ticket_title_report']}-{interaction.user.name}")
+
+        if channel is None:
+            return await interaction.response.send_message("Channel not found", ephemeral=True)
 
         ticket_info[str(channel.id)] = {"claimed": None,
                                         "owner": interaction.user.id,
@@ -125,6 +133,10 @@ async def report_button(interaction: discord.Interaction):
                                                 ephemeral=True)
         category = discord.utils.get(interaction.guild.categories,
                                      id=int(ticketdata[str(interaction.guild.id)]["categoryid"]))
+
+        if channel is None:
+            return await interaction.response.send_message("Channel not found", ephemeral=True)
+
         await channel.edit(category=category)
     except Exception as e:
         logger.error(str(e))
@@ -148,6 +160,9 @@ async def question_button(interaction: discord.Interaction):
         role = discord.utils.get(interaction.guild.roles, id=int(ticketdata[str(interaction.guild.id)]["roleid"]))
         channel = await interaction.guild.create_text_channel(
             name=f"🎫-{language['ticket_title_question']}-{interaction.user.name}")
+
+        if channel is None:
+            return await interaction.response.send_message("Channel not found", ephemeral=True)
 
         ticket_info[str(channel.id)] = {"claimed": None,
                                         "owner": interaction.user.id,
@@ -176,6 +191,10 @@ async def question_button(interaction: discord.Interaction):
                                                 ephemeral=True)
         category = discord.utils.get(interaction.guild.categories,
                                      id=int(ticketdata[str(interaction.guild.id)]["categoryid"]))
+
+        if channel is None:
+            return await interaction.response.send_message("Channel not found", ephemeral=True)
+
         await channel.edit(category=category)
     except Exception as e:
         logger.error(str(e))
