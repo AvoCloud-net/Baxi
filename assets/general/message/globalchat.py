@@ -371,7 +371,7 @@ async def handel_gc(booted: bool, emergency_mode: bool, message: discord.Message
                                                f"`Manage Messages`, `Manage Channels`")
                     except:  # noqa
                         continue
-            save_data("json/gc_messages.json", gc_messages)
+        save_data("json/gc_messages.json", gc_messages)
     except Exception as e:
         await message.channel.send(str(e))
 
