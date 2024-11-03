@@ -320,7 +320,6 @@ async def handel_gc(booted: bool, emergency_mode: bool, message: discord.Message
                 channel = guild.get_channel(server["channelid"])
                 if channel:
                     if replyed_message:
-                        # noinspection PyUnboundLocalVariable
                         original_msg_id = referenced_embed.footer.text.split("|")[2].strip()[5:]
                         # Save the reply message ID to the replies of the original message
                         try:
@@ -372,7 +371,7 @@ async def handel_gc(booted: bool, emergency_mode: bool, message: discord.Message
                                                f"`Manage Messages`, `Manage Channels`")
                     except:  # noqa
                         continue
-        save_data("json/gc_messages.json", gc_messages)
+            save_data("json/gc_messages.json", gc_messages)
     except Exception as e:
         await message.channel.send(str(e))
 
