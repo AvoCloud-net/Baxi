@@ -34,10 +34,10 @@ async def save_welcome_image(img_bytes):
     return filename
 
 
-async def create_welcome_banner(request):
+async def create_welcome_banner(data):
     keys = load_data("json/api_keys.json")
     try:
-        data = request.json
+        
 
         # Extract parameters
         api_key = data.get("api_key")
@@ -101,10 +101,10 @@ async def create_welcome_banner(request):
         return await jsonify({'error': str(e)}), 500
 
 
-async def get_chatfilter_data(request):
+async def get_chatfilter_data(data):
     keys = load_data("json/api_keys.json")
     try:
-        data = request.json
+        
 
         api_key = data.get("api_key")
 

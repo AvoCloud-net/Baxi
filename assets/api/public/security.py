@@ -45,20 +45,20 @@ async def load_error_page():
         return await render_template("503.html"), 503  # noqa
 
 
-async def load_chatfilterrequest_info(request, bot):
+async def load_chatfilterrequest_info(bot, id):
     auth0 = configparser.ConfigParser()
     auth0.read("config/auth0.conf")
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
     if bool(config["WEB"]["api_online"]):
-        requestid = request.args.get('requestid')
+       
 
-        if requestid:
+        if id:
             try:
                 with open('json/chatfilterrequest.json', 'r') as file:
 
                     data = json.load(file)
-                    result = data.get(str(requestid))
+                    result = data.get(str(id))
 
                     if result:
                         guild = bot.get_guild(int(result["serverid"]))
@@ -74,20 +74,19 @@ async def load_chatfilterrequest_info(request, bot):
         return await render_template("503.html"), 503  # noqa
 
 
-async def load_user_info(request, bot):
+async def load_user_info(bot, id):
     if bool(config["WEB"]["api_online"]):
-        requestid = request.args.get('idInput')
 
-        if requestid:
+        if id:
             try:
 
-                user_check = cara_api.get_user(requestid)
+                user_check = cara_api.get_user(id)
                 isSpammer = user_check.isSpammer
                 userid = user_check.user_id
                 isspammerreason = user_check.reason
 
                 try:
-                    user = bot.get_user(int(requestid))  # Diese Zeile verursacht den Fehler
+                    user = bot.get_user(int(id))  # Diese Zeile verursacht den Fehler
 
                     userPB = user.avatar.url
                     username = user.name

@@ -18,12 +18,10 @@ from quart import jsonify
 
 from assets.general.get_saves import *
 
-async def check_api_key(request):
+async def check_api_key(id):
     keys = load_data("json/api_keys.json")
-    key = request.args.get("key")
-    logger.info(str(key))
 
-    if str(key) not in keys:
+    if str(id) not in keys:
         return await jsonify({'error': "Invalid API KEY"}), 500
     else:
         return "Valid key!", 200
