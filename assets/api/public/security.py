@@ -50,22 +50,21 @@ async def load_chatfilterrequest_info(bot, id):
     auth0.read("config/auth0.conf")
     config = configparser.ConfigParser()
     config.read("config/runtime.conf")
+    data = load_data("json/chatfilterrequest.json")
     if bool(config["WEB"]["api_online"]):
        
 
         if id:
             try:
-                with open('json/chatfilterrequest.json', 'r') as file:
 
-                    data = json.load(file)
-                    result = data.get(str(id))
+                request_data = data[str(id)]
 
-                    if result:
-                        guild = bot.get_guild(int(result["serverid"]))
-                        user = guild.get_member(int(result["userid"]))
-                        return await render_template('info.html', result=result, guild=guild, user=user)  # noqa
-                    else:
-                        return await render_template("chatfiltererror.html", msg="RequestID not found")  # noqa
+                if request_data:
+                    guild = bot.get_guild(int(request_data["serverid"]))
+                    user = guild.get_member(int(request_data["userid"]))
+                    return await render_template('info.html', result=request_data, guild=guild, user=user)  # noqa
+                else:
+                    return await render_template("chatfiltererror.html", msg="RequestID not found")  # noqa
             except:
                 return await render_template("chatfiltererror.html", msg="RequestID not found in system")  # noqa
         else:
