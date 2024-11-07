@@ -166,7 +166,7 @@ async def audit_log_entry(entry, action_counts):
         executor: discord.User = entry.user
         target = entry.target
 
-        embed = discord.Embed(title=" ", description=" ")
+        
 
         if action == discord.AuditLogAction.kick:
             await log_action(entry.guild.id, executor.id, "member_kick", action_counts=action_counts)
@@ -195,6 +195,14 @@ async def audit_log_entry(entry, action_counts):
                                   ).set_thumbnail(url=executor.avatar.url)
 
         elif action == discord.AuditLogAction.member_update:
+            logger.info("member_UPDATE")
+            embed = discord.Embed(title=language["log_channel_title"],
+                                  description=language["log_member-update_perms"].format(user=target.mention,
+                                                                                         executer=executor.mention),
+                                  color=embedColor
+                                  ).set_thumbnail(url=executor.avatar.url)
+            
+        elif action == discord.AuditLogAction.member_role_update:
             logger.info("member_UPDATE")
             embed = discord.Embed(title=language["log_channel_title"],
                                   description=language["log_member-update_perms"].format(user=target.mention,
