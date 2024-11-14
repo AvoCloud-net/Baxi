@@ -89,7 +89,7 @@ async def verify_button(interaction: discord.Interaction):
                                                                                     color=discord.Color.red()),
                                                                 ephemeral=True)
             except Exception as e:
-                await interaction.response.send_message("ERROR: " + str(e) + "\n https://docs.pyropixle.com")
+                await interaction.response.send_message("ERROR: " + str(e) + "\n https://docs.avocloud.net")
                 logger.error(f"Verification process error: {str(e)}")
 
 

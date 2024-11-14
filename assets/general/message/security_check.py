@@ -68,8 +68,8 @@ async def check_message_sec(message: discord.Message, bot):
             for attachement in message.attachments:
                 filename = await save_general_image(attachement)
                 message_content = str(
-                    message_content) + "https://baxi-backend.pyropixle.com/_images_/" + filename + "\n"
-                logger.info("https://baxi-backend.pyropixle.com/_images_/" + filename + "\n")
+                    message_content) + "https://baxi-backend.avocloud.net/_images_/" + filename + "\n"
+                logger.info("https://baxi-backend.avocloud.net/_images_/" + filename + "\n")
         else:
             logger.info("Server has enabled advanced privacy, images not saved!")
 
@@ -174,7 +174,7 @@ async def del_message(message: discord.Message, message_api, user_api):
                           description=f"{language['security_chatfilter_introduction']} {message.author.mention}\n"
                                       f"> **{language['security_chatfilter_reason_tag']}** `{chatfilter_response_reason}`\n"
                                       f"> **{language['security_chatfilter_request_tag']}** `{chatfiltler_requestID}`\n"
-                                      f"> **Info:** [security.pyropixle.com](https://security.pyropixle.com/chatfilterinfo?requestid={chatfiltler_requestID})",
+                                      f"> **Info:** [security.avocloud.net](https://security.avocloud.net/chatfilterinfo?requestid={chatfiltler_requestID})",
                           # noqa
                           color=discord.Color.red()).set_thumbnail(url=icons_url + "warn.png").set_footer(
         text=language["security_chatfilter_footer"])

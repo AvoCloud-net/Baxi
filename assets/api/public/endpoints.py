@@ -93,7 +93,7 @@ async def create_welcome_banner(data):
 
         image = await save_welcome_image(img_bytes.getvalue())
 
-        image_url = "http://sparkle2.pyropixle.com:1650/" + url_for('serve_welcome_image', filename=image)
+        image_url = "http://solyra.avocloud.net:1650/" + url_for('serve_welcome_image', filename=image)
 
         return await jsonify({'image_url': image_url}), 200
     except Exception as e:

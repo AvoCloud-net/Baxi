@@ -27,7 +27,7 @@ async def run_guessing(message: discord.Message, booted: bool):
         if booted is False:
             embed = discord.Embed(title=language["035_title"],
                                   description=f"{language['system_not_booted_error']}"
-                                              "[PyroPixle System Status](https://status.pyropixle.com)").set_thumbnail(
+                                              "[PyroPixle System Status](https://status.avocloud.net)").set_thumbnail(
                 url=icons_url + "info.png")
             await message.channel.send(embed=embed)
             return 503

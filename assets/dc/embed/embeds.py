@@ -33,7 +33,7 @@ def user_ban_embed(user: discord.User):
 
     embed_ban = discord.Embed(
         title="Violation of terms of use",
-        description="> This is a Universal message, so it is in English.\n\nWe regret that we have excluded you from our systems and features. We have determined that you have violated our Terms of Service (https://pyropixle.com/gtc/). This means that you are temporarily or permanently excluded from using our services.",
+        description="> This is a Universal message, so it is in English.\n\nWe regret that we have excluded you from our systems and features. We have determined that you have violated our Terms of Service (https://avocloud.net/gtc/). This means that you are temporarily or permanently excluded from using our services.",
         color=discord.Color.red()
     )
 

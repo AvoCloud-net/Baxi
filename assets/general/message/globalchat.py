@@ -137,7 +137,7 @@ async def handel_gc(
             embed = discord.Embed(
                 title=language["035_title"],
                 description=f"{language['service_unavailable']}"
-                "[PyroPixle System Status](https://status.pyropixle.com)",
+                "[PyroPixle System Status](https://status.avocloud.net)",
             ).set_thumbnail(url=icons_url + "info.png")
             await message.channel.send(embed=embed)
             return 503
@@ -146,7 +146,7 @@ async def handel_gc(
             embed = discord.Embed(
                 title=language["035_title"],
                 description=f"{language['global_chat_unavailable']}"
-                "[PyroPixle System Status](https://status.pyropixle.com)",
+                "[PyroPixle System Status](https://status.avocloud.net)",
             ).set_thumbnail(url=icons_url + "info.png")
             await message.channel.send(embed=embed)
             return 503
@@ -167,8 +167,8 @@ async def handel_gc(
                 embed=discord.Embed(
                     title=language["security_ban_title"],
                     description=f"{language['global_chat_spammer_block']}\n"
-                    "> -  E-Mail: `support@pyropixle.com`\n"
-                    "> -  Ticket: [Discord Server](https://link.pyropixle.com/discord)",
+                    "> -  E-Mail: `support@avocloud.net`\n"
+                    "> -  Ticket: [Discord Server](https://link.avocloud.net/discord)",
                     color=discord.Color.red(),
                     timestamp=datetime.datetime.now(),
                 ).set_footer(text=language["global_chat_spammer_block_sorry"]),
@@ -357,7 +357,7 @@ async def handel_gc(
             img = message.attachments[0]
             filename = await save_globalchat_image(img)
             embed.set_image(
-                url="https://baxi-backend.pyropixle.com/globalchat_img/" + str(filename)
+                url="https://baxi-backend.avocloud.net/globalchat_img/" + str(filename)
             )
 
         elif tenor_match:

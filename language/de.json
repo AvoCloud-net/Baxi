@@ -1,7 +1,7 @@
 {
   "035_title": "503 | Dienst nicht verfügbar",
   "ban_success": "Der Benutzer wurde erfolgreich gebannt!",
-  "bot_rule_1": "Die Regeln von Baxi findet ihr hier: https://pyropixle.com/gtc/#rules.",
+  "bot_rule_1": "Die Regeln von Baxi findet ihr hier: https://avocloud.net/gtc/#rules.",
   "bot_rule_10": "Es ist auch wichtig zu erwähnen, dass nicht nur die oben genannten Regeln befolgt werden müssen, sondern auch unsere Community-Richtlinien und Nutzungsbedingungen. Weitere Informationen findest du auf unserer Website!",
   "bot_rule_2": "Keine Weitergabe persönlicher Daten oder Belästigung anderer Benutzer.",
   "bot_rule_3": "Kein Spam oder übermäßige Überflutung des Chats mit Nachrichten.",
@@ -98,7 +98,7 @@
   "global_chat_spammer_block_sorry": "Wir entschuldigen uns für etwaige Unannehmlichkeiten.",
   "global_chat_unavailable": "Der globale Chat ist derzeit nicht funktionsfähig! Dies kann folgende Gründe haben:\n- Unsere Sicherheitssysteme sind offline.\n- Der Chat wurde von einem Administrator blockiert. Den aktuellen Status unserer Systeme kannst du hier einsehen:",
   "global_chat_welcome_footer": "Bitte beachte, dass der globale Chat immer auf einen langsamen Modus von mindestens 5 Sekunden eingestellt sein sollte",
-  "global_chat_welcome_message": "Dein Server ist jetzt bereit! Von nun an werden alle Nachrichten in diesem Kanal direkt an alle anderen Server gesendet. Bitte beachte, dass alle [Richtlinien](https://pyropixle.com/agb) eingehalten werden müssen.",
+  "global_chat_welcome_message": "Dein Server ist jetzt bereit! Von nun an werden alle Nachrichten in diesem Kanal direkt an alle anderen Server gesendet. Bitte beachte, dass alle [Richtlinien](https://avocloud.net/agb) eingehalten werden müssen.",
   "global_chat_welcome_title": "Willkommen im PyroPixle Global Chat",
   "globalchat_title": "Globalchat",
   "guessing_correct_number": "Glückwunsch! Du hast die richtige Zahl erraten! Es wurde eine neue Zahl zwischen „1“ und „10000“ gewählt.",
