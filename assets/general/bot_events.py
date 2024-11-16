@@ -10,11 +10,11 @@
 ##################################
 import configparser
 
-from cara_api import CaraAPI
 from reds_simple_logger import Logger
 
 from assets.dc.embed.buttons import *
 from assets.general.routine_events import *
+from assets.sec_requests import Check
 from main import *
 from main import InviteUndWebUndDiscordundDocsButton
 
@@ -24,7 +24,7 @@ auth0 = configparser.ConfigParser()
 auth0.read("config/auth0.conf")
 
 logger = Logger()
-caraAPI = CaraAPI(auth0["CARA"]["key"])
+check_api = Check()
 
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
                                     int(config["BOT"]["embed_color_blue"]))  # FF5733
@@ -60,9 +60,9 @@ async def on_member_join_event(member: discord.Member, bot):
     welcomelist = load_data("json/welcome.json")
     auto_roles = load_data("json/auto_roles.json")
 
-    get_user = caraAPI.get_user(str(member.id))
+    get_user = check_api.check_user(member.id)
 
-    if get_user.isSpammer:
+    if get_user.flagged:
         icons_url = config["WEB"]["icons_url"]
         embedwarn = discord.Embed(title=language["security_title"],
                                   description=f"{language['join_user_warn']} {member.mention}",

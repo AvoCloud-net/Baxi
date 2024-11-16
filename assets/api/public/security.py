@@ -13,10 +13,11 @@ from io import BytesIO
 import discord
 import requests
 from PIL import Image, ImageDraw, ImageFont
-from cara_api import CaraAPI
 from quart import render_template, jsonify, url_for
 from reds_simple_logger import Logger
 import configparser
+
+from assets.sec_requests import Check
 
 logger = Logger()
 
@@ -28,7 +29,7 @@ auth0.read("config/auth0.conf")
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
 
-cara_api = CaraAPI(auth0["CARA"]["key"])
+check_api = Check()
 
 
 async def load_homepage():
@@ -79,9 +80,9 @@ async def load_user_info(bot, id):
         if id:
             try:
 
-                user_check = cara_api.get_user(id)
-                isSpammer = user_check.isSpammer
-                userid = user_check.user_id
+                user_check = check_api.check_user(int(id))
+                isSpammer = user_check.flagged
+                userid = user_check.id
                 isspammerreason = user_check.reason
 
                 try:

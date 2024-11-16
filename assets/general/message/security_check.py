@@ -13,11 +13,11 @@ import re
 
 from assets.general.message.globalchat import get_globalchat
 from assets.general.message.logging import save_log_entry_logged_server
-from cara_api import CaraAPI
 from reds_simple_logger import Logger
 
 from assets.dc.embed.buttons import *
 from assets.general.routine_events import *
+from assets.sec_requests import Check
 
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
@@ -25,7 +25,7 @@ auth0 = configparser.ConfigParser()
 auth0.read("config/auth0.conf")
 
 logger = Logger()
-caraAPI = CaraAPI(auth0["CARA"]["key"])
+api_check = Check()
 
 embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
                                     int(config["BOT"]["embed_color_blue"]))  # FF5733
@@ -44,15 +44,7 @@ async def check_message_sec(message: discord.Message, bot):
     chatfilter_server_index = next(
         (index for (index, d) in enumerate(settings_chatfilter) if d["guildid"] == message.guild.id), 1)
 
-    filter_word_list = load_data("filter/word_list.json")
-    filter_allowed_word_list = load_data("filter/allowed_words.json")
     filter_allowed_symbols_list = load_data("filter/allowed_symbols.json")
-
-    try:
-        chatfilter_block_nonAscci = settings_chatfilter.get("block_ascci")
-    except:
-        chatfilter_block_nonAscci = True
-
     for symbol in filter_allowed_symbols_list:
         message_content = message_content.replace(symbol, "")
 
@@ -92,40 +84,15 @@ async def check_message_sec(message: discord.Message, bot):
 
     if not (message_content is None or message_content == "") and (
             int(message.channel.id) not in settings_chatfilter[chatfilter_server_index]["bypass_channels"]):
-        try:
-            # noinspection RegExpSimplifiable
-            message_length = len(re.sub(r'http[s]?://\S+', '', message.content))
-            if message_length > 100:
-                logger.info(f"LONG message - {message_length} chars")
-                levenshtein_wert = 2
-            else:
-                logger.info(f"SHORT message - {message_length} chars")
-                levenshtein_wert = 1
-            chatfilter_request = caraAPI.chatfilter(message=message_content,
-                                                    levenshtein=levenshtein_wert,
-                                                    FilteredWords=filter_word_list,
-                                                    GoodWords=filter_allowed_word_list,
-                                                    GuildID=message.guild.id,
-                                                    ChannelID=message.channel.id,
-                                                    AuthorID=message.author.id,
-                                                    MessageID=message.id,
-                                                    GuildName=message.guild.name,
-                                                    ChannelName=message.channel.name,
-                                                    AuthorName=message.author.name,
-                                                    OnlyASCII=chatfilter_block_nonAscci,
-                                                    log=False)
 
-            response = {"response": chatfilter_request.result,
-                        "reason": chatfilter_request.reason,
-                        "pair": chatfilter_request.levenshteinPair,
-                        "timestamp": timestamp,
-                        "nsfw_server": CHATFILTER_nsfw_server}
+        chatfilter_request = api_check.check_message(message_content)
+        result = bool(chatfilter_request)
 
-
-        except:
-            response = {"response": 0,
-                        "reason": None,
-                        "pair": None,
+        if result:
+            response = {"response": result,
+                        "reason": "Badword",
+                        "match": chatfilter_request.match,
+                        "distance": chatfilter_request.distance,
                         "timestamp": timestamp,
                         "nsfw_server": CHATFILTER_nsfw_server}
 
@@ -142,9 +109,9 @@ async def check_message_sec(message: discord.Message, bot):
 async def check_user_sec(user: discord.User):
     try:
         bypass = load_data("json/spamdb_bypass.json")
-        user_check_request = caraAPI.get_user(user_id=str(user.id))
+        user_check_request = api_check.check_user(user.id)
         if user.id not in bypass:
-            isSpammer = user_check_request.isSpammer
+            isSpammer = user_check_request.flagged
         else:
             isSpammer = False
         isSpammer_reason = user_check_request.reason
