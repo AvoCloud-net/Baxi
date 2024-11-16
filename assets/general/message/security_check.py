@@ -114,25 +114,14 @@ async def check_message_sec(message: discord.Message, bot):
 
         chatfilter_request = api_check.check_message(message_content)
 
-        if chatfilter_request.flagged:
-            response = {
-                "response": chatfilter_request.flagged,
-                "reason": "Badword",
-                "match": chatfilter_request.match,
-                "distance": chatfilter_request.distance,
-                "timestamp": timestamp,
-                "nsfw_server": CHATFILTER_nsfw_server,
-            }
-        else:
-            response = {
-                "response": chatfilter_request.flagged,
-                "reason": "Badword",
-                "match": chatfilter_request.distance,
-                "distance": chatfilter_request.distance,
-                "timestamp": timestamp,
-                "nsfw_server": CHATFILTER_nsfw_server,
-            }
-
+        response = {
+            "response": chatfilter_request.flagged,
+            "reason": "Badword",
+            "match": chatfilter_request.match,
+            "distance": chatfilter_request.distance,
+            "timestamp": timestamp,
+            "nsfw_server": CHATFILTER_nsfw_server,
+        }
     else:
         response = {
             "response": 0,
