@@ -86,10 +86,10 @@ async def check_message_sec(message: discord.Message, bot):
             int(message.channel.id) not in settings_chatfilter[chatfilter_server_index]["bypass_channels"]):
 
         chatfilter_request = api_check.check_message(message_content)
-        result = bool(chatfilter_request)
+        
 
-        if result:
-            response = {"response": result,
+        if chatfilter_request.flagged:
+            response = {"response": chatfilter_request.flagged,
                         "reason": "Badword",
                         "match": chatfilter_request.match,
                         "distance": chatfilter_request.distance,
