@@ -29,7 +29,6 @@ class Check:
 
     class Message_check_answer:
         def __init__(self, data):
-            self.flagged: bool = data["flagged"]
             self.distance: str = data["distance"]
             self.match: str = data["matched_badword"]
 
