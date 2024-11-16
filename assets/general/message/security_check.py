@@ -124,9 +124,10 @@ async def check_message_sec(message: discord.Message, bot):
         }
     else:
         response = {
-            "response": 0,
-            "reason": None,
-            "pair": None,
+            "response": False,
+            "reason": "Badword",
+            "match": None,
+            "distance": None,
             "timestamp": timestamp,
             "nsfw_server": CHATFILTER_nsfw_server,
         }
@@ -137,12 +138,9 @@ async def check_user_sec(user: discord.User):
     try:
         bypass = load_data("json/spamdb_bypass.json")
         user_check_request = api_check.check_user(user.id)
-        if user.id not in bypass:
-            isSpammer = user_check_request.flagged
-        else:
-            isSpammer = False
+        
         isSpammer_reason = user_check_request.reason
-        response = {"isSpammer": isSpammer, "reason": isSpammer_reason}
+        response = {"isSpammer": user_check_request.flagged, "reason": isSpammer_reason}
     except:
         response = {"isSpammer": None, "reason": None}
 
@@ -192,7 +190,8 @@ async def del_message(message: discord.Message, message_api, user_api):
         "serverid": message.guild.id,
         "userisspammer": user_api["isSpammer"],
         "isspammerreason": user_api["reason"],
-        "levenshteinPair": message_api["pair"],
+        "levenshteinDistance": message_api["distance"],
+        "levenshteinMatch": message_api["match"]
     }
 
     save_data("json/chatfilterrequest.json", chatfilterrequest)
