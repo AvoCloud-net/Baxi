@@ -79,7 +79,6 @@ files_and_functions = [
     ("json/gc_messages.json", load_data, save_data),
     ("filter/word_list.json", load_data, save_data),
     ("filter/allowed_words.json", load_data, save_data),
-    ("filter/allowed_symbols.json", load_data, save_data),
     ("json/privacy_image.json", load_data, save_data),
     ("json/log_channels.json", load_data, save_data),
     ("json/anti_raid.json", load_data, save_data),

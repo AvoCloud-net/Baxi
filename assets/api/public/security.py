@@ -41,7 +41,7 @@ async def load_homepage():
 
 async def load_error_page():
     if bool(config["WEB"]["api_online"]):
-        return await render_template('404.html'), 404  # noqa
+        return await render_template("404.html"), 404  # noqa
     else:
         return await render_template("503.html"), 503  # noqa
 
@@ -53,7 +53,6 @@ async def load_chatfilterrequest_info(bot, id):
     config.read("config/runtime.conf")
     data = load_data("json/chatfilterrequest.json")
     if bool(config["WEB"]["api_online"]):
-       
 
         if id:
             try:
@@ -63,13 +62,21 @@ async def load_chatfilterrequest_info(bot, id):
                 if request_data:
                     guild = bot.get_guild(int(request_data["serverid"]))
                     user = guild.get_member(int(request_data["userid"]))
-                    return await render_template('info.html', result=request_data, guild=guild, user=user)  # noqa
+                    return await render_template(
+                        "info.html", result=request_data, guild=guild, user=user
+                    )  # noqa
                 else:
-                    return await render_template("chatfiltererror.html", msg="RequestID not found")  # noqa
+                    return await render_template(
+                        "chatfiltererror.html", msg="RequestID not found"
+                    )  # noqa
             except:
-                return await render_template("chatfiltererror.html", msg="RequestID not found in system")  # noqa
+                return await render_template(
+                    "chatfiltererror.html", msg="RequestID not found in system"
+                )  # noqa
         else:
-            return await render_template("chatfiltererror.html", msg="Missing information in your request")  # noqa
+            return await render_template(
+                "chatfiltererror.html", msg="Missing information in your request"
+            )  # noqa
     else:
         return await render_template("503.html"), 503  # noqa
 
@@ -92,19 +99,33 @@ async def load_user_info(bot, id):
                     username = user.name
                     onDiscordSince = user.created_at
                 except:
-                    return await render_template("chatfiltererror.html", msg="User not found")  # noqa
+                    return await render_template(
+                        "chatfiltererror.html", msg="User not found"
+                    )  # noqa
 
-                result = {"id": int(userid), "username": str(username), "pb": str(userPB), "isSpammer": isSpammer,
-                          "isspammerreason": isspammerreason, "onDiscordSince": onDiscordSince}
+                result = {
+                    "id": int(userid),
+                    "username": str(username),
+                    "pb": str(userPB),
+                    "isSpammer": isSpammer,
+                    "isspammerreason": isspammerreason,
+                    "onDiscordSince": onDiscordSince,
+                }
                 if result:
-                    return await render_template('user-info.html', result=result)  # noqa
+                    return await render_template(
+                        "user-info.html", result=result
+                    )  # noqa
                 else:
-                    return await render_template("chatfiltererror.html", msg="Corrupt data")  # noqa
+                    return await render_template(
+                        "chatfiltererror.html", msg="Corrupt data"
+                    )  # noqa
             except FileNotFoundError:
-                return await render_template("chatfiltererror.html", msg="Unknwon error")  # noqa
+                return await render_template(
+                    "chatfiltererror.html", msg="Unknwon error"
+                )  # noqa
         else:
-            return await render_template("chatfiltererror.html", msg="Missing information in your request")  # noqa
+            return await render_template(
+                "chatfiltererror.html", msg="Missing information in your request"
+            )  # noqa
     else:
         return await render_template("503.html"), 503  # noqa
-
-

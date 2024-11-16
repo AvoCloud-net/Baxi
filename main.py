@@ -25,8 +25,6 @@ from assets.api.public.endpoints import *
 from assets.general.message.counting import *
 from assets.general.message.guessing import *
 from assets.general.message.suggestion import *
-from assets.general.get_saves import *
-from assets.general.routine_events import *
 
 from assets.general.routine_events import *
 from assets.general.get_saves import *
