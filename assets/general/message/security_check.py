@@ -123,6 +123,15 @@ async def check_message_sec(message: discord.Message, bot):
                 "timestamp": timestamp,
                 "nsfw_server": CHATFILTER_nsfw_server,
             }
+        else:
+            response = {
+                "response": chatfilter_request.flagged,
+                "reason": "Badword",
+                "match": chatfilter_request.distance,
+                "distance": chatfilter_request.distance,
+                "timestamp": timestamp,
+                "nsfw_server": CHATFILTER_nsfw_server,
+            }
 
     else:
         response = {
