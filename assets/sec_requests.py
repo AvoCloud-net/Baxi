@@ -40,4 +40,5 @@ class Check:
             return f"ERROR - {request.text}"
         
         data = request.json()
+        print(data)
         return self.Message_check_answer(data=data)
