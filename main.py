@@ -26,6 +26,7 @@ from assets.general.message.counting import *
 from assets.general.message.guessing import *
 from assets.general.message.suggestion import *
 from assets.general.get_saves import *
+from assets.general.routine_events import *
 
 from assets.general.routine_events import *
 from assets.general.get_saves import *
@@ -1305,7 +1306,7 @@ async def userstatus(interaction: discord.Interaction, option: int, id: str):
         if option == 2:
             user_check_request = check_api.check_user(int(id))
 
-            userFlagged:bool = user_check_request.flagged
+            userFlagged: bool = user_check_request.flagged
             userFlaggedReason = user_check_request.reason
             user = bot.get_user(int(id))
             embed = discord.Embed(
@@ -1376,9 +1377,7 @@ async def userstatus(interaction: discord.Interaction, option: int, id: str):
 
             embed_new = discord.Embed(
                 title=language["get_db_title_new"],
-                description=language["get_db_finish"].format(
-                    baxidb=in_baxiDB
-                ),
+                description=language["get_db_finish"].format(baxidb=in_baxiDB),
                 color=embedColor,
             )
 

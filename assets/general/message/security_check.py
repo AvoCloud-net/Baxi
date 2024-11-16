@@ -27,8 +27,11 @@ auth0.read("config/auth0.conf")
 logger = Logger()
 api_check = Check()
 
-embedColor = discord.Color.from_rgb(int(config["BOT"]["embed_color_red"]), int(config["BOT"]["embed_color_green"]),
-                                    int(config["BOT"]["embed_color_blue"]))  # FF5733
+embedColor = discord.Color.from_rgb(
+    int(config["BOT"]["embed_color_red"]),
+    int(config["BOT"]["embed_color_green"]),
+    int(config["BOT"]["embed_color_blue"]),
+)  # FF5733
 
 
 async def check_message_sec(message: discord.Message, bot):
@@ -42,31 +45,53 @@ async def check_message_sec(message: discord.Message, bot):
     privacy_image = load_data("json/privacy_image.json")
 
     chatfilter_server_index = next(
-        (index for (index, d) in enumerate(settings_chatfilter) if d["guildid"] == message.guild.id), 1)
+        (
+            index
+            for (index, d) in enumerate(settings_chatfilter)
+            if d["guildid"] == message.guild.id
+        ),
+        1,
+    )
 
     filter_allowed_symbols_list = load_data("filter/allowed_symbols.json")
     for symbol in filter_allowed_symbols_list:
         message_content = message_content.replace(symbol, "")
 
-    if (str(message.guild.id) in settings_counting and settings_counting[str(message.guild.id)][
-        "channel_id"] == message.channel.id) or (
-            str(message.guild.id) in settings_guessing and int(message.channel.id) ==
-            settings_guessing[str(message.guild.id)]["channel_id"]):
-        message_content = re.sub(r'\d+', '', message_content)
+    if (
+        str(message.guild.id) in settings_counting
+        and settings_counting[str(message.guild.id)]["channel_id"] == message.channel.id
+    ) or (
+        str(message.guild.id) in settings_guessing
+        and int(message.channel.id)
+        == settings_guessing[str(message.guild.id)]["channel_id"]
+    ):
+        message_content = re.sub(r"\d+", "", message_content)
 
     if len(message.attachments) > 0:
         if message.guild.id not in privacy_image:
-            logger.info("Saving " + str(len(message.attachments)) + " attachments to static/general_imgs")
+            logger.info(
+                "Saving "
+                + str(len(message.attachments))
+                + " attachments to static/general_imgs"
+            )
             for attachement in message.attachments:
                 filename = await save_general_image(attachement)
-                message_content = str(
-                    message_content) + "https://baxi-backend.avocloud.net/_images_/" + filename + "\n"
-                logger.info("https://baxi-backend.avocloud.net/_images_/" + filename + "\n")
+                message_content = (
+                    str(message_content)
+                    + "https://baxi-backend.avocloud.net/_images_/"
+                    + filename
+                    + "\n"
+                )
+                logger.info(
+                    "https://baxi-backend.avocloud.net/_images_/" + filename + "\n"
+                )
         else:
             logger.info("Server has enabled advanced privacy, images not saved!")
 
-    invite_pattern = re.compile(r'(https?://)?(www\.)?(discord\.(gg|io|me|li|com)|discordapp\.com/invite)/(\w+)',
-                                re.IGNORECASE)
+    invite_pattern = re.compile(
+        r"(https?://)?(www\.)?(discord\.(gg|io|me|li|com)|discordapp\.com/invite)/(\w+)",
+        re.IGNORECASE,
+    )
     for match in invite_pattern.findall(message.content):
         invite_code = match[-1]
         try:
@@ -83,26 +108,30 @@ async def check_message_sec(message: discord.Message, bot):
             CHATFILTER_nsfw_server = False
 
     if not (message_content is None or message_content == "") and (
-            int(message.channel.id) not in settings_chatfilter[chatfilter_server_index]["bypass_channels"]):
+        int(message.channel.id)
+        not in settings_chatfilter[chatfilter_server_index]["bypass_channels"]
+    ):
 
         chatfilter_request = api_check.check_message(message_content)
-        
 
         if chatfilter_request.flagged:
-            response = {"response": chatfilter_request.flagged,
-                        "reason": "Badword",
-                        "match": chatfilter_request.match,
-                        "distance": chatfilter_request.distance,
-                        "timestamp": timestamp,
-                        "nsfw_server": CHATFILTER_nsfw_server}
-
+            response = {
+                "response": chatfilter_request.flagged,
+                "reason": "Badword",
+                "match": chatfilter_request.match,
+                "distance": chatfilter_request.distance,
+                "timestamp": timestamp,
+                "nsfw_server": CHATFILTER_nsfw_server,
+            }
 
     else:
-        response = {"response": 0,
-                    "reason": None,
-                    "pair": None,
-                    "timestamp": timestamp,
-                    "nsfw_server": CHATFILTER_nsfw_server}
+        response = {
+            "response": 0,
+            "reason": None,
+            "pair": None,
+            "timestamp": timestamp,
+            "nsfw_server": CHATFILTER_nsfw_server,
+        }
     return response
 
 
@@ -115,11 +144,9 @@ async def check_user_sec(user: discord.User):
         else:
             isSpammer = False
         isSpammer_reason = user_check_request.reason
-        response = {"isSpammer": isSpammer,
-                    "reason": isSpammer_reason}
+        response = {"isSpammer": isSpammer, "reason": isSpammer_reason}
     except:
-        response = {"isSpammer": None,
-                    "reason": None}
+        response = {"isSpammer": None, "reason": None}
 
     return response
 
@@ -137,14 +164,19 @@ async def del_message(message: discord.Message, message_api, user_api):
     else:
         chatfilter_response_reason = language["security_chatfilter_nsfw_link_reason"]
 
-    embed = discord.Embed(title=language["security_title"],
-                          description=f"{language['security_chatfilter_introduction']} {message.author.mention}\n"
-                                      f"> **{language['security_chatfilter_reason_tag']}** `{chatfilter_response_reason}`\n"
-                                      f"> **{language['security_chatfilter_request_tag']}** `{chatfiltler_requestID}`\n"
-                                      f"> **Info:** [security.avocloud.net](https://security.avocloud.net/chatfilterinfo?requestid={chatfiltler_requestID})",
-                          # noqa
-                          color=discord.Color.red()).set_thumbnail(url=icons_url + "warn.png").set_footer(
-        text=language["security_chatfilter_footer"])
+    embed = (
+        discord.Embed(
+            title=language["security_title"],
+            description=f"{language['security_chatfilter_introduction']} {message.author.mention}\n"
+            f"> **{language['security_chatfilter_reason_tag']}** `{chatfilter_response_reason}`\n"
+            f"> **{language['security_chatfilter_request_tag']}** `{chatfiltler_requestID}`\n"
+            f"> **Info:** [security.avocloud.net](https://security.avocloud.net/chatfilterinfo?requestid={chatfiltler_requestID})",
+            # noqa
+            color=discord.Color.red(),
+        )
+        .set_thumbnail(url=icons_url + "warn.png")
+        .set_footer(text=language["security_chatfilter_footer"])
+    )
 
     logger.working("Saving data to json/chatfilterrequest.json...")
 
@@ -162,27 +194,34 @@ async def del_message(message: discord.Message, message_api, user_api):
         "serverid": message.guild.id,
         "userisspammer": user_api["isSpammer"],
         "isspammerreason": user_api["reason"],
-        "levenshteinPair": message_api["pair"]
+        "levenshteinPair": message_api["pair"],
     }
 
     save_data("json/chatfilterrequest.json", chatfilterrequest)
     logger.info("Data saved!")
 
-    await save_log_entry_logged_server(guild=message.guild, message=message,
-                                       chatfilter_response=message_api["response"])
+    await save_log_entry_logged_server(
+        guild=message.guild,
+        message=message,
+        chatfilter_response=message_api["response"],
+    )
 
     if not get_globalchat(message.guild.id, message.channel.id):
         filter_server_ids = [item["guildid"] for item in chatfilter_list]
         if message.guild.id in filter_server_ids:
             if message.guild.id in log_channels:
-                await message.guild.get_channel(int(log_channels[str(message.guild.id)]["channel_id"])).send(
-                    embed=embed)
+                await message.guild.get_channel(
+                    int(log_channels[str(message.guild.id)]["channel_id"])
+                ).send(embed=embed)
 
             def check(message_in):
                 return message_in.id == message.id
 
-            await message.channel.purge(limit=5, check=check,
-                                        reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}")
+            await message.channel.purge(
+                limit=5,
+                check=check,
+                reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}",
+            )
             await message.channel.send(embed=embed)
             logger.success("Message processed! (Chatfilter action)")
             return
@@ -192,7 +231,10 @@ async def del_message(message: discord.Message, message_api, user_api):
         def check(message_in):
             return message_in.id == message.id
 
-        await message.channel.purge(limit=5, check=check,
-                                    reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}")
+        await message.channel.purge(
+            limit=5,
+            check=check,
+            reason=f"Baxi Security - Chatfilter - {chatfiltler_requestID}",
+        )
         logger.success("Message processed! (Chatfilter action)")
         return
