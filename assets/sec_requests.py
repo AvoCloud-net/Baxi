@@ -5,6 +5,9 @@ import json
 config = configparser.ConfigParser()
 config.read("config/runtime.conf")
 
+auth0 = configparser.ConfigParser()
+auth0.read("config/auth0.conf")
+
 class Check:
     def __init__(self):
         pass
@@ -17,7 +20,7 @@ class Check:
 
 
     def check_user(self, id: int):
-        json = {"id": id}
+        json = {"id": id, "key": auth0["SEC"]["key"]}
         request = requests.get(url=config["SEC"]["user_uri"], json=json)
         if request.status_code != 200:
             return f"ERROR - {request.text}"
@@ -41,7 +44,7 @@ class Check:
 
 
     def check_message(self, message: str):
-        json = {"message": message}
+        json = {"message": message, "key": auth0["SEC"]["key"]}
         request = requests.get(url=config["SEC"]["message_uri"], json=json)
         if request.status_code != 200:
             return f"ERROR - {request.text}"
