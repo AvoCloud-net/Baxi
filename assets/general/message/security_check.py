@@ -125,6 +125,7 @@ async def check_message_sec(message: discord.Message, bot):
             "reason": "Badword",
             "match": None,
             "distance": None,
+            "original_word": None,
             "timestamp": timestamp,
             "nsfw_server": CHATFILTER_nsfw_server,
         }
@@ -189,7 +190,7 @@ async def del_message(message: discord.Message, message_api, user_api):
         "isspammerreason": user_api["reason"],
         "levenshteinDistance": message_api["distance"],
         "levenshteinMatch": message_api["match"],
-        "original_word": message_api["input_word"]
+        "original_word": message_api["original_word"]
     }
 
     save_data("json/chatfilterrequest.json", chatfilterrequest)
