@@ -308,7 +308,7 @@
                         {% endif %}
                     {% endif %}
                     <hr>
-                    <p><u><b>Message</b></u>: <i>{{ result.message }}</i></p>
+                    <p><u><b>Message</b></u>: <i>{{ result.message | highlight_word(result.original_word) }}</i></p>
                     <p><u><b>Match</b></u>: <i>{{ result.original_word }} → {{ result.levenshteinMatch }}</i></p>
                     <p><u><b>Timestamp</b></u>: <i>{{ result.timestamp }}</i></p>
                     <hr>

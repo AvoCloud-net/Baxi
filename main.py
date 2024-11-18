@@ -13,7 +13,7 @@ import wavelink
 from bs4 import BeautifulSoup
 from discord import Guild, TextChannel, Interaction, app_commands, ui
 from discord.ext import commands, tasks
-from quart import session
+from quart import session, Markup
 from quart_cors import cors
 
 from assets.api.dash.save import *
@@ -743,6 +743,18 @@ async def check_apikey():
     id = request.args.get("requestid")
     return await check_api_key(id=id)
 
+
+def highlight_word(message, word):
+    # Markiert das Wort in der Nachricht
+    if not message or not word:
+        return message
+    highlighted = message.replace(
+        word, 
+        f'<span style="color: crimson; font-weight: bold;">{word}</span>'
+    )
+    return Markup(highlighted)  # Markup erlaubt HTML im Template
+
+app.jinja_env.filters['highlight_word'] = highlight_word
 
 @app.route("/chatfilterinfo")
 async def show_info():
