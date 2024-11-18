@@ -302,14 +302,14 @@
                     <p><u><b>User</b></u>: <i>{{ result.user }}</i></p>
                     <!--<p><u><b>Benutzer ID:  </b></u> <i>{{ result.userid }}</i></p>-->
                     <p><u><b>*Spammer</b></u>: <i>{{ result.userisspammer }}</i></p>
-                    {% if result.userisspammer == "Yes" %}
+                    {% if result.userisspammer == "True" %}
                         {% if result.isspammerreason != "none" %}
                             <p><u><b>Spammer reason</b></u>: <i>{{ result.isspammerreason }}</i></p>
                         {% endif %}
                     {% endif %}
                     <hr>
                     <p><u><b>Message</b></u>: <i>{{ result.message }}</i></p>
-                    <p><u><b>Match</b></u>: <i>{{ result.original_word }} -> {{ result.levenshteinMatch }}</i></p>
+                    <p><u><b>Match</b></u>: <i>{{ result.original_word }} → {{ result.levenshteinMatch }}</i></p>
                     <p><u><b>Timestamp</b></u>: <i>{{ result.timestamp }}</i></p>
                     <hr>
                     <p><u><b>Reason</b></u>: <i>{{ result.reason }}</i></p>
