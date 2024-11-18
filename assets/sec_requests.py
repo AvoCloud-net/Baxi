@@ -37,10 +37,12 @@ class Check:
                 self.flagged: bool = result
                 self.distance: str = data["distance"]
                 self.match: str = data["matched_badword"]
+                self.original_word:str = data["input_word"]
             else:
                 self.flagged: bool = result
                 self.distance: str = None
                 self.match: str = None
+                self.original_word:str = None
 
 
     def check_message(self, message: str):

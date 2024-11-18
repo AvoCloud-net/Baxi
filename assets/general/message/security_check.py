@@ -114,6 +114,7 @@ async def check_message_sec(message: discord.Message, bot):
             "response": chatfilter_request.flagged,
             "reason": "Badword",
             "match": chatfilter_request.match,
+            "original_word": chatfilter_request.original_word,
             "distance": chatfilter_request.distance,
             "timestamp": timestamp,
             "nsfw_server": CHATFILTER_nsfw_server,
@@ -151,7 +152,7 @@ async def del_message(message: discord.Message, message_api, user_api):
     log_channels = load_data("json/log_channels.json")
     chatfilter_list = load_data("json/chatfilter.json")
 
-    if message_api["response"] != 0:
+    if not bool(message_api["nsfw_server"]):
         chatfilter_response_reason = message_api["reason"]
     else:
         chatfilter_response_reason = language["security_chatfilter_nsfw_link_reason"]
