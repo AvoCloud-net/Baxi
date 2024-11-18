@@ -188,6 +188,7 @@ async def del_message(message: discord.Message, message_api, user_api):
         "isspammerreason": user_api["reason"],
         "levenshteinDistance": message_api["distance"],
         "levenshteinMatch": message_api["match"],
+        "original_word": message_api["input_word"]
     }
 
     save_data("json/chatfilterrequest.json", chatfilterrequest)
