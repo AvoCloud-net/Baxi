@@ -750,7 +750,7 @@ def highlight_word(message, word):
         return message
     highlighted = message.replace(
         word, 
-        f'<span style="color: crimson; font-weight: bold;">{word}</span>'
+        f'<span style="color: crimson;"><b>{word}</b></span>'
     )
     return Markup(highlighted)  # Markup erlaubt HTML im Template
 
