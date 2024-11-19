@@ -744,15 +744,14 @@ async def check_apikey():
     return await check_api_key(id=id)
 
 
-def highlight_word(message, word):
-    # Markiert das Wort in der Nachricht
+def highlight_word(message:str, word:str):
     if not message or not word:
         return message
-    highlighted = message.replace(
-        word, 
-        f'<span style="color: crimson;"><b>{word}</b></span>'
+    highlighted = message.lower().replace(
+        word.lower(), 
+        f'<span style="color: crimson;"><b>{word.lower()}</b></span>'
     )
-    return Markup(highlighted)  # Markup erlaubt HTML im Template
+    return Markup(highlighted)
 
 app.jinja_env.filters['highlight_word'] = highlight_word
 
