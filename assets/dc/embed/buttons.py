@@ -124,6 +124,7 @@ async def verify_button(interaction: discord.Interaction):
         
         elif int(verifylist[str(interaction.guild.id)]["task"]) == 3:
             try:
+                randomcode = generate_random_string(5)
                 code = verifylist[str(interaction.guild.id)]["password"]
                 logger.info(f"Generated verification code: {code}")
                 if str(interaction.guild.id) in verifylist:
@@ -145,16 +146,21 @@ async def verify_button(interaction: discord.Interaction):
                         verify_gid = interaction.guild.id
 
                         class VerifyModal(discord.ui.Modal):
-                            code_entered = discord.ui.TextInput(label=f"{language['verify_task']}",
+                            code_entered = discord.ui.TextInput(label=f"Password",
                                                                 placeholder=f"Enter Password",
                                                                 style=discord.TextStyle.short, required=True,
                                                                 min_length=len(code), max_length=len(code))
+                            
+                            captcha_entered = discord.ui.TextInput(label=f"{language['verify_task']}",
+                                                                placeholder=f"{code}",
+                                                                style=discord.TextStyle.short, required=True,
+                                                                min_length=5, max_length=5)
 
                             # noinspection PyUnresolvedReferences
                             async def on_submit(self, interaction_2: discord.Interaction):
                                 try:
                                     logger.info(f"Received verification code from user: {self.code_entered.value}")
-                                    if str(self.code_entered.value) == str(code):
+                                    if str(self.code_entered.value) == str(code) and str(self.captcha_entered.value) == str(randomcode):
                                         verifylist_2 = load_data("json/verify.json")
                                         role_2 = interaction_2.guild.get_role(
                                             verifylist_2[str(verify_gid)]["role_id"])
