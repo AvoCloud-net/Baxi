@@ -148,7 +148,7 @@ async def verify_button(interaction: discord.Interaction):
                             code_entered = discord.ui.TextInput(label=f"{language['verify_task']}",
                                                                 placeholder=f"Enter Password",
                                                                 style=discord.TextStyle.short, required=True,
-                                                                min_length=5, max_length=5)
+                                                                min_length=len(code), max_length=len(code))
 
                             # noinspection PyUnresolvedReferences
                             async def on_submit(self, interaction_2: discord.Interaction):
