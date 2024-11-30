@@ -164,8 +164,12 @@ async def verify_button(interaction: discord.Interaction):
                                         verifylist_2 = load_data("json/verify.json")
                                         role_2 = interaction_2.guild.get_role(
                                             verifylist_2[str(verify_gid)]["role_id"])
+                                        role_3 = interaction_2.guild.get_role(
+                                            verifylist_2[str(verify_gid)]["role_id2"])
                                         user = await interaction_2.guild.fetch_member(verify_uid)
                                         await user.add_roles(role_2,
+                                                             reason="Baxi Security - Successful verification")
+                                        await user.add_roles(role_3,
                                                              reason="Baxi Security - Successful verification")
                                         await interaction_2.response.send_message(embed=embed_success,
                                                                                   ephemeral=True)
