@@ -152,7 +152,7 @@ async def verify_button(interaction: discord.Interaction):
                                                                 min_length=len(code), max_length=len(code))
                             
                             captcha_entered = discord.ui.TextInput(label=f"{language['verify_task']}",
-                                                                placeholder=f"{code}",
+                                                                placeholder=f"{randomcode}",
                                                                 style=discord.TextStyle.short, required=True,
                                                                 min_length=5, max_length=5)
 
