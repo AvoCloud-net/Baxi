@@ -1,27 +1,10 @@
 
-/.vscode
-codingsupport.md
-favicon.ico
-/json
-/log
-message.py
-/share
-test.py
-twinkle systems-edit.txt
-/.cache
-/.local
-/static/general_imgs
-/static/globalchat_img
-config/auth0.conf
-test.json
-dash.md
-key_gen.py
-*.txt
-
-**/*.idea\workspace.xml
-**/*.xml
-**/*.iml
-**/*.idea\modules.xml
-assets\__pycache__\dash_api.cpython-312.pyc
-assets\__pycache__\get_saves.cpython-312.pyc
-**/*.pyc
+/__pycache__
+/assets/__pycache__
+/assets/message/__pycache__
+/config/__pycache__
+/data
+/general/bin
+/general/lib
+/assets/dash/__pycache__
+config/auth.py

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
+    <meta property="og:title" content="Avocloud.net logs - Chatfilter">
+    <meta property="og:description" content="Information on the entry number {{data.id}} of the user {{data.uname}}.">
+    <meta property="og:url" content="https://baxi.avocloud.net/logs/" <meta peoperty="og:color" content="#DC143C">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+    <title>Chatfilter log view</title>
+</head>
+
+<body>
+    <div class="popup" id="popup" onclick="hideOverlay(event)">
+        <h2 class="title-other"><i class="fa-solid fa-triangle-exclamation"></i> Content warning <i
+                class="fa-solid fa-triangle-exclamation"></i></h2>
+        <p class="alert-message">
+            This site may contain harmful or offensive content that may not be suitable for some people.
+            <br>
+            Would you like to continue despite this warning and view the content of this page?
+        </p>
+        <button onclick="hideOverlay(event)" class="highlight-yellow">Continue</button>
+    </div>
+
+    <div id="gradientbar"></div>
+    <div class="container" id="container">
+
+        <div id="particles-js"></div>
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Baxi
+                    <span class="highlight-purple" onclick="copyToClipboard()">chatfilter log</span> view
+                </h1>
+                <p class="subtitle">
+                    This page contains a clear representation of the log entry with the id <span
+                        class="highlight-yellow">{{data.id}}</span>
+                </p>
+            </div>
+
+        </section>
+
+        <main>
+            <section style="margin-top: 20hv;" id="basic-info">
+                <div class="section-header">
+                    <div class="section-title">
+                        INFORMATION
+                    </div>
+                </div>
+                <div class="project-card">
+                    <div class="project-profile">
+                        <img src="{{data.uicon}}" alt="Profile Picture" class="project-profile-picture">
+                    </div>
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-user"></i> User
+                    </h3>
+                    <p class="project-description">
+                        The name of the user is <span class="highlight-yellow">{{data.uname}}</span> and hat the id <span class="highlight-yellow">{{data.uid}}</span>. <br>
+                        The person's account was created on <span
+                            class="highlight-yellow">{{data.user_created_at}}</span>.
+                    </p>
+                </div>
+                <br>
+                <div class="project-card">
+                    <div class="project-profile">
+                        <img src="{{data.sicon}}" alt="Server Picture" class="project-profile-picture">
+                    </div>
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-people-roof"></i> Guild
+                    </h3>
+                    <p class="project-description">
+                        The name of the guild is <span class="highlight-yellow">{{data.sname}}</span>. <br>
+                        The ID of the named guild is <span class="highlight-yellow">{{data.sid}}</span> <br>
+                    </p>
+                </div>
+                <br>
+                <div class="project-card">
+                    <div class="project-profile">
+                        <img src="../static/images/message.png" alt="Server Picture" class="project-profile-picture"
+                            style="border-radius: 0px;">
+                    </div>
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-message"></i> Message
+                    </h3>
+                    <p class="project-description">
+                        The message was sent on <span class="highlight-yellow">{{data.timestamp}}</span> in the
+                        channel <span class="highlight-yellow">{{data.cname}}</span> with the id <span
+                            class="highlight-yellow">{{data.cid}}</span>. <br>
+                        The word <span class="highlight-yellow">{{data.word}}</span> matches the word <span
+                            class="highlight-yellow">{{data.match}}</span> in our database. <br>
+                        <hr>
+                        <br>
+                        {{data.message | highlight_word(data.word) }}
+                    </p>
+                </div>
+            </section>
+            <footer style="margin-top: 15vh;">Avocloud.net</footer>
+        </main>
+    </div>
+
+
+    <script>
+        function showOverlay() {
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('container').style.display = 'none';
+        }
+
+        function hideOverlay(event) {
+            if (event.target.tagName.toLowerCase() === 'button') {
+                // Füge die Fade-Out-Klasse zum Popup hinzu
+                document.getElementById('popup').classList.add('fade-out');
+
+                // Warte, bis das Popup ausgeblendet ist, und blende den Inhalt ein
+                setTimeout(function () {
+                    document.getElementById('popup').style.display = 'none';
+                    document.getElementById('container').style.display = 'block';
+
+                    // Füge die Fade-In-Klasse für den Inhalt hinzu
+                    document.getElementById('container').classList.add('fade-in');
+
+                    // Entferne die fade-out Klasse, um sie für den nächsten Klick erneut zu verwenden
+                    document.getElementById('popup').classList.remove('fade-out');
+                }, 1000); // 1000ms entsprechen der Dauer der Popup-Animation
+            }
+        }
+
+
+        window.onload = showOverlay;
+    </script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+</body>
+
+</html>

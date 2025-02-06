@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
+  <meta property="og:title" content="Avocloud.net logs - Home">
+  <meta property="og:description" content="This is the start page of the log-accespoint for users.">
+  <meta property="og:url" content="https://baxi.avocloud.net/logs/" <meta peoperty="og:color" content="#DC143C">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+  <title>Baxi Log</title>
+</head>
+
+<body>
+  <div id="gradientbar"></div>
+  <div id="particles-js"></div>
+
+  <div class="container">
+    <section class="hero">
+      <div class="hero-content">
+        <h1>
+          Welcome to the
+          <span class="highlight-purple" onclick="copyToClipboard()">log accespoint</span>
+        </h1>
+        <p class="subtitle">
+          Here you can use IDs to access certain baxi logs, such as chat filter logs.
+        </p>
+      </div>
+      <div class="scroll-indicator">
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </section>
+
+    <main>
+      <section style="margin-top: 15vh" id="staff">
+        <div class="section-header">
+          <div class="section-title">CHATFILTER</div>
+        </div>
+
+        <div class="project-card">
+
+          <h3 class="project-title">
+            <i class="fa-solid fa-comment-slash"></i> Chatfilter
+          </h3>
+          <p class="project-description">
+            Enter your ID of the log entry here to get an exact overview of the entry.
+          </p>
+          <form action="http://0.0.0.0:1637/log/chatfilter" method="get"
+            style="display: flex; flex-direction: column; margin-top: 40px; margin-bottom: 40px; padding: 20px; border-radius: 8px; border: 1px solid #222222;">
+            <input type="text" name="id_chatfilter" id="id_chatfilter"
+              style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: background-color 0.3s ease, border 0.3s ease; color: whitesmoke;">
+            <br>
+            <input type="submit" value="Submit"
+              style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #111111; transition: background-color 0.3s ease, border 0.3s ease; color: whitesmoke; transition: background 0.5s ease, color 0.5s ease;"
+              onmouseover="this.style.background='linear-gradient(90deg, #9333ea, #ec4899)';"
+              onmouseout="this.style.background='#111111'; this.style.color='white';">
+          </form>
+          <div class="tags">
+            <span class="tag">Guild</span>
+            <span class="tag">Chatfilter</span>
+          </div>
+          <div class="project-date">Avocloud.net - Baxi</div>
+        </div>
+      </section>
+
+      <footer style="margin-top: 15vh"></footer>
+    </main>
+  </div>
+</body>
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+
+</html>
