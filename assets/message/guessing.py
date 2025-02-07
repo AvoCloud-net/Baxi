@@ -1,7 +1,7 @@
 import discord
 from assets.data import load_data, save_data, load_lang
 from assets.translate import baxi_translate
-import lang.de as de
+import lang.lang as lang
 import config.config as config
 import random
 
@@ -20,10 +20,10 @@ async def guessing(message: discord.Message):
                 save_data(guild_id, "guessing", guessing_data.to_dict())
                 await message.add_reaction("✅")
                 embed = discord.Embed(
-                    title=await baxi_translate(de.Minigames.Guessing.title, lang),
+                    title=await baxi_translate(lang.Minigames.Guessing.title, lang),
                     description=str(
                         await baxi_translate(
-                            de.Minigames.Guessing.description_correct, lang
+                            lang.Minigames.Guessing.description_correct, lang
                         )
                     ).format(max_value=str(guessing_data.max_value)),
                     color=config.Discord.color,

@@ -5,7 +5,7 @@ import string
 import assets.data as datasys
 import assets.translate as tr
 import discord
-import lang.de as de
+import lang.lang as lang
 from assets.views import (
     Ticket_Creation_Modal,
     Verify_Captcha_Modal,
@@ -29,7 +29,7 @@ class BanConfirmView(ui.View):
         try:
             await self.user.ban(
                 reason=await tr.baxi_translate(
-                    de.Utility.Ban.audit_reason.format(
+                    lang.Utility.Ban.audit_reason.format(
                         moderator=self.user.name, reason=self.reason
                     ),
                     lang,
@@ -37,22 +37,22 @@ class BanConfirmView(ui.View):
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Utility.Ban.title, lang),
-                description=f"{await tr.baxi_translate(de.Utility.Ban.success, lang)}",
+                title=await tr.baxi_translate(lang.Utility.Ban.title, lang),
+                description=f"{await tr.baxi_translate(lang.Utility.Ban.success, lang)}",
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.user, lang),
+                name=await tr.baxi_translate(lang.Utility.user, lang),
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.mod, lang),
+                name=await tr.baxi_translate(lang.Utility.mod, lang),
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.reason, lang),
+                name=await tr.baxi_translate(lang.Utility.reason, lang),
                 value=self.reason,
                 inline=False,
             )
@@ -64,13 +64,13 @@ class BanConfirmView(ui.View):
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(de.Utility.Ban.bot_missing_perms, lang),
+                await tr.baxi_translate(lang.Utility.Ban.bot_missing_perms, lang),
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
                 await tr.baxi_translate(
-                    de.Utility.Ban.error.format(error=str(e)), lang
+                    lang.Utility.Ban.error.format(error=str(e)), lang
                 ),
                 ephemeral=True,
             )
@@ -79,8 +79,8 @@ class BanConfirmView(ui.View):
     async def cancel_ban(self, interaction: Interaction, button: ui.Button):
         lang = datasys.load_lang(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(de.Utility.Ban.title, lang),
-            description=await tr.baxi_translate(de.Utility.Ban.abort, lang),
+            title=await tr.baxi_translate(lang.Utility.Ban.title, lang),
+            description=await tr.baxi_translate(lang.Utility.Ban.abort, lang),
             color=discord.Color.yellow(),
         )
 
@@ -105,7 +105,7 @@ class KickConfirmView(ui.View):
         try:
             await self.user.kick(
                 reason=await tr.baxi_translate(
-                    de.Utility.Kick.audit_reason.format(
+                    lang.Utility.Kick.audit_reason.format(
                         moderator=self.user.name, reason=self.reason
                     ),
                     lang,
@@ -113,22 +113,22 @@ class KickConfirmView(ui.View):
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Utility.Kick.title, lang),
-                description=f"{await tr.baxi_translate(de.Utility.Kick.success, lang)}",
+                title=await tr.baxi_translate(lang.Utility.Kick.title, lang),
+                description=f"{await tr.baxi_translate(lang.Utility.Kick.success, lang)}",
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.user, lang),
+                name=await tr.baxi_translate(lang.Utility.user, lang),
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.mod, lang),
+                name=await tr.baxi_translate(lang.Utility.mod, lang),
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.reason, lang),
+                name=await tr.baxi_translate(lang.Utility.reason, lang),
                 value=self.reason,
                 inline=False,
             )
@@ -140,13 +140,13 @@ class KickConfirmView(ui.View):
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(de.Utility.Kick.bot_missing_perms, lang),
+                await tr.baxi_translate(lang.Utility.Kick.bot_missing_perms, lang),
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
                 await tr.baxi_translate(
-                    de.Utility.Kick.error.format(error=str(e)), lang
+                    lang.Utility.Kick.error.format(error=str(e)), lang
                 ),
                 ephemeral=True,
             )
@@ -157,8 +157,8 @@ class KickConfirmView(ui.View):
     async def cancel_kick(self, interaction: Interaction, button: ui.Button):
         lang = datasys.load_lang(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(de.Utility.Kick.title, lang),
-            description=await tr.baxi_translate(de.Utility.Kick.abort, lang),
+            title=await tr.baxi_translate(lang.Utility.Kick.title, lang),
+            description=await tr.baxi_translate(lang.Utility.Kick.abort, lang),
             color=discord.Color.yellow(),
         )
 
@@ -182,27 +182,27 @@ class UbanConfirmView(ui.View):
         try:
             await self.user.unban(
                 reason=await tr.baxi_translate(
-                    de.Utility.Unban.audit_reason.format(moderator=self.user.name), lang
+                    lang.Utility.Unban.audit_reason.format(moderator=self.user.name), lang
                 )
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Utility.Unban.title, lang),
-                description=f"{await tr.baxi_translate(de.Utility.Unban.success, lang)}",
+                title=await tr.baxi_translate(lang.Utility.Unban.title, lang),
+                description=f"{await tr.baxi_translate(lang.Utility.Unban.success, lang)}",
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.user, lang),
+                name=await tr.baxi_translate(lang.Utility.user, lang),
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.mod, lang),
+                name=await tr.baxi_translate(lang.Utility.mod, lang),
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.reason, lang),
+                name=await tr.baxi_translate(lang.Utility.reason, lang),
                 value=self.reason,
                 inline=False,
             )
@@ -214,13 +214,13 @@ class UbanConfirmView(ui.View):
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(de.Utility.Unban.bot_missing_perms, lang),
+                await tr.baxi_translate(lang.Utility.Unban.bot_missing_perms, lang),
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
                 await tr.baxi_translate(
-                    de.Utility.Unban.error.format(error=str(e)), lang
+                    lang.Utility.Unban.error.format(error=str(e)), lang
                 ),
                 ephemeral=True,
             )
@@ -231,8 +231,8 @@ class UbanConfirmView(ui.View):
     async def cancel_unban(self, interaction: Interaction, button: ui.Button):
         lang = datasys.load_lang(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(de.Utility.Unban.title, lang),
-            description=await tr.baxi_translate(de.Utility.Unban.abort, lang),
+            title=await tr.baxi_translate(lang.Utility.Unban.title, lang),
+            description=await tr.baxi_translate(lang.Utility.Unban.abort, lang),
             color=discord.Color.yellow(),
         )
 
@@ -260,22 +260,22 @@ class ClearConfirmView(ui.View):
             await self.channel.purge(limit=self.amount + 1)
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Utility.Clear.title, lang),
-                description=f"{await tr.baxi_translate(de.Utility.Clear.success, lang)}",
+                title=await tr.baxi_translate(lang.Utility.Clear.title, lang),
+                description=f"{await tr.baxi_translate(lang.Utility.Clear.success, lang)}",
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.mod, lang),
+                name=await tr.baxi_translate(lang.Utility.mod, lang),
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.amount, lang),
+                name=await tr.baxi_translate(lang.Utility.amount, lang),
                 value=self.amount,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(de.Utility.channel, lang),
+                name=await tr.baxi_translate(lang.Utility.channel, lang),
                 value=self.channel.name,
                 inline=False,
             )
@@ -287,13 +287,13 @@ class ClearConfirmView(ui.View):
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(de.Utility.Clear.bot_missing_perms, lang),
+                await tr.baxi_translate(lang.Utility.Clear.bot_missing_perms, lang),
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
                 await tr.baxi_translate(
-                    de.Utility.Clear.error.format(error=str(e)), lang
+                    lang.Utility.Clear.error.format(error=str(e)), lang
                 ),
                 ephemeral=True,
             )
@@ -304,8 +304,8 @@ class ClearConfirmView(ui.View):
     async def cancel_clear(self, interaction: Interaction, button: ui.Button):
         lang = datasys.load_lang(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(de.Utility.Clear.title, lang),
-            description=await tr.baxi_translate(de.Utility.Clear.abort, lang),
+            title=await tr.baxi_translate(lang.Utility.Clear.title, lang),
+            description=await tr.baxi_translate(lang.Utility.Clear.abort, lang),
             color=discord.Color.yellow(),
         )
 
@@ -330,9 +330,9 @@ class VerifyView(ui.View):
             option: int = verify_data.verify_option
 
             embed_success = discord.Embed(
-                title=await tr.baxi_translate(de.Verify.title, lang),
+                title=await tr.baxi_translate(lang.Verify.title, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.description_success, lang
+                    lang.Verify.description_success, lang
                 ),
                 color=discord.Color.green(),
             )
@@ -364,9 +364,9 @@ class VerifyView(ui.View):
                 )
         else:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Verify.title, lang),
+                title=await tr.baxi_translate(lang.Verify.title, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.description_not_enabeld, lang
+                    lang.Verify.description_not_enabeld, lang
                 ),
                 color=discord.Color.red(),
             )
@@ -393,10 +393,10 @@ class TicketView(ui.View):
                 if tickets[ticket]["user"] == interaction.user.id:
                     channel = await interaction.guild.fetch_channel(int(ticket))
                     embed = discord.Embed(
-                        title=await tr.baxi_translate(de.Ticket.title, lang),
+                        title=await tr.baxi_translate(lang.Ticket.title, lang),
                         description=str(
                             await tr.baxi_translate(
-                                de.Ticket.description_already_open, lang
+                                lang.Ticket.description_already_open, lang
                             )
                         ).format(channel=channel.mention),
                         color=discord.Color.red(),
@@ -437,9 +437,9 @@ class TicketAdminButtons(ui.View):
                     return
                 else:
                     embed = discord.Embed(
-                        title=await tr.baxi_translate(de.Ticket.title, lang),
+                        title=await tr.baxi_translate(lang.Ticket.title, lang),
                         description=await tr.baxi_translate(
-                            de.Ticket.description_no_permission_delete, lang
+                            lang.Ticket.description_no_permission_delete, lang
                         ),
                         color=discord.Color.red(),
                     )
@@ -463,18 +463,18 @@ class TicketAdminButtons(ui.View):
                         interaction.guild.id, sys="open_tickets", data=tickets
                     )
                     embed = discord.Embed(
-                        title=await tr.baxi_translate(de.Ticket.title, lang),
+                        title=await tr.baxi_translate(lang.Ticket.title, lang),
                         description=str(
-                            await tr.baxi_translate(de.Ticket.description_claimed, lang)
+                            await tr.baxi_translate(lang.Ticket.description_claimed, lang)
                         ).format(user=interaction.user.mention),
                         color=discord.Color.green(),
                     )
                     await interaction.response.send_message(embed=embed)
                 else:
                     embed = discord.Embed(
-                        title=await tr.baxi_translate(de.Ticket.title, lang),
+                        title=await tr.baxi_translate(lang.Ticket.title, lang),
                         description=await tr.baxi_translate(
-                            de.Ticket.description_no_permission_claim, lang
+                            lang.Ticket.description_no_permission_claim, lang
                         ),
                         color=discord.Color.red(),
                     )

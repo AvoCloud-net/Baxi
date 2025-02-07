@@ -2,7 +2,7 @@ import assets.data as datasys
 import assets.translate as tr
 import config.config as config
 import discord
-import lang.de as de
+import lang.lang as lang
 
 from discord import Interaction, ui
 from discord.ext import commands
@@ -27,9 +27,9 @@ class Verify_Captcha_Modal(ui.Modal):
         lang = datasys.load_lang(self.guild.id)
         if self.code_input.value == self.captcha:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Verify, lang),
+                title=await tr.baxi_translate(lang.Verify, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.description_success, lang
+                    lang.Verify.description_success, lang
                 ),
                 color=discord.Color.green(),
             )
@@ -40,9 +40,9 @@ class Verify_Captcha_Modal(ui.Modal):
             return
         else:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Verify, lang),
+                title=await tr.baxi_translate(lang.Verify, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.Captcha.description_wrong_code, lang
+                    lang.Verify.Captcha.description_wrong_code, lang
                 ),
                 color=discord.Color.red(),
             )
@@ -71,9 +71,9 @@ class Verify_Password_Modal(ui.Modal):
         lang = datasys.load_lang(self.guild.id)
         if self.code_input.value == self.captcha:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Verify, lang),
+                title=await tr.baxi_translate(lang.Verify, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.description_success, lang
+                    lang.Verify.description_success, lang
                 ),
                 color=discord.Color.green(),
             )
@@ -84,9 +84,9 @@ class Verify_Password_Modal(ui.Modal):
             return
         else:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Verify, lang),
+                title=await tr.baxi_translate(lang.Verify, lang),
                 description=await tr.baxi_translate(
-                    de.Verify.Password.description_wrong_password, lang
+                    lang.Verify.Password.description_wrong_password, lang
                 ),
                 color=discord.Color.red(),
             )
@@ -130,10 +130,10 @@ class Ticket_Creation_Modal(ui.Modal):
                 role: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, attach_files=True, manage_messages=True)
             }
 
-            channel: discord.TextChannel = await self.guild.create_text_channel(name=str(await tr.baxi_translate(de.Ticket.channel_name, lang)).format(user=self.user.name),
+            channel: discord.TextChannel = await self.guild.create_text_channel(name=str(await tr.baxi_translate(lang.Ticket.channel_name, lang)).format(user=self.user.name),
                                                                                 category=category,
                                                                                 overwrites=perms_overwrites)
-            embed = discord.Embed(title = await tr.baxi_translate(de.Ticket.title, lang), description = str(await tr.baxi_translate(de.Ticket.description_creation_successfull, lang)).format(channel = channel.mention) , color=config.Discord.color)
+            embed = discord.Embed(title = await tr.baxi_translate(lang.Ticket.title, lang), description = str(await tr.baxi_translate(lang.Ticket.description_creation_successfull, lang)).format(channel = channel.mention) , color=config.Discord.color)
             await interaction.followup.send(embed=embed, ephemeral=True)
             embed = discord.Embed(title=self.ticket_name.value, description=self.ticket_description.value, color=config.Discord.color)
             await channel.send(embed=embed, view=TicketAdminButtons())

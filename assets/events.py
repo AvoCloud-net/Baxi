@@ -11,7 +11,7 @@ import assets.translate as tr
 import config.auth as auth
 import config.config as config
 import discord
-import lang.de as de
+import lang.lang as lang
 import requests
 import wavelink
 from assets.ai import *
@@ -41,7 +41,8 @@ def events(bot: commands.AutoShardedBot):
             load_globalchat_message_data
         )
         globalchat_message_data.update(globalchat_message_data_file)
-        logger.debug.info(f"Loaded GCMD!: {globalchat_message_data}")
+        #logger.debug.info(f"Loaded GCMD!: {globalchat_message_data}")
+        logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
 
         try:
             if not hasattr(bot, "synced"):
@@ -105,7 +106,7 @@ def events(bot: commands.AutoShardedBot):
             json_file_path = os.path.join(guild_data_dir, "conf.json")
             with open(json_file_path, "w", encoding="utf-8") as json_file:
                 json.dump(config.datasys.default_data, json_file, indent=4)
-            data_text = de.Events.on_guild_join.saved_data.new_data
+            data_text = lang.Events.on_guild_join.saved_data.new_data
             channel = await guild.create_text_channel(
                 name="baxi-updates",
                 reason="Baxi info channel setup.",
@@ -115,15 +116,15 @@ def events(bot: commands.AutoShardedBot):
             datasys.save_data(1001, "updates", updates_channel.to_dict())
         else:
             logger.info("Already joined a known guild. Existing data is loaded...")
-            data_text = de.Events.on_guild_join.saved_data.existing_data
+            data_text = lang.Events.on_guild_join.saved_data.existing_data
             updates_channel = datasys.load_data(1001, "updates")
             channel = guild.get_channel(updates_channel[str(guild.id)]["cid"])
 
         lang = datasys.load_data(guild.id, "lang")
         embed = discord.Embed(
-            title=await tr.baxi_translate(de.Events.on_guild_join.title, lang),
+            title=await tr.baxi_translate(lang.Events.on_guild_join.title, lang),
             description=await tr.baxi_translate(
-                de.Events.on_guild_join.content, lang
+                lang.Events.on_guild_join.content, lang
             ).format(saved_data=await tr.baxi_translate(data_text, lang)),
         )
         await channel.send(embed=embed)
@@ -206,15 +207,15 @@ async def del_chatfilter(message: discord.Message, word: str, match: str):
     await message.delete()
     embed = (
         discord.Embed(
-            title=de.Chatfilter.title,
-            description=de.Chatfilter.Description.text.format(
+            title=lang.Chatfilter.title,
+            description=lang.Chatfilter.Description.text.format(
                 user=message.author.mention,
                 id=id,
                 link=f"https://security.avocloud.net/chatfilterinfo?requestid={id}",
             ),
             color=config.Discord.danger_color,
         )
-        .set_footer(text=de.Chatfilter.footer)
+        .set_footer(text=lang.Chatfilter.footer)
         .set_thumbnail(url=config.Icons.danger)
     )
     formatted_time:str = message.created_at.strftime("%d.%m.%Y - %H:%M")

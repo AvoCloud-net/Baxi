@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import assets.data as datasys
-import lang.de as de
+import lang.lang as lang
 import assets.translate as tr
 import config.config as config
 
@@ -26,11 +26,11 @@ async def counting(message: discord.Message):
                     await message.add_reaction("❌")
                     embed = discord.Embed(
                         title=await tr.baxi_translate(
-                            de.Minigames.Counting.title, lang
+                            lang.Minigames.Counting.title, lang
                         ),
                         description=str(
                             await tr.baxi_translate(
-                                de.Minigames.Counting.description_wrong_number, lang
+                                lang.Minigames.Counting.description_wrong_number, lang
                             )
                         ).format(user=message.author.mention),
                         color=config.Discord.color,
@@ -42,10 +42,10 @@ async def counting(message: discord.Message):
                     return True
             else:
                 embed = discord.Embed(
-                    title=await tr.baxi_translate(de.Minigames.Counting.title, lang),
+                    title=await tr.baxi_translate(lang.Minigames.Counting.title, lang),
                     description=str(
                         await tr.baxi_translate(
-                            de.Minigames.Counting.description_same_user, lang
+                            lang.Minigames.Counting.description_same_user, lang
                         )
                     ).format(user=message.author.mention),
                     color=config.Discord.color,

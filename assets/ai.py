@@ -8,7 +8,7 @@ import config.auth as auth
 import config.config as config
 import discord
 import discord.ext
-import lang.de as de
+import lang.lang as lang
 import requests
 from bs4 import BeautifulSoup
 from discord.ext import commands
@@ -71,9 +71,9 @@ async def conversation_start_response(
 
         if conversation_id in ai_conversations:
             embed = discord.Embed(
-                title=await tr.baxi_translate(de.Ai.title, lang),
+                title=await tr.baxi_translate(lang.Ai.title, lang),
                 description=await tr.baxi_translate(
-                    f"{de.Ai.Waiting.content}\n-# {message.content}", lang
+                    f"{lang.Ai.Waiting.content}\n-# {message.content}", lang
                 ),
                 color=config.Discord.color,
             )
@@ -107,7 +107,7 @@ async def conversation_start_response(
 
             answer = response.json()["choices"][0]["message"]["content"]
             embed_new = discord.Embed(
-                title=await tr.baxi_translate(de.Ai.title, lang),
+                title=await tr.baxi_translate(lang.Ai.title, lang),
                 description=f"-# {message.content}\n\n{answer}",
                 color=config.Discord.color,
             )
@@ -138,9 +138,9 @@ async def conversation_answer_response(
 
                 if conversation_id in ai_conversations or conversation_id is None:
                     embed = discord.Embed(
-                        title=await tr.baxi_translate(de.Ai.title, lang),
+                        title=await tr.baxi_translate(lang.Ai.title, lang),
                         description=await tr.baxi_translate(
-                            f"{de.Ai.Waiting.content}\n-# {message.content}",
+                            f"{lang.Ai.Waiting.content}\n-# {message.content}",
                             lang,
                         ),
                         color=config.Discord.color,
@@ -177,7 +177,7 @@ async def conversation_answer_response(
 
                     answer = response.json()["choices"][0]["message"]["content"]
                     embed_new = discord.Embed(
-                        title=await tr.baxi_translate(de.Ai.title, lang),
+                        title=await tr.baxi_translate(lang.Ai.title, lang),
                         description=f"-# {message.content}\n\n{answer}",
                         color=config.Discord.color,
                     )
@@ -190,7 +190,7 @@ async def conversation_answer_response(
                     )
                 else:
                     await message.reply(
-                        content=await tr.baxi_translate(de.Ai.Error.id_not_found, lang)
+                        content=await tr.baxi_translate(lang.Ai.Error.id_not_found, lang)
                     )
                 return True
 
@@ -200,7 +200,7 @@ async def conversation_answer_response(
             ):
                 await message.reply(
                     content=await tr.baxi_translate(
-                        de.Ai.Error.model_unable_to_chat, lang
+                        lang.Ai.Error.model_unable_to_chat, lang
                     )
                 )
                 return True

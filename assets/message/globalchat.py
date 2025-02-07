@@ -4,7 +4,7 @@ import assets.data as datasys
 import assets.translate as tr
 import config.config as config
 import discord, asyncio
-import lang.de as de
+import lang.lang as lang
 from assets.share import globalchat_message_data
 from discord import (
     CategoryChannel,
@@ -32,7 +32,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         gcmid: str = os.urandom(8).hex()
         if str(message.author.id) in gc_ban or str(message.author.id) in ba_ban:
             await message.reply(
-                content=await tr.baxi_translate(de.Globalchat.Error.baned, lang),
+                content=await tr.baxi_translate(lang.Globalchat.Error.baned, lang),
                 delete_after=10,
             )
             await message.delete(delay=10)
@@ -41,7 +41,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         if len(message.content) > 1000:
             await message.reply(
                 content=await tr.baxi_translate(
-                    de.Globalchat.Error.message_to_long, lang
+                    lang.Globalchat.Error.message_to_long, lang
                 ),
                 delete_after=5,
             )
@@ -79,14 +79,14 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                 embed.set_image(url=f"{config.Globalchat.attachments_url}{gcmid}.png")
             else:
                 await message.reply(
-                    content=f"{message.author.mention}\n{await tr.baxi_translate(de.Globalchat.Error.file_not_image)}",
+                    content=f"{message.author.mention}\n{await tr.baxi_translate(lang.Globalchat.Error.file_not_image)}",
                     delete_after=5,
                 )
                 await message.delete(delay=5)
                 return
         elif len(message.attachments) > 1:
             await message.reply(
-                content=f"{message.author.mention}\n{await tr.baxi_translate(de.Globalchat.Error.to_many_files)}",
+                content=f"{message.author.mention}\n{await tr.baxi_translate(lang.Globalchat.Error.to_many_files)}",
                 delete_after=5,
             )
             await message.delete(delay=5)

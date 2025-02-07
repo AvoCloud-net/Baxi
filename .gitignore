@@ -8,3 +8,4 @@
 /general/lib
 /assets/dash/__pycache__
 config/auth.py
+/lang/__pycache__
