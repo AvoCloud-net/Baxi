@@ -61,7 +61,8 @@ def load_data(sid: int, sys: str):
         data = load_json(file_path)
         return data
     elif sys == "open_tickets":
-        data = load_json(f"data/{sid}/tickets.json")
+        data = load_json(f"data/{sid}/conf.json")
+        req_data = data["ticket"]["open_tickets"]
         return data
     else:
         data = load_json(f"data/{sid}/conf.json")

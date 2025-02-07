@@ -39,15 +39,51 @@ class Globalchat:
 
 class datasys:
     default_data = {
-        "lang": "en",
-        "chatfilter": {
-            "enabled": False,
-            "c_badwords": [],
-            "c_goodwords": [],
-            "bypass_channel": [],
-        },
-        "counting": {"enabled": False, "cid": None, "number": None},
-        "guessing": {"enabled": False, "cid": None, "number": None},
-        "suggestion": {"enabled": False, "cids": []},
-        "antiraid": {"enabled": False, "bypass_user": []},
+    "lang": "en",
+    "chatfilter": {
+        "enabled": False,
+        "c_goodwords": [],
+        "c_badwords": [],
+        "bypass": []
+    },
+    "counting": {
+        "sid": None,
+        "cid": None,
+        "enabled": False,
+        "number": None,
+        "c_goodwords": None,
+        "c_badwords": None,
+        "bypass": None,
+        "globalchat": None,
+        "last_user": None
+    },
+    "guessing": {
+        "sid": None,
+        "cid": None,
+        "enabled": False,
+        "number": None,
+        "c_goodwords": None,
+        "c_badwords": None,
+        "bypass": None,
+        "globalchat": None,
+        "last_user": None,
+        "min_value": None,
+        "max_value": None
+    },
+    "ticket": {
+        "sid": None,
+        "cid": None,
+        "catid": None,
+        "rid": None,
+        "enabled": False,
+        "number": None,
+        "c_goodwords": None,
+        "c_badwords": None,
+        "bypass": None,
+        "globalchat": None,
+        "last_user": None,
+        "min_value": None,
+        "max_value": None,
+        "open_tickets": {}
     }
+}

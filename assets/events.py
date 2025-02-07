@@ -44,6 +44,20 @@ def events(bot: commands.AutoShardedBot):
         #logger.debug.info(f"Loaded GCMD!: {globalchat_message_data}")
         logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
 
+        guild_ids = [guild.id for guild in bot.guilds]
+
+        for guild_id in guild_ids:
+            guild_folder = os.path.join('data', str(guild_id))
+            if not os.path.exists(guild_folder):
+                os.makedirs(guild_folder)
+                config_path = os.path.join(guild_folder, 'conf.json')
+
+                with open(config_path, 'w') as config_file:
+                    json.dump(config.datasys.default_data, config_file, indent=4)
+                print(f'Ordner und conf.json für Guild {guild_id} erstellt.')
+            else:
+                print(f'Ordner für Guild {guild_id} existiert bereits.')
+
         try:
             if not hasattr(bot, "synced"):
                 bot.synced = True
