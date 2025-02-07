@@ -12,7 +12,7 @@ def translate(language, text_obj):
                 return getattr(en_obj, attr_name)
     return text_obj
 
-async def baxi_translate(language, text_obj):
+async def baxi_translate(text_obj, language: str):
     async def task():
         if language == "en":
             return translate(language, text_obj)
