@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="../static/main.css">
+
+    <meta property="og:title" content="Avocloud.net - Baxi">
+    <meta property="og:description" content="This is the home page of the Baxi dashboard.">
+    <meta property="og:url" content="https://baxi.avocloud.net/logs/">
+    <meta peoperty="og:color" content="#DC143C">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+    <title>Baxi dashboard</title>
+    <style>
+        #guild-login-submit {
+            border: 1px solid #222222;
+            margin: 5px;
+            padding: 5px;
+            border-radius: 8px;
+            background-color: #111111;
+            color: whitesmoke;
+            transition: all 0.3s ease;
+        }
+
+        #guild-login-submit:hover {
+            background: linear-gradient(90deg, #ec4899 0%, #9333ea 100%);
+        }
+
+        #chatfilter-log-submit {
+            border: 1px solid #222222;
+            margin: 5px;
+            padding: 5px;
+            border-radius: 8px;
+            background-color: #111111;
+            color: whitesmoke;
+            transition: all 0.3s ease;
+        }
+
+        #chatfilter-log-submit:hover {
+            background: linear-gradient(90deg, #ec4899 0%, #9333ea 100%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+    <div id="particles-js"></div>
+    <div id="button_group">
+        <button onclick="location.href = '/logout/'" class="group_button">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Log-out
+        </button>
+    </div>
+    <div class="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>
+                    {{greeting}}
+                </h1>
+                <p class="subtitle">
+                    Baxi dashboard<br><span class="highlight-purple" onclick="copyToClipboard()">!!!THIS IS A BETA VERSION!!!</span>
+                </p>
+            </div>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <main>
+            <section style="margin-top: 15vh" id="staff">
+                <div class="section-header">
+                    <div class="section-title">LOG IN</div>
+                </div>
+
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Guild log in
+                    </h3>
+                    <p class="project-description">
+                        Select the server below for which you want to make changes to the settings.
+                    </p>
+                    <form action="/" method="get" class="login-form"
+                        style="display: flex; flex-direction: column; margin-top: 40px; margin-bottom: 40px; padding: 20px; border-radius: 8px; border: 1px solid #222222;">
+                        <select name="guild_login" id="guild_login"
+                            style="border: 1px solid #222222; margin: 5px; padding: 10px 20px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                            required>
+                            <option value="">-- Please select --</option>
+                            {% for id, name in managed_guilds.items() %}
+                            <option value="{{ id }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                        <br>
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Log-in</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+                    <div class="tags">
+                        <span class="tag">Guild</span>
+                        <span class="tag">Config</span>
+                        <span class="tag">Management</span>
+                    </div>
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
+            <section style="margin-top: 15vh" id="staff">
+                <div class="section-header">
+                    <div class="section-title">LOGS</div>
+                </div>
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-comment-slash"></i> Chatfilter
+                    </h3>
+                    <p class="project-description">
+                        Enter your ID of the log entry here to get an exact overview of the entry.
+                    </p>
+                    <form action="/" method="get" class="login-form"
+                        style="display: flex; flex-direction: column; margin-top: 40px; margin-bottom: 40px; padding: 20px; border-radius: 8px; border: 1px solid #222222;">
+                        <input type="text" name="id_chatfilter" id="id_chatfilter"
+                            style="border: 1px solid #222222; margin: 5px; padding: 10px 20px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                            required>
+                        <br>
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">View</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+                    <div class="tags">
+                        <span class="tag">Guild</span>
+                        <span class="tag">Chatfilter</span>
+                    </div>
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
+
+            <footer style="margin-top: 15vh"></footer>
+        </main>
+
+    </div>
+</body>
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+<script>
+    document.querySelectorAll('.login-form').forEach(form => {
+        form.addEventListener('submit', function () {
+            const button = form.querySelector('.submit-btn');
+            const spinner = button.querySelector('.spinner');
+            const text = button.querySelector('.btn-text');
+
+            // Button deaktivieren & Spinner anzeigen
+            button.disabled = true;
+            spinner.classList.remove('hidden');
+            text.textContent = "Loading...";
+        });
+    });
+</script>
+
+</html>

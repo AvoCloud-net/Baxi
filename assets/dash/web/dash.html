@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="../static/main.css">
+
+    <meta property="og:title" content="Baxi dashboard - {{data.name}}">
+    <meta property="og:description" content="5 minute administrative access for the discord guild {{data.name}}.">
+    <meta property="og:url" content="https://baxi.avocloud.net/">
+    <meta peoperty="og:color" content="#DC143C">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+    <title>Baxi dashboard - {{data.name}}</title>
+    <style>
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        form label {
+            font-weight: 500;
+            color: #ddd;
+            margin-bottom: 0.3rem;
+        }
+
+        form input[type="checkbox"],
+        form input[type="radio"] {
+            margin-right: 8px;
+            accent-color: #9333ea;
+            transform: scale(1.2);
+        }
+
+        form input[type="radio"]+label,
+        form input[type="checkbox"]+label {
+            margin-right: 15px;
+        }
+
+        form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #111;
+            color: whitesmoke;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.95rem;
+            transition: border 0.3s;
+        }
+
+        form textarea:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            position: relative;
+            padding-left: 28px;
+            cursor: pointer;
+            color: #ddd;
+            font-size: 1rem;
+            max-width: 250px;
+            flex-direction: row;
+        }
+
+        .radio-option .radio-title {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .radio-option .radio-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.2;
+        }
+
+        .radio-option input[type="radio"] {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 4px;
+        }
+
+        .radio-option .custom-radio {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            height: 18px;
+            width: 18px;
+            background-color: #111;
+            border: 2px solid #9333ea;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .radio-option input[type="radio"]:checked+.custom-radio {
+            background-color: #9333ea;
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.4);
+        }
+
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #111;
+            min-height: 48px;
+            gap: 6px;
+            cursor: text;
+        }
+
+        .tag-input input {
+            background: none;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 0.95rem;
+            min-width: 100px;
+            flex: 1;
+        }
+
+        .tag-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 5px;
+            border-radius: 8px;
+            min-height: 44px;
+        }
+
+        .tag {
+            background-color: #9333ea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .tag .remove-tag {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+    <div id="particles-js"></div>
+    <div id="button_group">
+        <button onclick="location.href = '/'" class="group_button">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+        <button onclick="location.href = '/logout/'" class="group_button">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Log-out
+        </button>
+    </div>
+
+    <div class="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>
+                    {{greeting}}
+                </h1>
+                <p class="subtitle">
+                    Baxi dashboard - {{ guild.name }}
+                </p>
+            </div>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <main>
+            <section style="margin-top: 15vh" id="general">
+                <div class="section-header">
+                    <div class="section-title">GENERAL</div>
+                </div>
+
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-gear"></i> General config
+                    </h3>
+                    <p class="project-description">
+                        Manage general settings of your server.
+                    </p>
+                    <form id="general-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="general-lang">
+                                Language:
+                            </label>
+                            <select id="general-lang" name="general-lang"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
+                                <option value="en" selected>Englisch</option>
+                                <option value="de">Deutsch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="general-nick">
+                                Bot Name:
+                            </label>
+                            <input type="text" id="general-nick" placeholder="Type a name for the bot." max="10"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Save</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
+
+            <section style="margin-top: 15vh" id="chatfilter">
+                <div class="section-header">
+                    <div class="section-title">CHATFILTER</div>
+                </div>
+
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-comment-slash"></i> Chatfilter config
+                    </h3>
+                    <p class="project-description">
+                        Manage the chat filter for your server.
+                    </p>
+                    <form id="chatfilter-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="chatfilter-enabled">
+                                <input type="checkbox" id="chatfilter-enabled" name="chatfilter-enabled" value="true">
+                                Enable chatfilter
+                            </label>
+                            <input type="hidden" name="chatfilter-enabled" value="false">
+                        </div>
+
+                        <div class="form-group">
+                            <p style="margin-bottom: 0.5rem; font-weight: 500;">Choose system::</p>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
+                                        value="SafeText">
+                                    <span class="custom-radio"></span>
+                                    <div>
+                                        <span class="radio-title">Safetext</span><br>
+                                        <span class="radio-description">An open source tool from avocloud.net that
+                                            quickly checks individual words for problematic content. Ideal for high
+                                            speed, but prone to false positives.</span>
+                                    </div>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="chatfilter-system" id="chatfilter-system-ai" value="AI">
+                                    <span class="custom-radio"></span>
+                                    <div>
+                                        <span class="radio-title">AI</span><br>
+                                        <span class="radio-description">A locally hosted LLM that analyses entire
+                                            messages based on context. Slightly slower, but much more precise and
+                                            reliable in terms of recognition.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+
+
+                        <div class="form-group">
+                            <label for="c_goodwords_input">Custom good-words:</label>
+                            <input type="text" id="c_goodwords_input" placeholder="Type a word and press Enter"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
+                            <div id="c_goodwords_container" class="tag-input-container"></div>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="c_badwords_input">Custom bad-words:</label>
+                            <input type="text" id="c_badwords_input" placeholder="Type a word and press Enter"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
+                            <div id="c_badwords_container" class="tag-input-container"></div>
+                        </div>
+
+
+
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Save</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+
+                    <div class="project-date">Avocloud.net - Baxi - Security</div>
+                </div>
+            </section>
+
+            <section style="margin-top: 15vh" id="globalchat">
+                <div class="section-header">
+                    <div class="section-title">GLOBAL CHAT</div>
+                </div>
+
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-gear"></i> Global chat config
+                    </h3>
+                    <p class="project-description">
+                        Manage the global chat connected to your server.
+                    </p>
+                    <form id="globalchat-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="globalchat-enabled">
+                                <input type="checkbox" id="globalchat-enabled" name="globalchat-enabled" value="true">
+                                Enable globalchat
+                            </label>
+                            <input type="hidden" name="globalchat-enabled" value="false">
+                        </div>
+                        <div class="form-group">
+                            <label for="globalchat-channel">Channel:</label>
+                            <select name="globalchat-channel" id="globalchat-channel"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                                required>
+                                <option value="">-- Please select --</option>
+                                {% for id, name in channels.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Save</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
+
+            <section style="margin-top: 15vh" id="ticket">
+                <div class="section-header">
+                    <div class="section-title">SUPPORT TICKET</div>
+                </div>
+
+                <div class="project-card">
+
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-gear"></i> Ticket config
+                    </h3>
+                    <p class="project-description">
+                        Manage the ticket system on your server.
+                    </p>
+                    <form id="ticket-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="ticket-enabled">
+                                <input type="checkbox" id="ticket-enabled" name="ticket-enabled" value="true">
+                                Enable ticket
+                            </label>
+                            <input type="hidden" name="ticket-enabled" value="false">
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-channel">Channel:</label>
+                            <select name="ticket-channel" id="ticket-channel"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                                required>
+                                <option value="">-- Please select --</option>
+                                {% for id, name in channels.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-role">Staff role:</label>
+                            <select name="ticket-role" id="ticket-role"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                                required>
+                                <option value="">-- Please select --</option>
+                                {% for id, name in roles.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-cat">Category:</label>
+                            <select name="ticket-cat" id="ticket-cat"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                                required>
+                                <option value="">-- Please select --</option>
+                                {% for id, name in categorys.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-transcript-channel">Transcript channel:</label>
+                            <select name="ticket-transcript-channel" id="ticket-transcript-channel"
+                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
+                                required>
+                                <option value="">-- Please select --</option>
+                                {% for id, name in channels.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-color">
+                                Embed color:
+                            </label>
+                            <input type="text" id="ticket-color" placeholder="#rrggbb" pattern="#[0-9a-fA-F]{6}"
+                                maxlength="7"
+                                style="border: 1px solid #222222; margin: 5px; padding: 8px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
+                        </div>
+                        <div class="form-group">
+                            <label for="ticket-message">
+                                Embed message:
+                            </label>
+                            <textarea type="text" id="ticket-message" placeholder="Your custom message."
+                                maxlength="4096"
+                                style="border: 1px solid #222222; margin: 5px; padding: 8px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
+                            </textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">Save</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </form>
+
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
+
+            <br>
+            <br>
+
+            <section style="margin-top: 15vh" id="auditlog">
+                <div class="section-header">
+                    <div class="section-title">AUDIT LOG</div>
+                </div>
+                <div class="project-card">
+                    <!-- Filter Input -->
+                    <div style="margin-bottom: 20px;">
+                        <label for="logFilter">Filter by type:</label>
+                        <select id="logFilter"
+                            style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
+                            <option value="all" selected>All</option>
+                            <option value="login">Login Attempt</option>
+                            <option value="chatfilter_log">Chatfilter Access Log</option>
+                            <option value="save">Settings Changed</option>
+                            <option value="ticket_transcript">Ticket Transcripts</option>
+                        </select>
+                    </div>
+
+                    <!-- Container für alle Logs -->
+                    <div id="logContainer">
+                        {% for log in data.audit_log %}
+                        <div class="log-entry" data-type="{{ log.type }}"
+                            style="border-radius: 8px; border: 1px solid #222222; margin-top: 40px; margin-bottom: 40px; padding: 20px; position: relative;">
+
+                            <!-- Nummerierung hinzugefügt -->
+                            <div
+                                style="position: absolute; top: -15px; left: -15px; background: #222; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                                {{ data.audit_log|length - loop.index0 }}
+                            </div>
+
+                            {% if log.type == 'login' %}
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-right-to-bracket"></i> Login Attempt
+                            </h3>
+                            <p class="project-description">
+                                User tried to log in to the dashboard.
+                            </p>
+
+                            <div class="form-group">
+                                <label><strong>User:</strong> {{ log.user }}</label>
+                                <label><strong>Time:</strong> {{ log.time }}</label>
+                                <label><strong>Status:</strong>
+                                    {% if log.success %}
+                                    <span style="color: green;"><i class="fa-solid fa-check-circle"></i>
+                                        Success</span>
+                                    {% else %}
+                                    <span style="color: red;"><i class="fa-solid fa-times-circle"></i> Failed</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+
+                            {% elif log.type == 'chatfilter_log' %}
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-eye"></i> Chatfilter access log
+                            </h3>
+                            <p class="project-description">
+                                User accessed the chatfilter log {{ log.id }}
+                            </p>
+
+                            <div class="form-group">
+                                <label><strong>User:</strong> {{ log.user }}</label>
+                                <label><strong>ID:</strong> {{ log.id }}</label>
+                                <label><strong>Time:</strong> {{ log.time }}</label>
+                            </div>
+
+                            {% elif log.type == 'ticket_transcript' %}
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-eye"></i> Ticket transcript access
+                            </h3>
+                            <p class="project-description">
+                                User accessed the ticket transcript {{ log.id }}
+                            </p>
+
+                            <div class="form-group">
+                                <label><strong>User:</strong> {{ log.user }}</label>
+                                <label><strong>ID:</strong> {{ log.id }}</label>
+                                <label><strong>Time:</strong> {{ log.time }}</label>
+                            </div>
+
+                            {% elif log.type == 'save' %}
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-gear"></i> Settings Changed
+                            </h3>
+                            <p class="project-description">
+                                User has made changes to the {{ log.sys }} system.
+                            </p>
+
+                            <div class="form-group">
+                                <label><strong>User:</strong> {{ log.user }}</label>
+                                <label><strong>System:</strong> {{ log.sys }}</label>
+                                <label><strong>Time:</strong> {{ log.time }}</label>
+                            </div>
+
+                            {% else %}
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-circle-question"></i> Unknown Log Entry
+                            </h3>
+                            <p class="project-description">
+                                Unrecognized log type: {{ log.type }}
+                            </p>
+                            {% endif %}
+
+                            <div class="project-date">Avocloud.net - Baxi - Audit Log</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="paginationControls" style="text-align: center; margin-top: 20px;">
+                        <button id="prevPage"
+                            style="padding: 8px 12px; margin-right: 10px; border-radius: 5px; border: 1px solid #222;">&larr;
+                            Prev</button>
+                        <span id="pageInfo">1 / 1</span>
+                        <button id="nextPage"
+                            style="padding: 8px 12px; margin-left: 10px; border-radius: 5px; border: 1px solid #222;">Next
+                            &rarr;</button>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <footer style="margin-top: 15vh"></footer>
+        </main>
+    </div>
+
+    <script>
+        const data = JSON.parse('{{ data | tojson }}');
+        const nick = JSON.parse('{{ nick | tojson }}');
+
+        const parseWords = input => input.split(',').map(w => w.trim()).filter(w => w.length > 0);
+
+        function createTagInput(containerId, initialTags = []) {
+            const container = document.getElementById(containerId);
+            const input = document.createElement("input");
+            input.type = "text";
+            container.appendChild(input);
+
+            const tags = new Set(initialTags);
+
+            function updateTags() {
+                container.querySelectorAll(".tag").forEach(tag => tag.remove());
+
+                tags.forEach(tag => {
+                    const tagEl = document.createElement("span");
+                    tagEl.className = "tag";
+                    tagEl.innerHTML = `${tag}<span class="remove-tag">&times;</span>`;
+                    tagEl.querySelector(".remove-tag").onclick = () => {
+                        tags.delete(tag);
+                        updateTags();
+                    };
+                    container.insertBefore(tagEl, input);
+                });
+            }
+
+            input.addEventListener("keydown", (e) => {
+                if (["Enter", ","].includes(e.key)) {
+                    e.preventDefault();
+                    const value = input.value.trim();
+                    if (value && !tags.has(value)) {
+                        tags.add(value);
+                        input.value = "";
+                        updateTags();
+                    }
+                } else if (e.key === "Backspace" && input.value === "") {
+                    const last = Array.from(tags).pop();
+                    if (last) {
+                        tags.delete(last);
+                        updateTags();
+                    }
+                }
+            });
+
+            return {
+                getTags: () => Array.from(tags),
+                setTags: (tagList) => {
+                    tagList.forEach(tag => tags.add(tag));
+                    updateTags();
+                }
+            };
+        }
+
+        let goodwordInput, badwordInput;
+
+
+
+        function createDynamicFields() {
+            const enabledInput = document.getElementById('chatfilter-enabled');
+
+            if (data.chatfilter) {
+                enabledInput.checked = data.chatfilter.enabled === true;
+
+                if (data.chatfilter.system) {
+                    const system = data.chatfilter.system;
+                    const systemRadio = document.querySelector(`input[name="chatfilter-system"][value="${system}"]`);
+                    if (systemRadio) systemRadio.checked = true;
+                }
+
+                renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
+                renderTags('c_badwords', data.chatfilter.c_badwords || []);
+            }
+            document.getElementById("general-lang").value = data.lang || 'en';
+            document.getElementById("general-nick").value = nick || '';
+
+            document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
+            document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
+
+            document.getElementById("ticket-role").value = data.ticket.role || '';
+            document.getElementById("ticket-channel").value = data.ticket.channel || '';
+            document.getElementById("ticket-cat").value = data.ticket.catid || '';
+            document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
+            document.getElementById("ticket-message").value = data.ticket.message || '';
+            document.getElementById("ticket-color").value = data.ticket.color || '';
+
+
+        }
+
+        function renderTags(field, words) {
+            const container = document.getElementById(`${field}_container`);
+            container.innerHTML = '';
+            words.forEach(word => addTag(field, word));
+        }
+
+        function addTag(field, word) {
+            if (!word) return;
+            const container = document.getElementById(`${field}_container`);
+
+            const existingTags = Array.from(container.getElementsByClassName('tag'))
+                .map(tag => tag.firstChild.textContent.trim().toLowerCase());
+
+            if (existingTags.includes(word.toLowerCase())) {
+                const input = container.querySelector('input');
+                if (input) input.value = '';
+                return;
+            }
+
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = word;
+
+            const remove = document.createElement('span');
+            remove.className = 'remove-tag';
+            remove.innerHTML = '&times;';
+            remove.onclick = () => tag.remove();
+
+            tag.appendChild(remove);
+            container.appendChild(tag);
+
+            const input = container.querySelector('input');
+            if (input) input.value = '';
+        }
+
+
+        function getTags(field) {
+            const container = document.getElementById(`${field}_container`);
+            return Array.from(container.getElementsByClassName('tag'))
+                .map(tag => tag.firstChild.textContent.trim());
+        }
+
+
+        document.getElementById('c_goodwords_input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag('c_goodwords', this.value.trim());
+                this.value = '';
+            }
+        });
+        document.getElementById('c_badwords_input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag('c_badwords', this.value.trim());
+                this.value = '';
+            }
+        });
+
+
+        document.getElementById('chatfilter-form').onsubmit = function (event) {
+            event.preventDefault();
+
+            const enabled = document.getElementById('chatfilter-enabled').checked;
+            const system = document.querySelector('input[name="chatfilter-system"]:checked')?.value || null;
+            const goodWords = getTags('c_goodwords');
+            const badWords = getTags('c_badwords');
+
+            const payload = {
+                chatfilter: {
+                    enabled: enabled,
+                    system: system,
+                    c_goodwords: goodWords,
+                    c_badwords: badWords,
+                    bypass: []
+                }
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                }
+            };
+        };
+
+
+        window.onload = createDynamicFields;
+
+
+
+
+
+
+
+
+        document.getElementById('general-form').onsubmit = function (event) {
+            event.preventDefault();
+
+            const lang = document.getElementById('general-lang').value;
+            const nick = document.getElementById('general-nick').value;
+
+            const payload = {
+                general: {
+                    lang: lang,
+                    nick: nick
+                }
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                }
+            };
+        };
+
+
+        document.getElementById('globalchat-form').onsubmit = function (event) {
+            event.preventDefault();
+
+            const enabled = document.getElementById('globalchat-enabled').checked;
+            const channel = document.getElementById('globalchat-channel').value;
+
+            const payload = {
+                globalchat: {
+                    enabled: enabled,
+                    channel: channel
+                }
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=globalchat&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                }
+            };
+        };
+
+
+        document.getElementById('ticket-form').onsubmit = function (event) {
+            event.preventDefault();
+
+            const enabled = document.getElementById('ticket-enabled').checked;
+            const channel = document.getElementById('ticket-channel').value;
+            const channel_transcript = document.getElementById('ticket-transcript-channel').value;
+            const role = document.getElementById('ticket-role').value;
+            const category = document.getElementById('ticket-cat').value;
+            const color = document.getElementById('ticket-color').value;
+            const message = document.getElementById('ticket-message').value;
+
+
+            const payload = {
+                ticket: {
+                    enabled: enabled,
+                    channel: channel,
+                    channel_transcript: channel_transcript,
+                    role: role,
+                    category: category,
+                    color: color,
+                    message: message
+                }
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                }
+            };
+        };
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterSelect = document.getElementById('logFilter');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+            const logContainer = document.getElementById('logContainer');
+            const itemsPerPage = 6;
+
+            // Alle Log-Elemente als Array, umgedreht (neuester zuerst)
+            const allLogs = Array.from(document.querySelectorAll('.log-entry')).reverse();
+
+            let currentPage = 1;
+            let filteredLogs = allLogs; // initial ohne Filter
+
+            function renderPage() {
+                // Clear Container
+                logContainer.innerHTML = '';
+
+                // Berechne Seitenanzahl
+                const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+                if (totalPages === 0) {
+                    pageInfo.textContent = '0 / 0';
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
+                    return;
+                }
+
+                // Grenzen der anzuzeigenden Logs
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const logsToShow = filteredLogs.slice(startIndex, endIndex);
+
+                // Füge die Logs ins DOM ein
+                logsToShow.forEach(log => logContainer.appendChild(log));
+
+                // Update Paginierungstext und Buttons
+                pageInfo.textContent = `${currentPage} / ${totalPages}`;
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+            }
+
+            function applyFilter() {
+                const selectedType = filterSelect.value;
+                if (selectedType === 'all') {
+                    filteredLogs = allLogs;
+                } else {
+                    filteredLogs = allLogs.filter(log => log.dataset.type === selectedType);
+                }
+                currentPage = 1; // zurück zur ersten Seite nach Filter
+                renderPage();
+            }
+
+            // Events
+            filterSelect.addEventListener('change', applyFilter);
+
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
+                }
+            });
+
+            // Initial render
+            applyFilter();
+        });
+    </script>
+    <script>
+        document.querySelectorAll('.settings-form').forEach(form => {
+            form.addEventListener('submit', function () {
+                const button = form.querySelector('.submit-btn');
+                const spinner = button.querySelector('.spinner');
+                const text = button.querySelector('.btn-text');
+
+                // Button deaktivieren & Spinner anzeigen
+                button.disabled = true;
+                spinner.classList.remove('hidden');
+                text.textContent = "Saving...";
+            });
+        });
+    </script>
+
+
+
+
+</body>
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+
+</html>

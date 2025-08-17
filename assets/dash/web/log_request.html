@@ -8,7 +8,8 @@
 
     <meta property="og:title" content="Avocloud.net logs - Chatfilter">
     <meta property="og:description" content="Information on the entry number {{data.id}} of the user {{data.uname}}.">
-    <meta property="og:url" content="https://baxi.avocloud.net/logs/" <meta peoperty="og:color" content="#DC143C">
+    <meta property="og:url" content="https://baxi.avocloud.net/logs/">
+    <meta peoperty="og:color" content="#DC143C">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
     <title>Chatfilter log view</title>
@@ -16,20 +17,29 @@
 
 <body>
     <div class="popup" id="popup" onclick="hideOverlay(event)">
-        <h2 class="title-other"><i class="fa-solid fa-triangle-exclamation"></i> Content warning <i
+        <h2 class="title-other"><i class="fa-solid fa-triangle-exclamation"></i> Caution: Sensitive Content Warning <i
                 class="fa-solid fa-triangle-exclamation"></i></h2>
         <p class="alert-message">
-            This site may contain harmful or offensive content that may not be suitable for some people.
+            This chat filter log entry includes references to the topic: <b>{{ data.reason }}</b>
             <br>
-            Would you like to continue despite this warning and view the content of this page?
+            The material on this page may contain distressing or triggering content that could affect your emotional
+            well-being.
+            <br><br>
+            Do you want to continue and view the content despite this warning?
         </p>
         <button onclick="hideOverlay(event)" class="highlight-yellow">Continue</button>
     </div>
 
-    <div id="gradientbar"></div>
-    <div class="container" id="container">
 
-        <div id="particles-js"></div>
+     <div id="button_group">
+        <button onclick="location.href = '/'" class="group_button">
+            <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+    </div>
+    <div id="gradientbar"></div>
+
+    <div id="particles-js"></div>
+    <div class="container" id="container">
         <section class="hero">
             <div class="hero-content">
                 <h1>Baxi
@@ -39,6 +49,10 @@
                     This page contains a clear representation of the log entry with the id <span
                         class="highlight-yellow">{{data.id}}</span>
                 </p>
+                <p>Hi {{user.name}}</p>
+            </div>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
             </div>
 
         </section>
@@ -58,8 +72,8 @@
                         <i class="fa-solid fa-user"></i> User
                     </h3>
                     <p class="project-description">
-                        The name of the user is <span class="highlight-yellow">{{data.uname}}</span> and hat the id <span class="highlight-yellow">{{data.uid}}</span>. <br>
-                        The person's account was created on <span
+                        The user named <span class="highlight-yellow">{{data.uname}}</span> has the ID <span
+                            class="highlight-yellow">{{data.uid}}</span>, and their account was created on <span
                             class="highlight-yellow">{{data.user_created_at}}</span>.
                     </p>
                 </div>
@@ -72,8 +86,8 @@
                         <i class="fa-solid fa-people-roof"></i> Guild
                     </h3>
                     <p class="project-description">
-                        The name of the guild is <span class="highlight-yellow">{{data.sname}}</span>. <br>
-                        The ID of the named guild is <span class="highlight-yellow">{{data.sid}}</span> <br>
+                        The guild named <span class="highlight-yellow">{{data.sname}}</span> is associated with the
+                        guild ID <span class="highlight-yellow">{{data.sid}}</span>.
                     </p>
                 </div>
                 <br>
@@ -86,14 +100,15 @@
                         <i class="fa-solid fa-message"></i> Message
                     </h3>
                     <p class="project-description">
-                        The message was sent on <span class="highlight-yellow">{{data.timestamp}}</span> in the
-                        channel <span class="highlight-yellow">{{data.cname}}</span> with the id <span
-                            class="highlight-yellow">{{data.cid}}</span>. <br>
-                        The word <span class="highlight-yellow">{{data.word}}</span> matches the word <span
-                            class="highlight-yellow">{{data.match}}</span> in our database. <br>
+                        The message was sent on <span class="highlight-yellow">{{data.timestamp}}</span> in the channel
+                        <span class="highlight-yellow">#{{data.cname}}</span> (ID: <span
+                            class="highlight-yellow">{{data.cid}}</span>).
+                        <br>
+                        It was removed because it was potentially associated with the following content: <span
+                            class="highlight-yellow">{{data.reason}}</span>.
                         <hr>
                         <br>
-                        {{data.message | highlight_word(data.word) }}
+                        {{data.message}}
                     </p>
                 </div>
             </section>
@@ -110,20 +125,14 @@
 
         function hideOverlay(event) {
             if (event.target.tagName.toLowerCase() === 'button') {
-                // Füge die Fade-Out-Klasse zum Popup hinzu
                 document.getElementById('popup').classList.add('fade-out');
 
-                // Warte, bis das Popup ausgeblendet ist, und blende den Inhalt ein
                 setTimeout(function () {
                     document.getElementById('popup').style.display = 'none';
                     document.getElementById('container').style.display = 'block';
-
-                    // Füge die Fade-In-Klasse für den Inhalt hinzu
                     document.getElementById('container').classList.add('fade-in');
-
-                    // Entferne die fade-out Klasse, um sie für den nächsten Klick erneut zu verwenden
                     document.getElementById('popup').classList.remove('fade-out');
-                }, 1000); // 1000ms entsprechen der Dauer der Popup-Animation
+                }, 1000);
             }
         }
 

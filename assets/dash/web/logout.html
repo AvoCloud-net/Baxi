@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="../static/main.css">
+
+    <meta property="og:title" content="Avocloud.net - Baxi">
+    <meta property="og:description" content="This is the home page of the Baxi dashboard.">
+    <meta property="og:url" content="https://baxi.avocloud.net/logs/">
+    <meta peoperty="og:color" content="#DC143C">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+    <title>Baxi dashboard - logged out</title>
+
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+    <div id="particles-js"></div>
+    <div id="button_group">
+        <button onclick="window.open('https://avocloud.net', '_blank')" class="group_button">
+            <i class="fa-solid fa-house"></i> Home
+        </button>
+        <button onclick="location.href = '/'" class="group_button">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Log-in
+        </button>
+    </div>
+    <div class="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>
+                    You have successfully <span class="highlight-purple">logged out</span> of the management dashboard.
+                </h1>
+                <p class="subtitle" style="font-size: large;">
+                    Thank you for using the dashboard. See you next time!
+                </p>
+            </div>
+        </section>
+    </div>
+</body>
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+
+</html>

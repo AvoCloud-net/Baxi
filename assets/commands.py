@@ -1,24 +1,21 @@
-import asyncio
-import discord, requests, os
+import discord
+
 from discord.ext import commands
-from discord import Embed, Interaction, app_commands, ui
-from assets.ai import *
+from discord import Embed, Interaction, app_commands
 import config.config as config
-import config.auth as auth
 import assets.data as datasys
-import assets.translate as tr
-from assets.ai import ai_conversations
-import lang.lang as lang
-import requests
+from typing import cast, Optional
+import datetime
+
 from assets.buttons import (
     BanConfirmView,
     KickConfirmView,
     UbanConfirmView,
     ClearConfirmView,
 )
-import reds_simple_logger as logger
+import reds_simple_logger
 
-logger = logger.Logger()
+logger = reds_simple_logger.Logger()
 
 
 def base_commands(bot: commands.AutoShardedBot):
@@ -26,202 +23,107 @@ def base_commands(bot: commands.AutoShardedBot):
 
     @bot.tree.command(name="help", description="Shows the help panel")
     async def help_cmd(interaction: Interaction):
+        await interaction.response.defer()
+        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
+
+        lang = datasys.load_lang_file(guild_id)
+        title = f"{config.Icons.questionmark} {lang["commands"]["user"]["help"]["title"]}"
+        content_prefix_title = lang["commands"]["user"]["help"]["prefix"]["title"]
+        content_prefix_content = lang["commands"]["user"]["help"]["prefix"]["content"]
+        content_about_title = lang["commands"]["user"]["help"]["about"]["title"]
+        content_about_content = lang["commands"]["user"]["help"]["about"]["content"]
+        content_icons_title = lang["commands"]["user"]["help"]["icons"]["title"]
+        content_icons_content = lang["commands"]["user"]["help"]["icons"]["content"]
+        content_bugs_title = lang["commands"]["user"]["help"]["bugs"]["title"]
+        content_bugs_content = lang["commands"]["user"]["help"]["bugs"]["content"]
+
+        embed = Embed(
+            title=title,
+            description=(
+                f"## {content_prefix_title}\n> {content_prefix_content}\n"
+                f"## {content_about_title}\n> {content_about_content}\n"
+                f"## {content_icons_title}\n> {content_icons_content}\n"
+                f"## {content_bugs_title}\n> {content_bugs_content}"
+            ),
+            color=config.Discord.color,
+        )
+        await interaction.edit_original_response(embed=embed)
+
+    @bot.tree.command(
+    name="scan_users",
+    description="Scans this server for users flagged globally on Baxi for malicious or suspicious behavior.",
+    )
+    async def scan_user(interaction: discord.Interaction):
         try:
             await interaction.response.defer()
-            guild_id = interaction.guild.id if interaction.guild is not None else None
-            lang = datasys.load_lang(guild_id)
-            title = await tr.baxi_translate(lang.Help.title, lang)
-            content_prefix_title = await tr.baxi_translate(
-                lang.Help.Description.Prefix.title, lang
-            )
-            content_prefix_content = await tr.baxi_translate(
-                lang.Help.Description.Prefix.content, lang
-            )
-            content_about_title = await tr.baxi_translate(
-                lang.Help.Description.About.title, lang
-            )
-            content_about_content = await tr.baxi_translate(
-                lang.Help.Description.About.content, lang
-            )
-            content_icons_title = await tr.baxi_translate(
-                lang.Help.Description.Icons.title, lang
-            )
-            content_icons_content = await tr.baxi_translate(
-                lang.Help.Description.Icons.content, lang
-            )
-            content_bugs_title = await tr.baxi_translate(
-                lang.Help.Description.Bugs.title, lang
-            )
-            content_bugs_content = await tr.baxi_translate(
-                lang.Help.Description.Bugs.content, lang
-            )
-
-            embed = Embed(
-                title=title,
-                description=(
-                    f"## {content_prefix_title}\n> {content_prefix_content}\n"
-                    f"## {content_about_title}\n> {content_about_content}\n"
-                    f"## {content_icons_title}\n> {content_icons_content}\n"
-                    f"## {content_bugs_title}\n> {content_bugs_content}"
-                ),
-                color=config.Discord.color,
-            )
-            await interaction.edit_original_response(embed=embed)
-        except Exception as e:
-            print(e)
-
-
-def ai(bot: commands.AutoShardedBot):
-    logger.debug.info("AI commands loaded.")
-
-    @bot.tree.command(name="ai", description="Ask a Question")
-    @app_commands.describe(question="question")
-    async def ai_cmd(interaction: Interaction, question: str):
-        await interaction.response.defer()
-        conversation_id = os.urandom(8).hex()
-        ai_conversations[str(conversation_id)] = []
-        ai_conversations[str(conversation_id)].append(
-            {f"{interaction.user.name}": f"{question}"}
-        )
-
-        try:
-            guild_id = interaction.guild.id if interaction.guild is not None else None
-            lang = datasys.load_lang(guild_id)
-            embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Ai.title, lang),
-                description=await tr.baxi_translate(
-                    f"{lang.Ai.Waiting.content}\n-# {question}", lang
-                ),
-                color=config.Discord.color,
-            )
-            embed.set_thumbnail(url=config.Icons.loading)
-            embed.set_author(name="Baxi AI")
-            embed.set_footer(text=str(conversation_id))
-            await interaction.edit_original_response(embed=embed)
-
-            async def make_request():
-                headers = {
-                    "Authorization": f"Bearer {auth.Ai.api_key}",
-                    "Content-Type": "application/json",
-                }
-                data = {
-                    "model": "llama3.2:latest",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": f"Username: {interaction.user.name}\nUser input: {question}",
-                        }
-                    ],
-                }
-                response = requests.post(auth.Ai.uri, headers=headers, json=data)
-
-                return response
-
-            response = await asyncio.create_task(make_request(), name="ai_make_request")
-            if response.status_code == 200:
-                answer = response.json()["choices"][0]["message"]["content"]
-                embed_new = discord.Embed(
-                    title=await tr.baxi_translate(lang.Ai.title, lang),
-                    description=f"-# {question}\n\n{answer}",
-                    color=config.Discord.color,
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                embed = discord.Embed(
+                    title="⚠️ " + lang["commands"]["guild_only"],
+                    description="This command can only be used in a server.",
+                    color=config.Discord.warn_color
                 )
-                embed_new.set_thumbnail(url=config.Icons.chatbot)
-                embed_new.set_author(name="Baxi AI")
-                embed_new.set_footer(text=str(conversation_id))
-                ai_conversations[str(conversation_id)].append(
-                    {"Baxi (you)": f"{answer}"}
-                )
-                await interaction.edit_original_response(embed=embed_new)
+                return await interaction.response.send_message(embed=embed)
+            if interaction.user.avatar is None:
+                user_avatar = ""
             else:
-                embed_new = discord.Embed(
-                    title=await tr.baxi_translate(lang.Ai.title, lang),
-                    description=await tr.baxi_translate(lang.Ai.Error.unknown, lang),
-                    color=config.Discord.color,
-                )
-                embed_new.set_thumbnail(url=config.Icons.chatbot)
-                embed_new.set_author(name="Baxi AI")
-        except Exception as e:
-            await interaction.channel.send(
-                content=await tr.baxi_translate(f"{lang.Ai.Error.unknown} : {e}", lang)
-            )
+                user_avatar = interaction.user.avatar.url
 
-    @bot.tree.command(name="ai-web", description="Ask a Question")
-    @app_commands.describe(question="question")
-    async def ai_cmd(interaction: Interaction, question: str):
-        await interaction.response.defer()
+            lang = datasys.load_lang_file(interaction.guild.id)
+            users_list: dict = dict(datasys.load_data(1001, "users"))
+            flagged_users = []
 
-        try:
-            guild_id = interaction.guild.id if interaction.guild is not None else None
-            lang = datasys.load_lang(guild_id)
+            for member in interaction.guild.members:
+                if str(member.id) in users_list and bool(users_list[str(member.id)]["flagged"]):
+                    flagged_users.append(users_list[str(member.id)])
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Ai.title, lang),
-                description=await tr.baxi_translate(
-                    f"{lang.Ai.Waiting.content}\n-# {question}", lang
-                ),
-                color=config.Discord.color,
+                title=f"{config.Icons.search} {lang['commands']['user']['scan_users']['title']}",
+                description=str(lang["commands"]["user"]["scan_users"]["user_count"]).format(users=interaction.guild.member_count),
+                color=0x2b2d31 if len(flagged_users) == 0 else 0xe74c3c
             )
-            embed.set_thumbnail(url=config.Icons.loading)
-            embed.set_author(name="Baxi AI - Web")
+            
+            embed.set_thumbnail(url=interaction.guild.icon.url if interaction.guild.icon else None)
+            embed.set_footer(text=f"Requested by {interaction.user}", icon_url=user_avatar)
+
+            if len(flagged_users) == 0:
+                embed.add_field(
+                    name=f"{config.Icons.info} {lang["commands"]["user"]["scan_users"]["no_threats"]}",
+                    value=lang["commands"]["user"]["scan_users"]["no_users_detected"],
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name=f"{config.Icons.alert} {len(flagged_users)} {lang["commands"]["user"]["scan_users"]["users_found"]}",
+                    value=f"{lang["commands"]["user"]["scan_users"]["users_found_description"]}",
+                    inline=False
+                )
+                
+                for i, user in enumerate(flagged_users, 1):
+                    embed.add_field(
+                        name=f"{i}. {user['name']}",
+                        value=f"-  **{lang["commands"]["user"]["scan_users"]["reason"]}:** {user['reason']}\n"
+                            f"-  **{lang["commands"]["user"]["scan_users"]["date"]}:** {user['entry_date']}\n"
+                            f"-  **{lang["commands"]["user"]["scan_users"]["id"]}:** `{member.id}`",
+                        inline=False
+                    )
+                
+                embed.add_field(
+                    name=f"{config.Icons.people_crossed} {lang["commands"]["user"]["scan_users"]["recommendation"]}",
+                    value=f"{lang["commands"]["user"]["scan_users"]["recommendation_description"]}",
+                    inline=False
+                )
+
             await interaction.edit_original_response(embed=embed)
 
-            async def make_request():
-                search_results = baxi_web_search(question)
-
-                headers = {
-                    "Authorization": f"Bearer {auth.Ai.api_key}",
-                    "Content-Type": "application/json",
-                }
-                data = {
-                    "model": "qwen2.5:1.5b",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": f"Answer question from {interaction.user.name}: {question} with the following infos: {search_results}",
-                        }
-                    ],
-                }
-
-                response = requests.post(auth.Ai.uri, headers=headers, json=data)
-
-                return response, search_results
-
-            response, search_results = await asyncio.create_task(
-                make_request(), name="ai_make_request"
-            )
-
-            if response.status_code == 200:
-                answer = response.json()["choices"][0]["message"]["content"]
-                embed_new = discord.Embed(
-                    title=await tr.baxi_translate(lang.Ai.title, lang),
-                    description=f"-# {question}\n\n{answer}",
-                    color=config.Discord.color,
-                )
-                embed_new.set_thumbnail(url=config.Icons.chatbot)
-                embed_new.set_author(name="Baxi AI - Web")
-
-                if search_results:
-                    urls = [result.get("url", "N/A") for result in search_results[:3]]
-                    footer_text = "Sources: " + " | ".join(urls)
-                    embed_new.set_footer(text=footer_text)
-
-                await interaction.edit_original_response(embed=embed_new)
-            else:
-                embed_error = discord.Embed(
-                    title=await tr.baxi_translate(lang.Ai.title, lang),
-                    description=await tr.baxi_translate(lang.Ai.Error.unknown, lang)
-                    + f"{response.text}",
-                    color=config.Discord.color,
-                )
-                embed_error.set_thumbnail(url=config.Icons.chatbot)
-                embed_error.set_author(name="Baxi AI - Web")
-                await interaction.edit_original_response(embed=embed_error)
-
         except Exception as e:
-            error_message = await tr.baxi_translate(
-                f"{lang.Ai.Error.unknown} : {e}", lang
+            logger.error(str(e))
+            error_embed = discord.Embed(
+                title="❌ An error occurred",
+                description="Failed to complete the scan. Please try again later.",
+                color=config.Discord.danger_color
             )
-            await interaction.channel.send(content=error_message)
+            await interaction.edit_original_response(embed=error_embed)
 
 
 def utility_commands(bot: commands.AutoShardedBot):
@@ -232,37 +134,48 @@ def utility_commands(bot: commands.AutoShardedBot):
     @app_commands.describe(user="The user you want to ban.")
     @app_commands.describe(reason="The reason for the ban.")
     async def ban_cmd(
-        interaction: Interaction, user: discord.Member, reason: str = None
+        interaction: Interaction, user: discord.Member, reason: str = "N/A"
     ):
-        lang = datasys.load_lang(interaction.guild.id)
-        if interaction.user.top_role <= user.top_role:
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+
+        lang = datasys.load_lang_file(interaction.guild.id)
+        member = cast(discord.Member, interaction.user)
+
+        if member.top_role <= user.top_role:
             await interaction.response.send_message(
-                "Du hast keine Berechtigung, diesen Benutzer zu bannen.", ephemeral=True
+                lang["commands"]["admin"]["ban"]["missing_perms"], ephemeral=True
             )
             return
 
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Ban.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Ban.confirmation, lang),
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["ban"]["title"]}',
+            description=lang["commands"]["admin"]["ban"]["confirmation"],
             color=discord.Color.red(),
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.user, lang),
+            name=lang["commands"]["admin"]["user"],
             value=user.mention,
             inline=False,
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.mod, lang),
+            name=lang["commands"]["admin"]["mod"],
             value=interaction.user.mention,
             inline=False,
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.reason, lang),
+            name=lang["commands"]["admin"]["reason"],
             value=reason,
             inline=False,
         )
 
-        view = BanConfirmView(user, interaction.user, reason)
+        view = BanConfirmView(user, member, reason)
 
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -271,37 +184,49 @@ def utility_commands(bot: commands.AutoShardedBot):
     @app_commands.describe(user="The user you want to kick.")
     @app_commands.describe(reason="The reason for the kick.")
     async def kick_cmd(
-        interaction: Interaction, user: discord.Member, reason: str = None
+        interaction: Interaction, user: discord.Member, reason: str = "N/A"
     ):
-        lang = datasys.load_lang(interaction.guild.id)
-        if interaction.user.top_role <= user.top_role:
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+
+        lang = datasys.load_lang_file(interaction.guild.id)
+        member = cast(discord.Member, interaction.user)
+
+        if member.top_role <= user.top_role:
             await interaction.response.send_message(
-                await tr.baxi_translate(lang.Utility.Kick.missing_perms, lang),
+                lang["commands"]["admin"]["kick"]["missing_perms"],
                 ephemeral=True,
             )
             return
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Kick.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Kick.confirmation, lang),
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["kick"]["title"]}',
+            description=lang["commands"]["admin"]["kick"]["confirmation"],
             color=discord.Color.red(),
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.user, lang),
+            name=lang["commands"]["admin"]["user"],
             value=user.mention,
             inline=False,
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.mod, lang),
+            name=lang["commands"]["admin"]["mod"],
             value=interaction.user.mention,
             inline=False,
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.reason, lang),
+            name=lang["commands"]["admin"]["reason"],
             value=reason,
             inline=False,
         )
 
-        view = KickConfirmView(user, interaction.user, reason)
+        view = KickConfirmView(user, member, reason)
 
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -309,40 +234,143 @@ def utility_commands(bot: commands.AutoShardedBot):
     @app_commands.checks.has_permissions(ban_members=True)
     @app_commands.describe(user="The user id of the user you want to unban.")
     async def unban_cmd(interaction: Interaction, user: int):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Unban.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Unban.confirmation, lang),
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["unban"]["title"]}',
+            description=lang["commands"]["admin"]["unban"]["confirmation"],
             color=discord.Color.green(),
         )
-        user_new = await bot.fetch_user(user)
+        user_member = interaction.guild.get_member(user)
+        if user_member is None:
+            user_member = await bot.fetch_user(user)
+
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.user, lang),
-            value=user_new.name,
+            name=lang["commands"]["admin"]["user"],
+            value=user_member.name,
             inline=False,
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.mod, lang),
+            name=lang["commands"]["admin"]["mod"],
             value=interaction.user.mention,
             inline=False,
         )
-        view = UbanConfirmView(user, interaction.user)
+        view = UbanConfirmView(user_member, interaction.user)
         await interaction.response.send_message(embed=embed, view=view)
 
     @bot.tree.command(name="clear", description="Clear messages from a channel.")
     @app_commands.checks.has_permissions(manage_messages=True)
     @app_commands.describe(amount="The amount of messages to clear.")
     async def clear_cmd(interaction: Interaction, amount: int):
-        lang = datasys.load_lang(interaction.guild.id)
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Clear.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Clear.confirmation, lang),
+            title=lang["commands"]["admin"]["clear"]["title"],
+            description=lang["commands"]["admin"]["clear"]["confirmation"],
             color=discord.Color.green(),
         )
         embed.add_field(
-            name=await tr.baxi_translate(lang.Utility.amount, lang),
+            name=lang["commands"]["admin"]["amount"],
             value=amount,
             inline=False,
         )
-        view = ClearConfirmView(amount, interaction.user, interaction.channel)
+        channel = interaction.channel
+        if not isinstance(channel, discord.abc.Messageable):
+            await interaction.response.send_message(
+                "❌ Dieser Channel unterstützt keine Nachrichten.", ephemeral=True
+            )
+            return
+        if isinstance(interaction.channel, discord.TextChannel):
+            view = ClearConfirmView(amount, interaction.user, interaction.channel)
+        else:
+            await interaction.response.send_message(
+                "Dieser Befehl kann nur in Textkanälen genutzt werden.", ephemeral=True
+            )
+            return
         await interaction.response.send_message(embed=embed, view=view)
+
+def bot_admin_commands(bot: commands.AutoShardedBot):
+    logger.debug.info("Bot admin commands loaded.")
+
+    @bot.tree.command(name="flag-user", description="Flag a user as global troublemaker, triggering increased scrutiny and potential consequences.")
+    @app_commands.describe(user="User you want to flag.")
+    @app_commands.describe(user_id="The ID of the user you want to flag.")
+    @app_commands.describe(reason="Why do you want to flag this user?")
+    async def flag_user_command(interaction: discord.Interaction, reason: str, user: Optional[discord.Member] = None, user_id: Optional[int] = 0):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
+        lang: dict = dict(datasys.load_lang_file(guild_id))
+
+        if interaction.user.id not in admins:
+            await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
+            return
+        
+        if user is None and user_id == 0:
+            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["missing_parameters"])
+            return
+
+        userid: int = user.id if user is not None else (user_id or 0)
+
+        users_list: dict = dict(datasys.load_data(1001, "users"))
+        selected_user = await bot.fetch_user(userid)
+
+        users_list[str(selected_user.id)] = {
+            "entry_date": str(datetime.date.today()),
+            "id": int(selected_user.id),
+            "name": str(selected_user.name),
+            "reason": reason,
+            "flagged": True
+        }
+
+        print(users_list)
+
+        datasys.save_data(1001, "users", users_list)
+
+        await interaction.response.send_message(config.Icons.people_crossed + "" + lang["commands"]["admin"]["flag_user"]["success"])
+
+
+    @bot.tree.command(name="deflag-user", description="Deflag a user as global troublemaker, triggering increased scrutiny and potential consequences.")
+    @app_commands.describe(user="User you want to deflag.")
+    @app_commands.describe(user_id="The ID of the user you want to deflag.")
+    @app_commands.describe(reason="Why do you want to deflag this user?")
+    async def deflag_user_command(interaction: discord.Interaction, reason: str, user: Optional[discord.Member] = None, user_id: Optional[int] = 0):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
+        lang: dict = dict(datasys.load_lang_file(guild_id))
+
+        if interaction.user.id not in admins:
+            await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
+            return
+        
+        if user is None and user_id == 0:
+            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["missing_parameters"])
+            return
+
+        userid: int = user.id if user is not None else (user_id or 0)
+
+        users_list: dict = dict(datasys.load_data(1001, "users"))
+        selected_user = await bot.fetch_user(userid)
+
+        users_list[str(selected_user.id)]["flagged"] = False
+
+        datasys.save_data(1001, "users", users_list)
+
+        await interaction.response.send_message(config.Icons.people_crossed + "" + lang["commands"]["admin"]["deflag_user"]["success"])
+        

@@ -1,0 +1,1 @@
+`[GCDH] - Global Chat Data Handler - Checks and updates the global chat data structure with new message IDs.`

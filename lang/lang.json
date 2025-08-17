@@ -1,0 +1,336 @@
+{
+    "de": {
+        "commands": {
+            "guild_only": "Dieser Befehl kann nur innerhalb eines Discord-Servers ausgeführt werden, nicht über private Nachrichten (DM).",
+            "user": {
+                "help": {
+                    "title": "Hilfe",
+                    "content": "Alle Befehle beginnen mit dem Präfix „/“.",
+                    "footer": "Baxi Bot - Avocloud.net",
+                    "prefix": {
+                        "title": "Prefix",
+                        "content": "Der Prefix für diesen Bot ist „/“."
+                    },
+                    "about": {
+                        "title": "Über dieses Projekt",
+                        "content": "Dieser Bot wurde von Avocloud.net erstellt. Weitere Informationen findest du auf unserer Website."
+                    },
+                    "icons": {
+                        "title": "Icons",
+                        "content": "Die von Baxi verwendeten Icons findet ihr hier: [Icons](https://discord.gg/aPvvhefmt3)"
+                    },
+                    "bugs": {
+                        "title": "Bugs",
+                        "content": "Wenn du auf Fehler stößt, würden wir dich bitten, diese mit dem Befehl </report:1227394011715735582> zu melden. Dies hilft uns sehr bei der Entwicklung und Fehlerbehebung. Vielen Dank für deine Unterstützung!"
+                    }
+                },
+                "scan_users": {
+                    "title": "Scan Report",
+                    "reason": "Grund",
+                    "date": "Makiert am",
+                    "id": "Benutzer ID",
+                    "recommendation": "Empfehlung",
+                    "recommendation_description": "Überprüfe diese Benutzer und ergreife geeignete Maßnahmen.",
+                    "no_users_detected": "Es wurden keine verdächtigen oder bedrohlichen Benutzer auf diesem Server gefunden. Alles scheint in Ordnung zu sein.",
+                    "user_count": "**{users}** Mitglieder gescannt",
+                    "no_threats": "Keine Bedrohungen entdeckt",
+                    "users_found": "markierte Benutzer gefunden",
+                    "users_found_description": "Diese Benutzer wurden wegen verdächtiger Aktivitäten markiert:"
+                }
+            },
+            "admin": {
+                "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Befehl zu verwenden.",
+                "user": "Benutzer: ",
+                "mod": "Moderator: ",
+                "reason": "Grund: ",
+                "amount": "Mänge: ",
+                "channel": "Kanal: ",
+                "ban": {
+                    "title": "Bann",
+                    "confirmation": "Möchtest du diesen Benutzer wirklich mit folgendem Grund bannen?",
+                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
+                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
+                    "success": "Der Benutzer wurde erfolgreich mit folgendem Grund gebannt:",
+                    "audit_reason": "Gegannt von {moderator}: {reason}",
+                    "error": "Ein Fehler ist aufgetreten: {error}",
+                    "abort": "Der Bannvorgang wurde abgebrochen."
+                },
+                "unban": {
+                    "title": "Entbannung",
+                    "confirmation": "Möchtest du diesen Benutzer wirklich entbannen?",
+                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+                    "success": "Der Benutzer wurde erfolgreich entbannen:",
+                    "audit_reason": "Entbannung von {moderator}: {reason}",
+                    "error": "Ein Fehler ist aufgetreten: {error}",
+                    "abort": "Der Entbannvorgang wurde abgebrochen."
+                },
+                "kick": {
+                    "title": "Kick",
+                    "confirmation": "Möchtest du diesen Benutzer wirklich aus dem Server entfernen?",
+                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+                    "success": "Der Benutzer wurde erfolgreich aus dem Server entfernt:",
+                    "audit_reason": "Kick von {moderator}: {reason}",
+                    "error": "Ein Fehler ist aufgetreten: {error}",
+                    "abort": "Der Entbannvorgang wurde abgebrochen."
+                },
+                "clear": {
+                    "title": "Löschen",
+                    "confirmation": "Möchtest du die Nachrichten wirklich löschen?",
+                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
+                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
+                    "success": "Die Nachricht wurde erfolgreich gelöscht:",
+                    "error": "Ein Fehler ist aufgetreten: {error}",
+                    "abort": "Der Vorgang wurde abgebrochen."
+                },
+                "flag_user": {
+                    "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
+                    "success": "Der Benutzer wurde erfolgreich ins System eingetragen."
+                },
+                "deflag_user": {
+                    "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
+                    "success": "Der Benutzer wurde erfolgreich aus dem System ausgetragen."
+                }
+            }
+        },
+        "systems": {
+            "chatfilter": {
+                "title": "Chatfilter",
+                "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
+                "footer": "Baxi Security - avocloud.net"
+            },
+            "globalchat": {
+                "title": "Globalchat",
+                "error": {
+                    "file_not_image": "Diese Datei ist kein Bild und kann daher nicht im globalen Chat versendet werden.",
+                    "to_many_files": "Du kannst maximal ein Bild anhängen und versenden.",
+                    "message_to_long": "Deine Nachricht ist zu lang. Beachte, dass die maximale Länge 1000 Zeichen beträgt.",
+                    "baned": "Du bist aus dem globalen Chat ausgeschlossen. Folgender Grund ist angegeben: {reason}",
+                    "s11-not-sent": "⚠️ Deine Nachricht konnte nicht im globalen Chat gesendet werden, da sie sensible Themen wie Selbstverletzung oder Suizid enthält.\nBitte schau in deine privaten Nachrichten, unser Bot hat dir dort eine wichtige Nachricht geschickt."
+                }
+            },
+            "verify": {
+                "title": "Verifizierung",
+                "description_not_enabled": "Dieses System ist auf diesem Server nicht aktiviert. Bitte kontaktieren einen Administrator.",
+                "description_success": "Die verifizierung war erfolgreich. Willkommen auf dem Server!",
+                "captcha": {
+                    "description_wrong_code": "Der eingegebene Code ist falsch. Bitte versuche es erneut."
+                },
+                "password": {
+                    "description_wrong_password": "Die eingegebene Passwort ist falsch. Bitte versuche es erneut."
+                }
+            },
+            "ticket": {
+                "title": "Support Ticket",
+                "channel_name": "support-{user}",
+                "description_creation_successfull": "Das Ticket wurde erfolgreich erstellt. Ein Teammitglied wird sich in Kürze bei dir melden.\nDein Ticket: {channel}",
+                "description_already_open": "Du hast bereits ein offenes Ticket. Bitte warte bis ein Teammitglied antwortet.\nDein Ticket: {channel}",
+                "description_no_permission_delete": "Du hast keine Berechtigung dieses Ticket zu löschen.",
+                "description_no_permission_claim": "Du hast keine Berechtigung dieses Ticket zu übernehmen.",
+                "description_claimed": "Der Supporter {user} übernimmt nun dieses Ticket.",
+                "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets:",
+                "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen."
+            },
+            "ai": {
+                "title": "AI",
+                "waiting": {
+                    "content": "Baxi AI arbeitet an einer Antwort..."
+                },
+                "error": {
+                    "unknown": "Ein unbekannter Fehler ist aufgetreten. Bitte versuche es später noch einmal.",
+                    "id_not_found": "Die ConversationID deiner Unterhaltung wurde nicht gefunden. Bitte starte einen neuen chat mithilfe des `/ai` Befehls.",
+                    "model_unable_to_chat": "Mit diesem Model kannst du leider nicht chatten. Bitte versuche es mit dem anderen Model."
+                }
+            }
+        },
+        "events": {
+            "on_guild_join": {
+                "title": "Hallooo!",
+                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, musst du das Baxi Dashboard öffnen. Verwende dafür den Befehl `/dashboard`.\n\n-# {saved_data}",
+                "saved_data": {
+                    "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard beliebige Systeme aktivieren und einstellen.",
+                    "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard ob diese Einstellungen korrekt sind."
+                }
+            }
+        },
+        "games": {
+            "counting": {
+                "title": "Zählspiel",
+                "description_wrong_number": "{user}, die Zahl die du gesendet hast ist nicht die richtige. Wir beginnen wieder bei 1.",
+                "description_same_user": "{user}, du darfst nicht zweimal hintereinander eine Zahl senden. Ihr müsst abwechselnd zählen."
+            },
+            "guessing": {
+                "title": "Raten",
+                "description_correct": "{user}, du hast die Zahl richtig geraten!\nWir beginnen mit einer neuen Zahl, diese wurde zwischen 1 und {max_value} generiert.\nViel Erfolg!"
+            }
+        }
+    },
+    "en": {
+        "commands": {
+            "guild_only": "This command can only be used in a Discord server, not via direct message (DM).",
+            "user": {
+                "help": {
+                    "title": "Help",
+                    "content": "All commands start with the prefix “/”.",
+                    "footer": "Baxi Bot - Avocloud.net",
+                    "prefix": {
+                        "title": "Prefix",
+                        "content": "The prefix for this bot is “/”."
+                    },
+                    "about": {
+                        "title": "About this project",
+                        "content": "This bot was created by Avocloud.net. For more information, please visit our website."
+                    },
+                    "icons": {
+                        "title": "Icons",
+                        "content": "The icons used by Baxi can be found here: [Icons](https://discord.gg/aPvvhefmt3)"
+                    },
+                    "bugs": {
+                        "title": "Bugs",
+                        "content": "If you encounter any errors, please report them using the command </report:1227394011715735582>. This helps us greatly in development and troubleshooting. Thank you for your support!"
+                    }
+                },
+                "scan_users": {
+                    "title": "Scan Report",
+                    "reason": "Reason",
+                    "date": "Date Flagged",
+                    "id": "User ID",
+                    "recommendation": "Recommendation",
+                    "recommendation_description": "Consider reviewing these users and taking appropriate action.",
+                    "no_users_detected": "No suspicious or threatening users were found on this server. Everything appears to be in order.",
+                    "user_count": "Scanned **{users}** members",
+                    "no_threats": "No threats detected",
+                    "users_found": "Flagged Users Found",
+                    "users_found_description": "These users have been flagged for suspicious activity:"
+                }
+            },
+            "admin": {
+                "missing_perms": "You do not have the necessary permissions to use this command.",
+                "user": ":User  ",
+                "mod": "Moderator: ",
+                "reason": "Reason: ",
+                "amount": "Amount: ",
+                "channel": "Channel: ",
+                "ban": {
+                    "title": "Ban",
+                    "confirmation": "Do you really want to ban this user for the following reason?",
+                    "missing_perms": "You do not have the necessary permissions to ban this user.",
+                    "bot_missing_perms": "I do not have the necessary permissions to ban this user.",
+                    "success": "The user has been successfully banned for the following reason:",
+                    "audit_reason": "Banned by {moderator}: {reason}",
+                    "error": "An error occurred: {error}",
+                    "abort": "The ban process has been aborted."
+                },
+                "unban": {
+                    "title": "Unban",
+                    "confirmation": "Do you really want to unban this user?",
+                    "missing_perms": "You do not have the necessary permissions to unban this user.",
+                    "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
+                    "success": "The user has been successfully unbanned:",
+                    "audit_reason": "Unbanned by {moderator}: {reason}",
+                    "error": "An error occurred: {error}",
+                    "abort": "The unban process has been aborted."
+                },
+                "kick": {
+                    "title": "Kick",
+                    "confirmation": "Do you really want to remove this user from the server?",
+                    "missing_perms": "You do not have the necessary permissions to unban this user.",
+                    "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
+                    "success": "The user has been successfully removed from the server:",
+                    "audit_reason": "Kicked by {moderator}: {reason}",
+                    "error": "An error occurred: {error}",
+                    "abort": "The kick process has been aborted."
+                },
+                "clear": {
+                    "title": "Delete",
+                    "confirmation": "Do you really want to delete the messages?",
+                    "missing_perms": "You do not have the necessary permissions to delete messages.",
+                    "bot_missing_perms": "I do not have the necessary permissions to delete messages.",
+                    "success": "The message has been successfully deleted:",
+                    "error": "An error occurred: {error}",
+                    "abort": "The process has been aborted."
+                },
+                "flag_user": {
+                    "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
+                    "success": "The user was successfully entered into the system."
+                },
+                "deflag_user": {
+                    "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
+                    "success": "The user was successfully removed from the system."
+                }
+            }
+        },
+        "systems": {
+            "chatfilter": {
+                "title": "Chat Filter",
+                "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
+                "footer": "Baxi Security - avocloud.net"
+            },
+            "globalchat": {
+                "title": "Global Chat",
+                "error": {
+                    "file_not_image": "This file is not an image and cannot be sent in the global chat.",
+                    "to_many_files": "You can attach and send a maximum of one image.",
+                    "message_to_long": "Your message is too long. Please note that the maximum length is 1000 characters.",
+                    "baned": "You are banned from the global chat. The following reason is given: {reason}",
+                    "s11-not-sent": "⚠️ Your message wasn't sent in the global chat because it contains sensitive content related to self-harm or suicide.\nPlease check your private messages — our bot has sent you an important message there."
+                }
+            },
+            "verify": {
+                "title": "Verification",
+                "description_not_enabled": "This system is not enabled on this server. Please contact an administrator.",
+                "description_success": "The verification was successful. Welcome to the server!",
+                "captcha": {
+                    "description_wrong_code": "The code entered is incorrect. Please try again."
+                },
+                "password": {
+                    "description_wrong_password": "The password entered is incorrect. Please try again."
+                }
+            },
+            "ticket": {
+                "title": "Support Ticket",
+                "channel_name": "support-{user}",
+                "description_creation_successfull": "The ticket has been successfully created. A team member will get back to you shortly.\nYour ticket: {channel}",
+                "description_already_open": "You already have an open ticket. Please wait for a team member to respond.\nYour ticket: {channel}",
+                "description_no_permission_delete": "You do not have permission to delete this ticket.",
+                "description_no_permission_claim": "You do not have permission to claim this ticket.",
+                "description_claimed": "The supporter {user} is now claiming this ticket.",
+                "link": "Here you can find a transcript of your recently closed ticket:",
+                "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion."
+            },
+            "ai": {
+                "title": "AI",
+                "waiting": {
+                    "content": "Baxi AI is working on a response..."
+                },
+                "error": {
+                    "unknown": "An unknown error has occurred. Please try again later.",
+                    "id_not_found": "The ConversationID of your chat was not found. Please start a new chat using the `/ai` command.",
+                    "model_unable_to_chat": "Unfortunately, you cannot chat with this model. Please try with another model."
+                }
+            }
+        },
+        "events": {
+            "on_guild_join": {
+                "title": "Hello!",
+                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo make settings, you need to open the Baxi Dashboard. Use the command `/dashboard`.\n\n-# {saved_data}",
+                "saved_data": {
+                    "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard.",
+                    "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard to ensure these settings are correct."
+                }
+            }
+        },
+        "games": {
+            "counting": {
+                "title": "Counting Game",
+                "description_wrong_number": "{user}, the number you sent is not correct. We will start again at 1.",
+                "description_same_user": "{user}, you cannot send a number twice in a row. You must take turns counting."
+            },
+            "guessing": {
+                "title": "Guessing Game",
+                "description_correct": "{user}, you guessed the number correctly!\nWe will start with a new number, which has been generated between 1 and {max_value}.\nGood luck!"
+            }
+        }
+    }
+}

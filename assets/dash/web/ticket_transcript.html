@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Transcript #{{data.id}} | Avocloud.net</title>
+    
+    <meta property="og:title" content="Avocloud.net - Ticket #{{data.id}} Transcript">
+    <meta property="og:description" content="Transcript for support ticket #{{data.id}} - {{data.title}}">
+    <meta property="og:url" content="https://baxi.avocloud.net/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://baxi.avocloud.net/static/images/logo.png">
+    <meta name="theme-color" content="#DC143C">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" as="style">
+    <link rel="preload" href="{{ url_for('static', filename='main.css') }}" as="style">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" />
+    
+    <style>
+        :root {
+            --chat-bg: rgba(34, 34, 34, 0.8);
+            --chat-border: 1px solid rgba(255, 255, 255, 0.1);
+            --chat-radius: 12px;
+            --chat-spacing: 1.25rem;
+            --avatar-size: 48px;
+        }
+        
+        .chat-log {
+            display: flex;
+            flex-direction: column;
+            gap: var(--chat-spacing);
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(17, 17, 17, 0.6);
+            border: var(--chat-border);
+            border-radius: var(--chat-radius);
+            transition: transform 0.2s ease-in-out;
+            backdrop-filter: blur(8px);
+        }
+
+        .chat-log:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-avatar {
+            width: var(--avatar-size);
+            height: var(--avatar-size);
+            border-radius: 50%;
+            flex-shrink: 0;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-bubble {
+            background-color: var(--chat-bg);
+            padding: 0.75rem 1rem;
+            border-radius: var(--chat-radius);
+            color: var(--text-primary, #f1f1f1);
+            max-width: min(100%, 800px);
+            width: fit-content;
+            border: var(--chat-border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .chat-username {
+            font-weight: bold;
+            color: var(--text-primary, #fff);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-timestamp {
+            font-style: italic;
+            font-size: 0.75rem;
+            opacity: 0.75;
+            white-space: nowrap;
+        }
+
+        .chat-text {
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                --avatar-size: 40px;
+                --chat-spacing: 1rem;
+            }
+            
+            .chat-message {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chat-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            
+            .chat-timestamp {
+                margin-left: calc(var(--avatar-size) + 1rem);
+            }
+        }
+        
+        .ticket-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        .status-open {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00C853;
+        }
+        
+        .status-closed {
+            background: rgba(255, 0, 0, 0.2);
+            color: #FF5252;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="button_group">
+        <button onclick="location.href = '/'" class="group_button" aria-label="Go back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+        </button>
+    </div>
+    <div id="gradientbar"></div>
+
+    <div id="particles-js" aria-hidden="true"></div>
+    <div class="container" id="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Baxi
+                    <span class="highlight-purple" tabindex="0" role="button">support ticket</span> overview
+                </h1>
+                <p class="subtitle">
+                    This page displays all available details for support request <span
+                        class="highlight-yellow">#{{data.id}}</span>.
+                </p>
+                <p>Hello <strong>{{user.name}}</strong>, below you'll find the original message and the full conversation transcript
+                    associated with this ticket.</p>
+            </div>
+            <div class="scroll-indicator" aria-hidden="true">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <main>
+            <section id="ticket-overview" style="margin-top: 15vh;">
+                <div class="section-header">
+                    <div class="section-title">SUPPORT TICKET</div>
+                    <div class="ticket-status status-{{data.status}}">
+                        {{ data.status|upper }}
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-envelope" aria-hidden="true"></i> 
+                        {{ data.title }}
+                    </h3>
+                    <p class="project-description" style="white-space: pre-wrap;">
+                        {{ data.msg }}
+                    </p>
+                </div>
+
+                <div class="section-header" style="margin-top: 3rem;">
+                    <div class="section-title">CONVERSATION TRANSCRIPT</div>
+                    <div class="meta-info">{{ data.transcript|length }} messages</div>
+                </div>
+                
+                <div class="chat-log">
+                    {% for entry in data.transcript %}
+                    <div class="chat-message" id="message-{{ loop.index }}">
+                        <img src="{{ entry.avatar }}" alt="{{ entry.user }}'s avatar" class="chat-avatar" loading="lazy">
+                        <div class="chat-bubble">
+                            <div class="chat-header">
+                                <span class="chat-username">
+                                    {% if entry.is_staff %}
+                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
+                                    {% endif %}
+                                    {{ entry.user }}
+                                </span>
+                                <span class="chat-timestamp">
+                                    <a href="#message-{{ loop.index }}" title="Permalink to this message" style="color: var(--text-secondary)">
+                                        {{ entry.timestamp }}
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="chat-text">{{ entry.message }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-comment-slash" aria-hidden="true"></i>
+                        <p>No messages in this conversation yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <footer style="margin-top: 15vh;">
+            </footer>
+        </main>
+    </div>
+
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script defer src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    
+
+</body>
+
+</html>

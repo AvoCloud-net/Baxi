@@ -1,6 +1,6 @@
-import discord
 import asyncio
 from discord.ext import tasks, commands
+
 from reds_simple_logger import Logger
 from assets.share import globalchat_message_data
 import assets.data as datasys
@@ -9,7 +9,7 @@ import copy
 logger = Logger()
 
 
-class SyncGlobalchatMessageDataTask:
+class GCDH_Task:
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.old_data: dict = {}
@@ -29,14 +29,15 @@ class SyncGlobalchatMessageDataTask:
                     return f"{e}", False
 
         response, success = await asyncio.create_task(
-            save_globalchat_message_data(), name="save_globalchat_message_data"
+            save_globalchat_message_data(), name="GCDH"
         )
 
         if success:
             if response == "ncds":
-                logger.debug.info("[GCMD] No change in data detected")
+                logger.debug.info("[GCDH] No change in data detected")
             else:
-                logger.debug.success("[GCMD] Data synced with data-structure")
+                logger.debug.success("[GCDH] Data synced with data-structure")
                 self.old_data = copy.deepcopy(globalchat_message_data)
         else:
-            logger.error(f"[GCMD] Sync failed: {response}")
+            logger.error(f"[GCDH] Sync failed: {response}")
+

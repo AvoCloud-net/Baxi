@@ -1,21 +1,22 @@
-import asyncio
 import random
 import string
+import os
 
 import assets.data as datasys
-import assets.translate as tr
 import discord
-import lang.lang as lang
 from assets.views import (
     Ticket_Creation_Modal,
     Verify_Captcha_Modal,
     Verify_Password_Modal,
 )
 from discord import Interaction, ui
+import asyncio
+import config.config as config
+from typing import cast, Optional, Union
 
 
 class BanConfirmView(ui.View):
-    def __init__(self, user: discord.Member, moderator: discord.Member, reason: str):
+    def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str):
         super().__init__(timeout=None)
         self.user = user
         self.moderator = moderator
@@ -25,73 +26,86 @@ class BanConfirmView(ui.View):
         label="✅", style=discord.ButtonStyle.danger, custom_id="ban_admin_confirm"
     )
     async def confirm_ban(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         try:
             await self.user.ban(
-                reason=await tr.baxi_translate(
-                    lang.Utility.Ban.audit_reason.format(
-                        moderator=self.user.name, reason=self.reason
-                    ),
-                    lang,
+                reason=str(lang["commands"]["admin"]["ban"]["audit_reason"]).format(
+                    moderator=self.user.name, reason=self.reason
                 )
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Utility.Ban.title, lang),
-                description=f"{await tr.baxi_translate(lang.Utility.Ban.success, lang)}",
+                title=lang["commands"]["admin"]["ban"]["title"],
+                description=lang["commands"]["admin"]["ban"]["success"],
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.user, lang),
+                name=lang["commands"]["admin"]["user"],
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.mod, lang),
+                name=lang["commands"]["admin"]["mod"],
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.reason, lang),
+                name=lang["commands"]["admin"]["reason"],
                 value=self.reason,
                 inline=False,
             )
 
             for item in self.children:
-                item.disabled = True
+                button = cast(discord.ui.Button, item)
+                button.disabled = True
 
             await interaction.response.edit_message(embed=embed, view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(lang.Utility.Ban.bot_missing_perms, lang),
+                lang["commands"]["admin"]["ban"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
-                await tr.baxi_translate(
-                    lang.Utility.Ban.error.format(error=str(e)), lang
-                ),
+                str(lang["commands"]["admin"]["ban"]["error"]).format(error=str(e)),
                 ephemeral=True,
             )
 
     @ui.button(label="❌", style=discord.ButtonStyle.gray, custom_id="ban_admin_cancel")
     async def cancel_ban(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Ban.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Ban.abort, lang),
+            title=lang["commands"]["admin"]["ban"]["title"],
+            description=lang["commands"]["admin"]["ban"]["abort"],
             color=discord.Color.yellow(),
         )
 
         for item in self.children:
-            item.disabled = True
+            button = cast(discord.ui.Button, item)
+            button.disabled = True
 
         await interaction.response.edit_message(embed=embed, view=self)
 
 
 class KickConfirmView(ui.View):
-    def __init__(self, user: discord.Member, moderator: discord.Member, reason: str):
+    def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str):
         super().__init__(timeout=None)
         self.user = user
         self.moderator = moderator
@@ -101,53 +115,57 @@ class KickConfirmView(ui.View):
         label="✅", style=discord.ButtonStyle.danger, custom_id="kick_admin_confirm"
     )
     async def confirm_kick(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         try:
             await self.user.kick(
-                reason=await tr.baxi_translate(
-                    lang.Utility.Kick.audit_reason.format(
-                        moderator=self.user.name, reason=self.reason
-                    ),
-                    lang,
+                reason=str(lang["commands"]["admin"]["kick"]["audit_reason"]).format(
+                    moderator=self.user.name, reason=self.reason
                 )
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Utility.Kick.title, lang),
-                description=f"{await tr.baxi_translate(lang.Utility.Kick.success, lang)}",
+                title=lang["commands"]["admin"]["kick"]["title"],
+                description=lang["commands"]["admin"]["kick"]["success"],
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.user, lang),
+                name=lang["commands"]["admin"]["user"],
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.mod, lang),
+                name=lang["commands"]["admin"]["mod"],
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.reason, lang),
+                name=lang["commands"]["admin"]["reason"],
                 value=self.reason,
                 inline=False,
             )
 
             for item in self.children:
-                item.disabled = True
+                button = cast(discord.ui.Button, item)
+                button.disabled = True
 
             await interaction.response.edit_message(embed=embed, view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(lang.Utility.Kick.bot_missing_perms, lang),
+                lang["commands"]["admin"]["kick"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
-                await tr.baxi_translate(
-                    lang.Utility.Kick.error.format(error=str(e)), lang
-                ),
+                str(lang["commands"]["admin"]["kick"]["error"]).format(error=str(e)),
                 ephemeral=True,
             )
 
@@ -155,73 +173,96 @@ class KickConfirmView(ui.View):
         label="❌", style=discord.ButtonStyle.gray, custom_id="kick_admin_cancel"
     )
     async def cancel_kick(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Kick.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Kick.abort, lang),
+            title=lang["commands"]["admin"]["kick"]["title"],
+            description=lang["commands"]["admin"]["kick"]["abort"],
             color=discord.Color.yellow(),
         )
 
         for item in self.children:
-            item.disabled = True
+            button = cast(discord.ui.Button, item)
+            button.disabled = True
 
         await interaction.response.edit_message(embed=embed, view=self)
 
 
 class UbanConfirmView(ui.View):
-    def __init__(self, user: discord.Member, moderator: discord.Member):
+    def __init__(
+        self,
+        user: Union[discord.Member, discord.User],
+        moderator: discord.abc.User,
+        reason: Optional[str] = "N/A",
+    ):
         super().__init__(timeout=None)
         self.user = user
         self.moderator = moderator
+        self.reason = reason
 
     @ui.button(
         label="✅", style=discord.ButtonStyle.danger, custom_id="unban_admin_confirm"
     )
     async def confirm_uban(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
-        try:
-            await self.user.unban(
-                reason=await tr.baxi_translate(
-                    lang.Utility.Unban.audit_reason.format(moderator=self.user.name), lang
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
                 )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
+        try:
+            await interaction.guild.unban(
+                self.user,
+                reason=str(lang["commands"]["admin"]["unban"]["audit_reason"]).format(
+                    moderator=interaction.user.name  # vermutlich Moderator, nicht User!
+                ),
             )
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Utility.Unban.title, lang),
-                description=f"{await tr.baxi_translate(lang.Utility.Unban.success, lang)}",
+                title=lang["commands"]["admin"]["unban"]["title"],
+                description=lang["commands"]["admin"]["unban"]["success"],
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.user, lang),
+                name=lang["commands"]["admin"]["user"],
                 value=self.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.mod, lang),
+                name=lang["commands"]["admin"]["mod"],
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.reason, lang),
+                name=lang["commands"]["admin"]["reason"],
                 value=self.reason,
                 inline=False,
             )
 
             for item in self.children:
-                item.disabled = True
+                button = cast(discord.ui.Button, item)
+                button.disabled = True
 
             await interaction.response.edit_message(embed=embed, view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(lang.Utility.Unban.bot_missing_perms, lang),
+                lang["commands"]["admin"]["unban"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
-                await tr.baxi_translate(
-                    lang.Utility.Unban.error.format(error=str(e)), lang
-                ),
+                str(lang["commands"]["admin"]["unban"]["error"]).format(error=str(e)),
                 ephemeral=True,
             )
 
@@ -229,22 +270,34 @@ class UbanConfirmView(ui.View):
         label="❌", style=discord.ButtonStyle.gray, custom_id="unban_admin_cancel"
     )
     async def cancel_unban(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Unban.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Unban.abort, lang),
+            title=lang["commands"]["admin"]["unban"]["title"],
+            description=lang["commands"]["admin"]["unban"]["abort"],
             color=discord.Color.yellow(),
         )
 
         for item in self.children:
-            item.disabled = True
+            button = cast(discord.ui.Button, item)
+            button.disabled = True
 
         await interaction.response.edit_message(embed=embed, view=self)
 
 
 class ClearConfirmView(ui.View):
     def __init__(
-        self, amount: int, moderator: discord.Member, channel: discord.TextChannel
+        self,
+        amount: int,
+        moderator: discord.abc.User,
+        channel: discord.abc.GuildChannel,
     ):
         super().__init__(timeout=None)
         self.amount = amount
@@ -255,46 +308,59 @@ class ClearConfirmView(ui.View):
         label="✅", style=discord.ButtonStyle.danger, custom_id="clear_admin_confirm"
     )
     async def confirm_clear(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         try:
-            await self.channel.purge(limit=self.amount + 1)
+            text_channel = cast(discord.TextChannel, self.channel)
+            await text_channel.purge(limit=self.amount + 1)
 
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Utility.Clear.title, lang),
-                description=f"{await tr.baxi_translate(lang.Utility.Clear.success, lang)}",
+                title=lang["commands"]["admin"]["clear"]["title"],
+                description=lang["commands"]["admin"]["clear"]["success"],
                 color=discord.Color.red(),
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.mod, lang),
+                name=lang["commands"]["admin"]["user"],
                 value=interaction.user.mention,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.amount, lang),
+                name=lang["commands"]["admin"]["amount"],
                 value=self.amount,
                 inline=False,
             )
             embed.add_field(
-                name=await tr.baxi_translate(lang.Utility.channel, lang),
+                name=lang["commands"]["admin"]["channel"],
                 value=self.channel.name,
                 inline=False,
             )
 
             for item in self.children:
-                item.disabled = True
+                button = cast(discord.ui.Button, item)
+                button.disabled = True
 
-            await interaction.channel.send(embed=embed, view=self)
+            if isinstance(
+                interaction.channel, (discord.TextChannel, discord.DMChannel)
+            ):
+                await interaction.channel.send(embed=embed, view=self)
+            else:
+                await interaction.response.send_message(embed=embed, view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
-                await tr.baxi_translate(lang.Utility.Clear.bot_missing_perms, lang),
+                lang["commands"]["admin"]["clear"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
             await interaction.response.send_message(
-                await tr.baxi_translate(
-                    lang.Utility.Clear.error.format(error=str(e)), lang
-                ),
+                str(lang["commands"]["admin"]["clear"]["error"]).format(error=str(e)),
                 ephemeral=True,
             )
 
@@ -302,15 +368,24 @@ class ClearConfirmView(ui.View):
         label="❌", style=discord.ButtonStyle.gray, custom_id="clear_admin_cancel"
     )
     async def cancel_clear(self, interaction: Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=await tr.baxi_translate(lang.Utility.Clear.title, lang),
-            description=await tr.baxi_translate(lang.Utility.Clear.abort, lang),
+            title=lang["commands"]["admin"]["clear"]["title"],
+            description=lang["commands"]["admin"]["clear"]["abort"],
             color=discord.Color.yellow(),
         )
 
         for item in self.children:
-            item.disabled = True
+            button = cast(discord.ui.Button, item)
+            button.disabled = True
 
         await interaction.response.edit_message(embed=embed, view=self)
 
@@ -321,19 +396,40 @@ class VerifyView(ui.View):
 
     @ui.button(style=discord.ButtonStyle.success, emoji="✅", custom_id="verify_user")
     async def verify(self, interaction: Interaction, button: ui.Button):
-        lang: str = datasys.load_lang(interaction.guild.id)
-        verify_data: dict = datasys.load_data(interaction.guild.id, "verify")
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                )
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
+        verify_data: dict = dict(datasys.load_data(interaction.guild.id, "verify"))
 
-        if verify_data.enabled:
-            role: discord.Role = interaction.guild.get_role(verify_data.rid)
-            user: discord.User = interaction.guild.get_member(interaction.user.id)
-            option: int = verify_data.verify_option
+        if verify_data.get("enabled", False):
+            role: Optional[discord.Role] = interaction.guild.get_role(
+                verify_data.get("rid", 0)
+            )
+            if role is None:
+                await interaction.response.send_message(
+                    "Role not found.", ephemeral=True
+                )
+                return
+            user: Optional[discord.Member] = interaction.guild.get_member(
+                interaction.user.id
+            )
+            if user is None:
+                await interaction.response.send_message(
+                    "User not found in guild.", ephemeral=True
+                )
+                return
+
+            option: int = verify_data.get("verify_option", 0)
 
             embed_success = discord.Embed(
-                title=await tr.baxi_translate(lang.Verify.title, lang),
-                description=await tr.baxi_translate(
-                    lang.Verify.description_success, lang
-                ),
+                title=lang["systems"]["verify"]["title"],
+                description=lang["systems"]["verify"]["description_success"],
                 color=discord.Color.green(),
             )
 
@@ -356,18 +452,16 @@ class VerifyView(ui.View):
             elif option == 2:
                 await interaction.response.send_modal(
                     Verify_Password_Modal(
-                        user=interaction.user.id,
-                        captcha=verify_data.password,
+                        user=interaction.user,
+                        captcha=verify_data.get("password", "password"),
                         guild=interaction.guild,
                         role=role,
                     )
                 )
         else:
             embed = discord.Embed(
-                title=await tr.baxi_translate(lang.Verify.title, lang),
-                description=await tr.baxi_translate(
-                    lang.Verify.description_not_enabeld, lang
-                ),
+                title=lang["systems"]["verify"]["title"],
+                description=lang["systems"]["verify"]["description_not_enabled"],
                 color=discord.Color.red(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -382,35 +476,42 @@ class TicketView(ui.View):
     )
     async def ticket(self, interaction: discord.Interaction, button: ui.Button):
         try:
-            print("ticket_create_button")
-            lang = datasys.load_lang(interaction.guild.id)
-            print("Loaded language:", lang)
-            tickets = datasys.load_data(interaction.guild.id, sys="open_tickets")
-            print("Loaded tickets:", tickets)
-            for ticket in tickets:
-                print("print_loop_one")
-                print("Current ticket:", ticket)
-                if tickets[ticket]["user"] == interaction.user.id:
-                    channel = await interaction.guild.fetch_channel(int(ticket))
-                    embed = discord.Embed(
-                        title=await tr.baxi_translate(lang.Ticket.title, lang),
-                        description=str(
-                            await tr.baxi_translate(
-                                lang.Ticket.description_already_open, lang
-                            )
-                        ).format(channel=channel.mention),
-                        color=discord.Color.red(),
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                return await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=lang["commands"]["guild_only"],
+                        color=config.Discord.warn_color,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    return
+                )
+            lang = datasys.load_lang_file(interaction.guild.id)
+            settings: dict = dict(datasys.load_data(interaction.guild.id, sys="ticket"))
+            tickets: dict = dict(settings.get("open_tickets", {}))
+            for ticket in list(tickets):
+                if dict(tickets.get(ticket, {})).get("user") == interaction.user.id:
+
+                    try:
+                        channel = await interaction.guild.fetch_channel(int(ticket))
+                        embed = discord.Embed(
+                            title=lang["systems"]["ticket"]["title"],
+                            description=str(
+                                lang["systems"]["ticket"]["description_already_open"]
+                            ).format(channel=channel.mention),
+                            color=discord.Color.red(),
+                        )
+                        await interaction.response.send_message(
+                            embed=embed, ephemeral=True
+                        )
+                        return
+                    except discord.NotFound:
+                        del tickets[ticket]
+                        datasys.save_data(interaction.guild.id, "ticket", settings)
+
             await interaction.response.send_modal(
                 Ticket_Creation_Modal(user=interaction.user, guild=interaction.guild)
             )
         except Exception as e:
-            print("An error occurred:", str(e))
-            import traceback
-
-            print(traceback.format_exc())
+            print(f"error in ticket button {e}")
 
 
 class TicketAdminButtons(ui.View):
@@ -421,64 +522,207 @@ class TicketAdminButtons(ui.View):
         emoji="🗑️", style=discord.ButtonStyle.danger, custom_id="ticket_admin_delete"
     )
     async def delete(self, interaction: discord.Interaction, button: ui.Button):
-        lang = datasys.load_lang(interaction.guild.id)
-        tickets = datasys.load_data(interaction.guild.id, sys="open_tickets")
-        for ticket in tickets:
-            print(ticket)
-            if int(ticket) == int(interaction.channel.id):
-                if int(tickets[ticket]["supporterid"]) == int(interaction.user.id):
-                    await interaction.channel.delete(
-                        reason=f"Ticket was closes by the supporter {interaction.user.name}"
-                    )
-                    del tickets[str(ticket)]
-                    datasys.save_data(
-                        interaction.guild.id, sys="open_tickets", data=tickets
+        try:
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                return await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=lang["commands"]["guild_only"],
+                        color=config.Discord.warn_color,
+                    ),
+                    ephemeral=True,
+                )
+
+            if not isinstance(interaction.channel, discord.TextChannel):
+                await interaction.response.send_message(
+                    "This command can only be used in a text channel.",
+                    ephemeral=True,
+                )
+                return
+
+            transcript_id: str = os.urandom(8).hex()
+
+            lang = datasys.load_lang_file(interaction.guild.id)
+            guild_settings: dict = dict(
+                datasys.load_data(interaction.guild.id, sys="ticket")
+            )
+            tickets = guild_settings.get("open_tickets", {})
+            transcripts: dict = dict(datasys.load_data(1001, "transcripts"))
+
+            if not isinstance(tickets, dict):
+                tickets = {}
+
+            channel_id = str(interaction.channel.id)
+            if channel_id in tickets:
+                ticket_data = tickets[channel_id]
+
+                member = interaction.guild.get_member(interaction.user.id)
+                if member is None:
+                    await interaction.response.send_message(
+                        "Error: Member not found.", ephemeral=True
                     )
                     return
+
+                required_role_id = guild_settings.get("role", 0)
+                if ticket_data.get("supporterid") == interaction.user.id or int(
+                    required_role_id
+                ) in [role.id for role in member.roles]:
+                    await interaction.response.send_message(
+                        embed=discord.Embed(
+                            title=lang["systems"]["ticket"]["title"],
+                            description=lang["systems"]["ticket"]["wait_delete_confirm"],
+                            color=config.Discord.danger_color
+                        )
+                    )
+
+                    if interaction.channel.id is None:
+                        return
+
+                    def check(m):
+                        return (m.channel.id == interaction.channel.id and  # pyright: ignore[reportOptionalMemberAccess]
+                                m.author.id == interaction.user.id)
+
+                    try:
+                        response = await interaction.client.wait_for(
+                            "message",
+                            check=check,
+                            timeout=60.0 
+                        )
+                        
+                        if response.content.lower() == "confirm":
+                            await interaction.channel.delete(
+                                reason=f"Ticket closed by {interaction.user.name}"
+                            )
+                            
+                            transcript_data: dict = {
+                                "guild": str(interaction.guild.id),
+                                "id": str(transcript_id),
+                                "title": ticket_data["title"],
+                                "msg": ticket_data["message"],
+                                "transcript": ticket_data["transcript"],
+                            }
+
+                            transcript_channel = await interaction.guild.fetch_channel(
+                                int(guild_settings.get("channel", 0))
+                            )
+                            link = f"https://{config.Web.url}/?ticket_transcript={transcript_id}"
+
+                            embed = discord.Embed(
+                                title=lang["systems"]["ticket"]["title"],
+                                description=f"{lang['systems']['ticket']['link']} {link}",
+                            )
+                            
+                            if transcript_channel is not None and isinstance(
+                                transcript_channel, discord.TextChannel
+                            ):
+                                await transcript_channel.send(embed=embed)
+
+                            if member.dm_channel is not None:
+                                await member.dm_channel.send(embed=embed)
+
+                            transcripts[str(transcript_id)] = transcript_data
+                            datasys.save_data(1001, "transcripts", transcripts)
+                            del tickets[channel_id]
+                            datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+                        else:
+                            await interaction.channel.send("Ticket deletion cancelled.")
+                            
+                    except asyncio.TimeoutError:
+                        await interaction.channel.send("Timed out waiting for confirmation.")
+                        
                 else:
-                    embed = discord.Embed(
-                        title=await tr.baxi_translate(lang.Ticket.title, lang),
-                        description=await tr.baxi_translate(
-                            lang.Ticket.description_no_permission_delete, lang
+                    await interaction.response.send_message(
+                        embed=discord.Embed(
+                            title=lang["systems"]["ticket"]["title"],
+                            description=lang["systems"]["ticket"][
+                                "description_no_permission_delete"
+                            ],
+                            color=discord.Color.red(),
                         ),
-                        color=discord.Color.red(),
+                        ephemeral=True,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    return
             else:
-                continue
+                await interaction.response.send_message(
+                    "This channel is not a valid ticket.",
+                    ephemeral=True,
+                )
+        except Exception as e:
+            print(f"error in ticket delete: {e}")
 
     @ui.button(
         emoji="🖐️", style=discord.ButtonStyle.primary, custom_id="ticket_admin_claim"
     )
     async def claim(self, interaction: discord.Interaction, button: ui.Button):
-        lang: str = datasys.load_lang(interaction.guild.id)
-        tickets: dict = datasys.load_data(interaction.guild.id, sys="open_tickets")
-        guild_settings: dict = datasys.load_data(interaction.guild.id, sys="ticket")
-        for ticket in tickets:
-            if int(ticket) == int(interaction.channel.id):
-                if guild_settings.rid in [role.id for role in interaction.user.roles]:
-                    tickets[ticket]["supporterid"] = interaction.user.id
-                    datasys.save_data(
-                        interaction.guild.id, sys="open_tickets", data=tickets
-                    )
-                    embed = discord.Embed(
-                        title=await tr.baxi_translate(lang.Ticket.title, lang),
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    title=lang["commands"]["guild_only"],
+                    color=config.Discord.warn_color,
+                ),
+                ephemeral=True,
+            )
+
+        if not isinstance(interaction.channel, discord.TextChannel):
+            await interaction.response.send_message(
+                "This command can only be used in a text channel.",
+                ephemeral=True,
+            )
+            return
+
+        lang = datasys.load_lang_file(interaction.guild.id)
+        guild_settings: dict = dict(
+            datasys.load_data(interaction.guild.id, sys="ticket")
+        )
+        tickets = guild_settings.get("open_tickets", {})
+
+        if not isinstance(tickets, dict):
+            tickets = {}
+        if not isinstance(guild_settings, dict) or "role" not in guild_settings:
+            await interaction.response.send_message(
+                "Error: Ticket system not properly configured.",
+                ephemeral=True,
+            )
+            return
+
+        channel_id = str(interaction.channel.id)
+        if channel_id in tickets:
+            member = interaction.guild.get_member(interaction.user.id)
+            if member is None:
+                await interaction.response.send_message(
+                    "Error: Member not found.",
+                    ephemeral=True,
+                )
+                return
+
+            required_role_id = guild_settings.get("role", 0)
+            if int(required_role_id) in [role.id for role in member.roles]:
+                tickets[channel_id]["supporterid"] = interaction.user.id
+                datasys.save_data(interaction.guild.id, "tickets", guild_settings)
+
+                await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=lang["systems"]["ticket"]["title"],
                         description=str(
-                            await tr.baxi_translate(lang.Ticket.description_claimed, lang)
+                            lang["systems"]["ticket"]["description_claimed"]
                         ).format(user=interaction.user.mention),
                         color=discord.Color.green(),
                     )
-                    await interaction.response.send_message(embed=embed)
-                else:
-                    embed = discord.Embed(
-                        title=await tr.baxi_translate(lang.Ticket.title, lang),
-                        description=await tr.baxi_translate(
-                            lang.Ticket.description_no_permission_claim, lang
-                        ),
-                        color=discord.Color.red(),
-                    )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    return
+                )
             else:
-                continue
+                print([role.id for role in member.roles])
+                await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=lang["systems"]["ticket"]["title"],
+                        description=lang["systems"]["ticket"][
+                            "description_no_permission_claim"
+                        ],
+                        color=discord.Color.red(),
+                    ),
+                    ephemeral=True,
+                )
+        else:
+            await interaction.response.send_message(
+                "This channel is not a valid ticket.",
+                ephemeral=True,
+            )

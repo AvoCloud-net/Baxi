@@ -4,27 +4,30 @@ import config.auth as auth
 import config.config as config
 import discord
 import reds_simple_logger
-from assets.commands import ai, base_commands, utility_commands
-from assets.dash.log import (highlight_word, request_chatfilter_log,
-                             request_log_home)
+from assets.commands import base_commands, utility_commands, bot_admin_commands
+from assets.dash.log import highlight_word
+
 from assets.data import set_bot
 from assets.events import events
 from discord.ext import commands
 from quart import Quart
 from quart_cors import cors
+import os
 
 logger = reds_simple_logger.Logger()
 
 logger.working("Booting...")
-
 
 class PersistentViewBot(commands.AutoShardedBot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True
+        intents.guilds = True
+        intents.guild_messages = True
         super().__init__(
-            command_prefix=str(commands.when_mentioned_or(config.Discord.prefix)),
+            command_prefix=str(
+                commands.when_mentioned_or(config.Discord.prefix)),
             intents=intents,
             shard_count=config.Discord.shard_count,
         )
@@ -43,23 +46,20 @@ web = Quart(
     static_folder=config.Web.static_folder,
 )
 web = cors(web)
+web.config["PREFERRED_URL_SCHEME"] = "https"
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-events(bot=bot)
+
+events(bot=bot, web=web)
 base_commands(bot=bot)
 utility_commands(bot=bot)
-ai(bot=bot)
+bot_admin_commands(bot=bot)
 
-request_chatfilter_log(app=web, bot=bot)
-request_log_home(app=web)
 web.jinja_env.filters['highlight_word'] = highlight_word
 
-@bot.tree.command(name="ticket-test")
-async def ticket_test(interaction: discord.Interaction):
-    from assets.buttons import TicketView
-    await interaction.response.send_message("Ticket Test", view=TicketView())
 
 async def run_bot():
-    await bot.start(auth.Bot.token)
+    await bot.start(auth.Bot.token, reconnect=True)
 
 
 async def run_app():

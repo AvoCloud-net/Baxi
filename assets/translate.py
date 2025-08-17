@@ -1,8 +1,7 @@
-import asyncio
-from deep_translator import GoogleTranslator
-import asyncio
+import aiohttp
 
-def translate(language, text_obj):
+
+async def translate(language, text_obj):
     if language == "en":
         parent_obj = text_obj.__parent__
         attr_name = text_obj.__name__
@@ -10,17 +9,28 @@ def translate(language, text_obj):
             en_obj = getattr(parent_obj, "en")
             if hasattr(en_obj, attr_name):
                 return getattr(en_obj, attr_name)
+    elif language == "de":
+        return text_obj
     return text_obj
 
-async def baxi_translate(text_obj, language: str):
-    async def task():
-        if language == "en":
-            return translate(language, text_obj)
-        try:
-            translated = GoogleTranslator(source="auto", target=language).translate(str(text_obj))
-            return translated
-        except Exception as e:
-            return f"An error occurred: {str(e)}"
 
-    translated = await asyncio.create_task(task(), name="baxi_translate")
-    return str(translated)
+async def translate_api(text: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        
+        
+
+        # Übersetzung
+        payload = {
+            "q": text,
+            "source": "auto",
+            "target": "en",
+            "format": "text"
+        }
+        async with session.post(
+            "https://translate.avocloud.net/translate",
+            json=payload
+        ) as translate_request:
+            translated_response = await translate_request.json()
+            print(translated_response)
+            translated_text = translated_response["translatedText"]
+            return translated_text

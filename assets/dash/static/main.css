@@ -7,6 +7,8 @@
   --text-secondary: #888888;
   --border-color: #222222;
   --font-family: "Quicksand", sans-serif;
+  --hover-color: #222222;
+  --hover-border: #333333;
 }
 
 * {
@@ -20,6 +22,20 @@ body {
   font-family: var(--font-family);
   color: var(--text-color);
   line-height: 1.6;
+}
+
+html,
+body {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-y: scroll;
+  margin: 0;
+  padding: 0;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 #gradientbar {
@@ -140,20 +156,6 @@ h1 {
   background-color: rgba(147, 51, 234, 0.6);
 }
 
-.highlight-red {
-  background-color: rgba(234, 51, 51, 0.2);
-  padding: 2px 8px;
-  color: rgb(254, 180, 180);
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.highlight-red:hover {
-  background-color: rgba(234, 51, 51, 0.4);
-  transform: translateY(-2px);
-  cursor: pointer;
-}
-
 .highlight-yellow {
   background-color: rgba(234, 179, 8, 0.2);
   padding: 2px 8px;
@@ -203,7 +205,7 @@ h1 {
 }
 
 .project-card {
-  background: var(--card-background);
+  background: rgba(17, 17, 17, 0.6);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 24px;
@@ -277,6 +279,8 @@ main {
   object-fit: cover;
 }
 
+
+
 .popup {
   position: fixed;
   top: 50%;
@@ -296,6 +300,7 @@ main {
   background-blend-mode: multiply;
   z-index: 100;
 }
+
 
 .alert-message {
   margin-top: 15px;
@@ -339,4 +344,111 @@ button {
   font-family: var(--font-family);
   color: var(--text-color);
   font-size: 18px;
+}
+
+#back_button {
+  padding: 10px;
+  background-color: var(--card-background);
+  border: solid var(--border-color) 1px;
+  border-radius: 8px;
+  z-index: 9999;
+  position: fixed;
+  bottom: 1.5%;
+  left: 1.5%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+
+#back_button:hover {
+  background-color: var(--hover-color);
+  border-color: var(--border-color);
+}
+
+#arrow_back {
+  color: var(--text-color);
+  justify-self: left;
+  align-self: center;
+}
+
+#button_group {
+    position: fixed;
+    bottom: 1.5%;
+    left: 1.5%;
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.group_button {
+    all: unset;
+    padding: 10px 14px;
+    color: white;
+    background-color: var(--card-background);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+    text-align: left;
+}
+
+.group_button:hover {
+    background-color: var(--hover-color);
+}
+
+
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #333;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--hover-border);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease-in-out, background 0.2s ease-in-out;
+}
+
+.submit-btn:hover {
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.6);
+  background: linear-gradient(90deg, #ec4899 0%, #9333ea 100%);
 }

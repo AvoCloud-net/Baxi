@@ -1,8 +1,9 @@
 import json
 import os
-
 import discord
 from discord.ext import commands
+from typing import Optional, Union
+import config.config as config
 
 
 def load_json(file: str):
@@ -10,68 +11,69 @@ def load_json(file: str):
         return json.load(f)
 
 
-class Data_return:
-    def __init__(self, data: dict):
-        self.data: dict = data
-        self.enabled: bool = data.get("enabled")
-        self.sid: int = data.get("sid")
-        self.cid: int = data.get("cid")
-        self.catid: int = data.get("catid")
-        self.rid: int = data.get("rid")
-        self.number: int = data.get("number")
-        self.c_goodwords: list = data.get("c_goodwords")
-        self.c_badwords: list = data.get("c_badwords")
-        self.bypass: list = data.get("bypass")
-        self.globalchat: dict = data.get("globalchat")
-        self.last_user: int = data.get("last_user")
-        self.min_value: int = data.get("min_value")
-        self.max_value: int = data.get("max_value")
-        self.verify_option: int = data.get(
-            "verify_option"
-        )  # 0 = none, 1 = captcha, 2 = password
-        self.password: str = data.get("password")
-
-    def to_dict(self):
-        return {
-            "enabled": self.enabled,
-            "sid": self.sid,
-            "cid": self.cid,
-            "catid": self.catid,
-            "rid": self.rid,
-            "number": self.number,
-            "c_goodwords": self.c_goodwords,
-            "c_badwords": self.c_badwords,
-            "bypass": self.bypass,
-            "globalchat": self.globalchat,
-            "last_user": self.last_user,
-            "min_value": self.min_value,
-            "max_value": self.max_value,
-            "verify_option": self.verify_option,
-            "password": self.password,
-        } 
+def load_data(
+    sid: int,
+    sys: str,
+    bot: Optional[commands.AutoShardedBot] = None,
+    dash_login: Optional[str] = None,
+) -> Union[dict, list]:
+    
+    guild_data_dir = os.path.join("data", str(sid))
+    if not os.path.exists(guild_data_dir):
+        os.makedirs(guild_data_dir)
+        json_file_path = os.path.join(guild_data_dir, "conf.json")
+        if not os.path.exists(json_file_path):
+            with open(json_file_path, "w", encoding="utf-8") as json_file:
+                json.dump(config.datasys.default_data, json_file, indent=4)
 
 
-def load_data(sid: int, sys: str):
     if sys == "globalchat_message_data":
-        file_path = f"data/{sid}/globalchat_message_data.json"
-        data = load_json(file_path)
+        data: dict = load_json(f"data/{sid}/globalchat_message_data.json")
         return data
+
     elif sys == "chatfilter_log":
-        file_path = f"data/{sid}/chatfilter_log.json"
-        data = load_json(file_path)
+        data = load_json(f"data/{sid}/chatfilter_log.json")
         return data
-    elif sys == "open_tickets":
-        data = load_json(f"data/{sid}/conf.json")
-        req_data = data["ticket"]["open_tickets"]
+    
+    elif sys == "transcripts":
+        data = load_json(f"data/{sid}/transcripts.json")
         return data
+    
+    elif sys == "users":
+        data = load_json(f"data/{sid}/users.json")
+        return data
+
+    elif sys == "all":
+        guild_data = load_json(f"data/{sid}/conf.json")
+        gc_data = load_json("data/1001/conf.json")["globalchat"]
+        if bot is None:
+            return {}
+        guild = bot.get_guild(int(sid))
+        if guild is None:
+            return {}
+        guild_icon = guild.icon.url if guild.icon is not None else ""
+        guild_info = {
+            "name": guild.name,
+            "id": guild.id,
+            "icon_url": guild_icon,
+            "member_count": len(guild.members),
+            "dash_login": dash_login,
+        }
+        if str(sid) in gc_data:
+            guild_gc_data = {"globalchat": gc_data[str(sid)]}
+            guild_conf = {**guild_info, **guild_data, **guild_gc_data}
+        else:
+            guild_conf = {**guild_info, **guild_data}
+        return guild_conf
+
     else:
         data = load_json(f"data/{sid}/conf.json")
         req_data = data[sys]
-        return Data_return(req_data)
+        return req_data
 
 
 def load_lang(sid: int):
-    if sid is not None:
+    if sid is not None and sid != 1001 and sid != 0:
         try:
             data = load_json(f"data/{sid}/conf.json")
             req_data = data["lang"]
@@ -81,6 +83,12 @@ def load_lang(sid: int):
     else:
         req_data = "en"
     return req_data
+
+
+def load_lang_file(sid: int):
+    server_lang = load_lang(sid)
+    data = load_json(os.path.join("lang", "lang.json"))
+    return data[str(server_lang)]
 
 
 def save_json(file: str, data):
@@ -95,9 +103,11 @@ def save_data(sid: int, sys: str, data):
     elif sys == "chatfilter_log":
         file_path = f"data/{sid}/chatfilter_log.json"
         save_json(file_path, data)
-    elif sys == "open_tickets":
-        file_path = f"data/{sid}/tickets.json"
+    elif sys == "transcripts":
+        file_path = f"data/{sid}/transcripts.json"
         save_json(file_path, data)
+    elif sys == "users": 
+        save_json(f"data/{sid}/users.json", data)
     else:
         file_path = f"data/{sid}/conf.json"
 
@@ -110,10 +120,10 @@ def save_data(sid: int, sys: str, data):
         save_json(file_path, data_file)
 
 
-bot_instance = None
+bot_instance: Optional[commands.AutoShardedBot] = None
 
 
-def set_bot(bot):
+def set_bot(bot: commands.AutoShardedBot):
     global bot_instance
     bot_instance = bot
 
@@ -131,6 +141,12 @@ class Server_info_return:
         self.name = guild.name
 
 
-def get_guild_data(gid: int):
+def get_guild_data(gid: int) -> Optional[Server_info_return]:
+    if bot_instance is None:
+        return None
+
     guild = bot_instance.get_guild(gid)
+    if guild is None:
+        return None
+
     return Server_info_return(guild)

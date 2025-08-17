@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
+    <meta property="og:title" content="Avocloud.net logs - Chatfilter">
+    <meta property="og:url" content="https://baxi.avocloud.net/logs/">
+    <meta peoperty="og:color" content="#DC143C">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
+    <title>Chatfilter log view</title>
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+
+    <div id="particles-js"></div>
+    <div class="container" id="container">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Changes 
+                    <span class="highlight-purple" onclick="copyToClipboard()">applied successfully</span>
+                </h1>
+                <p class="subtitle">
+                    The changes you have made have been successfully applied. 
+                </p>
+                <button id="back-button"><span><i class="fa-solid fa-arrow-left" id="arrow_back"> </i>Back</span></button>
+            </div>
+
+        </section>
+
+        <main>
+            <footer style="margin-top: 15vh;">Avocloud.net</footer>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script>
+        document.getElementById('back-button').onclick = function() {
+            const currentUrl = new URL(window.location.href);
+            
+            const guildLogin = currentUrl.searchParams.get('dash_login');
+            
+            if (guildLogin) {
+                location.href = `/guild/?guild_login=${guildLogin}`;
+            } else {
+                location.href = '/';
+            }
+        };
+    </script>
+</body>
+
+</html>

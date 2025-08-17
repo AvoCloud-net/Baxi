@@ -3,26 +3,23 @@ from assets.data import load_data
 from discord.ext import commands
 from quart import Markup, render_template
 from reds_simple_logger import Logger
+from typing import Optional
 
 logger = Logger()
-
-def request_log_home(app: quart.Quart):
-    @app.route("/log/")
-    async def log_home():
-        return await render_template("log_home.html")
 
 def request_chatfilter_log(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/log/chatfilter")
     async def log():
         try:
             id = quart.request.args.get("id_chatfilter")
+            print(id)
 
-            chatfilter_log:dict = load_data(1001, "chatfilter_log")
+            chatfilter_log:dict = dict(load_data(1001, "chatfilter_log"))
             try:
-                requested_data:dict = chatfilter_log.get(str(id))
+                requested_data: Optional[dict] = chatfilter_log.get(str(id))
                 if not requested_data:
                     return await render_template("error.html", message="We're not sure what your ID is. Just double-check that you've copied or typed it correctly.")
-            except:
+            except Exception as e:
                 logger.error("LOG VIEW ERROR 1" + str(e))
                 return await render_template("error.html", message="We're getting an error we don't recognize. Try again. If this keeps happening, let the development team know.")
 
@@ -31,6 +28,8 @@ def request_chatfilter_log(app: quart.Quart, bot: commands.AutoShardedBot):
         except Exception as e:
             logger.error("LOG VIEW ERROR 2" + str(e))
             return await render_template("error.html", message="We're getting an error we don't recognize. Try again. If this keeps happening, let the development team know.")
+        
+
     
 
 def highlight_word(message:str, word:str):
