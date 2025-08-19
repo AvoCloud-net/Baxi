@@ -208,15 +208,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             await dm_channel.send(embed=embed)
             return
 
-        print(chatfilter_req)
-        if str(message.guild.id) in gc_data:
-            if chatfilter_req["flagged"] is True:
-                await del_chatfilter(
-                    message=message, reason=chatfilter_req["reason"], bot=bot
-                )
-                return
-
-        elif (
+        if (
             bool(chatfilter_data.get("enabled", False))
             and message.channel.id not in chatfilter_data["bypass"]
         ):
@@ -228,9 +220,15 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if str(message.guild.id) in gc_data and message.channel.id == int(
             gc_data[str(message.guild.id)]["channel"]
         ):
-            return await globalchat.globalchat(
-                bot=bot, message=message, gc_data=gc_data
-            )
+            if chatfilter_req["flagged"] is True:
+                await del_chatfilter(
+                    message=message, reason=chatfilter_req["reason"], bot=bot
+                )
+                return
+            else:
+                return await globalchat.globalchat(
+                    bot=bot, message=message, gc_data=gc_data
+                )
         
         settings: dict = dict(datasys.load_data(message.guild.id, sys="ticket"))
         try:
