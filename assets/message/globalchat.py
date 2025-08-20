@@ -67,9 +67,13 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         }
         assert message.guild is not None, "Message guild none"
         assert message.author.avatar is not None, "Message authr avatar none"
+        guild = await bot.fetch_guild(int(guild_id))
+        guild_icon = guild.icon.url if guild.icon is not None else "https://avocloud.net/icon.png"
+        guild_user = await guild.fetch_member(int(message.author.id))
+        role_color = guild_user.top_role.color if guild_user.top_role.color != discord.Color.default() else discord.Color.blurple()
         embed = discord.Embed(
             description=message.content,
-            color=discord.Color.blurple(),
+            color=role_color,
             timestamp=message.created_at,
         )
 
@@ -83,7 +87,8 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             text=(
                 f"{message.guild.name} | {message.guild.id} | "
                 f"{message.author.id} | {gcmid}"
-            )
+            ),
+            icon_url=guild_icon
         )
 
         if len(message.attachments) == 1:
