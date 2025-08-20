@@ -13,7 +13,11 @@ from discord.ext import commands
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-
+import re
+from urllib.parse import urlparse
+import aiohttp
+from bs4 import BeautifulSoup
+import requests
 
 async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: dict):
     try:
@@ -91,46 +95,132 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             icon_url=guild_icon
         )
 
+        def extract_gif_link(tenor_link_var):
+            response = requests.get(tenor_link_var)
+
+            if response.status_code != 200:
+                raise Exception(
+                    f"Failed to retrieve page. Status code: {response.status_code}"
+                )
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            gif_link = None
+            for img_gif_var in soup.find_all("img"):
+                if img_gif_var.get("src") and "gif" in img_gif_var.get("src"):
+                    gif_link = img_gif_var.get("src")
+                    break
+
+            if gif_link is None:
+                pass
+
+            return gif_link
+
+        async def process_image_links(content):
+            
+            url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
+            urls = re.findall(url_pattern, content)
+            
+            if not urls:
+                return None, None
+                
+            
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.svg']
+            video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.wmv', '.flv', '.m4v']
+            
+            for url in urls:
+                try:
+                    
+                    if url.startswith('www.'):
+                        url = 'https://' + url
+                    
+                    parsed_url = urlparse(url)
+                    path = parsed_url.path.lower()
+                    
+                    
+                    if any(path.endswith(ext) for ext in image_extensions):
+                        return url, 'image'
+                    
+                    
+                    if any(path.endswith(ext) for ext in video_extensions):
+                        return url, 'video'
+                    
+                    
+                    if 'tenor.com' in parsed_url.netloc:
+                        gif_url: str = str(extract_gif_link(str(url)))
+                        gif_id = gif_url.split('/m/')[1].split('/')[0]
+                        cleaned_gif_url: str = f"https://c.tenor.com/{gif_id}/tenor.gif"
+                        print(cleaned_gif_url)
+                        return cleaned_gif_url, 'gif'
+                    
+                    
+                    if 'imgur.com' in parsed_url.netloc:
+                        
+                        if parsed_url.netloc == 'i.imgur.com':
+                            return url, 'image'
+                        
+                        
+                        imgur_id = path.split('/')[-1]
+                        if imgur_id and '.' not in imgur_id:  
+                            
+                            for ext in ['.jpg', '.png', '.gif', '.mp4']:
+                                direct_url = f"https://i.imgur.com/{imgur_id}{ext}"
+                                async with aiohttp.ClientSession() as session:
+                                    async with session.head(direct_url) as response:
+                                        if response.status == 200:
+                                            media_type = 'video' if ext == '.mp4' else 'image'
+                                            return direct_url, media_type
+                    
+                    
+                    if 'reddit.com' in parsed_url.netloc or 'i.redd.it' in parsed_url.netloc or 'v.redd.it' in parsed_url.netloc:
+                        if 'i.redd.it' in parsed_url.netloc:
+                            return url, 'image'
+                        if 'v.redd.it' in parsed_url.netloc:
+                            return url, 'video'
+                        
+                        if '/comments/' in path:
+                            
+                            post_id = path.split('/comments/')[1].split('/')[0]
+                            if post_id:
+                                return f"https://i.redd.it/{post_id}.jpg", 'image'
+                    
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.head(url, allow_redirects=True) as response:
+                            if response.status == 200:
+                                content_type = response.headers.get('content-type', '')
+                                if content_type and content_type.startswith('image/'):
+                                    return url, 'image'
+                                elif content_type and content_type.startswith('video/'):
+                                    return url, 'video'
+                    
+                except Exception as e:
+                    print(f"Error processing URL {url}: {e}")
+                    continue
+                    
+            return None, None
+
+        
+        image_url, media_type = await process_image_links(message.content)
+        
+        
         if len(message.attachments) == 1:
             attachment = message.attachments[0]
             content_type = attachment.content_type
 
-            if content_type and content_type.startswith("image/"):
-                image_bytes = await attachment.read()
-                image = Image.open(BytesIO(image_bytes)).convert("RGBA")
-
-                watermark_lines = ["avocloud.net - baxi", message.author.name]
-                width, height = image.size
-
-                txt = Image.new("RGBA", image.size, (255, 255, 255, 0))
-                draw = ImageDraw.Draw(txt)
-
-                font_size = int(height / 12)
-                font = ImageFont.load_default(size=font_size)
-
-                text_heights = []
-                text_widths = []
-
-                for line in watermark_lines:
-                    bbox = draw.textbbox((0, 0), line, font=font)
-                    w = bbox[2] - bbox[0]
-                    h = bbox[3] - bbox[1]
-                    text_widths.append(w)
-                    text_heights.append(h)
-
-                total_text_height = sum(text_heights) + 10
-                y = (height - total_text_height) // 2
-
-                for i, line in enumerate(watermark_lines):
-                    x = (width - text_widths[i]) // 2
-                    draw.text((x + 2, y + 2), line, fill=(0, 0, 0, 60), font=font)
-                    draw.text((x, y), line, fill=(255, 255, 255, 80), font=font)
-                    y += text_heights[i] + 5
-
-                watermarked = Image.alpha_composite(image, txt)
-                file_path = Path(config.Globalchat.attachments_dir) / f"{gcmid}.png"
-                watermarked.save(file_path)
-                embed.set_image(url=f"{config.Globalchat.attachments_url}{gcmid}.png")
+            if content_type and (content_type.startswith("image/") or content_type.startswith("video/")):
+                
+                
+                if content_type.startswith("video/") or content_type == "image/gif":
+                    embed.set_image(url=attachment.url)
+                else:
+                    
+                    image_bytes = await attachment.read()
+                    image = Image.open(BytesIO(image_bytes)).convert("RGBA")
+                    
+                    file_path = Path(config.Globalchat.attachments_dir) / f"{gcmid}.png"
+                    image.save(file_path)
+                    embed.set_image(url=f"{config.Globalchat.attachments_url}{gcmid}.png")
             else:
                 await message.reply(
                     content=f'{message.author.mention}\n{lang["systems"]["globalchat"]["error"]["file_not_image"]}',
@@ -146,6 +236,37 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             )
             await message.delete(delay=5)
             return
+            
+        
+        elif image_url and len(message.attachments) == 0:
+            try:
+                
+                if media_type in ['video', 'gif']:
+                    embed.set_image(url=image_url)
+                else:
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_url) as response:
+                            if response.status == 200:
+                                content_type = response.headers.get('content-type', '')
+                                
+                                if content_type and content_type.startswith('image/'):
+                                    
+                                    image_data = await response.read()
+                                    
+                                    try:
+                                        image = Image.open(BytesIO(image_data)).convert("RGBA")
+                                        
+                                        file_path = Path(config.Globalchat.attachments_dir) / f"{gcmid}.png"
+                                        image.save(file_path)
+                                        embed.set_image(url=f"{config.Globalchat.attachments_url}{gcmid}.png")
+                                        
+                                    except Exception as img_error:
+                                        print(f"Error processing downloaded image: {img_error}")
+                                        embed.set_image(url=image_url)
+                                
+            except Exception as e:
+                print(f"Error processing image URL: {e}")
 
         if message.reference and message.reference.message_id:
             replied_message = await message.channel.fetch_message(
@@ -240,7 +361,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         "mid": sent_message.id,
                     }
                 )
-                if reply and referenced_mid is not None:  # Now safe to check
+                if reply and referenced_mid is not None:  
                     globalchat_message_data[str(referenced_mid)]["replies"].append(
                         {
                             "gid": sent_message.guild.id,
@@ -252,4 +373,4 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         await asyncio.create_task(gc_send_msg(), name="gc_send_msg")
         await message.delete()
     except Exception as e:
-        print(f"Error in global chat: {e}\n{e.with_traceback}")
+        print(f"Error in global chat: {e}")

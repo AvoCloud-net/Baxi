@@ -103,7 +103,7 @@
             "globalchat": {
                 "title": "Globalchat",
                 "error": {
-                    "file_not_image": "Diese Datei ist kein Bild und kann daher nicht im globalen Chat versendet werden.",
+                    "file_not_image": "Diese Datei ist kein Bild oder Video und kann daher nicht im globalen Chat versendet werden.",
                     "to_many_files": "Du kannst maximal ein Bild anhängen und versenden.",
                     "message_to_long": "Deine Nachricht ist zu lang. Beachte, dass die maximale Länge 1000 Zeichen beträgt.",
                     "baned": "Du bist aus dem globalen Chat ausgeschlossen. Folgender Grund ist angegeben: {reason}",
@@ -270,7 +270,7 @@
             "globalchat": {
                 "title": "Global Chat",
                 "error": {
-                    "file_not_image": "This file is not an image and cannot be sent in the global chat.",
+                    "file_not_image": "This file is not an image or video and cannot be sent in the global chat.",
                     "to_many_files": "You can attach and send a maximum of one image.",
                     "message_to_long": "Your message is too long. Please note that the maximum length is 1000 characters.",
                     "baned": "You are banned from the global chat. The following reason is given: {reason}",
