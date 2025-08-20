@@ -104,7 +104,7 @@ def base_commands(bot: commands.AutoShardedBot):
                         name=f"{i}. {user['name']}",
                         value=f"-  **{lang["commands"]["user"]["scan_users"]["reason"]}:** {user['reason']}\n"
                             f"-  **{lang["commands"]["user"]["scan_users"]["date"]}:** {user['entry_date']}\n"
-                            f"-  **{lang["commands"]["user"]["scan_users"]["id"]}:** `{member.id}`",
+                            f"-  **{lang["commands"]["user"]["scan_users"]["id"]}:** `{user['id']}`",
                         inline=False
                     )
                 
@@ -373,4 +373,20 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         datasys.save_data(1001, "users", users_list)
 
         await interaction.response.send_message(config.Icons.people_crossed + "" + lang["commands"]["admin"]["deflag_user"]["success"])
+
+
+    @bot.tree.command(name="gc_msg_info", description="Displays information about a message in the global chat.")
+    @app_commands.describe(mid="Message ID from message embed")
+    async def gc_msg_info_command(interaction: discord.Interaction, mid: str):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
+        lang: dict = dict(datasys.load_lang_file(guild_id))
+
+        if interaction.user.id not in admins:
+            await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
+            return
+        
+        from assets.share import globalchat_message_data
+
+        message_data = globalchat_message_data.get(mid)
         

@@ -17,7 +17,8 @@ from io import BytesIO
 
 async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: dict):
     try:
-        reply: bool = False
+        reply: bool = True if message.reference else False
+        referenced_mid = None
         guild_id = message.guild.id if message.guild is not None else 0
         lang = datasys.load_lang_file(guild_id)
         gc_ban = datasys.load_data(1001, "gc_ban")
@@ -85,8 +86,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
         embed.set_footer(
             text=(
-                f"{message.guild.name} | {message.guild.id} | "
-                f"{message.author.id} | {gcmid}"
+                f"{message.guild.name} | {gcmid}"
             ),
             icon_url=guild_icon
         )
@@ -155,10 +155,11 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             if replied_message and replied_message.embeds:
                 referenced_embed = replied_message.embeds[0]
                 if referenced_embed.footer and referenced_embed.footer.text:
-                    referenced_mid = referenced_embed.footer.text.split(" | ")[3]
+                    
+                    referenced_mid = referenced_embed.footer.text.split(" | ")[1]
                     embed.set_footer(
                         text=(
-                            f"{message.guild.name} | {message.guild.id} | {message.author.id} | {gcmid} | {referenced_mid}"
+                            f"{message.guild.name} | {gcmid} | {referenced_mid}"
                         )
                     )
 
@@ -179,6 +180,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                             inline=False,
                         )
 
+                        
         sent_message = await message.channel.send(embed=embed)
         guild_id = sent_message.guild.id if sent_message.guild else None
         channel_id = sent_message.channel.id if sent_message.channel else None
@@ -193,7 +195,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         )
 
         globalchat_message_data[str(gcmid)]["reply"] = reply
-        if reply and referenced_mid is not None:
+        if reply and referenced_mid is not None: 
             globalchat_message_data[str(gcmid)]["referenceid"] = referenced_mid
             if str(referenced_mid) not in globalchat_message_data:
                 globalchat_message_data[str(referenced_mid)] = {"replies": []}
@@ -238,7 +240,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         "mid": sent_message.id,
                     }
                 )
-                if reply:
+                if reply and referenced_mid is not None:  # Now safe to check
                     globalchat_message_data[str(referenced_mid)]["replies"].append(
                         {
                             "gid": sent_message.guild.id,
