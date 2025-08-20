@@ -378,15 +378,78 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
     @bot.tree.command(name="gc_msg_info", description="Displays information about a message in the global chat.")
     @app_commands.describe(mid="Message ID from message embed")
     async def gc_msg_info_command(interaction: discord.Interaction, mid: str):
-        admins: list = list(datasys.load_data(1001, "admins"))
-        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
-        lang: dict = dict(datasys.load_lang_file(guild_id))
+        admins = list(datasys.load_data(1001, "admins"))
+        guild_id = interaction.guild.id if interaction.guild is not None else 0
+        lang = dict(datasys.load_lang_file(guild_id))
 
         if interaction.user.id not in admins:
             await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
             return
         
         from assets.share import globalchat_message_data
-
         message_data = globalchat_message_data.get(mid)
         
+        if not message_data:
+            embed = discord.Embed(
+                title="Message Not Found",
+                description=f"No message data found for ID: `{mid}`",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed)
+            return
+        
+        embed = discord.Embed(
+            title="Global Chat Message Information",
+            description=f"Information for message ID: `{mid}`",
+            color=discord.Color.blue(),
+            timestamp=discord.utils.utcnow()
+        )
+        
+        embed.add_field(
+            name="Author",
+            value=f"ID: `{message_data['author_id']}`\nName: {message_data['author_name']}",
+            inline=False
+        )
+        
+        message_type = "Reply" if message_data['reply'] else "Original Message"
+        embed.add_field(
+            name="Type",
+            value=message_type,
+            inline=True
+        )
+        
+        if message_data['referenceid']:
+            embed.add_field(
+                name="Reference ID",
+                value=f"`{message_data['referenceid']}`",
+                inline=True
+            )
+        
+        messages_text = ""
+        for i, msg in enumerate(message_data['messages'], 1):
+            messages_text += f"{i}. Guild: `{msg['gid']}` | Channel: `{msg['channel']}` | Message: `{msg['mid']}`\n"
+        
+        embed.add_field(
+            name=f"Messages ({len(message_data['messages'])})",
+            value=messages_text or "No messages",
+            inline=False
+        )
+        
+        if message_data['replies']:
+            replies_text = ""
+            for i, reply in enumerate(message_data['replies'], 1):
+                reply_info = f"{i}. Guild: `{reply['gid']}` | Channel: `{reply['channel']}` | Message: `{reply['mid']}`"
+                if 'referenceid' in reply:
+                    reply_info += f" | Reference: `{reply['referenceid']}`"
+                if 'replyid' in reply:
+                    reply_info += f" | Reply ID: `{reply['replyid']}`"
+                replies_text += reply_info + "\n"
+            
+            embed.add_field(
+                name=f"Replies ({len(message_data['replies'])})",
+                value=replies_text,
+                inline=False
+            )
+        
+        await interaction.response.send_message(embed=embed)
+            
