@@ -59,8 +59,6 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
         watermark_enabled = "--watermark" in message.content
 
-        clean_content = message.content.replace("--watermark", "").strip()
-
         while True:
             gcmid: str = os.urandom(8).hex()
             if gcmid in globalchat_message_data:
@@ -90,7 +88,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             else discord.Color.blurple()
         )
         embed = discord.Embed(
-            description=clean_content,
+            description=message.content,
             color=role_color,
             timestamp=message.created_at,
         )
@@ -403,6 +401,20 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             except Exception as e:
                 print(f"Error processing image URL: {e}")
 
+        def get_reply_link_for_server(
+            guild_id, channel_id, message_id, referenced_mid, globalchat_data
+        ):
+            if referenced_mid not in globalchat_data:
+                return None
+
+            referenced_data = globalchat_data[referenced_mid]
+
+            for msg in referenced_data["messages"]:
+                if msg["gid"] == guild_id and msg["channel"] == channel_id:
+                    return f"https://discord.com/channels/{guild_id}/{channel_id}/{msg['mid']}"
+
+            return None
+
         if message.reference and message.reference.message_id:
             replied_message = await message.channel.fetch_message(
                 message.reference.message_id
@@ -428,9 +440,17 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         reply_preview = reply_preview[:60] + "..."
 
                     if reply_preview:
+
+                        reply_link = get_reply_link_for_server(
+                            guild.id,
+                            message.channel.id,
+                            None,
+                            referenced_mid,
+                            globalchat_message_data,
+                        )
                         embed.add_field(
                             name=f"{config.Icons.message} Replies to {config.Icons.user} {replied_author}'s message:",
-                            value=reply_preview,
+                            value=f"[{reply_preview}]({reply_link})",
                             inline=False,
                         )
 
@@ -469,23 +489,61 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             for server_id, server in gc_data.items():
                 if int(server["channel"]) == message.channel.id:
                     continue
+
                 guild = bot.get_guild(server["gid"])
                 if guild is None:
                     continue
+
                 channel = guild.get_channel(int(server["channel"]))
-                if isinstance(channel, TextChannel):
-                    sent_message = await channel.send(embed=embed)
-                else:
-                    print(
-                        f"[WARN] Channel {server['channel']} is not a TextChannel (type: {type(channel)})"
-                    )
+                if not isinstance(channel, TextChannel):
+                    print(f"[WARN] Channel {server['channel']} is not a TextChannel")
                     continue
+
+                server_embed = embed.copy()
+
+                if reply and referenced_mid is not None:
+
+                    reply_link = get_reply_link_for_server(
+                        guild.id,
+                        channel.id,
+                        None,
+                        referenced_mid,
+                        globalchat_message_data,
+                    )
+
+                    original_value = (
+                        server_embed.fields[0].value
+                        if server_embed.fields[0].value is not None
+                        else "Unable to load message"
+                    )
+
+                    if original_value.startswith("[") and "](" in original_value:
+
+                        text_start = original_value.find("[") + 1
+                        text_end = original_value.find("]")
+                        if text_start != -1 and text_end != -1:
+                            clean_text = original_value[text_start:text_end]
+                        else:
+                            clean_text = original_value
+                    else:
+                        clean_text = original_value
+
+                    server_embed.set_field_at(
+                        0,
+                        name=server_embed.fields[0].name,
+                        value=f"[{clean_text}]({reply_link})",
+                        inline=False,
+                    )
+
+                sent_message = await channel.send(embed=server_embed)
+                assert sent_message.guild is not None, "Guild none"
+
                 if str(gcmid) not in globalchat_message_data:
                     globalchat_message_data[str(gcmid)] = {
                         "messages": [],
                         "replies": [],
                     }
-                assert sent_message.guild is not None, "sent message guild none"
+
                 globalchat_message_data[str(gcmid)]["messages"].append(
                     {
                         "gid": sent_message.guild.id,
@@ -493,7 +551,11 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         "mid": sent_message.id,
                     }
                 )
+
                 if reply and referenced_mid is not None:
+                    if str(referenced_mid) not in globalchat_message_data:
+                        globalchat_message_data[str(referenced_mid)] = {"replies": []}
+
                     globalchat_message_data[str(referenced_mid)]["replies"].append(
                         {
                             "gid": sent_message.guild.id,
@@ -504,5 +566,6 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
         await asyncio.create_task(gc_send_msg(), name="gc_send_msg")
         await message.delete()
+
     except Exception as e:
         print(f"Error in global chat: {e}")
