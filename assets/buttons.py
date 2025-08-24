@@ -485,6 +485,12 @@ class TicketView(ui.View):
                     )
                 )
             lang = datasys.load_lang_file(interaction.guild.id)
+            guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
+            if not guild_terms:
+                    embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
+                    embed.set_footer(text="Baxi - avocloud.net")
+                    await interaction.response.send_message(embed=embed)
+                    return
             settings: dict = dict(datasys.load_data(interaction.guild.id, sys="ticket"))
             tickets: dict = dict(settings.get("open_tickets", {}))
             for ticket in list(tickets):
