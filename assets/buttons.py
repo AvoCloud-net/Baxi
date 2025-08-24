@@ -406,6 +406,12 @@ class VerifyView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         verify_data: dict = dict(datasys.load_data(interaction.guild.id, "verify"))
+        guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
+        if not guild_terms:
+                embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
+                embed.set_footer(text="Baxi - avocloud.net")
+                await interaction.response.send_message(embed=embed)
+                return
 
         if verify_data.get("enabled", False):
             role: Optional[discord.Role] = interaction.guild.get_role(
