@@ -142,6 +142,9 @@
                     "id_not_found": "Die ConversationID deiner Unterhaltung wurde nicht gefunden. Bitte starte einen neuen chat mithilfe des `/ai` Befehls.",
                     "model_unable_to_chat": "Mit diesem Model kannst du leider nicht chatten. Bitte versuche es mit dem anderen Model."
                 }
+            },
+            "terms": {
+                "description": "Der Inhaber dieses Servers hat den Nutzungsbedingungen der Dienste von Baxi und Avocloud.net nicht zugestimmt. Daher wurde dieser Dienst auf diesem Server gesperrt. \n\nUm die Baxi-Dienste wieder zu aktivieren, muss sich jemand aus dem Server Team beim [Baxi-Dashboard]({url}) anmelden und die Nutzungsbedingungen akzeptieren."
             }
         },
         "events": {
@@ -309,6 +312,9 @@
                     "id_not_found": "The ConversationID of your chat was not found. Please start a new chat using the `/ai` command.",
                     "model_unable_to_chat": "Unfortunately, you cannot chat with this model. Please try with another model."
                 }
+            },
+            "terms": {
+                "description": "The owner of this server has not agreed to the terms and conditions of Baxi and Avocloud.net services. Therefore, this service has been blocked on this server. \n\nTo reactivate Baxi services, someone from the team must log in to the [Baxi Dashboard]({url}) and accept the terms and conditions."
             }
         },
         "events": {

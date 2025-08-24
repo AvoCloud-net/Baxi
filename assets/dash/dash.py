@@ -224,7 +224,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_login), "audit_log", audit_log)
             return redirect(url_for("guild_manager", guild_login=guild_login))
-        
+
         elif ticket_transcript:
             tickets: dict = cast(dict, load_data(1001, "transcripts"))
             guild = await bot.fetch_guild(int(tickets[str(ticket_transcript)]["guild"]))
@@ -233,7 +233,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "user": user.name,
                 "success": True,
                 "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
-                "id": f"{ticket_transcript}"
+                "id": f"{ticket_transcript}",
             }
             audit_log: list = cast(
                 list, load_data(sid=int(guild.id), sys="audit_log", bot=bot)
@@ -292,7 +292,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             user=user,
             greeting=get_time_based_greeting(user.name),
         )
-    
+
     @app.route("/ticket_transcript/")
     @requires_authorization
     async def ticket_transcript():
@@ -413,7 +413,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if guild_bot_user.nick is not None
                 else guild_bot_user.name
             )
-
+            print(guild_conf)
             return await render_template(
                 "dash.html",
                 data=guild_conf,
@@ -438,7 +438,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "error.html", message="An unexpected error occurred."
             )
 
-    @app.route("/api/dash/save/", methods=["POST", "GET"])  # type: ignore
+    @app.route("/api/dash/save/", methods=["POST", "GET"])
     async def dash_api():
         system = quart.request.args.get("system")
         print(system)
@@ -612,6 +612,23 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             save_data(sid=int(guild_id), sys="lang", data=guild_conf_lang)
 
+            guild_conf_terms = general.get("terms")
+            print(guild_conf_terms)
+
+            if guild_conf_terms is None:
+                return await render_template(
+                    "error.html",
+                    message="'terms' must be provided and not be null.",
+                )
+
+            if not isinstance(guild_conf_terms, bool):
+                return await render_template(
+                    "error.html",
+                    message="'terms' must be a boolean (true/false).",
+                )
+
+            save_data(sid=int(guild_id), sys="terms", data=guild_conf_terms)
+
             user = await discord_auth.fetch_user()
             audit_log_new: dict = {
                 "type": "save",
@@ -716,8 +733,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "error.html",
                     message="Role ID does not match the Discord ID format.",
                 )
-            
-            if not isinstance(ticket["color"], str) or not bool(re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", ticket["color"])):
+
+            if not isinstance(ticket["color"], str) or not bool(
+                re.fullmatch(
+                    r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", ticket["color"]
+                )
+            ):
                 return await render_template(
                     "error.html",
                     message="You did not specify the color in a valid HEX format.",
@@ -736,7 +757,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "error.html",
                     message="The specified channel is not a text channel.",
                 )
-            
+
             cat = await guild.fetch_channel(int(ticket["category"]))
             if cat is None:
                 return await render_template(
@@ -748,7 +769,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "error.html",
                     message="The specified category is not a category.",
                 )
-            
+
             settings.setdefault("enabled", False)
             settings.setdefault("channel", "")
             settings.setdefault("transcript", "")
@@ -775,10 +796,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 settings["color"] = ticket["color"]
                 settings["message"] = ticket["message"]
 
-            embed = discord.Embed(title=f"{config.Icons.questionmark} {guild.name} support",
-                                  description=ticket["message"],
-                                  color=discord.Color.from_str(ticket["color"]))
-            
+            embed = discord.Embed(
+                title=f"{config.Icons.questionmark} {guild.name} support",
+                description=ticket["message"],
+                color=discord.Color.from_str(ticket["color"]),
+            )
+
             await channel.send(embed=embed, view=TicketView())
 
             save_data(guild.id, "ticket", settings)

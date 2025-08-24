@@ -216,6 +216,47 @@
                     </p>
                     <form id="general-form" class="settings-form">
                         <div class="form-group">
+                            <label for="general-guidelines">
+                                Terms and Conditions:
+                            </label>
+                            <p class="project-description">Please select whether you agree to our guidelines. Your
+                                consent is required in order to use all functions.
+
+                                By clicking "Agree", you agree to the following terms:
+                            <ul class="project-list" onclick="window.open('https://avocloud.net/regulations/', '_blank')" style="cursor: pointer;">
+                                <li>Data Protection Regulations</li>
+                                <li>Terms of Service</li>
+                                <li>Service Description Summary</li>
+                                <li>Discord Related Rules</li>
+                            </ul>
+                            </p>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="general-guidelines" id="general-guidelines-yes"
+                                        value="true">
+                                    <span class="custom-radio"></span>
+                                    <div>
+                                        <span class="radio-title">I agree</span><br>
+                                        <span class="radio-description">I, {{user.name}}, hereby confirm that I have
+                                            read all terms and conditions and hereby agree on behalf of my server, and I
+                                            will ensure that they are complied with on my entire server.
+                                        </span>
+                                    </div>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="general-guidelines" id="general-guidelines-no"
+                                        value="false">
+                                    <span class="custom-radio"></span>
+                                    <div>
+                                        <span class="radio-title">I disagree</span><br>
+                                        <span class="radio-description">I, {{user.name}}, hereby confirm that I do not
+                                            agree to the terms and conditions. I am aware that Baxi will no longer
+                                            function on my server after applying this setting.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label for="general-lang">
                                 Language:
                             </label>
@@ -659,8 +700,16 @@
                 renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
                 renderTags('c_badwords', data.chatfilter.c_badwords || []);
             }
+
             document.getElementById("general-lang").value = data.lang || 'en';
             document.getElementById("general-nick").value = nick || '';
+
+
+            if (data.terms !== undefined) {
+                const termsValue = data.terms.toString();
+                const systemRadio = document.querySelector(`input[name="general-guidelines"][value="${termsValue}"]`);
+                if (systemRadio) systemRadio.checked = true;
+            }
 
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
@@ -671,8 +720,6 @@
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
             document.getElementById("ticket-color").value = data.ticket.color || '';
-
-
         }
 
         function renderTags(field, words) {
@@ -779,11 +826,14 @@
 
             const lang = document.getElementById('general-lang').value;
             const nick = document.getElementById('general-nick').value;
+            const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
+            const termsBoolean = terms === 'true';
 
             const payload = {
                 general: {
                     lang: lang,
-                    nick: nick
+                    nick: nick,
+                    terms: termsBoolean
                 }
             };
 

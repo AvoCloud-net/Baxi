@@ -62,7 +62,41 @@ def events(bot: commands.AutoShardedBot, web):
                     json.dump(data, config_file, indent=4)
                 logger.success(f"Ordner und conf.json für Guild {guild_id} erstellt.")
             else:
-                logger.success(f"Ordner für Guild {guild_id} existiert bereits.")
+                config_path = os.path.join(guild_folder, "conf.json")
+                
+                
+                if os.path.exists(config_path):
+                    try:
+                        
+                        with open(config_path, "r") as config_file:
+                            data = json.load(config_file)
+                        
+                        
+                        if "terms" not in data:
+                            data["terms"] = False
+                            
+                            
+                            with open(config_path, "w") as config_file:
+                                json.dump(data, config_file, indent=4)
+                            
+                            logger.success(f"terms-Feld für Guild {guild_id} hinzugefügt und auf false gesetzt.")
+                        else:
+                            logger.success(f"terms-Feld für Guild {guild_id} existiert bereits.")
+                            
+                    except json.JSONDecodeError:
+                        logger.error(f"Fehler beim Lesen der conf.json für Guild {guild_id}")
+                    except Exception as e:
+                        logger.error(f"Unerwarteter Fehler für Guild {guild_id}: {e}")
+                else:
+                    
+                    data: dict = config.datasys.default_data
+                    guild = await bot.fetch_guild(int(guild_id))
+                    data["guild_name"] = str(guild.name)
+                    data["terms"] = False  
+
+                    with open(config_path, "w") as config_file:
+                        json.dump(data, config_file, indent=4)
+                    logger.success(f"conf.json für Guild {guild_id} erstellt mit terms-Feld.")
 
         try:
             await bot.tree.sync()
@@ -141,7 +175,7 @@ def events(bot: commands.AutoShardedBot, web):
                 title=lang["events"]["on_guild_join"]["title"],
                 description=str(
                     lang["events"]["on_guild_join"]["content"]
-                    + "\n\n# THIS IS A BETA VERSION"
+                    + "\n\n"
                 ).format(saved_data=data_text),
             )
             if isinstance(channel, discord.TextChannel):
@@ -171,6 +205,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     assert guild_data is not None, "Guild is unknown!"
     try:
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
+        guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))
         guild_id: int = message.guild.id if message.guild is not None else 0
         lang = datasys.load_lang_file(guild_id)
         chatfilter_data: dict = dict(datasys.load_data(message.guild.id, "chatfilter"))
@@ -180,6 +215,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         )
         print(str(chatfilter_req["reason"]).lower())
         if str(chatfilter_req["reason"]).lower() == "s11":
+            if not guild_terms:
+                return
             dm_channel = message.author.dm_channel
             if dm_channel is None:
                 dm_channel = await message.author.create_dm()
@@ -212,14 +249,23 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             bool(chatfilter_data.get("enabled", False))
             and message.channel.id not in chatfilter_data["bypass"]
         ):
+            
             if chatfilter_req["flagged"] is True:
-                await del_chatfilter(
-                    message=message, reason=chatfilter_req["reason"], bot=bot
-                )
+                if not guild_terms:
+                    return
+                else:
+                    await del_chatfilter(
+                        message=message, reason=chatfilter_req["reason"], bot=bot
+                    )
 
         if str(message.guild.id) in gc_data and message.channel.id == int(
             gc_data[str(message.guild.id)]["channel"]
         ):
+            if not guild_terms:
+                embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
+                embed.set_footer(text="Baxi - avocloud.net")
+                await message.reply(embed=embed)
+                return
             if chatfilter_req["flagged"] is True:
                 await del_chatfilter(
                     message=message, reason=chatfilter_req["reason"], bot=bot

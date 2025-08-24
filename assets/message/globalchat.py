@@ -136,7 +136,6 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                 ".jpg",
                 ".jpeg",
                 ".png",
-                ".gif",
                 ".webp",
                 ".bmp",
                 ".tiff",
@@ -151,6 +150,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                 ".wmv",
                 ".flv",
                 ".m4v",
+                ".gif",
             ]
 
             for url in urls:
@@ -309,21 +309,24 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                     embed.set_image(url=image_url)
                 else:
 
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(image_url) as response:
-                            if response.status == 200:
-                                content_type = response.headers.get("content-type", "")
+                    if watermark_enabled:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(image_url) as response:
+                                if response.status == 200:
+                                    content_type = response.headers.get(
+                                        "content-type", ""
+                                    )
 
-                                if content_type and content_type.startswith("image/"):
+                                    if content_type and content_type.startswith(
+                                        "image/"
+                                    ):
 
-                                    image_data = await response.read()
+                                        image_data = await response.read()
 
-                                    try:
-                                        image = Image.open(BytesIO(image_data)).convert(
-                                            "RGBA"
-                                        )
-
-                                        if watermark_enabled:
+                                        try:
+                                            image = Image.open(
+                                                BytesIO(image_data)
+                                            ).convert("RGBA")
 
                                             watermark_lines = [
                                                 "avocloud.net - baxi",
@@ -380,29 +383,21 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                                                 / f"{gcmid}.png"
                                             )
                                             watermarked.save(file_path)
-                                        else:
 
-                                            file_path = (
-                                                Path(config.Globalchat.attachments_dir)
-                                                / f"{gcmid}.png"
+                                        except Exception as img_error:
+                                            print(
+                                                f"Error processing downloaded image: {img_error}"
                                             )
-                                            image.save(file_path)
+                                            embed.set_image(url=image_url)
+                    else:
 
-                                        embed.set_image(
-                                            url=f"{config.Globalchat.attachments_url}{gcmid}.png"
-                                        )
-
-                                    except Exception as img_error:
-                                        print(
-                                            f"Error processing downloaded image: {img_error}"
-                                        )
-                                        embed.set_image(url=image_url)
+                        embed.set_image(url=image_url)
 
             except Exception as e:
                 print(f"Error processing image URL: {e}")
 
-        def get_reply_link_for_server(
-            guild_id, channel_id, message_id, referenced_mid, globalchat_data
+        def get_reply_message_for_server(
+            guild_id, channel_id, referenced_mid, globalchat_data
         ):
             if referenced_mid not in globalchat_data:
                 return None
@@ -411,7 +406,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
             for msg in referenced_data["messages"]:
                 if msg["gid"] == guild_id and msg["channel"] == channel_id:
-                    return f"https://discord.com/channels/{guild_id}/{channel_id}/{msg['mid']}"
+                    return msg["mid"]
 
             return None
 
@@ -423,7 +418,6 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             if replied_message and replied_message.embeds:
                 referenced_embed = replied_message.embeds[0]
                 if referenced_embed.footer and referenced_embed.footer.text:
-
                     referenced_mid = referenced_embed.footer.text.split(" | ")[1]
                     embed.set_footer(
                         text=(f"{message.guild.name} | {gcmid} | {referenced_mid}")
@@ -440,21 +434,24 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         reply_preview = reply_preview[:60] + "..."
 
                     if reply_preview:
-
-                        reply_link = get_reply_link_for_server(
-                            guild.id,
-                            message.channel.id,
-                            None,
-                            referenced_mid,
-                            globalchat_message_data,
-                        )
                         embed.add_field(
                             name=f"{config.Icons.message} Replies to {config.Icons.user} {replied_author}'s message:",
-                            value=f"[{reply_preview}]({reply_link})",
+                            value=reply_preview,
                             inline=False,
                         )
 
-        sent_message = await message.channel.send(embed=embed)
+        #sent_message = await message.channel.send(embed=embed)
+        reply_message_id = get_reply_message_for_server(
+            message.guild.id, message.channel.id, referenced_mid, globalchat_message_data
+        )
+        if reply and referenced_mid is not None and reply_message_id is not None:
+            reply_message = await message.channel.fetch_message(reply_message_id)
+            sent_message = await reply_message.reply(
+                embed=embed, mention_author=False
+            )
+        else:
+            sent_message = await message.channel.send(embed=embed)
+        
         guild_id = sent_message.guild.id if sent_message.guild else None
         channel_id = sent_message.channel.id if sent_message.channel else None
         message_id = sent_message.id
@@ -500,42 +497,34 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                     continue
 
                 server_embed = embed.copy()
+                reply_message_id = None
 
                 if reply and referenced_mid is not None:
-
-                    reply_link = get_reply_link_for_server(
-                        guild.id,
-                        channel.id,
-                        None,
-                        referenced_mid,
-                        globalchat_message_data,
+                    reply_message_id = get_reply_message_for_server(
+                        guild.id, channel.id, referenced_mid, globalchat_message_data
                     )
 
-                    original_value = (
-                        server_embed.fields[0].value
-                        if server_embed.fields[0].value is not None
-                        else "Unable to load message"
-                    )
+                try:
 
-                    if original_value.startswith("[") and "](" in original_value:
+                    if reply_message_id:
 
-                        text_start = original_value.find("[") + 1
-                        text_end = original_value.find("]")
-                        if text_start != -1 and text_end != -1:
-                            clean_text = original_value[text_start:text_end]
-                        else:
-                            clean_text = original_value
+                        reply_message = await channel.fetch_message(reply_message_id)
+                        sent_message = await reply_message.reply(
+                            embed=server_embed, mention_author=False
+                        )
+
                     else:
-                        clean_text = original_value
 
-                    server_embed.set_field_at(
-                        0,
-                        name=server_embed.fields[0].name,
-                        value=f"[{clean_text}]({reply_link})",
-                        inline=False,
-                    )
+                        sent_message = await channel.send(embed=server_embed)
 
-                sent_message = await channel.send(embed=server_embed)
+                except discord.NotFound:
+
+                    sent_message = await channel.send(embed=server_embed)
+                except discord.HTTPException as e:
+
+                    print(f"Error replying to message: {e}")
+                    sent_message = await channel.send(embed=server_embed)
+
                 assert sent_message.guild is not None, "Guild none"
 
                 if str(gcmid) not in globalchat_message_data:

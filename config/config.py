@@ -44,6 +44,7 @@ class datasys:
     default_data = {
     "lang": "en",
     "guild_name": "",
+    "terms": False,
     "chatfilter": {
         "enabled": False
     },
