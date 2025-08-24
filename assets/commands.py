@@ -54,16 +54,25 @@ def base_commands(bot: commands.AutoShardedBot):
     description="Scans this server for users flagged globally on Baxi for malicious or suspicious behavior.",
     )
     async def scan_user(interaction: discord.Interaction):
+        
         try:
+            lang = datasys.load_lang_file(1001)
             await interaction.response.defer()
             if interaction.guild is None:
-                lang = datasys.load_lang_file(1001)
+                
                 embed = discord.Embed(
                     title="⚠️ " + lang["commands"]["guild_only"],
                     description="This command can only be used in a server.",
                     color=config.Discord.warn_color
                 )
                 return await interaction.response.send_message(embed=embed)
+            
+            guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
+            if not guild_terms:
+                    embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
+                    embed.set_footer(text="Baxi - avocloud.net")
+                    await interaction.response.send_message(embed=embed)
+                    return
             if interaction.user.avatar is None:
                 user_avatar = ""
             else:
