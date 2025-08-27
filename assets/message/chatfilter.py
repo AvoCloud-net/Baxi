@@ -15,41 +15,30 @@ class Chatfilter:
         chatfilter_data: dict = dict(datasys.load_data(gid, "chatfilter"))
         preferred_system = chatfilter_data.get("system", "SafeText").lower()
 
-        safetext_task = asyncio.create_task(
-            self._try_safetext_check(message, gid, cid, chatfilter_data)
-        )
-        ai_task = asyncio.create_task(self._try_ai_check(message))
+        result = None
 
         try:
             async with asyncio.timeout(10):
-                safetext_result, ai_result = await asyncio.gather(
-                    safetext_task, ai_task
-                )
+                if preferred_system == "safetext":
+                    result = await self._try_safetext_check(message, gid, cid, chatfilter_data)
+                    if result:
+                        print("Used system: SafeText")
+                    else:
+                        print("SafeText failed → fallback to AI")
+                        result = await self._try_ai_check(message)
+                else:
+                    result = await self._try_ai_check(message)
+                    if result:
+                        print("Used system: AI")
+                    else:
+                        print("AI failed → fallback to SafeText")
+                        result = await self._try_safetext_check(message, gid, cid, chatfilter_data)
+
         except asyncio.TimeoutError:
-            safetext_result = safetext_task.result() if safetext_task.done() else None
-            ai_result = ai_task.result() if ai_task.done() else None
+            print(f"{preferred_system.capitalize()} check timed out")
 
-        
-        if safetext_result and safetext_result.get("reason") == "custom":
-            return safetext_result
-        if ai_result and ai_result.get("reason") == "S11":
-            return ai_result
-
-        
-        if preferred_system == "safetext":
-            if safetext_result is not None:
-                print("Default: SafeText; Used: SafeText")
-                return safetext_result
-            if ai_result is not None:
-                print("Default: SafeText; Used: AI")
-                return ai_result
-        else:
-            if ai_result is not None:
-                print("Default: AI; Used: AI")
-                return ai_result
-            if safetext_result is not None:
-                print("Default: AI; Used: SafeText")
-                return safetext_result
+        if result:
+            return result
 
         return {
             "code": "safe",
