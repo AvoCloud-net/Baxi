@@ -150,7 +150,7 @@
         "events": {
             "on_guild_join": {
                 "title": "Hallooo!",
-                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, musst du das Baxi Dashboard öffnen. Verwende dafür den Befehl `/dashboard`.\n\n-# {saved_data}",
+                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, musst du das Baxi Dashboard öffnen.\n\n-# {saved_data}",
                 "saved_data": {
                     "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard beliebige Systeme aktivieren und einstellen.",
                     "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard ob diese Einstellungen korrekt sind."
@@ -320,7 +320,7 @@
         "events": {
             "on_guild_join": {
                 "title": "Hello!",
-                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo make settings, you need to open the Baxi Dashboard. Use the command `/dashboard`.\n\n-# {saved_data}",
+                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo make settings, you need to open the Baxi Dashboard.\n\n-# {saved_data}",
                 "saved_data": {
                     "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard.",
                     "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard to ensure these settings are correct."

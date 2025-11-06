@@ -386,6 +386,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if str(guild.id) in globalchat
                 else {"enabled": False, "channel": ""}
             )
+            guild_conf["guild_id"] = str(guild.id)
 
             channels = await guild.fetch_channels()
 
@@ -831,12 +832,80 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return (
                 await render_template(
                     "error.html",
-                    message='No login token provided. Please use the "/dashboard" command to get one.',
+                    message='No login token provided.',
                 ),
                 400,
             )
 
         return await render_template("dash_success.html")
+    
+    @app.route("/check/channel/perms/", methods=["POST"])
+    async def check_channel_perms():
+        data: dict = await quart.request.get_json()
+        system: str = data.get("system")
+        channel_id: int = int(data.get("channel_id"))
+        guild_id: int = int(data.get("guild_id"))
+        print(system)
+        print(channel_id)
+        print(guild_id)
+
+        if not all([system, channel_id, guild_id]):
+            print("Missing required fields")
+            return quart.jsonify({"error": "Missing required fields"}), 400
+
+        try:
+            guild = await bot.fetch_guild(guild_id)
+            channel = await guild.fetch_channel(channel_id)
+            bot_member = guild.get_member(bot.user.id)
+            if not bot_member:
+                bot_member = await guild.fetch_member(bot.user.id)
+
+            permissions = channel.permissions_for(bot_member)
+
+            required_perms = set()
+
+            if system == "globalchat":
+                required_perms = {
+                    "send_messages",
+                    "manage_messages",
+                    "attach_files",
+                    "use_external_emojis",
+                    "embed_links",  # oft implizit nötig für Rich Embeds
+                    "read_messages",
+                    "read_message_history"
+                }
+            elif system == "ticket":
+                required_perms = {
+                    "send_messages",
+                    "read_messages",
+                    "read_message_history",
+                    "manage_channels",        # zum Erstellen/Löschen von Ticket-Kanälen
+                    "manage_permissions",     # um Berechtigungen im Ticket zu setzen
+                    "embed_links"
+                }
+            elif system == "ticket_transcript":
+                required_perms = {
+                    "send_messages",
+                    "read_messages",
+                    "read_message_history",
+                    "attach_files",           # um Transkript als .txt oder .html zu senden
+                    "embed_links"
+                }
+            else:
+                return quart.jsonify({"error": "Unknown system"}), 400
+
+            # Prüfe, ob alle benötigten Berechtigungen vorhanden sind
+            missing = [perm for perm in required_perms if not getattr(permissions, perm, False)]
+
+            valid = len(missing) == 0
+
+            return quart.jsonify({
+                "valid": valid,
+                "missing": missing if not valid else None
+            })
+
+        except Exception as e:
+            return quart.jsonify({"error": str(e)}), 500
 
     @app.route("/attachments/<filename>")
     async def attachments(filename):

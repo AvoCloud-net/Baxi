@@ -170,6 +170,35 @@
             cursor: pointer;
             font-weight: bold;
         }
+
+        .channel-perm-feedback {
+            background-color: rgba(40, 167, 69, 0.2);
+            /* Grün, leicht durchsichtig */
+            color: #a3d9a5;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+
+        .channel-perm-feedback i {
+            color: #4ade80;
+        }
+
+        .channel-perm-feedback.error {
+            background-color: rgba(220, 53, 69, 0.2);
+            /* Rot, leicht durchsichtig */
+            color: #f8d7da;
+            border-color: rgba(220, 53, 69, 0.4);
+        }
+
+        .channel-perm-feedback.error i {
+            color: #ff6b6b;
+        }
     </style>
 </head>
 
@@ -223,7 +252,9 @@
                                 consent is required in order to use all functions.
 
                                 By clicking "Agree", you agree to the following terms:
-                            <ul class="project-list" onclick="window.open('https://avocloud.net/regulations/', '_blank')" style="cursor: pointer;">
+                            <ul class="project-list"
+                                onclick="window.open('https://avocloud.net/regulations/', '_blank')"
+                                style="cursor: pointer;">
                                 <li>Data Protection Regulations</li>
                                 <li>Terms of Service</li>
                                 <li>Service Description Summary</li>
@@ -393,6 +424,8 @@
                                 <option value="{{ id }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="channel-perm-feedback" id="feedback-globalchat-channel" style="display: none;">
+                            </div>
                         </div>
 
                         <button type="submit" class="submit-btn">
@@ -436,6 +469,8 @@
                                 <option value="{{ id }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="channel-perm-feedback" id="feedback-ticket-channel" style="display: none;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ticket-role">Staff role:</label>
@@ -469,6 +504,8 @@
                                 <option value="{{ id }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="channel-perm-feedback" id="feedback-ticket-transcript-channel"
+                                style="display: none;"></div>
                         </div>
                         <div class="form-group">
                             <label for="ticket-color">
@@ -720,6 +757,8 @@
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
             document.getElementById("ticket-color").value = data.ticket.color || '';
+
+            runInitialPermissionChecks();
         }
 
         function renderTags(field, words) {
@@ -987,6 +1026,91 @@
 
             // Initial render
             applyFilter();
+        });
+    </script>
+    <script>
+        function checkChannelPermissions(system, channelId, feedbackElementId) {
+            const feedbackEl = document.getElementById(feedbackElementId);
+            if (!channelId || !feedbackEl) {
+                if (feedbackEl) feedbackEl.style.display = 'none';
+                return;
+            }
+
+            const payload = {
+                guild_id: data.guild_id,
+                channel_id: channelId,
+                system: system
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/check/channel/perms/');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    const el = document.getElementById(feedbackElementId);
+                    if (!el) return;
+
+                    // Standardmäßig ausblenden
+                    el.style.display = 'none';
+
+                    if (xhr.status === 200) {
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            if (resp.valid === true) {
+                                // ✅ Alles OK
+                                el.innerHTML = '<i class="fas fa-check-circle"></i> Channel permissions seem correct';
+                                el.className = 'channel-perm-feedback'; // entfernt ggf. "error"
+                                el.style.display = 'flex';
+                            } else if (Array.isArray(resp.missing) && resp.missing.length > 0) {
+                                // ❌ Fehlende Rechte
+                                const missingList = resp.missing.join(', ');
+                                el.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Missing permissions: ${missingList}`;
+                                el.className = 'channel-perm-feedback error';
+                                el.style.display = 'flex';
+                            }
+                            // Falls valid=false, aber missing fehlt → nichts anzeigen (optional)
+                        } catch (e) {
+                            // Bei Parse-Fehler nichts anzeigen
+                        }
+                    }
+                    // Bei 4xx/5xx → nichts anzeigen (bereits ausgeblendet)
+                }
+            };
+        }
+
+        // Initiale Prüfung nach createDynamicFields
+        function runInitialPermissionChecks() {
+            const gc = document.getElementById('globalchat-channel')?.value;
+            const tc = document.getElementById('ticket-channel')?.value;
+            const ttc = document.getElementById('ticket-transcript-channel')?.value;
+
+            if (gc) checkChannelPermissions('globalchat', gc, 'feedback-globalchat-channel');
+            if (tc) checkChannelPermissions('ticket', tc, 'feedback-ticket-channel');
+            if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
+        }
+
+        // Event Listener für Änderungen
+        document.addEventListener('DOMContentLoaded', () => {
+            const globalChatSelect = document.getElementById('globalchat-channel');
+            if (globalChatSelect) {
+                globalChatSelect.addEventListener('change', (e) => {
+                    checkChannelPermissions('globalchat', e.target.value, 'feedback-globalchat-channel');
+                });
+            }
+            const ticketChannelSelect = document.getElementById('ticket-channel');
+            if (ticketChannelSelect) {
+                ticketChannelSelect.addEventListener('change', (e) => {
+                    checkChannelPermissions('ticket', e.target.value, 'feedback-ticket-channel');
+                });
+            }
+            const ticketTranscriptSelect = document.getElementById('ticket-transcript-channel');
+            if (ticketTranscriptSelect) {
+                ticketTranscriptSelect.addEventListener('change', (e) => {
+                    checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel');
+                });
+            }
         });
     </script>
     <script>
