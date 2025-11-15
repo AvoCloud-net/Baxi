@@ -108,6 +108,11 @@ def save_data(sid: int, sys: str, data):
         save_json(file_path, data)
     elif sys == "users": 
         save_json(f"data/{sid}/users.json", data)
+    elif sys == "open_tickets":
+        file_path = f"data/{sid}/conf.json"
+        data_file = dict(load_json(file_path))["tickets"]
+        data_file["open_tickets"] = data
+        save_json(file_path, data_file)
     else:
         file_path = f"data/{sid}/conf.json"
 
