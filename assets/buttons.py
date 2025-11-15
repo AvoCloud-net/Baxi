@@ -615,7 +615,7 @@ class TicketAdminButtons(ui.View):
                             }
 
                             transcript_channel = await interaction.guild.fetch_channel(
-                                int(guild_settings.get("channel", 0))
+                                int(guild_settings.get("transcript", 0))
                             )
                             link = f"https://{config.Web.url}/?ticket_transcript={transcript_id}"
 
