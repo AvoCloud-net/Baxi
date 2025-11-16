@@ -406,12 +406,19 @@ class VerifyView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         verify_data: dict = dict(datasys.load_data(interaction.guild.id, "verify"))
-        guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
+        guild_terms: bool = bool(
+            datasys.load_data(sid=interaction.guild.id, sys="terms")
+        )
         if not guild_terms:
-                embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
-                embed.set_footer(text="Baxi - avocloud.net")
-                await interaction.response.send_message(embed=embed)
-                return
+            embed = discord.Embed(
+                description=str(lang["systems"]["terms"]["description"]).format(
+                    url=f"https://{config.Web.url}"
+                ),
+                color=config.Discord.danger_color,
+            )
+            embed.set_footer(text="Baxi - avocloud.net")
+            await interaction.response.send_message(embed=embed)
+            return
 
         if verify_data.get("enabled", False):
             role: Optional[discord.Role] = interaction.guild.get_role(
@@ -491,15 +498,23 @@ class TicketView(ui.View):
                     )
                 )
             lang = datasys.load_lang_file(interaction.guild.id)
-            guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
+            guild_terms: bool = bool(
+                datasys.load_data(sid=interaction.guild.id, sys="terms")
+            )
             if not guild_terms:
-                    embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
-                    embed.set_footer(text="Baxi - avocloud.net")
-                    await interaction.response.send_message(embed=embed)
-                    return
-            settings: dict = dict(datasys.load_data(interaction.guild.id, sys="ticket"))
-            tickets: dict = dict(settings.get("open_tickets", {}))
-            for ticket in list(tickets):
+                embed = discord.Embed(
+                    description=str(lang["systems"]["terms"]["description"]).format(
+                        url=f"https://{config.Web.url}"
+                    ),
+                    color=config.Discord.danger_color,
+                )
+                embed.set_footer(text="Baxi - avocloud.net")
+                await interaction.response.send_message(embed=embed)
+                return
+            tickets: dict = dict(
+                datasys.load_data(interaction.guild.id, "open_tickets")
+            )
+            for ticket in tickets:
                 if dict(tickets.get(ticket, {})).get("user") == interaction.user.id:
 
                     try:
@@ -517,7 +532,7 @@ class TicketView(ui.View):
                         return
                     except discord.NotFound:
                         del tickets[ticket]
-                        datasys.save_data(interaction.guild.id, "ticket", settings)
+                        datasys.save_data(interaction.guild.id, "open_tickets", tickets)
 
             await interaction.response.send_modal(
                 Ticket_Creation_Modal(user=interaction.user, guild=interaction.guild)
@@ -558,20 +573,23 @@ class TicketAdminButtons(ui.View):
             guild_settings: dict = dict(
                 datasys.load_data(interaction.guild.id, sys="ticket")
             )
-            tickets = guild_settings.get("open_tickets", {})
+            tickets: dict = dict(
+                datasys.load_data(interaction.guild.id, "open_tickets")
+            )
             transcripts: dict = dict(datasys.load_data(1001, "transcripts"))
 
             if not isinstance(tickets, dict):
                 tickets = {}
 
-            channel_id = str(interaction.channel.id)
+            channel_id: str = str(interaction.channel.id)
             if channel_id in tickets:
                 ticket_data = tickets[channel_id]
 
-                member = interaction.guild.get_member(interaction.user.id)
+                member = interaction.guild.get_member(int(ticket_data["user"]))
                 if member is None:
                     await interaction.response.send_message(
-                        "Error: Member not found.", ephemeral=True
+                        "Error: Member not found.",
+                        ephemeral=True,
                     )
                     return
 
@@ -582,8 +600,10 @@ class TicketAdminButtons(ui.View):
                     await interaction.response.send_message(
                         embed=discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
-                            description=lang["systems"]["ticket"]["wait_delete_confirm"],
-                            color=config.Discord.danger_color
+                            description=lang["systems"]["ticket"][
+                                "wait_delete_confirm"
+                            ],
+                            color=config.Discord.danger_color,
                         )
                     )
 
@@ -591,21 +611,22 @@ class TicketAdminButtons(ui.View):
                         return
 
                     def check(m):
-                        return (m.channel.id == interaction.channel.id and  # pyright: ignore[reportOptionalMemberAccess]
-                                m.author.id == interaction.user.id)
+                        return (
+                            m.channel.id
+                            == interaction.channel.id  # pyright: ignore[reportOptionalMemberAccess]
+                            and m.author.id == interaction.user.id
+                        )
 
                     try:
                         response = await interaction.client.wait_for(
-                            "message",
-                            check=check,
-                            timeout=60.0 
+                            "message", check=check, timeout=60.0
                         )
-                        
+
                         if response.content.lower() == "confirm":
                             await interaction.channel.delete(
                                 reason=f"Ticket closed by {interaction.user.name}"
                             )
-                            
+
                             transcript_data: dict = {
                                 "guild": str(interaction.guild.id),
                                 "id": str(transcript_id),
@@ -623,25 +644,28 @@ class TicketAdminButtons(ui.View):
                                 title=lang["systems"]["ticket"]["title"],
                                 description=f"{lang['systems']['ticket']['link']} {link}",
                             )
-                            
+
                             if transcript_channel is not None and isinstance(
                                 transcript_channel, discord.TextChannel
                             ):
                                 await transcript_channel.send(embed=embed)
-
                             if member.dm_channel is not None:
                                 await member.dm_channel.send(embed=embed)
 
                             transcripts[str(transcript_id)] = transcript_data
                             datasys.save_data(1001, "transcripts", transcripts)
-                            del tickets[channel_id]
-                            datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+                            tickets.pop(str(channel_id))
+                            datasys.save_data(
+                                interaction.guild.id, "open_tickets", tickets
+                            )
                         else:
                             await interaction.channel.send("Ticket deletion cancelled.")
-                            
+
                     except asyncio.TimeoutError:
-                        await interaction.channel.send("Timed out waiting for confirmation.")
-                        
+                        await interaction.channel.send(
+                            "Timed out waiting for confirmation."
+                        )
+
                 else:
                     await interaction.response.send_message(
                         embed=discord.Embed(
@@ -686,7 +710,7 @@ class TicketAdminButtons(ui.View):
         guild_settings: dict = dict(
             datasys.load_data(interaction.guild.id, sys="ticket")
         )
-        tickets = guild_settings.get("open_tickets", {})
+        tickets: dict = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
 
         if not isinstance(tickets, dict):
             tickets = {}

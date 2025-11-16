@@ -131,23 +131,14 @@ class Ticket_Creation_Modal(ui.Modal):
             from assets.buttons import TicketAdminButtons
 
             lang = datasys.load_lang_file(self.guild.id)
-
+            tickets: dict = dict(datasys.load_data(self.guild.id, sys="open_tickets"))
             guild_data = datasys.load_data(self.guild.id, sys="ticket")
             if not isinstance(guild_data, dict):
-                guild_data = {
-                    "enabled": True,
-                    "open_tickets": {},
-                    "catid": None,
-                    "role": None
-                }
-
-            if "open_tickets" not in guild_data or not isinstance(guild_data["open_tickets"], dict):
-                guild_data["open_tickets"] = {}
+                guild_data = {"enabled": True, "catid": None, "role": None}
 
             if "catid" not in guild_data or not guild_data["catid"]:
                 await interaction.response.send_message(
-                    lang["systems"]["ticket"]["errors"]["no_category"],
-                    ephemeral=True
+                    lang["systems"]["ticket"]["errors"]["no_category"], ephemeral=True
                 )
                 return
 
@@ -156,87 +147,97 @@ class Ticket_Creation_Modal(ui.Modal):
                 if not isinstance(category, discord.CategoryChannel):
                     await interaction.response.send_message(
                         lang["systems"]["ticket"]["errors"]["invalid_category"],
-                        ephemeral=True
+                        ephemeral=True,
                     )
                     return
-            except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+            except (
+                ValueError,
+                discord.NotFound,
+                discord.Forbidden,
+                discord.HTTPException,
+            ):
                 await interaction.response.send_message(
                     lang["systems"]["ticket"]["errors"]["category_access"],
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
 
             if "role" not in guild_data or not guild_data["role"]:
                 await interaction.response.send_message(
-                    lang["systems"]["ticket"]["errors"]["no_role"],
-                    ephemeral=True
+                    lang["systems"]["ticket"]["errors"]["no_role"], ephemeral=True
                 )
                 return
 
             try:
                 role = await self.guild.fetch_role(int(guild_data["role"]))
-            except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+            except (
+                ValueError,
+                discord.NotFound,
+                discord.Forbidden,
+                discord.HTTPException,
+            ):
                 await interaction.response.send_message(
                     lang["systems"]["ticket"]["errors"]["role_not_found"],
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
 
             perms_overwrites = {
-                self.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                self.guild.default_role: discord.PermissionOverwrite(
+                    view_channel=False
+                ),
                 self.user: discord.PermissionOverwrite(
                     view_channel=True,
                     send_messages=True,
                     read_message_history=True,
-                    attach_files=True
+                    attach_files=True,
                 ),
                 role: discord.PermissionOverwrite(
                     view_channel=True,
                     send_messages=True,
                     read_message_history=True,
                     attach_files=True,
-                    manage_messages=True
-                )
+                    manage_messages=True,
+                ),
             }
 
             channel_name_template: str = "ticket-{user}"
             channel_name = channel_name_template.format(user=self.user.name)
             channel = await self.guild.create_text_channel(
-                name=channel_name,
-                category=category,
-                overwrites=perms_overwrites
+                name=channel_name, category=category, overwrites=perms_overwrites
             )
 
-            guild_data["open_tickets"][str(channel.id)] = {
+            tickets[str(channel.id)] = {
                 "user": self.user.id,
                 "supporterid": None,
                 "created_at": int(datetime.datetime.now().timestamp()),
                 "status": "open",
                 "title": f"{self.ticket_name.value}",
                 "message": f"{self.ticket_description.value}",
-                "transcript": []
+                "transcript": [],
             }
-            datasys.save_data(self.guild.id, "ticket", guild_data)
+            print(tickets)
+            datasys.save_data(self.guild.id, "open_tickets", tickets)
 
             success_embed = discord.Embed(
                 title=lang["systems"]["ticket"]["title"],
-                description=lang["systems"]["ticket"]["description_creation_successfull"].format(
-                    channel=channel.mention
-                ),
-                color=config.Discord.color
+                description=lang["systems"]["ticket"][
+                    "description_creation_successfull"
+                ].format(channel=channel.mention),
+                color=config.Discord.color,
             )
             await interaction.response.send_message(embed=success_embed, ephemeral=True)
 
             ticket_embed = discord.Embed(
                 title=self.ticket_name.value,
                 description=self.ticket_description.value,
-                color=config.Discord.color
+                color=config.Discord.color,
             )
-            
+
             await channel.send(
                 content=f"{self.user.mention} {role.mention}",
                 embed=ticket_embed,
-                view=TicketAdminButtons()
+                view=TicketAdminButtons(),
             )
 
         except Exception as e:

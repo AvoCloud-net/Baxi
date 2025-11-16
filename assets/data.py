@@ -17,15 +17,18 @@ def load_data(
     bot: Optional[commands.AutoShardedBot] = None,
     dash_login: Optional[str] = None,
 ) -> Union[dict, list]:
-    
+
     guild_data_dir = os.path.join("data", str(sid))
     if not os.path.exists(guild_data_dir):
         os.makedirs(guild_data_dir)
-        json_file_path = os.path.join(guild_data_dir, "conf.json")
-        if not os.path.exists(json_file_path):
-            with open(json_file_path, "w", encoding="utf-8") as json_file:
-                json.dump(config.datasys.default_data, json_file, indent=4)
-
+    json_file_path = os.path.join(guild_data_dir, "conf.json")
+    if not os.path.exists(json_file_path):
+        with open(json_file_path, "w", encoding="utf-8") as json_file:
+            json.dump(config.datasys.default_data, json_file, indent=4)
+    ticket_json_file_path = os.path.join(guild_data_dir, "tickets.json")
+    if not os.path.exists(ticket_json_file_path):
+        with open(ticket_json_file_path, "w", encoding="utf-8") as t_json_file:
+            json.dump({}, t_json_file, indent=4)
 
     if sys == "globalchat_message_data":
         data: dict = load_json(f"data/{sid}/globalchat_message_data.json")
@@ -34,13 +37,17 @@ def load_data(
     elif sys == "chatfilter_log":
         data = load_json(f"data/{sid}/chatfilter_log.json")
         return data
-    
+
     elif sys == "transcripts":
         data = load_json(f"data/{sid}/transcripts.json")
         return data
-    
+
     elif sys == "users":
         data = load_json(f"data/{sid}/users.json")
+        return data
+
+    elif sys == "open_tickets":
+        data = load_json(f"data/{sid}/tickets.json")
         return data
 
     elif sys == "all":
@@ -106,13 +113,11 @@ def save_data(sid: int, sys: str, data):
     elif sys == "transcripts":
         file_path = f"data/{sid}/transcripts.json"
         save_json(file_path, data)
-    elif sys == "users": 
+    elif sys == "users":
         save_json(f"data/{sid}/users.json", data)
     elif sys == "open_tickets":
-        file_path = f"data/{sid}/conf.json"
-        data_file = dict(load_json(file_path))["tickets"]
-        data_file["open_tickets"] = data
-        save_json(file_path, data_file)
+        file_path = f"data/{sid}/tickets.json"
+        save_json(file_path, data)
     else:
         file_path = f"data/{sid}/conf.json"
 
@@ -120,7 +125,6 @@ def save_data(sid: int, sys: str, data):
             data_file = load_json(file_path)
         else:
             data_file = {}
-
         data_file[sys] = data
         save_json(file_path, data_file)
 

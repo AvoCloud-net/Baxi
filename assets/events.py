@@ -63,40 +63,45 @@ def events(bot: commands.AutoShardedBot, web):
                 logger.success(f"Ordner und conf.json für Guild {guild_id} erstellt.")
             else:
                 config_path = os.path.join(guild_folder, "conf.json")
-                
-                
+
                 if os.path.exists(config_path):
                     try:
-                        
+
                         with open(config_path, "r") as config_file:
                             data = json.load(config_file)
-                        
-                        
+
                         if "terms" not in data:
                             data["terms"] = False
-                            
-                            
+
                             with open(config_path, "w") as config_file:
                                 json.dump(data, config_file, indent=4)
-                            
-                            logger.success(f"terms-Feld für Guild {guild_id} hinzugefügt und auf false gesetzt.")
+
+                            logger.success(
+                                f"terms-Feld für Guild {guild_id} hinzugefügt und auf false gesetzt."
+                            )
                         else:
-                            logger.success(f"terms-Feld für Guild {guild_id} existiert bereits.")
-                            
+                            logger.success(
+                                f"terms-Feld für Guild {guild_id} existiert bereits."
+                            )
+
                     except json.JSONDecodeError:
-                        logger.error(f"Fehler beim Lesen der conf.json für Guild {guild_id}")
+                        logger.error(
+                            f"Fehler beim Lesen der conf.json für Guild {guild_id}"
+                        )
                     except Exception as e:
                         logger.error(f"Unerwarteter Fehler für Guild {guild_id}: {e}")
                 else:
-                    
+
                     data: dict = config.datasys.default_data
                     guild = await bot.fetch_guild(int(guild_id))
                     data["guild_name"] = str(guild.name)
-                    data["terms"] = False  
+                    data["terms"] = False
 
                     with open(config_path, "w") as config_file:
                         json.dump(data, config_file, indent=4)
-                    logger.success(f"conf.json für Guild {guild_id} erstellt mit terms-Feld.")
+                    logger.success(
+                        f"conf.json für Guild {guild_id} erstellt mit terms-Feld."
+                    )
 
         try:
             await bot.tree.sync()
@@ -174,8 +179,7 @@ def events(bot: commands.AutoShardedBot, web):
             embed = discord.Embed(
                 title=lang["events"]["on_guild_join"]["title"],
                 description=str(
-                    lang["events"]["on_guild_join"]["content"]
-                    + "\n\n"
+                    lang["events"]["on_guild_join"]["content"] + "\n\n"
                 ).format(saved_data=data_text),
             )
             if isinstance(channel, discord.TextChannel):
@@ -213,6 +217,23 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         chatfilter_req: dict = await chatfilter_instance.check(
             message=message.clean_content, gid=message.guild.id, cid=message.channel.id
         )
+
+        tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
+
+        if str(message.channel.id) in tickets:
+            user_avatar: str = (
+                "" if message.author.avatar is None else message.author.avatar.url
+            )
+            tickets[str(message.channel.id)]["transcript"].append(
+                {
+                    "user": str(message.author.name),
+                    "avatar": str(user_avatar),
+                    "timestamp": str(datetime.datetime.now()),
+                    "message": str(message.content),
+                }
+            )
+            datasys.save_data(message.guild.id, "open_tickets", tickets)
+            return
         print(str(chatfilter_req["reason"]).lower())
         if str(chatfilter_req["reason"]).lower() == "s11":
             if not guild_terms:
@@ -249,7 +270,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             bool(chatfilter_data.get("enabled", False))
             and message.channel.id not in chatfilter_data["bypass"]
         ):
-            
+
             if chatfilter_req["flagged"] is True:
                 if not guild_terms:
                     return
@@ -262,7 +283,12 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             gc_data[str(message.guild.id)]["channel"]
         ):
             if not guild_terms:
-                embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
+                embed = discord.Embed(
+                    description=str(lang["systems"]["terms"]["description"]).format(
+                        url=f"https://{config.Web.url}"
+                    ),
+                    color=config.Discord.danger_color,
+                )
                 embed.set_footer(text="Baxi - avocloud.net")
                 await message.reply(embed=embed)
                 return
@@ -275,28 +301,6 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 return await globalchat.globalchat(
                     bot=bot, message=message, gc_data=gc_data
                 )
-        
-        settings: dict = dict(datasys.load_data(message.guild.id, sys="ticket"))
-        try:
-            tickets = settings["open_tickets"]
-        except KeyError:
-            settings["open_tickets"] = {}
-            save_data(message.guild.id, "ticket", settings)
-            tickets = settings["open_tickets"]
-        if str(message.channel.id) in list(tickets):
-            user_avatar: str = (
-                "" if message.author.avatar is None else message.author.avatar.url
-            )
-            tickets[str(message.channel.id)]["transcript"].append(
-                {
-                    "user": str(message.author.name),
-                    "avatar": str(user_avatar),
-                    "timestamp": str(datetime.datetime.now()),
-                    "message": str(message.content),
-                }
-            )
-            datasys.save_data(message.guild.id, "ticket", settings)
-            return
 
     except Exception as e:
         print(e)

@@ -778,7 +778,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             settings.setdefault("catid", "")
             settings.setdefault("color", "")
             settings.setdefault("message", "")
-            settings.setdefault("open_tickets", {})
 
             if ticket["enabled"] is False:
                 settings["enabled"] = False
