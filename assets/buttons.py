@@ -585,7 +585,7 @@ class TicketAdminButtons(ui.View):
             if channel_id in tickets:
                 ticket_data = tickets[channel_id]
 
-                member = interaction.guild.get_member(int(ticket_data["user"]))
+                member = interaction.guild.get_member(interaction.user.id)
                 if member is None:
                     await interaction.response.send_message(
                         "Error: Member not found.",
@@ -593,10 +593,9 @@ class TicketAdminButtons(ui.View):
                     )
                     return
 
-                required_role_id = guild_settings.get("role", 0)
-                if ticket_data.get("supporterid") == interaction.user.id or int(
-                    required_role_id
-                ) in [role.id for role in member.roles]:
+                required_role_id: int = int(guild_settings.get("role", 0))
+                role = await interaction.guild.fetch_role(required_role_id)
+                if role in member.roles:
                     await interaction.response.send_message(
                         embed=discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
@@ -649,8 +648,26 @@ class TicketAdminButtons(ui.View):
                                 transcript_channel, discord.TextChannel
                             ):
                                 await transcript_channel.send(embed=embed)
-                            if member.dm_channel is not None:
-                                await member.dm_channel.send(embed=embed)
+                            
+                            try:
+                                member = interaction.guild.get_member(int(tickets[channel_id]["user"]))
+                                if member is None:
+                                    return
+                                if member.dm_channel is None:
+                                    dm_channel = await member.create_dm()
+                                else:
+                                    dm_channel = member.dm_channel
+
+                                await dm_channel.send(embed=embed)
+                                if transcript_channel is not None and isinstance(transcript_channel, discord.TextChannel):
+                                    await transcript_channel.send(
+                                        f"Transcript sent to user {member.mention} via DM."
+                                    )
+                            except discord.Forbidden:
+                                if transcript_channel is not None and isinstance(transcript_channel, discord.TextChannel):
+                                    await transcript_channel.send(
+                                        f"Unable to send transcript to user: DMs closed or blocked."
+                                    )
 
                             transcripts[str(transcript_id)] = transcript_data
                             datasys.save_data(1001, "transcripts", transcripts)
@@ -731,8 +748,9 @@ class TicketAdminButtons(ui.View):
                 )
                 return
 
-            required_role_id = guild_settings.get("role", 0)
-            if int(required_role_id) in [role.id for role in member.roles]:
+            required_role_id: int = int(guild_settings.get("role", 0))
+            role = await interaction.guild.fetch_role(required_role_id)
+            if role in member.roles:
                 tickets[channel_id]["supporterid"] = interaction.user.id
                 datasys.save_data(interaction.guild.id, "open_tickets", tickets)
 

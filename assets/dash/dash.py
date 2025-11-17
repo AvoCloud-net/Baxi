@@ -840,8 +840,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():
-        data: dict = await quart.request.get_json()
-        system: str = data.get("system")
+        data: dict = dict(await quart.request.get_json())
+        system: str = str(data.get("system"))
         channel_id: int = int(data.get("channel_id"))
         guild_id: int = int(data.get("guild_id"))
         print(system)
@@ -893,10 +893,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             else:
                 return quart.jsonify({"error": "Unknown system"}), 400
 
-            # Prüfe, ob alle benötigten Berechtigungen vorhanden sind
-            missing = [perm for perm in required_perms if not getattr(permissions, perm, False)]
+            if channel is not None and isinstance(channel, discord.TextChannel):
+                missing = [perm for perm in required_perms if not getattr(permissions, perm, False)]
 
-            valid = len(missing) == 0
+                valid = len(missing) == 0
+            else:
+                valid = False
+                missing = "Channel is not a text channel"
 
             return quart.jsonify({
                 "valid": valid,
