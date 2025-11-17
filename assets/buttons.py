@@ -515,7 +515,7 @@ class TicketView(ui.View):
                 datasys.load_data(interaction.guild.id, "open_tickets")
             )
             for ticket in tickets:
-                if dict(tickets.get(ticket, {})).get("user") == interaction.user.id:
+                if ticket.get("user") == interaction.user.id:
 
                     try:
                         channel = await interaction.guild.fetch_channel(int(ticket))
@@ -734,7 +734,7 @@ class TicketAdminButtons(ui.View):
             required_role_id = guild_settings.get("role", 0)
             if int(required_role_id) in [role.id for role in member.roles]:
                 tickets[channel_id]["supporterid"] = interaction.user.id
-                datasys.save_data(interaction.guild.id, "tickets", guild_settings)
+                datasys.save_data(interaction.guild.id, "open_tickets", tickets)
 
                 await interaction.response.send_message(
                     embed=discord.Embed(
