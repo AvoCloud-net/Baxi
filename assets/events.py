@@ -3,6 +3,11 @@ import json
 import os
 import datetime
 
+from pathlib import Path
+from PIL import Image
+from io import BytesIO
+import random
+
 import assets.data as datasys
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
@@ -224,12 +229,22 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             user_avatar: str = (
                 "" if message.author.avatar is None else message.author.avatar.url
             )
+            attachments_list: list = []
+            if message.attachments:
+                for attachment in message.attachments:
+                    file_path = (
+                            Path(config.Globalchat.attachments_dir) / f"ticket{message.channel.id}-{random.randint(100, 999)}.png"
+                        )
+                    image = Image.open(BytesIO(await attachment.read()))
+                    image.save(file_path)
+                    attachments_list.append(str(file_path).replace(config.Globalchat.attachments_dir,"").replace("/",""))
             tickets[str(message.channel.id)]["transcript"].append(
                 {
                     "user": str(message.author.name),
                     "avatar": str(user_avatar),
                     "timestamp": str(datetime.datetime.now()),
                     "message": str(message.content),
+                    "attachments": attachments_list,
                 }
             )
             datasys.save_data(message.guild.id, "open_tickets", tickets)

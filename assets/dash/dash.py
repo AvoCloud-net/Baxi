@@ -319,6 +319,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             data=requested_data,
             user=user,
             greeting=get_time_based_greeting(user.name),
+            attachment_url=config.Globalchat.attachments_url
         )
 
     @app.route("/guild/")
