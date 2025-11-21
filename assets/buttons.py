@@ -515,8 +515,10 @@ class TicketView(ui.View):
                 datasys.load_data(interaction.guild.id, "open_tickets")
             )
             for ticket in tickets:
-                if ticket.get("user") == interaction.user.id:
-
+                print(ticket)
+                ticket_data: dict = tickets[str(ticket)]
+                if ticket_data.get("user") == interaction.user.id:
+                    
                     try:
                         channel = await interaction.guild.fetch_channel(int(ticket))
                         embed = discord.Embed(
