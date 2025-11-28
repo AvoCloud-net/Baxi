@@ -13,6 +13,7 @@ from discord import Interaction, ui
 import asyncio
 import config.config as config
 from typing import cast, Optional, Union
+import datetime
 
 
 class BanConfirmView(ui.View):
@@ -518,7 +519,7 @@ class TicketView(ui.View):
                 print(ticket)
                 ticket_data: dict = tickets[str(ticket)]
                 if ticket_data.get("user") == interaction.user.id:
-                    
+
                     try:
                         channel = await interaction.guild.fetch_channel(int(ticket))
                         embed = discord.Embed(
@@ -633,6 +634,8 @@ class TicketAdminButtons(ui.View):
                                 "id": str(transcript_id),
                                 "title": ticket_data["title"],
                                 "msg": ticket_data["message"],
+                                "closed_by": str(interaction.user.name),
+                                "closed_on": str(datetime.datetime.now()),
                                 "transcript": ticket_data["transcript"],
                             }
 
@@ -650,9 +653,11 @@ class TicketAdminButtons(ui.View):
                                 transcript_channel, discord.TextChannel
                             ):
                                 await transcript_channel.send(embed=embed)
-                            
+
                             try:
-                                member = interaction.guild.get_member(int(tickets[channel_id]["user"]))
+                                member = interaction.guild.get_member(
+                                    int(tickets[channel_id]["user"])
+                                )
                                 if member is None:
                                     return
                                 if member.dm_channel is None:
@@ -661,12 +666,16 @@ class TicketAdminButtons(ui.View):
                                     dm_channel = member.dm_channel
 
                                 await dm_channel.send(embed=embed)
-                                if transcript_channel is not None and isinstance(transcript_channel, discord.TextChannel):
+                                if transcript_channel is not None and isinstance(
+                                    transcript_channel, discord.TextChannel
+                                ):
                                     await transcript_channel.send(
                                         f"Transcript sent to user {member.mention} via DM."
                                     )
                             except discord.Forbidden:
-                                if transcript_channel is not None and isinstance(transcript_channel, discord.TextChannel):
+                                if transcript_channel is not None and isinstance(
+                                    transcript_channel, discord.TextChannel
+                                ):
                                     await transcript_channel.send(
                                         f"Unable to send transcript to user: DMs closed or blocked."
                                     )
@@ -708,77 +717,95 @@ class TicketAdminButtons(ui.View):
         emoji="🖐️", style=discord.ButtonStyle.primary, custom_id="ticket_admin_claim"
     )
     async def claim(self, interaction: discord.Interaction, button: ui.Button):
-        if interaction.guild is None:
-            lang = datasys.load_lang_file(1001)
-            return await interaction.response.send_message(
-                embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
-                    color=config.Discord.warn_color,
-                ),
-                ephemeral=True,
-            )
+        try:
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                return await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=lang["commands"]["guild_only"],
+                        color=config.Discord.warn_color,
+                    ),
+                    ephemeral=True,
+                )
 
-        if not isinstance(interaction.channel, discord.TextChannel):
-            await interaction.response.send_message(
-                "This command can only be used in a text channel.",
-                ephemeral=True,
-            )
-            return
-
-        lang = datasys.load_lang_file(interaction.guild.id)
-        guild_settings: dict = dict(
-            datasys.load_data(interaction.guild.id, sys="ticket")
-        )
-        tickets: dict = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
-
-        if not isinstance(tickets, dict):
-            tickets = {}
-        if not isinstance(guild_settings, dict) or "role" not in guild_settings:
-            await interaction.response.send_message(
-                "Error: Ticket system not properly configured.",
-                ephemeral=True,
-            )
-            return
-
-        channel_id = str(interaction.channel.id)
-        if channel_id in tickets:
-            member = interaction.guild.get_member(interaction.user.id)
-            if member is None:
+            if not isinstance(interaction.channel, discord.TextChannel):
                 await interaction.response.send_message(
-                    "Error: Member not found.",
+                    "This command can only be used in a text channel.",
                     ephemeral=True,
                 )
                 return
 
-            required_role_id: int = int(guild_settings.get("role", 0))
-            role = await interaction.guild.fetch_role(required_role_id)
-            if role in member.roles:
-                tickets[channel_id]["supporterid"] = interaction.user.id
-                datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+            lang = datasys.load_lang_file(interaction.guild.id)
+            guild_settings: dict = dict(
+                datasys.load_data(interaction.guild.id, sys="ticket")
+            )
+            tickets: dict = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
 
+            if not isinstance(tickets, dict):
+                tickets = {}
+            if not isinstance(guild_settings, dict) or "role" not in guild_settings:
                 await interaction.response.send_message(
-                    embed=discord.Embed(
-                        title=lang["systems"]["ticket"]["title"],
-                        description=str(
-                            lang["systems"]["ticket"]["description_claimed"]
-                        ).format(user=interaction.user.mention),
-                        color=discord.Color.green(),
-                    )
-                )
-            else:
-                print([role.id for role in member.roles])
-                await interaction.response.send_message(
-                    embed=discord.Embed(
-                        title=lang["systems"]["ticket"]["title"],
-                        description=lang["systems"]["ticket"][
-                            "description_no_permission_claim"
-                        ],
-                        color=discord.Color.red(),
-                    ),
+                    "Error: Ticket system not properly configured.",
                     ephemeral=True,
                 )
-        else:
+                return
+
+            channel_id = str(interaction.channel.id)
+            if channel_id in tickets:
+                member = interaction.guild.get_member(interaction.user.id)
+                if member is None:
+                    await interaction.response.send_message(
+                        "Error: Member not found.",
+                        ephemeral=True,
+                    )
+                    return
+
+                required_role_id: int = int(guild_settings.get("role", 0))
+                role = await interaction.guild.fetch_role(required_role_id)
+                if role in member.roles:
+                    tickets[channel_id]["supporterid"] = interaction.user.id
+                    tickets[channel_id]["transcript"].append(
+                        {
+                            "type": "sys_msg",
+                            "msg": str(lang["systems"]["ticket"]["description_claimed"]).format(
+                                user=interaction.user.name
+                            ),
+                            "avatar": "https://avocloud.net/img/icons/gear.svg",
+                            "timestamp": str(datetime.datetime.now()),
+                            "is_staff": True,
+                        }
+                    )
+                    datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+
+                    await interaction.response.send_message(
+                        embed=discord.Embed(
+                            title=lang["systems"]["ticket"]["title"],
+                            description=str(
+                                lang["systems"]["ticket"]["description_claimed"]
+                            ).format(user=interaction.user.mention),
+                            color=discord.Color.green(),
+                        )
+                    )
+                else:
+                    print([role.id for role in member.roles])
+                    await interaction.response.send_message(
+                        embed=discord.Embed(
+                            title=lang["systems"]["ticket"]["title"],
+                            description=lang["systems"]["ticket"][
+                                "description_no_permission_claim"
+                            ],
+                            color=discord.Color.red(),
+                        ),
+                        ephemeral=True,
+                    )
+            else:
+                await interaction.response.send_message(
+                    "This channel is not a valid ticket.",
+                    ephemeral=True,
+                )
+        except Exception as e:
+            print(f"error in ticket claim: {e}")
             await interaction.response.send_message(
-                "This channel is not a valid ticket.",
+                "An error occurred while trying to claim the ticket.",
                 ephemeral=True,
             )

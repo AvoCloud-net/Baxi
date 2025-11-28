@@ -843,69 +843,166 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def check_channel_perms():
         data: dict = dict(await quart.request.get_json())
         system: str = str(data.get("system"))
-        channel_id: int = int(data.get("channel_id"))
         guild_id: int = int(data.get("guild_id"))
-        print(system)
-        print(channel_id)
-        print(guild_id)
+        
+        # channel_id ist optional – nur bei Nicht-bot_general erforderlich
+        channel_id = data.get("channel_id")
+        if system != "bot_general" and system != "bot_role_position":
+            if not channel_id:
+                return quart.jsonify({"error": "Missing channel_id for non-general check"}), 400
+            channel_id = int(channel_id)
 
-        if not all([system, channel_id, guild_id]):
-            print("Missing required fields")
+        if not guild_id or not system:
             return quart.jsonify({"error": "Missing required fields"}), 400
 
         try:
             guild = await bot.fetch_guild(guild_id)
-            channel = await guild.fetch_channel(channel_id)
-            bot_member = guild.get_member(bot.user.id)
+            bot_member = await guild.fetch_member(bot.user.id)
             if not bot_member:
                 bot_member = await guild.fetch_member(bot.user.id)
 
-            permissions = channel.permissions_for(bot_member)
+            if system == "bot_general":
+                # 🔹 Globale Guild-Berechtigungen prüfen
+                permissions = bot_member.guild_permissions  # <-- ACHTUNG: guild.me ist der Bot in diesem Guild
 
-            required_perms = set()
-
-            if system == "globalchat":
                 required_perms = {
+                    # Server & Rollen
+                    "manage_guild",
+                    "manage_roles",
+                    
+                    # Kanäle & Nachrichten (global gültig, auch wenn kanalbasiert)
+                    "manage_channels",
+                    "view_channel",
+                    "read_message_history",
                     "send_messages",
+                    "send_messages_in_threads",
                     "manage_messages",
+                    "embed_links",
                     "attach_files",
+                    "mention_everyone",
+                    "add_reactions",
                     "use_external_emojis",
-                    "embed_links",  # oft implizit nötig für Rich Embeds
-                    "read_messages",
-                    "read_message_history"
+                    "use_external_stickers",
+                    "use_application_commands",
+                    
+                    # Moderation
+                    "kick_members",
+                    "ban_members",
+                    "moderate_members",
+                    
+                    # Audit & Logging
+                    "view_audit_log",
+                    
+                    # Voice
+                    "connect",
+                    "speak",
+                    "mute_members",
+                    "move_members",
+                    "stream",
+                    "use_voice_activation",
+                    
+                    # Sonstige
+                    "manage_permissions",
+                    "create_polls",
                 }
-            elif system == "ticket":
-                required_perms = {
-                    "send_messages",
-                    "read_messages",
-                    "read_message_history",
-                    "manage_channels",        # zum Erstellen/Löschen von Ticket-Kanälen
-                    "manage_permissions",     # um Berechtigungen im Ticket zu setzen
-                    "embed_links"
-                }
-            elif system == "ticket_transcript":
-                required_perms = {
-                    "send_messages",
-                    "read_messages",
-                    "read_message_history",
-                    "attach_files",           # um Transkript als .txt oder .html zu senden
-                    "embed_links"
-                }
-            else:
-                return quart.jsonify({"error": "Unknown system"}), 400
 
-            if channel is not None and isinstance(channel, discord.TextChannel):
                 missing = [perm for perm in required_perms if not getattr(permissions, perm, False)]
-
                 valid = len(missing) == 0
-            else:
-                valid = False
-                missing = "Channel is not a text channel"
 
-            return quart.jsonify({
-                "valid": valid,
-                "missing": missing if not valid else None
-            })
+                return quart.jsonify({
+                    "valid": valid,
+                    "missing": missing if not valid else None,
+                    "scope": "guild"
+                })
+            elif system == "bot_role_position":
+                # Prüfe Bot-Rollenposition im Vergleich zu allen anderen Rollen
+                bot_roles = bot_member.roles
+                if not bot_roles:
+                    return quart.jsonify({"error": "Bot has no roles"}), 500
+
+                bot_top_role = bot_member.top_role
+                guild_roles = sorted(guild.roles, key=lambda r: r.position, reverse=True)
+                highest_role = guild_roles[0]  # Rolle ganz oben (meist @everyone nicht, aber ggf. Admin-Rolle)
+
+                # Ist die Bot-Rolle NICHT die höchste?
+                is_highest = bot_top_role.position == highest_role.position
+
+                # Optionale: Ist der Bot über der Ticket-Stuff-Rolle? (kann später erweitert werden)
+
+                return quart.jsonify({
+                    "is_highest": is_highest,
+                    "bot_role_name": bot_top_role.name,
+                    "bot_role_position": bot_top_role.position,
+                    "highest_role_name": highest_role.name,
+                    "total_roles": len(guild.roles),
+                    "warning": not is_highest
+                })
+            else:
+                # 🔹 Kanal-spezifische Prüfung (wie vorher)
+                if not channel_id:
+                    return quart.jsonify({"error": "channel_id is required for this system"}), 400
+
+                channel = await guild.fetch_channel(channel_id)
+                permissions = channel.permissions_for(bot_member)
+
+                required_perms = set()
+                if system == "globalchat":
+                    required_perms = {
+                        "send_messages",
+                        "view_channel",
+                        "read_message_history",
+                        "attach_files",
+                        "embed_links",
+                        "use_external_emojis",
+                        "manage_messages",
+                    }
+                elif system == "ticket_button":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "send_messages",
+                        "embed_links",
+                        "use_application_commands",
+                    }
+                elif system == "ticket":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "send_messages",
+                        "manage_channels",
+                        "manage_permissions",
+                        "embed_links",
+                    }
+                elif system == "ticket_transcript":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "send_messages",
+                        "attach_files",
+                        "embed_links",
+                    }
+                elif system == "category":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "manage_channels",
+                        "manage_permissions",
+                    }
+                else:
+                    return quart.jsonify({"error": "Unknown system"}), 400
+
+                if isinstance(channel, (discord.TextChannel, discord.CategoryChannel)):
+                    missing = [perm for perm in required_perms if not getattr(permissions, perm, False)]
+                    valid = len(missing) == 0
+                else:
+                    valid = False
+                    missing = "Channel is not a text channel or category."
+
+                return quart.jsonify({
+                    "valid": valid,
+                    "missing": missing if not valid else None,
+                    "scope": "channel"
+                })
 
         except Exception as e:
             return quart.jsonify({"error": str(e)}), 500

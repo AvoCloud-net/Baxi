@@ -226,6 +226,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
 
         if str(message.channel.id) in tickets:
+            guild_ticket_config: dict = dict(datasys.load_data(message.guild.id, "ticket"))
             user_avatar: str = (
                 "" if message.author.avatar is None else message.author.avatar.url
             )
@@ -238,13 +239,19 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                     image = Image.open(BytesIO(await attachment.read()))
                     image.save(file_path)
                     attachments_list.append(str(file_path).replace(config.Globalchat.attachments_dir,"").replace("/",""))
+            user = await message.guild.fetch_member(message.author.id)
+            is_staff: bool = True if int(guild_ticket_config.get("role", 0)) in [
+                role.id for role in user.roles
+            ] else False
             tickets[str(message.channel.id)]["transcript"].append(
                 {
+                    "type": "message",  
                     "user": str(message.author.name),
                     "avatar": str(user_avatar),
                     "timestamp": str(datetime.datetime.now()),
                     "message": str(message.content),
                     "attachments": attachments_list,
+                    "is_staff": is_staff,
                 }
             )
             datasys.save_data(message.guild.id, "open_tickets", tickets)

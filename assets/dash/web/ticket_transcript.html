@@ -218,8 +218,25 @@
                 <div class="chat-log">
                     {% for entry in data.transcript %}
                     <div class="chat-message" id="message-{{ loop.index }}">
-                        <img src="{{ entry.avatar }}" alt="{{ entry.user }}'s avatar" class="chat-avatar"
-                            loading="lazy">
+                        <img src="{{ entry.avatar }}" alt="{{ entry.user }}'s avatar"
+                            class="chat-avatar" loading="lazy">
+                        {% if entry.type == 'sys_msg' %}
+                        <div class="chat-bubble">
+                            <div class="chat-header">
+                                <span class="chat-username">
+                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
+                                    System - Ticket Claim
+                                </span>
+                                <span class="chat-timestamp">
+                                    <a href="#message-{{ loop.index }}" title="Permalink to this message"
+                                        style="color: var(--text-secondary)">
+                                        {{ entry.timestamp }}
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="chat-text">{{ entry.msg }}</div>
+                        </div>
+                        {% else %}
                         <div class="chat-bubble">
                             <div class="chat-header">
                                 <span class="chat-username">
@@ -239,7 +256,8 @@
                             {% if entry.attachments %}
                             <div class="chat-attachments" style="margin-top: 0.5rem;">
                                 {% for attachment in entry.attachments %}
-                                <a href="{{ attachment_url }}{{ attachment }}" target="_blank" rel="noopener noreferrer">
+                                <a href="{{ attachment_url }}{{ attachment }}" target="_blank"
+                                    rel="noopener noreferrer">
                                     <img src="{{ attachment_url }}{{ attachment }}" alt="Attachment"
                                         style="border-radius: 8px; border: var(--chat-border); max-width: 600px;">
                                 </a>
@@ -247,6 +265,7 @@
                             </div>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div class="empty-state">
@@ -254,6 +273,25 @@
                         <p>No messages in this conversation yet.</p>
                     </div>
                     {% endfor %}
+                    <div class="chat-message" id="message-system-closed">
+                        <img src="https://avocloud.net/img/icons/gear.svg" alt="System" class="chat-avatar"
+                            loading="lazy">
+                        <div class="chat-bubble">
+                            <div class="chat-header">
+                                <span class="chat-username">
+                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
+                                    System - Ticket Closed
+                                </span>
+                                <span class="chat-timestamp">
+                                    <a href="#message-system-closed" title="Permalink to this message"
+                                        style="color: var(--text-secondary)">
+                                        {{ data.closed_on }}
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="chat-text">Ticket was closed by {{ data.closed_by }}</div>
+                        </div>
+                    </div>
                 </div>
             </section>
 

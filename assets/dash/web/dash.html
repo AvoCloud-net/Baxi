@@ -310,7 +310,26 @@
                             <span class="spinner hidden"></span>
                         </button>
                     </form>
-
+                    <div class="project-card" style="margin-top: 2rem;">
+                        <h3 class="project-title">
+                            <i class="fa-solid fa-robot"></i> Bot Permissions
+                        </h3>
+                        <p class="project-description">
+                            Verify that Baxi has all required permissions in this server.
+                        </p>
+                        <div class="channel-perm-feedback" id="feedback-bot-general" style="display: none;"></div>
+                        <div class="channel-perm-feedback warning" id="feedback-bot-role"
+                            style="display: none; background-color: rgba(255, 165, 0, 0.2); border-color: rgba(255, 165, 0, 0.4);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="bot-role-warning-text">Bot role is not at the top. Some features may not work
+                                properly.</span>
+                        </div>
+                        <button type="button" class="submit-btn" onclick="checkBotGeneralPermissions()"
+                            style="margin-top: 12px;">
+                            <span class="btn-text">Check Bot Permissions</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </div>
                     <div class="project-date">Avocloud.net - Baxi</div>
                 </div>
             </section>
@@ -493,6 +512,8 @@
                                 <option value="{{ id }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="channel-perm-feedback" id="feedback-category-channel" style="display: none;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="ticket-transcript-channel">Transcript channel:</label>
@@ -1086,10 +1107,12 @@
             const gc = document.getElementById('globalchat-channel')?.value;
             const tc = document.getElementById('ticket-channel')?.value;
             const ttc = document.getElementById('ticket-transcript-channel')?.value;
+            const tcat = document.getElementById('ticket-cat')?.value;
 
             if (gc) checkChannelPermissions('globalchat', gc, 'feedback-globalchat-channel');
             if (tc) checkChannelPermissions('ticket', tc, 'feedback-ticket-channel');
             if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
+            if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
         }
 
         // Event Listener für Änderungen
@@ -1112,7 +1135,88 @@
                     checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel');
                 });
             }
+            const categorySelect = document.getElementById('ticket-cat');
+            if (categorySelect) {
+                categorySelect.addEventListener('change', (e) => {
+                    checkChannelPermissions('category', e.target.value, 'feedback-category-channel');
+                });
+            }
         });
+
+
+        function checkBotRolePosition() {
+            const feedbackEl = document.getElementById('feedback-bot-role');
+            if (!feedbackEl) return;
+
+            const payload = {
+                guild_id: data.guild_id,
+                system: "bot_role_position"
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/check/channel/perms/');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    feedbackEl.style.display = 'none';
+                    if (xhr.status === 200) {
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            if (resp.warning) {
+                                document.getElementById('bot-role-warning-text').textContent =
+                                    `Bot role "${resp.bot_role_name}" is not at the top. Some features may not work properly.`;
+                                feedbackEl.style.display = 'flex';
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+                }
+            };
+        }
+
+        function checkBotGeneralPermissions() {
+            const feedbackEl = document.getElementById('feedback-bot-general');
+            if (!feedbackEl) return;
+
+            feedbackEl.style.display = 'none';
+            const payload = {
+                guild_id: data.guild_id,
+                system: "bot_general"
+                // ❗ Kein channel_id!
+            };
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/check/channel/perms/');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(payload));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            if (resp.valid) {
+                                feedbackEl.innerHTML = '<i class="fas fa-check-circle"></i> Bot has all required guild permissions';
+                                feedbackEl.className = 'channel-perm-feedback';
+                            } else if (resp.missing && resp.missing.length) {
+                                feedbackEl.innerHTML = `<i class="fas fa-exclamation-triangle"></mi> Missing: ${resp.missing.join(', ')}`;
+                                feedbackEl.className = 'channel-perm-feedback error';
+                            } else {
+                                feedbackEl.style.display = 'none';
+                                return;
+                            }
+                            feedbackEl.style.display = 'flex';
+                        } catch (e) {
+                            feedbackEl.style.display = 'none';
+                        }
+                    } else {
+                        feedbackEl.style.display = 'none';
+                    }
+                }
+            };
+        }
+        checkBotRolePosition(); 
     </script>
     <script>
         document.querySelectorAll('.settings-form').forEach(form => {

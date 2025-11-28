@@ -104,7 +104,7 @@ class Chatfilter:
         try:
             translated_message = await translate_api(message)
             payload = {
-                "model": "hf.co/jquirion/Llama-Guard-3-1B-Q4_K_M:latest",
+                "model": "llama-guard3:8b",
                 "messages": [{"role": "user", "content": translated_message}],
                 "temperature": 0.2,
                 "max_tokens": 512,

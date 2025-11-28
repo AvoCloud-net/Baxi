@@ -191,6 +191,9 @@ class Ticket_Creation_Modal(ui.Modal):
                     send_messages=True,
                     read_message_history=True,
                     attach_files=True,
+                    manage_messages=True,
+                    manage_channels=True,
+                    manage_permissions=True,
                 ),
                 role: discord.PermissionOverwrite(
                     view_channel=True,
