@@ -319,10 +319,9 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Bot admin commands loaded.")
 
     @bot.tree.command(name="flag-user", description="Flag a user as global troublemaker, triggering increased scrutiny and potential consequences.")
-    @app_commands.describe(user="User you want to flag.")
     @app_commands.describe(user_id="The ID of the user you want to flag.")
     @app_commands.describe(reason="Why do you want to flag this user?")
-    async def flag_user_command(interaction: discord.Interaction, reason: str, user: Optional[discord.Member] = None, user_id: Optional[int] = 0):
+    async def flag_user_command(interaction: discord.Interaction, user_id: str, reason: str):
         admins: list = list(datasys.load_data(1001, "admins"))
         guild_id: int = interaction.guild.id if interaction.guild is not None else 0
         lang: dict = dict(datasys.load_lang_file(guild_id))
@@ -330,29 +329,34 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if interaction.user.id not in admins:
             await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
             return
-        
-        if user is None and user_id == 0:
-            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["missing_parameters"])
+
+        if not user_id.isdigit():
+            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["invalid_user_id"])
             return
 
-        userid: int = user.id if user is not None else (user_id or 0)
-
+        userid: int = int(user_id)
         users_list: dict = dict(datasys.load_data(1001, "users"))
-        selected_user = await bot.fetch_user(userid)
+
+        try:
+            selected_user = await bot.fetch_user(userid)
+        except discord.NotFound:
+            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["user_not_found"])
+            return
+        except Exception as e:
+            await interaction.response.send_message(lang["commands"]["admin"]["flag_user"]["fetch_error"].format(error=str(e)))
+            return
 
         users_list[str(selected_user.id)] = {
             "entry_date": str(datetime.date.today()),
-            "id": int(selected_user.id),
-            "name": str(selected_user.name),
+            "id": selected_user.id,
+            "name": selected_user.name,
             "reason": reason,
             "flagged": True
         }
 
-        print(users_list)
-
         datasys.save_data(1001, "users", users_list)
 
-        await interaction.response.send_message(config.Icons.people_crossed + "" + lang["commands"]["admin"]["flag_user"]["success"])
+        await interaction.response.send_message(config.Icons.people_crossed + lang["commands"]["admin"]["flag_user"]["success"])
 
 
     @bot.tree.command(name="deflag-user", description="Deflag a user as global troublemaker, triggering increased scrutiny and potential consequences.")

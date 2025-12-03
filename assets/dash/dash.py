@@ -843,9 +843,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def check_channel_perms():
         data: dict = dict(await quart.request.get_json())
         system: str = str(data.get("system"))
-        guild_id: int = int(data.get("guild_id"))
+        if "guild_id" in data and data["guild_id"] is not None:
+            guild_id: int = int(data["guild_id"])
+        else:
+            guild_id: int = 0 
         
-        # channel_id ist optional – nur bei Nicht-bot_general erforderlich
         channel_id = data.get("channel_id")
         if system != "bot_general" and system != "bot_role_position":
             if not channel_id:
@@ -857,20 +859,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         try:
             guild = await bot.fetch_guild(guild_id)
+            assert bot.user is not None, "Bot user unknown"
             bot_member = await guild.fetch_member(bot.user.id)
             if not bot_member:
                 bot_member = await guild.fetch_member(bot.user.id)
 
             if system == "bot_general":
-                # 🔹 Globale Guild-Berechtigungen prüfen
-                permissions = bot_member.guild_permissions  # <-- ACHTUNG: guild.me ist der Bot in diesem Guild
+                permissions = bot_member.guild_permissions
 
                 required_perms = {
-                    # Server & Rollen
                     "manage_guild",
                     "manage_roles",
                     
-                    # Kanäle & Nachrichten (global gültig, auch wenn kanalbasiert)
                     "manage_channels",
                     "view_channel",
                     "read_message_history",
@@ -885,15 +885,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "use_external_stickers",
                     "use_application_commands",
                     
-                    # Moderation
                     "kick_members",
                     "ban_members",
                     "moderate_members",
                     
-                    # Audit & Logging
                     "view_audit_log",
                     
-                    # Voice
                     "connect",
                     "speak",
                     "mute_members",
@@ -901,7 +898,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "stream",
                     "use_voice_activation",
                     
-                    # Sonstige
                     "manage_permissions",
                     "create_polls",
                 }
@@ -915,19 +911,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "scope": "guild"
                 })
             elif system == "bot_role_position":
-                # Prüfe Bot-Rollenposition im Vergleich zu allen anderen Rollen
                 bot_roles = bot_member.roles
                 if not bot_roles:
                     return quart.jsonify({"error": "Bot has no roles"}), 500
 
                 bot_top_role = bot_member.top_role
                 guild_roles = sorted(guild.roles, key=lambda r: r.position, reverse=True)
-                highest_role = guild_roles[0]  # Rolle ganz oben (meist @everyone nicht, aber ggf. Admin-Rolle)
+                highest_role = guild_roles[0]
 
-                # Ist die Bot-Rolle NICHT die höchste?
                 is_highest = bot_top_role.position == highest_role.position
-
-                # Optionale: Ist der Bot über der Ticket-Stuff-Rolle? (kann später erweitert werden)
 
                 return quart.jsonify({
                     "is_highest": is_highest,
@@ -938,7 +930,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "warning": not is_highest
                 })
             else:
-                # 🔹 Kanal-spezifische Prüfung (wie vorher)
                 if not channel_id:
                     return quart.jsonify({"error": "channel_id is required for this system"}), 400
 
