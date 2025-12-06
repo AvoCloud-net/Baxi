@@ -409,29 +409,6 @@ button {
     background-color: var(--hover-color);
 }
 
-
-.spinner {
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #333;
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  animation: spin 1s linear infinite;
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 8px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .hidden {
   display: none;
 }
@@ -456,4 +433,40 @@ button:disabled {
 .submit-btn:hover {
   box-shadow: 0 0 12px rgba(147, 51, 234, 0.6);
   background: linear-gradient(90deg, #ec4899 0%, #9333ea 100%);
+}
+
+
+.windows-loading-spinner {
+  box-sizing: border-box;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 2px;
+  overflow: visible;
+}
+
+.windows-loading-spinner > circle {
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  transform-origin: 50% 50%;
+  transition: all 0.2s ease-in-out 0s;
+  animation: 2s linear 0s infinite normal none running loading-spinner;
+}
+
+@keyframes loading-spinner {
+  0% {
+    stroke-dasharray: 0.01px, 43.97px;
+    transform: rotate(0);
+  }
+
+  50% {
+    stroke-dasharray: 21.99px, 21.99px;
+    transform: rotate(450deg);
+  }
+
+  100% {
+    stroke-dasharray: 0.01px, 43.97px;
+    transform: rotate(1080deg);
+  }
 }

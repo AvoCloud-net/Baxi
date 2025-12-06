@@ -109,8 +109,10 @@
                                 <i class="fa-solid fa-message"></i> Processed Messages
                             </h3>
                             <p class="project-description">
-                                Baxi has processed <strong>{{ "{:,}".format(stats.get("prossesed_messages", 0)) }}</strong>
-                                message{{ 's' if stats.get("prossesed_messages", 0) != 1 else '' }} since 1st of December 2025.
+                                Baxi has processed <strong>{{ "{:,}".format(stats.get("prossesed_messages", 0))
+                                    }}</strong>
+                                message{{ 's' if stats.get("prossesed_messages", 0) != 1 else '' }} since 1st of
+                                December 2025.
                             </p>
                         </div>
                     </div>
@@ -144,7 +146,10 @@
                         <br>
                         <button type="submit" class="submit-btn">
                             <span class="btn-text">Log-in</span>
-                            <span class="spinner hidden"></span>
+                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
+                                    class="windows-loading-spinner">
+                                    <circle r="7px" cy="8px" cx="8px"></circle>
+                                </svg></span>
                         </button>
                     </form>
                     <div class="tags">
@@ -175,7 +180,10 @@
                         <br>
                         <button type="submit" class="submit-btn">
                             <span class="btn-text">View</span>
-                            <span class="spinner hidden"></span>
+                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
+                                    class="windows-loading-spinner">
+                                    <circle r="7px" cy="8px" cx="8px"></circle>
+                                </svg></span>
                         </button>
                     </form>
                     <div class="tags">
@@ -202,7 +210,9 @@
             // Button deaktivieren & Spinner anzeigen
             button.disabled = true;
             spinner.classList.remove('hidden');
-            text.textContent = "Loading...";
+            text.textContent = "";
+
+
         });
     });
 </script>
