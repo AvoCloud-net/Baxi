@@ -60,7 +60,8 @@
                     {{greeting}}
                 </h1>
                 <p class="subtitle">
-                    Baxi dashboard<br><span class="highlight-purple" onclick="copyToClipboard()">!!!THIS IS A BETA VERSION!!!</span>
+                    Baxi dashboard<br><span class="highlight-purple" onclick="copyToClipboard()">!!!THIS IS A BETA
+                        VERSION!!!</span>
                 </p>
             </div>
             <div class="scroll-indicator">
@@ -69,6 +70,54 @@
         </section>
 
         <main>
+            <section style="margin-top: 15vh" id="staff">
+                <div class="section-header">
+                    <div class="section-title">STATS</div>
+                </div>
+
+                <div class="project-card">
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-chart-column"></i> Baxi Stats
+                    </h3>
+                    <p class="project-description">
+                        Here you can see some statistics about Baxi's usage.
+                    </p>
+
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-server"></i> Guilds
+                            </h3>
+                            <p class="project-description">
+                                Currently active in <strong>{{ "{:,}".format(stats.get("guild_count", 0)) }}</strong>
+                                Discord server{{ 's' if stats.get("guild_count", 0) != 1 else '' }}.
+                            </p>
+                        </div>
+
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-users"></i> Users
+                            </h3>
+                            <p class="project-description">
+                                Serving <strong>{{ "{:,}".format(stats.get("user_count", 0)) }}</strong> unique user{{
+                                's' if stats.get("user_count", 0) != 1 else '' }}.
+                            </p>
+                        </div>
+
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-message"></i> Processed Messages
+                            </h3>
+                            <p class="project-description">
+                                Baxi has processed <strong>{{ "{:,}".format(stats.get("prossesed_messages", 0)) }}</strong>
+                                message{{ 's' if stats.get("prossesed_messages", 0) != 1 else '' }} since 1st of December 2025.
+                            </p>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
             <section style="margin-top: 15vh" id="staff">
                 <div class="section-header">
                     <div class="section-title">LOG IN</div>

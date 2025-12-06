@@ -49,7 +49,9 @@ def load_data(
     elif sys == "open_tickets":
         data = load_json(f"data/{sid}/tickets.json")
         return data
-
+    elif sys == "stats":
+        data = load_json(f"data/{sid}/stats.json")
+        return data
     elif sys == "all":
         guild_data = load_json(f"data/{sid}/conf.json")
         gc_data = load_json("data/1001/conf.json")["globalchat"]
@@ -117,6 +119,9 @@ def save_data(sid: int, sys: str, data):
         save_json(f"data/{sid}/users.json", data)
     elif sys == "open_tickets":
         file_path = f"data/{sid}/tickets.json"
+        save_json(file_path, data)
+    elif sys == "stats":
+        file_path = f"data/{sid}/stats.json"
         save_json(file_path, data)
     else:
         file_path = f"data/{sid}/conf.json"

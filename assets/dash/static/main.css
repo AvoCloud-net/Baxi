@@ -241,6 +241,11 @@ h1 {
   font-size: 0.95rem;
 }
 
+.project-description strong {
+    color: #d8b4fe; /* oder #c084fc */
+    font-weight: 700;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;

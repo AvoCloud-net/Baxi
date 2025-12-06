@@ -16,7 +16,7 @@ import discord
 
 from typing import cast
 from assets.share import globalchat_message_data
-from assets.tasks import GCDH_Task
+from assets.tasks import GCDH_Task, UpdateStatsTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -124,6 +124,11 @@ def events(bot: commands.AutoShardedBot, web):
             GCDTH_task.sync_globalchat_message_data.start()
             logger.debug.success("Globalchat message data sync task started.")
 
+            logger.working("Starting UpdateStats task...")
+            update_stats_task = UpdateStatsTask(bot)
+            update_stats_task.update_stats.start()
+            logger.debug.success("Update stats task started.")
+
         except Exception as e:
             await bot.change_presence(
                 activity=discord.Activity(
@@ -212,6 +217,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     assert message.guild is not None, "Message guild is unknown!"
     guild_data = datasys.get_guild_data(message.guild.id)
     assert guild_data is not None, "Guild is unknown!"
+    stats: dict = dict(datasys.load_data(1001, "stats"))
+    stats["prossesed_messages"] = int(stats.get("prossesed_messages", 0)) + 1
+    datasys.save_data(1001, "stats", stats)
     try:
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
         guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))

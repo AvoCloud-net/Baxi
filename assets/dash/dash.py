@@ -257,12 +257,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             for guild_id, name in user_managed_guilds.items()
             if guild_id in bot_guild_ids
         }
-
+        stats: dict = dict(load_data(1001, "stats"))
         return await render_template(
             "dash_home.html",
             managed_guilds=valid_guilds,
             greeting=get_time_based_greeting(user.name),
             user=user,
+            stats=stats
         )
 
     @app.route("/chatfilter/")

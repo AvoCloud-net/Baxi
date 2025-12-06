@@ -41,3 +41,37 @@ class GCDH_Task:
         else:
             logger.error(f"[GCDH] Sync failed: {response}")
 
+
+class UpdateStatsTask:
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(minutes=10)
+    async def update_stats(self):
+        guild_count = len(self.bot.guilds)
+        
+        unique_user_ids = set()
+        for guild in self.bot.guilds:
+            for member in guild.members:
+                if not member.bot: 
+                    unique_user_ids.add(member.id)
+        
+        user_count = len(unique_user_ids)
+
+        stats: dict = dict(datasys.load_data(1001, "stats"))
+        stats["guild_count"] = guild_count
+        stats["user_count"] = user_count
+        top_servers: dict = {server.name: server.member_count for server in self.bot.guilds}
+        stats["top_servers"] = dict(
+            sorted(
+                top_servers.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:10]
+        )
+        datasys.save_data(1001, "stats", stats)
+
+
+        logger.debug.info(
+            f"[Stats] Updated stats: Guilds: {guild_count}, Unique Users: {user_count}"
+        )
