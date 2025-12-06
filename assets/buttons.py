@@ -621,7 +621,7 @@ class TicketAdminButtons(ui.View):
 
                     try:
                         response = await interaction.client.wait_for(
-                            "message", check=check, timeout=60.0
+                            "message", check=check, timeout=30.0
                         )
 
                         if response.content.lower() == "confirm":
@@ -646,7 +646,7 @@ class TicketAdminButtons(ui.View):
 
                             embed = discord.Embed(
                                 title=lang["systems"]["ticket"]["title"],
-                                description=f"{lang['systems']['ticket']['link']} {link}",
+                                description=f"{str(lang['systems']['ticket']['link']).format(guild=interaction.guild.name)} {link}",
                             )
 
                             if transcript_channel is not None and isinstance(
@@ -687,12 +687,35 @@ class TicketAdminButtons(ui.View):
                                 interaction.guild.id, "open_tickets", tickets
                             )
                         else:
-                            await interaction.channel.send("Ticket deletion cancelled.")
+                            await interaction.channel.send(str(lang["systems"]["ticket"]["close_cancel"]).format(user=interaction.user.name))
+                            tickets[channel_id]["transcript"].append(
+                                {
+                                    "type": "sys_msg",
+                                    "msg": str(
+                                        lang["systems"]["ticket"]["close_cancel"]
+                                    ).format(user=interaction.user.name),
+                                    "avatar": "https://avocloud.net/img/icons/gear.svg",
+                                    "timestamp": str(datetime.datetime.now()),
+                                    "is_staff": True,
+                                }
+                            )
+                            datasys.save_data(interaction.guild.id, "open_tickets", tickets)
 
                     except asyncio.TimeoutError:
-                        await interaction.channel.send(
-                            "Timed out waiting for confirmation."
+                        await interaction.channel.send(str(lang["systems"]["ticket"]["close_cancel"]).format(user=interaction.user.name))
+                        tickets[channel_id]["transcript"].append(
+                            {
+                                "type": "sys_msg",
+                                "msg": str(
+                                    lang["systems"]["ticket"]["close_cancel"]
+                                ).format(user=interaction.user.name),
+                                "avatar": "https://avocloud.net/img/icons/gear.svg",
+                                "timestamp": str(datetime.datetime.now()),
+                                "is_staff": True,
+                            }
                         )
+                        datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+
 
                 else:
                     await interaction.response.send_message(
@@ -739,7 +762,9 @@ class TicketAdminButtons(ui.View):
             guild_settings: dict = dict(
                 datasys.load_data(interaction.guild.id, sys="ticket")
             )
-            tickets: dict = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
+            tickets: dict = dict(
+                datasys.load_data(interaction.guild.id, "open_tickets")
+            )
 
             if not isinstance(tickets, dict):
                 tickets = {}
@@ -767,9 +792,9 @@ class TicketAdminButtons(ui.View):
                     tickets[channel_id]["transcript"].append(
                         {
                             "type": "sys_msg",
-                            "msg": str(lang["systems"]["ticket"]["description_claimed"]).format(
-                                user=interaction.user.name
-                            ),
+                            "msg": str(
+                                lang["systems"]["ticket"]["description_claimed"]
+                            ).format(user=interaction.user.name),
                             "avatar": "https://avocloud.net/img/icons/gear.svg",
                             "timestamp": str(datetime.datetime.now()),
                             "is_staff": True,

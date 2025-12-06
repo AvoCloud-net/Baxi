@@ -129,8 +129,9 @@
                 "description_no_permission_delete": "Du hast keine Berechtigung dieses Ticket zu löschen.",
                 "description_no_permission_claim": "Du hast keine Berechtigung dieses Ticket zu übernehmen.",
                 "description_claimed": "Der Supporter {user} übernimmt nun dieses Ticket.",
-                "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets:",
-                "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen."
+                "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets auf {guild}:",
+                "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen.",
+                "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen."
             },
             "ai": {
                 "title": "AI",
@@ -299,8 +300,9 @@
                 "description_no_permission_delete": "You do not have permission to delete this ticket.",
                 "description_no_permission_claim": "You do not have permission to claim this ticket.",
                 "description_claimed": "The supporter {user} is now claiming this ticket.",
-                "link": "Here you can find a transcript of your recently closed ticket:",
-                "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion."
+                "link": "Here you can find a transcript of your recently closed ticket on {guild}:",
+                "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion.",
+                "close_cancel": "The ticket close process has been cancelled by {user}."
             },
             "ai": {
                 "title": "AI",
