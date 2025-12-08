@@ -39,8 +39,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     @app.route("/callback/")
     async def callback():
-        await discord_auth.callback()
-        return redirect(url_for("index"))
+        try:
+            await discord_auth.callback()
+            return redirect(url_for("index"))
+        except Exception as e:
+            print(f"Error in callback route: {e}")
+            return await render_template(
+                "error.html", message="An unexpected error occurred during login. Please try again."
+            )
 
     @app.errorhandler(Unauthorized)
     async def redirect_unauthorized(e):
@@ -188,84 +194,90 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/")
     @requires_authorization
     async def index():
-        chatfilter_log_id = quart.request.args.get("id_chatfilter")
-        guild_login = quart.request.args.get("guild_login")
-        ticket_transcript = quart.request.args.get("ticket_transcript")
-        user = await discord_auth.fetch_user()
-        print(f"{user.name} accessed dashboard")
-        if chatfilter_log_id:
-            chatfilter_log: dict = cast(dict, load_data(1001, "chatfilter_log"))
-            guild = await bot.fetch_guild(chatfilter_log[str(chatfilter_log_id)]["sid"])
-            audit_log_new: dict = {
-                "type": "chatfilter_log",
-                "user": user.name,
-                "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
-                "id": chatfilter_log_id,
+        try:
+            chatfilter_log_id = quart.request.args.get("id_chatfilter")
+            guild_login = quart.request.args.get("guild_login")
+            ticket_transcript = quart.request.args.get("ticket_transcript")
+            user = await discord_auth.fetch_user()
+            print(f"{user.name} accessed dashboard")
+            if chatfilter_log_id:
+                chatfilter_log: dict = cast(dict, load_data(1001, "chatfilter_log"))
+                guild = await bot.fetch_guild(chatfilter_log[str(chatfilter_log_id)]["sid"])
+                audit_log_new: dict = {
+                    "type": "chatfilter_log",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "id": chatfilter_log_id,
+                }
+                audit_log: list = cast(
+                    list, load_data(sid=guild.id, sys="audit_log", bot=bot)
+                )
+
+                audit_log.append(audit_log_new)
+
+                save_data(guild.id, "audit_log", audit_log)
+                return redirect(url_for("chatfilter", id_chatfilter=chatfilter_log_id))
+
+            elif guild_login:
+                audit_log_new: dict = {
+                    "type": "login",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                }
+                audit_log: list = cast(
+                    list, load_data(sid=int(guild_login), sys="audit_log", bot=bot)
+                )
+                audit_log.append(audit_log_new)
+                save_data(int(guild_login), "audit_log", audit_log)
+                return redirect(url_for("guild_manager", guild_login=guild_login))
+
+            elif ticket_transcript:
+                tickets: dict = cast(dict, load_data(1001, "transcripts"))
+                guild = await bot.fetch_guild(int(tickets[str(ticket_transcript)]["guild"]))
+                audit_log_new: dict = {
+                    "type": "ticket_transcript",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "id": f"{ticket_transcript}",
+                }
+                audit_log: list = cast(
+                    list, load_data(sid=int(guild.id), sys="audit_log", bot=bot)
+                )
+                audit_log.append(audit_log_new)
+                save_data(int(guild.id), "audit_log", audit_log)
+                return redirect(url_for("ticket_transcript", id_ticket=ticket_transcript))
+
+            user_guilds = await discord_auth.fetch_guilds()
+            user_managed_guilds = {
+                str(guild.id): guild.name
+                for guild in user_guilds
+                if guild.permissions.manage_guild
             }
-            audit_log: list = cast(
-                list, load_data(sid=guild.id, sys="audit_log", bot=bot)
-            )
 
-            audit_log.append(audit_log_new)
+            bot_guilds = bot.guilds
+            bot_guild_ids = {str(guild.id) for guild in bot_guilds}
 
-            save_data(guild.id, "audit_log", audit_log)
-            return redirect(url_for("chatfilter", id_chatfilter=chatfilter_log_id))
-
-        elif guild_login:
-            audit_log_new: dict = {
-                "type": "login",
-                "user": user.name,
-                "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+            valid_guilds = {
+                guild_id: name
+                for guild_id, name in user_managed_guilds.items()
+                if guild_id in bot_guild_ids
             }
-            audit_log: list = cast(
-                list, load_data(sid=int(guild_login), sys="audit_log", bot=bot)
+            stats: dict = dict(load_data(1001, "stats"))
+            return await render_template(
+                "dash_home.html",
+                managed_guilds=valid_guilds,
+                greeting=get_time_based_greeting(user.name),
+                user=user,
+                stats=stats
             )
-            audit_log.append(audit_log_new)
-            save_data(int(guild_login), "audit_log", audit_log)
-            return redirect(url_for("guild_manager", guild_login=guild_login))
-
-        elif ticket_transcript:
-            tickets: dict = cast(dict, load_data(1001, "transcripts"))
-            guild = await bot.fetch_guild(int(tickets[str(ticket_transcript)]["guild"]))
-            audit_log_new: dict = {
-                "type": "ticket_transcript",
-                "user": user.name,
-                "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
-                "id": f"{ticket_transcript}",
-            }
-            audit_log: list = cast(
-                list, load_data(sid=int(guild.id), sys="audit_log", bot=bot)
+        except Exception as e:
+            print(f"Error in index route: {e}")
+            return await render_template(
+                "error.html", message="An unexpected error occurred. Please try again."
             )
-            audit_log.append(audit_log_new)
-            save_data(int(guild.id), "audit_log", audit_log)
-            return redirect(url_for("ticket_transcript", id_ticket=ticket_transcript))
-
-        user_guilds = await discord_auth.fetch_guilds()
-        user_managed_guilds = {
-            str(guild.id): guild.name
-            for guild in user_guilds
-            if guild.permissions.manage_guild
-        }
-
-        bot_guilds = bot.guilds
-        bot_guild_ids = {str(guild.id) for guild in bot_guilds}
-
-        valid_guilds = {
-            guild_id: name
-            for guild_id, name in user_managed_guilds.items()
-            if guild_id in bot_guild_ids
-        }
-        stats: dict = dict(load_data(1001, "stats"))
-        return await render_template(
-            "dash_home.html",
-            managed_guilds=valid_guilds,
-            greeting=get_time_based_greeting(user.name),
-            user=user,
-            stats=stats
-        )
 
     @app.route("/chatfilter/")
     @requires_authorization
