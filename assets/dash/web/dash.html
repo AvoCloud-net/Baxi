@@ -243,23 +243,17 @@
                         Here you can see some statistics.
                     </p>
 
-                    <div class="projects-grid">
-                        <div class="project-card">
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-users"></i> Members
-                            </h3>
-                            <p class="project-description">
-                                There are currently {{stats.get("members")}} members on your server.
-                            </p>
-                        </div>
+                    <div class="projects-grid" style="grid-template-columns: 2;">
 
                         <div class="project-card">
                             <h3 class="project-title">
                                 <i class="fa-solid fa-ticket"></i> Tickets
                             </h3>
                             <p class="project-description">
-                                You currently have {{stats.get("open_tickets")}} open tickets.<br>
-                                {{stats.get("unanswered_tickets")}} of them have not been answered by staff yet.
+                                You currently have <strong>{{stats.get("open_tickets")}}</strong> open tickets.<br>
+                                <strong>{{stats.get("unanswered_tickets")}}</strong> of them have not been answered by
+                                staff yet.<br>
+                                The average age of open tickets is <strong>{{stats.get("avg_ticket_age_h")}}</strong> hours.
                             </p>
                         </div>
 
@@ -268,7 +262,7 @@
                                 <i class="fa-solid fa-code-commit"></i> Version
                             </h3>
                             <p class="project-description">
-                                You are currently using Baxi version {{stats.get("version")}}.
+                                You are currently using Baxi version <strong>{{stats.get("version")}}</strong>.
                             </p>
                         </div>
                     </div>

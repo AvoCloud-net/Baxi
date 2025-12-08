@@ -13,6 +13,7 @@ import re
 from typing import cast
 import config.config as config
 from assets.buttons import TicketView
+import time
 
 
 def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
@@ -416,23 +417,31 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if guild_bot_user.nick is not None
                 else guild_bot_user.name
             )
-            print(guild_conf)
-            tickets = dict(load_data(int(guild.id), "tickets"))
-            stats = {}
-            stats["members"] = guild.member_count
-            stats["open_tickets"] = len(tickets)
-            stats["unanswered_tickets"] = 0 
+            try:
 
-            for ticket_id, ticket in tickets.items():
-                has_staff_reply = False
-                for message in ticket.get("transcript", []):
-                    if message.get("is_staff", False):
-                        has_staff_reply = True
-                        break 
-                if not has_staff_reply:
-                    stats["unanswered_tickets"] += 1
+                tickets = dict(load_data(guild.id, "open_tickets"))
+                stats = {}
+                now = time.time()
+                total_age = sum(now - ticket["created_at"] for ticket in tickets.values())
+                avg_age_hours = (total_age / len(tickets)) / 3600 if tickets else 0
+                stats["avg_ticket_age_h"] = round(avg_age_hours, 1)
+                stats["open_tickets"] = len(tickets)
+                stats["unanswered_tickets"] = 0 
+
+                for ticket_id, ticket in tickets.items():
+                    has_staff_reply = False
+                    for message in ticket.get("transcript", []):
+                        if message.get("is_staff", False):
+                            has_staff_reply = True
+                            break 
+                    if not has_staff_reply:
+                        stats["unanswered_tickets"] += 1
+                
+                stats["version"] = config.Discord.version
+            except Exception as e:
+                stats = {"members": "unable to load stats", "open_tickets": "unable to load stats", "unanswered_tickets": "unable to load stats", "version": config.Discord.version}
+                print(f"Unable to load stats: {e}")
             
-            stats["version"] = config.Discord.version
             return await render_template(
                 "dash.html",
                 data=guild_conf,
