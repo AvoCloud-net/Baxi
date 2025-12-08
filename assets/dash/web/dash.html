@@ -230,6 +230,52 @@
         </section>
 
         <main>
+            <section style="margin-top: 15vh" id="staff">
+                <div class="section-header">
+                    <div class="section-title">STATS</div>
+                </div>
+
+                <div class="project-card">
+                    <h3 class="project-title">
+                        <i class="fa-solid fa-chart-column"></i> Baxi Stats
+                    </h3>
+                    <p class="project-description">
+                        Here you can see some statistics.
+                    </p>
+
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-users"></i> Members
+                            </h3>
+                            <p class="project-description">
+                                There are currently {{stats.get("members")}} members on your server.
+                            </p>
+                        </div>
+
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-ticket"></i> Tickets
+                            </h3>
+                            <p class="project-description">
+                                You currently have {{stats.get("open_tickets")}} open tickets.<br>
+                                {{stats.get("unanswered_tickets")}} of them have not been answered by staff yet.
+                            </p>
+                        </div>
+
+                        <div class="project-card">
+                            <h3 class="project-title">
+                                <i class="fa-solid fa-code-commit"></i> Version
+                            </h3>
+                            <p class="project-description">
+                                You are currently using Baxi version {{stats.get("version")}}.
+                            </p>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="project-date">Avocloud.net - Baxi</div>
+                </div>
+            </section>
             <section style="margin-top: 15vh" id="general">
                 <div class="section-header">
                     <div class="section-title">GENERAL</div>

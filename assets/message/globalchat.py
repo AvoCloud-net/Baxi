@@ -113,8 +113,9 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
             gif_link = None
             for img_gif_var in soup.find_all("img"):
-                if img_gif_var.get("src") and "gif" in img_gif_var.get("src"):
-                    gif_link = img_gif_var.get("src")
+                src = img_gif_var.get("src")
+                if src and "gif" in src:
+                    gif_link = src
                     break
 
             if gif_link is None:
@@ -311,7 +312,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
                     if watermark_enabled:
                         async with aiohttp.ClientSession() as session:
-                            async with session.get(image_url) as response:
+                            async with session.get(str(image_url)) as response:
                                 if response.status == 200:
                                     content_type = response.headers.get(
                                         "content-type", ""

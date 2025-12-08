@@ -417,6 +417,22 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 else guild_bot_user.name
             )
             print(guild_conf)
+            tickets = dict(load_data(int(guild.id), "tickets"))
+            stats = {}
+            stats["members"] = guild.member_count
+            stats["open_tickets"] = len(tickets)
+            stats["unanswered_tickets"] = 0 
+
+            for ticket_id, ticket in tickets.items():
+                has_staff_reply = False
+                for message in ticket.get("transcript", []):
+                    if message.get("is_staff", False):
+                        has_staff_reply = True
+                        break 
+                if not has_staff_reply:
+                    stats["unanswered_tickets"] += 1
+            
+            stats["version"] = config.Discord.version
             return await render_template(
                 "dash.html",
                 data=guild_conf,
@@ -426,6 +442,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 categorys=catrgorys_list,
                 roles=roles_list,
                 nick=bot_nick,
+                stats=stats,
                 greeting=get_time_based_greeting(user.name),
             )
 
