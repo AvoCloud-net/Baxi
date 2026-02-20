@@ -1054,7 +1054,12 @@
                     if (entry.isIntersecting) {
                         navLinks.forEach(l => l.classList.remove('active'));
                         const active = document.querySelector(`.dash-nav-item[href="#${entry.target.id}"]`);
-                        if (active) active.classList.add('active');
+                        if (active) {
+                            active.classList.add('active');
+                            /* Scroll the nav so the active item is always visible,
+                               even when partially off-screen behind the right-edge mask. */
+                            active.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                        }
                     }
                 });
             }, { rootMargin: '-10% 0px -80% 0px' });

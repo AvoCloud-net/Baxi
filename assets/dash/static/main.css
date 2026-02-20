@@ -6,6 +6,7 @@
 
 body {
   font-family: var(--font-family);
+  overflow-x: clip; /* prevent horizontal scroll from layout-viewport expansion */
 }
 
 html::-webkit-scrollbar {
@@ -447,4 +448,102 @@ main {
   background: rgba(255, 82, 82, 0.1);
   color: #FF5252;
   border-color: rgba(255, 82, 82, 0.3);
+}
+
+/* ── General: btn-link text wrapping ─────────────────────── */
+
+/* buttons default to white-space: nowrap — override so long link text wraps */
+.btn-link {
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
+}
+
+/* fieldsets default to min-width: min-content which breaks CSS Grid sizing */
+fieldset {
+  min-width: 0;
+}
+
+/* ── Mobile overrides ─────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  /* Nav: fixed (sticky misbehaves when mobile browser chrome hides/shows).
+     Right-edge gradient mask signals that the nav scrolls horizontally. */
+  .dash-nav {
+    position: fixed;
+    top: 4px;
+    left: 0;
+    right: 0;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin-bottom: 0;
+    -webkit-mask: linear-gradient(to right, black 78%, transparent 100%);
+    mask: linear-gradient(to right, black 78%, transparent 100%);
+  }
+
+  /* Push main content below the now-fixed nav */
+  main {
+    padding-top: 3.5rem;
+  }
+
+  /* Theme toggle: push below the fixed nav so they don't overlap */
+  .theme-toggle {
+    top: 3.25rem; /* nav bottom ≈ 40px + 12px gap */
+  }
+
+  /* Increase scroll-margin so anchor links land below the fixed nav */
+  .dash-section {
+    scroll-margin-top: 5rem;
+  }
+
+  /* ── Button group: compact icon-only pill at bottom center ── */
+  .local-button-group {
+    bottom: 1rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    flex-direction: row !important;
+    align-items: center;
+    background: var(--color-card, rgba(28, 28, 28, 0.95));
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 3rem;
+    padding: 0.3rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    gap: 0.15rem;
+  }
+
+  html:not(.dark) .local-button-group {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Hide the HR divider — not needed in horizontal pill layout */
+  .local-button-group hr {
+    display: none;
+  }
+
+  /* Shrink all buttons to icon-only square pills */
+  .local-button-group button {
+    padding: 0.65rem !important;
+    border-radius: 2rem !important;
+    font-size: 0 !important;   /* hides text nodes */
+    line-height: 0;
+    min-width: 0;
+  }
+
+  /* Restore icon sizes inside the shrunken buttons */
+  .local-button-group button svg {
+    width: 1.15rem !important;
+    height: 1.15rem !important;
+    font-size: initial;
+  }
+
+  .local-button-group button img {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    font-size: initial;
+  }
 }
