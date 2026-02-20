@@ -242,22 +242,24 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             if message.attachments:
                 for attachment in message.attachments:
                     file_path = (
-                            Path(config.Globalchat.attachments_dir) / f"ticket{message.channel.id}-{random.randint(100, 999)}.png"
-                        )
+                        Path(config.Globalchat.attachments_dir) / f"ticket{message.channel.id}-{random.randint(100, 999)}.png"
+                    )
                     image = Image.open(BytesIO(await attachment.read()))
                     image.save(file_path)
-                    attachments_list.append(str(file_path).replace(config.Globalchat.attachments_dir,"").replace("/",""))
+                    attachments_list.append(str(file_path).replace(config.Globalchat.attachments_dir, "").replace("/", ""))
+
             user = await message.guild.fetch_member(message.author.id)
-            is_staff: bool = True if int(guild_ticket_config.get("role", 0)) in [
-                role.id for role in user.roles
-            ] else False
+            is_staff: bool = int(guild_ticket_config.get("role", 0)) in [role.id for role in user.roles]
+
+            clean_msg = message.clean_content
+
             tickets[str(message.channel.id)]["transcript"].append(
                 {
-                    "type": "message",  
+                    "type": "message",
                     "user": str(message.author.name),
                     "avatar": str(user_avatar),
                     "timestamp": str(datetime.datetime.now()),
-                    "message": str(message.content),
+                    "message": clean_msg,
                     "attachments": attachments_list,
                     "is_staff": is_staff,
                 }

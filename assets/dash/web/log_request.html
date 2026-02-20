@@ -4,138 +4,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-
-    <meta property="og:title" content="Avocloud.net logs - Chatfilter">
-    <meta property="og:description" content="Information on the entry number {{data.id}} of the user {{data.uname}}.">
+    <title>Chatfilter Log #{{data.id}} | Baxi</title>
+    <meta property="og:title" content="Baxi — Chatfilter Log">
+    <meta property="og:description" content="Information on entry #{{data.id}} of user {{data.uname}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/logs/">
-    <meta peoperty="og:color" content="#DC143C">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
-    <title>Chatfilter log view</title>
+    <meta property="og:color" content="#DC143C">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
 </head>
 
 <body>
-    <div class="popup" id="popup" onclick="hideOverlay(event)">
-        <h2 class="title-other"><i class="fa-solid fa-triangle-exclamation"></i> Caution: Sensitive Content Warning <i
-                class="fa-solid fa-triangle-exclamation"></i></h2>
-        <p class="alert-message">
-            This chat filter log entry includes references to the topic: <b>{{ data.reason }}</b>
-            <br>
-            The material on this page may contain distressing or triggering content that could affect your emotional
-            well-being.
-            <br><br>
-            Do you want to continue and view the content despite this warning?
-        </p>
-        <button onclick="hideOverlay(event)" class="highlight-yellow">Continue</button>
-    </div>
-
-
-     <div id="button_group">
-        <button onclick="location.href = '/'" class="group_button">
-            <i class="fa-solid fa-arrow-left"></i> Back
-        </button>
-    </div>
-    <div id="gradientbar"></div>
-
-    <div id="particles-js"></div>
-    <div class="container" id="container">
-        <section class="hero">
-            <div class="hero-content">
-                <h1>Baxi
-                    <span class="highlight-purple" onclick="copyToClipboard()">chatfilter log</span> view
-                </h1>
-                <p class="subtitle">
-                    This page contains a clear representation of the log entry with the id <span
-                        class="highlight-yellow">{{data.id}}</span>
-                </p>
-                <p>Hi {{user.name}}</p>
-            </div>
-            <div class="scroll-indicator">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-
-        </section>
-
-        <main>
-            <section style="margin-top: 20hv;" id="basic-info">
-                <div class="section-header">
-                    <div class="section-title">
-                        INFORMATION
-                    </div>
-                </div>
-                <div class="project-card">
-                    <div class="project-profile">
-                        <img src="{{data.uicon}}" alt="Profile Picture" class="project-profile-picture">
-                    </div>
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-user"></i> User
-                    </h3>
-                    <p class="project-description">
-                        The user named <span class="highlight-yellow">{{data.uname}}</span> has the ID <span
-                            class="highlight-yellow">{{data.uid}}</span>, and their account was created on <span
-                            class="highlight-yellow">{{data.user_created_at}}</span>.
-                    </p>
-                </div>
-                <br>
-                <div class="project-card">
-                    <div class="project-profile">
-                        <img src="{{data.sicon}}" alt="Server Picture" class="project-profile-picture">
-                    </div>
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-people-roof"></i> Guild
-                    </h3>
-                    <p class="project-description">
-                        The guild named <span class="highlight-yellow">{{data.sname}}</span> is associated with the
-                        guild ID <span class="highlight-yellow">{{data.sid}}</span>.
-                    </p>
-                </div>
-                <br>
-                <div class="project-card">
-                    <div class="project-profile">
-                        <img src="../static/images/message.png" alt="Server Picture" class="project-profile-picture"
-                            style="border-radius: 0px;">
-                    </div>
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-message"></i> Message
-                    </h3>
-                    <p class="project-description">
-                        The message was sent on <span class="highlight-yellow">{{data.timestamp}}</span> in the channel
-                        <span class="highlight-yellow">#{{data.cname}}</span> (ID: <span
-                            class="highlight-yellow">{{data.cid}}</span>).
-                        <br>
-                        It was removed because it was potentially associated with the following content: <span
-                            class="highlight-yellow">{{data.reason}}</span>.
-                        <hr>
-                        <br>
-                        {{data.message}}
-                    </p>
+    <!-- Sensitive content overlay -->
+    <div class="popup" id="popup">
+        <div class="popup-inner card">
+            <header>
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <svg class="lucide" viewBox="0 0 24 24">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                        <path d="M12 9v4"/>
+                        <path d="M12 17h.01"/>
+                    </svg>
+                    Content Warning
+                </h2>
+                <p class="text-muted text-sm">Log entry <span class="highlight-yellow">#{{data.id}}</span> contains potentially sensitive material.</p>
+            </header>
+            <section>
+                <p class="text-muted text-sm mb-1">This entry is associated with:</p>
+                <p class="font-semibold mb-4"><span class="highlight-yellow">{{ data.reason }}</span></p>
+                <p class="text-muted text-sm">The content may be distressing or triggering. Do you want to continue?</p>
+                <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button onclick="hideOverlay()" class="btn-primary">Continue anyway</button>
                 </div>
             </section>
-            <footer style="margin-top: 15vh;">Avocloud.net</footer>
+        </div>
+    </div>
+
+    <div id="gradientbar"></div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+    </button>
+
+    <div class="button-group local-button-group" data-orientation="vertical">
+        <button type="button" class="btn-lg-outline p-6">
+            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
+            {{user.name}}
+        </button>
+        <hr role="separator" />
+        <button onclick="location.href = '/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back
+        </button>
+        <button onclick="location.href = '/logout/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m16 17 5-5-5-5"/>
+                <path d="M21 12H9"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            </svg>
+            Log-out
+        </button>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6" id="container">
+        <div class="page-header">
+            <h1 class="text-3xl font-bold">Chatfilter Log <span class="highlight-yellow">#{{data.id}}</span></h1>
+        </div>
+
+        <main class="pb-24">
+            <section class="pb-16" id="basic-info">
+                <div class="section-label">INFORMATION</div>
+                <div class="grid grid-cols-1 gap-6">
+
+                    <div class="card card-hover">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <img src="{{data.uicon}}" alt="Profile Picture"
+                                    class="size-10 rounded-full object-cover flex-shrink-0">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                User
+                            </h2>
+                        </header>
+                        <section>
+                            <p class="text-muted">
+                                The user named <span class="highlight-yellow">{{data.uname}}</span> has the ID
+                                <span class="highlight-yellow">{{data.uid}}</span>, and their account was created on
+                                <span class="highlight-yellow">{{data.user_created_at}}</span>.
+                            </p>
+                        </section>
+                    </div>
+
+                    <div class="card card-hover">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <img src="{{data.sicon}}" alt="Server Picture"
+                                    class="size-10 rounded-full object-cover flex-shrink-0">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                Guild
+                            </h2>
+                        </header>
+                        <section>
+                            <p class="text-muted">
+                                The guild named <span class="highlight-yellow">{{data.sname}}</span> is associated with
+                                the guild ID <span class="highlight-yellow">{{data.sid}}</span>.
+                            </p>
+                        </section>
+                    </div>
+
+                    <div class="card card-hover">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Message
+                            </h2>
+                        </header>
+                        <section>
+                            <p class="text-muted">
+                                Sent on <span class="highlight-yellow">{{data.timestamp}}</span> in channel
+                                <span class="highlight-yellow">#{{data.cname}}</span>
+                                (ID: <span class="highlight-yellow">{{data.cid}}</span>).<br>
+                                Removed because it was potentially associated with:
+                                <span class="highlight-yellow">{{data.reason}}</span>.
+                            </p>
+                            <hr class="my-4" style="opacity: 0.2;">
+                            <p>{{data.message}}</p>
+                        </section>
+                    </div>
+
+                </div>
+            </section>
+
+            <footer class="site-footer">
+                <p>Avocloud.net &mdash; Baxi</p>
+            </footer>
         </main>
     </div>
 
-
     <script>
         function showOverlay() {
-            document.getElementById('popup').style.display = 'block';
+            document.getElementById('popup').style.display = 'flex';
             document.getElementById('container').style.display = 'none';
         }
 
-        function hideOverlay(event) {
-            if (event.target.tagName.toLowerCase() === 'button') {
-                document.getElementById('popup').classList.add('fade-out');
-
-                setTimeout(function () {
-                    document.getElementById('popup').style.display = 'none';
-                    document.getElementById('container').style.display = 'block';
-                    document.getElementById('container').classList.add('fade-in');
-                    document.getElementById('popup').classList.remove('fade-out');
-                }, 1000);
-            }
+        function hideOverlay() {
+            document.getElementById('popup').classList.add('fade-out');
+            setTimeout(function () {
+                document.getElementById('popup').style.display = 'none';
+                document.getElementById('container').style.display = 'block';
+                document.getElementById('container').classList.add('fade-in');
+                document.getElementById('popup').classList.remove('fade-out');
+            }, 1000);
         }
-
 
         window.onload = showOverlay;
     </script>

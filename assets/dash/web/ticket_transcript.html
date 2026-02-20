@@ -4,21 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Transcript #{{data.id}} | Avocloud.net</title>
-
-    <meta property="og:title" content="Avocloud.net - Ticket #{{data.id}} Transcript">
-    <meta property="og:description" content="Transcript for support ticket #{{data.id}} - {{data.title}}">
+    <title>Ticket Transcript #{{data.id}} | Baxi</title>
+    <meta property="og:title" content="Baxi — Ticket #{{data.id}} Transcript">
+    <meta property="og:description" content="Transcript for support ticket #{{data.id}} — {{data.title}}">
     <meta property="og:url" content="https://baxi.avocloud.net/">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://baxi.avocloud.net/static/images/logo.png">
     <meta name="theme-color" content="#DC143C">
 
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" as="style">
-    <link rel="preload" href="{{ url_for('static', filename='main.css') }}" as="style">
-
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
-        integrity="sha512-..." crossorigin="anonymous" />
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
 
     <style>
         :root {
@@ -27,6 +23,11 @@
             --chat-radius: 12px;
             --chat-spacing: 1.25rem;
             --avatar-size: 48px;
+        }
+
+        html:not(.dark) {
+            --chat-bg: rgba(220, 220, 220, 0.6);
+            --chat-border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .chat-log {
@@ -38,13 +39,11 @@
             background: rgba(17, 17, 17, 0.6);
             border: var(--chat-border);
             border-radius: var(--chat-radius);
-            transition: transform 0.2s ease-in-out;
             backdrop-filter: blur(8px);
         }
 
-        .chat-log:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        html:not(.dark) .chat-log {
+            background: rgba(235, 235, 235, 0.5);
         }
 
         .chat-message {
@@ -52,18 +51,6 @@
             align-items: flex-start;
             gap: 1rem;
             animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .chat-avatar {
@@ -75,11 +62,14 @@
             border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
+        html:not(.dark) .chat-avatar {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
         .chat-bubble {
             background-color: var(--chat-bg);
             padding: 0.75rem 1rem;
             border-radius: var(--chat-radius);
-            color: var(--text-primary, #f1f1f1);
             max-width: min(100%, 800px);
             width: fit-content;
             border: var(--chat-border);
@@ -91,7 +81,7 @@
             justify-content: space-between;
             align-items: baseline;
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: oklch(.5 0 0);
             margin-bottom: 0.25rem;
             gap: 1rem;
             flex-wrap: wrap;
@@ -99,7 +89,6 @@
 
         .chat-username {
             font-weight: bold;
-            color: var(--text-primary, #fff);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -114,31 +103,14 @@
 
         .chat-text {
             white-space: pre-wrap;
-            color: var(--text-secondary);
+            color: oklch(.5 0 0);
             font-size: 0.95rem;
             line-height: 1.5;
         }
 
-        @media (max-width: 768px) {
-            :root {
-                --avatar-size: 40px;
-                --chat-spacing: 1rem;
-            }
-
-            .chat-message {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .chat-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.25rem;
-            }
-
-            .chat-timestamp {
-                margin-left: calc(var(--avatar-size) + 1rem);
-            }
+        html:not(.dark) .chat-text,
+        html:not(.dark) .chat-header {
+            color: oklch(.35 0 0);
         }
 
         .ticket-status {
@@ -157,62 +129,77 @@
         }
 
         .status-closed {
-            background: rgba(255, 0, 0, 0.2);
+            background: rgba(255, 82, 82, 0.2);
             color: #FF5252;
+        }
+
+        @media (max-width: 768px) {
+            :root { --avatar-size: 40px; --chat-spacing: 1rem; }
+            .chat-message { flex-direction: column; }
+            .chat-header { flex-direction: column; gap: 0.25rem; }
         }
     </style>
 </head>
 
 <body>
-    <div id="button_group">
-        <button onclick="location.href = '/'" class="group_button" aria-label="Go back">
-            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+    <div id="gradientbar"></div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+    </button>
+
+    <div class="button-group local-button-group" data-orientation="vertical">
+        <button type="button" class="btn-lg-outline p-6">
+            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
+            {{user.name}}
+        </button>
+        <hr role="separator" />
+        <button onclick="location.href = '/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back
+        </button>
+        <button onclick="location.href = '/logout/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m16 17 5-5-5-5"/>
+                <path d="M21 12H9"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            </svg>
+            Log-out
         </button>
     </div>
-    <div id="gradientbar"></div>
 
-    <div id="particles-js" aria-hidden="true"></div>
-    <div class="container" id="container">
-        <section class="hero">
-            <div class="hero-content">
-                <h1>Baxi
-                    <span class="highlight-purple" tabindex="0" role="button">support ticket</span> overview
-                </h1>
-                <p class="subtitle">
-                    This page displays all available details for support request <span
-                        class="highlight-yellow">#{{data.id}}</span>.
-                </p>
-                <p>Hello <strong>{{user.name}}</strong>, below you'll find the original message and the full
-                    conversation transcript
-                    associated with this ticket.</p>
-            </div>
-            <div class="scroll-indicator" aria-hidden="true">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </section>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="page-header">
+            <h1 class="text-3xl font-bold">Ticket <span class="highlight-yellow">#{{data.id}}</span></h1>
+            <p class="text-muted">{{ data.title }}</p>
+        </div>
 
-        <main>
-            <section id="ticket-overview" style="margin-top: 15vh;">
-                <div class="section-header">
-                    <div class="section-title">SUPPORT TICKET</div>
-                    <div class="ticket-status status-{{data.status}}">
-                        {{ data.status|upper }}
-                    </div>
+        <main class="pb-24">
+            <section class="pb-16" id="ticket-overview">
+                <div class="section-label flex items-center gap-3">
+                    SUPPORT TICKET
+                    <span class="ticket-status status-{{data.status}}">{{ data.status|upper }}</span>
                 </div>
 
-                <div class="project-card">
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
-                        {{ data.title }}
-                    </h3>
-                    <p class="project-description" style="white-space: pre-wrap;">
-                        {{ data.msg }}
-                    </p>
+                <div class="card card-hover mb-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            {{ data.title }}
+                        </h2>
+                    </header>
+                    <section>
+                        <p class="text-muted" style="white-space: pre-wrap;">{{ data.msg }}</p>
+                    </section>
                 </div>
 
-                <div class="section-header" style="margin-top: 3rem;">
-                    <div class="section-title">CONVERSATION TRANSCRIPT</div>
-                    <div class="meta-info">{{ data.transcript|length }} messages</div>
+                <div class="section-label mt-8">
+                    CONVERSATION TRANSCRIPT
+                    <span class="text-muted font-normal normal-case text-xs ml-2">{{ data.transcript|length }} messages</span>
                 </div>
 
                 <div class="chat-log">
@@ -224,12 +211,13 @@
                         <div class="chat-bubble">
                             <div class="chat-header">
                                 <span class="chat-username">
-                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
-                                    System - Ticket Claim
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:1em;height:1em;">
+                                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                    </svg>
+                                    System — Ticket Claim
                                 </span>
                                 <span class="chat-timestamp">
-                                    <a href="#message-{{ loop.index }}" title="Permalink to this message"
-                                        style="color: var(--text-secondary)">
+                                    <a href="#message-{{ loop.index }}" style="color: oklch(.5 0 0);">
                                         {{ entry.timestamp }}
                                     </a>
                                 </span>
@@ -241,23 +229,24 @@
                             <div class="chat-header">
                                 <span class="chat-username">
                                     {% if entry.is_staff %}
-                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:1em;height:1em;" title="Staff Member">
+                                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
                                     {% endif %}
                                     {{ entry.user }}
                                 </span>
                                 <span class="chat-timestamp">
-                                    <a href="#message-{{ loop.index }}" title="Permalink to this message"
-                                        style="color: var(--text-secondary)">
+                                    <a href="#message-{{ loop.index }}" style="color: oklch(.5 0 0);">
                                         {{ entry.timestamp }}
                                     </a>
                                 </span>
                             </div>
                             <div class="chat-text">{{ entry.message }}</div>
                             {% if entry.attachments %}
-                            <div class="chat-attachments" style="margin-top: 0.5rem;">
+                            <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                                 {% for attachment in entry.attachments %}
-                                <a href="{{ attachment_url }}{{ attachment }}" target="_blank"
-                                    rel="noopener noreferrer">
+                                <a href="{{ attachment_url }}{{ attachment }}" target="_blank" rel="noopener noreferrer">
                                     <img src="{{ attachment_url }}{{ attachment }}" alt="Attachment"
                                         style="border-radius: 8px; border: var(--chat-border); max-width: 600px;">
                                 </a>
@@ -268,23 +257,28 @@
                         {% endif %}
                     </div>
                     {% else %}
-                    <div class="empty-state">
-                        <i class="fa-solid fa-comment-slash" aria-hidden="true"></i>
+                    <div style="text-align: center; padding: 2rem; color: oklch(.5 0 0);">
+                        <svg class="lucide" viewBox="0 0 24 24" style="width:2rem;height:2rem;margin: 0 auto 0.5rem;">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                        </svg>
                         <p>No messages in this conversation yet.</p>
                     </div>
                     {% endfor %}
+
+                    <!-- Ticket closed system message -->
                     <div class="chat-message" id="message-system-closed">
-                        <img src="https://avocloud.net/img/icons/gear.svg" alt="System" class="chat-avatar"
-                            loading="lazy">
+                        <img src="https://avocloud.net/assets/images/logo.png" alt="System" class="chat-avatar" loading="lazy">
                         <div class="chat-bubble">
                             <div class="chat-header">
                                 <span class="chat-username">
-                                    <i class="fa-solid fa-shield-alt" aria-hidden="true" title="Staff Member"></i>
-                                    System - Ticket Closed
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:1em;height:1em;">
+                                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                    </svg>
+                                    System — Ticket Closed
                                 </span>
                                 <span class="chat-timestamp">
-                                    <a href="#message-system-closed" title="Permalink to this message"
-                                        style="color: var(--text-secondary)">
+                                    <a href="#message-system-closed" style="color: oklch(.5 0 0);">
                                         {{ data.closed_on }}
                                     </a>
                                 </span>
@@ -295,15 +289,13 @@
                 </div>
             </section>
 
-            <footer style="margin-top: 15vh;">
+            <footer class="site-footer">
+                <p>Avocloud.net &mdash; Baxi</p>
             </footer>
         </main>
     </div>
 
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-    <script defer src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-
-
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
 
 </html>

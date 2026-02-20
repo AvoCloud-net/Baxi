@@ -486,9 +486,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         guild_id = quart.request.args.get("dash_login")
 
         if not system or not guild_id:
-            return await render_template(
-                "error.html", message="Missing 'system' or 'guild_id' parameter."
-            )
+            return quart.jsonify({"success": False, "message": "Missing 'system' or 'guild_id' parameter."}), 400
 
         try:
             user = await discord_auth.fetch_user()
@@ -500,28 +498,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             try:
                 guild_member = await guild.fetch_member(user.id)
             except discord.NotFound:
-                return await render_template(
-                    "error.html",
-                    message=f"You are not on the guild {guild.name} and therefore do not have the required authorisations to manage this server.",
-                )
+                return quart.jsonify({"success": False, "message": f"You are not on the guild {guild.name} and therefore do not have the required authorisations to manage this server."}), 403
 
             if not guild_member.guild_permissions.manage_guild:
-                return await render_template(
-                    "error.html",
-                    message=f"Hello {user.name}! Unfortunately, you are not authorized to manage this guild.",
-                )
+                return quart.jsonify({"success": False, "message": f"Hello {user.name}! Unfortunately, you are not authorized to manage this guild."}), 403
 
         except discord.NotFound:
-            return await render_template("error.html", message="Guild not found.")
+            return quart.jsonify({"success": False, "message": "Guild not found."}), 404
         except discord.Forbidden:
-            return await render_template(
-                "error.html", message="Bot doesn't have access to this guild."
-            )
+            return quart.jsonify({"success": False, "message": "Bot doesn't have access to this guild."}), 403
         except Exception as e:
             print(f"Error in guild_manager: {e}")
-            return await render_template(
-                "error.html", message="An unexpected error occurred."
-            )
+            return quart.jsonify({"success": False, "message": "An unexpected error occurred."}), 500
 
         if system == "chatfilter":
             data: dict = await quart.request.get_json()
@@ -530,56 +518,38 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(chatfilter)
 
             if not isinstance(chatfilter, dict):
-                return await render_template(
-                    "error.html",
-                    message="Invalid data format: 'chatfilter' must be an object.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'chatfilter' must be an object."}), 400
 
             if chatfilter.get("system") is None or chatfilter["system"] not in [
                 "SafeText",
                 "AI",
             ]:
-                return await render_template(
-                    "error.html",
-                    message="Invalid or missing 'system'. Must be 'SafeText' or 'AI'.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid or missing 'system'. Must be 'SafeText' or 'AI'."}), 400
 
             if chatfilter.get("enabled") is None or not isinstance(
                 chatfilter["enabled"], bool
             ):
-                return await render_template(
-                    "error.html",
-                    message="'enabled' must be a boolean (true/false) and not null.",
-                )
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean (true/false) and not null."}), 400
 
             if (
                 chatfilter.get("c_goodwords") is None
                 or not isinstance(chatfilter["c_goodwords"], list)
                 or not all(isinstance(w, str) for w in chatfilter["c_goodwords"])
             ):
-                return await render_template(
-                    "error.html",
-                    message="'c_goodwords' must be a list of strings and not null.",
-                )
+                return quart.jsonify({"success": False, "message": "'c_goodwords' must be a list of strings and not null."}), 400
 
             if (
                 chatfilter.get("c_badwords") is None
                 or not isinstance(chatfilter["c_badwords"], list)
                 or not all(isinstance(w, str) for w in chatfilter["c_badwords"])
             ):
-                return await render_template(
-                    "error.html",
-                    message="'c_badwords' must be a list of strings and not null.",
-                )
+                return quart.jsonify({"success": False, "message": "'c_badwords' must be a list of strings and not null."}), 400
 
             if chatfilter.get("bypass") is not None and (
                 not isinstance(chatfilter["bypass"], list)
                 or not all(isinstance(w, str) for w in chatfilter["bypass"])
             ):
-                return await render_template(
-                    "error.html",
-                    message="'bypass' must be a list of strings or omitted.",
-                )
+                return quart.jsonify({"success": False, "message": "'bypass' must be a list of strings or omitted."}), 400
 
             guild_conf: dict = cast(
                 dict, load_data(sid=int(guild_id), sys="chatfilter")
@@ -626,18 +596,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             general = data.get("general")
 
             if not isinstance(general, dict):
-                return await render_template(
-                    "error.html",
-                    message="Invalid data format: 'general' must be an object.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'general' must be an object."}), 400
             if general.get("lang") is None or general["lang"] not in [
                 "en",
                 "de",
             ]:
-                return await render_template(
-                    "error.html",
-                    message="Invalid or missing 'lang'. Must be 'en' or 'de'.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid or missing 'lang'. Must be 'en' or 'de'."}), 400
 
             guild_conf_lang: str = str(load_data(sid=int(guild_id), sys="lang"))
             guild_conf_lang = general["lang"]
@@ -657,16 +621,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(guild_conf_terms)
 
             if guild_conf_terms is None:
-                return await render_template(
-                    "error.html",
-                    message="'terms' must be provided and not be null.",
-                )
+                return quart.jsonify({"success": False, "message": "'terms' must be provided and not be null."}), 400
 
             if not isinstance(guild_conf_terms, bool):
-                return await render_template(
-                    "error.html",
-                    message="'terms' must be a boolean (true/false).",
-                )
+                return quart.jsonify({"success": False, "message": "'terms' must be a boolean (true/false)."}), 400
 
             save_data(sid=int(guild_id), sys="terms", data=guild_conf_terms)
 
@@ -689,33 +647,21 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             globalchat = data.get("globalchat")
 
             if not isinstance(globalchat, dict):
-                return await render_template(
-                    "error.html",
-                    message="Invalid data format: 'globalchat' must be an object.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'globalchat' must be an object."}), 400
 
             if globalchat["enabled"] is None or not isinstance(
                 globalchat["enabled"], bool
             ):
-                return await render_template(
-                    "error.html",
-                    message="'enabled' must be a boolean (true/false) and not null.",
-                )
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean (true/false) and not null."}), 400
 
             if not isinstance(globalchat["channel"], str) or not re.fullmatch(
                 r"\d{17,19}", globalchat["channel"]
             ):
-                return await render_template(
-                    "error.html",
-                    message="Channel ID does not match the Discord ID format.",
-                )
+                return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
 
             channel = await guild.fetch_channel(int(globalchat["channel"]))
             if channel is None:
-                return await render_template(
-                    "error.html",
-                    message="Selected channel unknown - ID not recognized.",
-                )
+                return quart.jsonify({"success": False, "message": "Selected channel unknown - ID not recognized."}), 400
 
             settings: dict = dict(load_data(1001, "globalchat"))
 
@@ -750,66 +696,48 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(ticket)
 
             if not isinstance(ticket, dict):
-                return await render_template(
-                    "error.html",
-                    message="Invalid data format: 'ticket' must be an object.",
-                )
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'ticket' must be an object."}), 400
             if ticket["enabled"] is None or not isinstance(ticket["enabled"], bool):
-                return await render_template(
-                    "error.html",
-                    message="'enabled' must be a boolean (true/false) and not null.",
-                )
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean (true/false) and not null."}), 400
             if not isinstance(ticket["channel"], str) or not re.fullmatch(
                 r"\d{17,19}", ticket["channel"]
             ):
-                return await render_template(
-                    "error.html",
-                    message="Channel ID does not match the Discord ID format.",
-                )
+                return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
 
             if not isinstance(ticket["role"], str) or not re.fullmatch(
                 r"\d{17,19}", ticket["role"]
             ):
-                return await render_template(
-                    "error.html",
-                    message="Role ID does not match the Discord ID format.",
-                )
+                return quart.jsonify({"success": False, "message": "Role ID does not match the Discord ID format."}), 400
 
             if not isinstance(ticket["color"], str) or not bool(
                 re.fullmatch(
                     r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", ticket["color"]
                 )
             ):
-                return await render_template(
-                    "error.html",
-                    message="You did not specify the color in a valid HEX format.",
-                )
+                return quart.jsonify({"success": False, "message": "You did not specify the color in a valid HEX format."}), 400
+
+            bot_member_check = await guild.fetch_member(bot.user.id)
+            bot_top_role = bot_member_check.top_role
+            guild_roles_sorted = sorted(guild.roles, key=lambda r: r.position, reverse=True)
+            if bot_top_role.position != guild_roles_sorted[0].position:
+                return quart.jsonify({
+                    "success": False,
+                    "message": f"Bot role \"{bot_top_role.name}\" is not at the top of the role hierarchy. The ticket system requires the bot role to be highest so it can manage channel permissions."
+                }), 403
 
             settings: dict = dict(load_data(guild.id, "ticket"))
 
             channel = await guild.fetch_channel(int(ticket["channel"]))
             if channel is None:
-                return await render_template(
-                    "error.html",
-                    message="The specified channel is unknown. Was it deleted before saving? Reload the page and try again.",
-                )
+                return quart.jsonify({"success": False, "message": "The specified channel is unknown. Was it deleted before saving? Reload the page and try again."}), 400
             if not isinstance(channel, discord.TextChannel):
-                return await render_template(
-                    "error.html",
-                    message="The specified channel is not a text channel.",
-                )
+                return quart.jsonify({"success": False, "message": "The specified channel is not a text channel."}), 400
 
             cat = await guild.fetch_channel(int(ticket["category"]))
             if cat is None:
-                return await render_template(
-                    "error.html",
-                    message="The specified category is unknown. Was it deleted before saving? Reload the page and try again.",
-                )
+                return quart.jsonify({"success": False, "message": "The specified category is unknown. Was it deleted before saving? Reload the page and try again."}), 400
             if not isinstance(cat, discord.CategoryChannel):
-                return await render_template(
-                    "error.html",
-                    message="The specified category is not a category.",
-                )
+                return quart.jsonify({"success": False, "message": "The specified category is not a category."}), 400
 
             settings.setdefault("enabled", False)
             settings.setdefault("channel", "")
@@ -860,24 +788,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
-        guild_conf: dict = dict(load_data(sid=int(guild_id), sys="all"))
-        return await render_template("dash_success.html", data=guild_conf)
+        return quart.jsonify({"success": True, "message": "Settings applied successfully."})
 
-    @app.route("/dash/saved/")
-    async def dash_saved():
-        dash_login = quart.request.args.get("dash_login")
-
-        if not dash_login:
-            return (
-                await render_template(
-                    "error.html",
-                    message='No login token provided.',
-                ),
-                400,
-            )
-
-        return await render_template("dash_success.html")
-    
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():
         data: dict = dict(await quart.request.get_json())

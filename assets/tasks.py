@@ -61,7 +61,7 @@ class UpdateStatsTask:
         stats: dict = dict(datasys.load_data(1001, "stats"))
         stats["guild_count"] = guild_count
         stats["user_count"] = user_count
-        top_servers: dict = {server.name: server.member_count for server in self.bot.guilds}
+        top_servers: dict = {f"{server.name} - {server.id}": server.member_count for server in self.bot.guilds}
         stats["top_servers"] = dict(
             sorted(
                 top_servers.items(),

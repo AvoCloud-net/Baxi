@@ -2,44 +2,44 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxi — Error</title>
+    <meta property="og:title" content="Baxi — Error">
+    <meta property="og:url" content="https://baxi.avocloud.net/">
+    <meta property="og:color" content="#DC143C">
 
-  <meta property="og:title" content="Avocloud.net logs - Home">
-  <meta property="og:description" content="This is the start page of the log-accespoint for users.">
-  <meta property="og:url" content="https://baxi.avocloud.net/logs/" <meta peoperty="og:color" content="#DC143C">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
-  <title>Baxi Log</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
 </head>
 
 <body>
-  <div id="gradientbar"></div>
-  <div id="particles-js"></div>
+    <div id="gradientbar"></div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+    </button>
 
-  <div class="container">
-    <section class="hero">
-      <div class="hero-content">
-        <h1>
-          <span
-            style="background-color: rgba(234, 51, 51, 0.2);padding: 2px 8px;color: rgb(254, 180, 180);border-radius: 4px;transition: all 0.3s ease;">
-            Oops...</span>
-        </h1>
-        <p class="subtitle">
-          "{{message}}"
-        </p>
-        <div id="button_group">
-          <button onclick="location.href = '/'" class="group_button">
-            <i class="fa-solid fa-arrow-left"></i> Back
-          </button>
-        </div>
-      </div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="text-4xl font-bold mb-4">
+                    <span class="highlight-purple">Oops...</span>
+                </h1>
+                <p class="text-muted text-lg mb-6">"{{message}}"</p>
+                <a href="/" class="btn-secondary inline-flex items-center gap-2">
+                    <svg class="lucide" viewBox="0 0 24 24">
+                        <path d="m12 19-7-7 7-7"/>
+                        <path d="M19 12H5"/>
+                    </svg>
+                    Back
+                </a>
+            </div>
+        </section>
+    </div>
 
-    </section>
-
-  </div>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
-<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 
 </html>

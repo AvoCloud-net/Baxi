@@ -4,737 +4,648 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <link rel="stylesheet" href="../static/main.css">
-
-    <meta property="og:title" content="Baxi dashboard - {{data.name}}">
-    <meta property="og:description" content="5 minute administrative access for the discord guild {{data.name}}.">
+    <title>Baxi Dashboard — {{data.name}}</title>
+    <meta property="og:title" content="Baxi Dashboard — {{data.name}}">
+    <meta property="og:description" content="5 minute administrative access for the Discord guild {{data.name}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
-    <meta peoperty="og:color" content="#DC143C">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" />
-    <title>Baxi dashboard - {{data.name}}</title>
-    <style>
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 40px;
-            margin-bottom: 40px;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
+    <meta property="og:color" content="#DC143C">
 
-        form label {
-            font-weight: 500;
-            color: #ddd;
-            margin-bottom: 0.3rem;
-        }
-
-        form input[type="checkbox"],
-        form input[type="radio"] {
-            margin-right: 8px;
-            accent-color: #9333ea;
-            transform: scale(1.2);
-        }
-
-        form input[type="radio"]+label,
-        form input[type="checkbox"]+label {
-            margin-right: 15px;
-        }
-
-        form textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #333;
-            border-radius: 8px;
-            background-color: #111;
-            color: whitesmoke;
-            resize: vertical;
-            font-family: monospace;
-            font-size: 0.95rem;
-            transition: border 0.3s;
-        }
-
-        form textarea:focus {
-            outline: none;
-            border-color: #9333ea;
-        }
-
-
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .radio-group {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            position: relative;
-            padding-left: 28px;
-            cursor: pointer;
-            color: #ddd;
-            font-size: 1rem;
-            max-width: 250px;
-            flex-direction: row;
-        }
-
-        .radio-option .radio-title {
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .radio-option .radio-description {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            line-height: 1.2;
-        }
-
-        .radio-option input[type="radio"] {
-            opacity: 0;
-            position: absolute;
-            left: 0;
-            top: 4px;
-        }
-
-        .radio-option .custom-radio {
-            position: absolute;
-            left: 0;
-            top: 4px;
-            height: 18px;
-            width: 18px;
-            background-color: #111;
-            border: 2px solid #9333ea;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .radio-option input[type="radio"]:checked+.custom-radio {
-            background-color: #9333ea;
-            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.4);
-        }
-
-        .tag-input {
-            display: flex;
-            flex-wrap: wrap;
-            padding: 8px;
-            border: 1px solid #333;
-            border-radius: 8px;
-            background-color: #111;
-            min-height: 48px;
-            gap: 6px;
-            cursor: text;
-        }
-
-        .tag-input input {
-            background: none;
-            border: none;
-            outline: none;
-            color: white;
-            font-size: 0.95rem;
-            min-width: 100px;
-            flex: 1;
-        }
-
-        .tag-input-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 5px;
-            border-radius: 8px;
-            min-height: 44px;
-        }
-
-        .tag {
-            background-color: #9333ea;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            font-size: 0.85rem;
-        }
-
-        .tag .remove-tag {
-            margin-left: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .channel-perm-feedback {
-            background-color: rgba(40, 167, 69, 0.2);
-            /* Grün, leicht durchsichtig */
-            color: #a3d9a5;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 6px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid rgba(40, 167, 69, 0.4);
-        }
-
-        .channel-perm-feedback i {
-            color: #4ade80;
-        }
-
-        .channel-perm-feedback.error {
-            background-color: rgba(220, 53, 69, 0.2);
-            /* Rot, leicht durchsichtig */
-            color: #f8d7da;
-            border-color: rgba(220, 53, 69, 0.4);
-        }
-
-        .channel-perm-feedback.error i {
-            color: #ff6b6b;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
 </head>
 
 <body>
     <div id="gradientbar"></div>
-    <div id="particles-js"></div>
-    <div id="button_group">
-        <button onclick="location.href = '/'" class="group_button">
-            <i class="fa-solid fa-arrow-left"></i> Back
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+    </button>
+    <div id="toaster" class="toaster"></div>
+
+    <div class="button-group local-button-group" data-orientation="vertical">
+        <button type="button" class="btn-lg-outline p-6">
+            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
+            {{user.name}}
         </button>
-        <button onclick="location.href = '/logout/'" class="group_button">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Log-out
+        <hr role="separator" />
+        <button onclick="location.href = '/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back
+        </button>
+        <button onclick="location.href = '/logout/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="m16 17 5-5-5-5"/>
+                <path d="M21 12H9"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            </svg>
+            Log-out
         </button>
     </div>
 
-    <div class="container">
-        <section class="hero">
-            <div class="hero-content">
-                <h1>
-                    {{greeting}}
-                </h1>
-                <p class="subtitle">
-                    Baxi dashboard - {{ guild.name }}
-                </p>
-            </div>
-            <div class="scroll-indicator">
-                <i class="fas fa-chevron-down"></i>
-            </div>
-        </section>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="page-header">
+            <h1 class="text-3xl font-bold mb-1">{{greeting}}</h1>
+            <p class="text-muted">{{ guild.name }}</p>
+        </div>
 
-        <main>
-            <section style="margin-top: 15vh" id="staff">
-                <div class="section-header">
-                    <div class="section-title">STATS</div>
-                </div>
+        <!-- Quick-jump nav -->
+        <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
+            <a href="#stats" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Stats
+            </a>
+            <a href="#config-general" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                General
+            </a>
+            <a href="#config-chatfilter" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
+                Chatfilter
+            </a>
+            <a href="#globalchat" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+                Global Chat
+            </a>
+            <a href="#ticket" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                Tickets
+            </a>
+            <a href="#auditlog" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Audit Log
+            </a>
+        </nav>
 
-                <div class="project-card">
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-chart-column"></i> Baxi Stats
-                    </h3>
-                    <p class="project-description">
-                        Here you can see some statistics.
-                    </p>
+        <main class="pb-24">
 
-                    <div class="projects-grid" style="grid-template-columns: 2;">
-
-                        <div class="project-card">
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-ticket"></i> Tickets
-                            </h3>
-                            <p class="project-description">
-                                You currently have <strong>{{stats.get("open_tickets")}}</strong> open tickets.<br>
-                                <strong>{{stats.get("unanswered_tickets")}}</strong> of them have not been answered by
-                                staff yet.<br>
-                                The average age of open tickets is <strong>{{stats.get("avg_ticket_age_h")}}</strong> hours.
-                            </p>
+            <!-- Guild Statistics -->
+            <section class="pb-16 dash-section" id="stats">
+                <div class="section-label">GUILD STATISTICS</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <line x1="18" y1="20" x2="18" y2="10"/>
+                                <line x1="12" y1="20" x2="12" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                            Guild Statistics
+                        </h2>
+                        <p class="text-muted">Here you can see some statistics about your guild.</p>
+                    </header>
+                    <section>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="card">
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+                                            <path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
+                                        </svg>
+                                        Tickets
+                                    </h2>
+                                </header>
+                                <section>
+                                    <p class="text-muted">
+                                        You currently have <strong>{{stats.get("open_tickets")}}</strong> open tickets.<br>
+                                        <strong>{{stats.get("unanswered_tickets")}}</strong> of them have not been answered by staff yet.<br>
+                                        The average age of open tickets is <strong>{{stats.get("avg_ticket_age_h")}}</strong> hours.
+                                    </p>
+                                </section>
+                            </div>
+                            <div class="card">
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M12 3v6"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                            <path d="M12 15v6"/>
+                                        </svg>
+                                        Version
+                                    </h2>
+                                </header>
+                                <section>
+                                    <p class="text-muted">
+                                        You are currently using Baxi version <strong>{{stats.get("version")}}</strong>.
+                                    </p>
+                                </section>
+                            </div>
                         </div>
-
-                        <div class="project-card">
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-code-commit"></i> Version
-                            </h3>
-                            <p class="project-description">
-                                You are currently using Baxi version <strong>{{stats.get("version")}}</strong>.
-                            </p>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="project-date">Avocloud.net - Baxi</div>
+                    </section>
                 </div>
             </section>
-            <section style="margin-top: 15vh" id="general">
-                <div class="section-header">
-                    <div class="section-title">GENERAL</div>
-                </div>
 
-                <div class="project-card">
+            <!-- General Config -->
+            <section class="pb-16 dash-section" id="config-general">
+                <div class="section-label">GENERAL CONFIG</div>
+                <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                General Config
+                            </h2>
+                            <p class="text-muted">Manage general settings of your server.</p>
+                        </header>
+                        <section>
+                            <form id="general-form" class="form grid gap-6 settings-form">
+                                <div class="grid gap-2">
+                                    <label for="general-guidelines">Terms and Conditions:</label>
+                                    <p class="text-muted text-sm">
+                                        Please select whether you agree to our guidelines. Your consent is required in order to use all functions.
+                                        By clicking "Agree", you agree to the following terms:
+                                        <button class="btn-link"
+                                            onclick="window.open('https://avocloud.net/regulations/', '_blank')">
+                                            Data Protection Regulations, Terms of Service, Service Description Summary, Discord Related Rules
+                                        </button>
+                                    </p>
+                                    <fieldset class="grid gap-3">
+                                        <label class="radio-label">
+                                            <input type="radio" name="general-guidelines" id="general-guidelines-yes"
+                                                value="true" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">I agree</span>
+                                                <span class="block text-xs text-muted">
+                                                    I, {{user.name}}, hereby confirm that I have read all terms and conditions and agree on behalf of my server.
+                                                </span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="general-guidelines" id="general-guidelines-no"
+                                                value="false" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">I disagree</span>
+                                                <span class="block text-xs text-muted">
+                                                    I, {{user.name}}, do not agree. Baxi will no longer function on my server after applying this setting.
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </fieldset>
+                                </div>
 
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-gear"></i> General config
-                    </h3>
-                    <p class="project-description">
-                        Manage general settings of your server.
-                    </p>
-                    <form id="general-form" class="settings-form">
-                        <div class="form-group">
-                            <label for="general-guidelines">
-                                Terms and Conditions:
-                            </label>
-                            <p class="project-description">Please select whether you agree to our guidelines. Your
-                                consent is required in order to use all functions.
+                                <div class="grid gap-2">
+                                    <label for="general-lang">Language:</label>
+                                    <select class="select w-full" id="general-lang" name="general-lang">
+                                        <option value="en" selected>English</option>
+                                        <option value="de">Deutsch</option>
+                                    </select>
+                                </div>
 
-                                By clicking "Agree", you agree to the following terms:
-                            <ul class="project-list"
-                                onclick="window.open('https://avocloud.net/regulations/', '_blank')"
-                                style="cursor: pointer;">
-                                <li>Data Protection Regulations</li>
-                                <li>Terms of Service</li>
-                                <li>Service Description Summary</li>
-                                <li>Discord Related Rules</li>
-                            </ul>
-                            </p>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="general-guidelines" id="general-guidelines-yes"
-                                        value="true">
-                                    <span class="custom-radio"></span>
-                                    <div>
-                                        <span class="radio-title">I agree</span><br>
-                                        <span class="radio-description">I, {{user.name}}, hereby confirm that I have
-                                            read all terms and conditions and hereby agree on behalf of my server, and I
-                                            will ensure that they are complied with on my entire server.
+                                <div class="grid gap-2">
+                                    <label for="general-nick">Bot Name:</label>
+                                    <input type="text" id="general-nick" placeholder="Baxi"
+                                        minlength="2" maxlength="15" class="w-full">
+                                </div>
+
+                                <button type="submit" class="btn-primary submit-btn w-full">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                            </form>
+
+                            <!-- Bot Permissions sub-card -->
+                            <div class="card mt-6">
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="m3 17 2 2 4-4"/>
+                                            <path d="m3 7 2 2 4-4"/>
+                                            <path d="M13 6h8"/>
+                                            <path d="M13 12h8"/>
+                                            <path d="M13 18h8"/>
+                                        </svg>
+                                        Bot Permissions
+                                    </h2>
+                                    <p class="text-muted text-sm">Check that Baxi has all required guild permissions and its role is correctly positioned in the hierarchy.</p>
+                                </header>
+                                <section>
+                                    <div id="feedback-bot-general" class="channel-perm-feedback hidden mb-2"></div>
+                                    <div id="feedback-bot-role" class="channel-perm-feedback hidden mb-2"></div>
+                                    <button type="button" id="btn-check-perms" onclick="checkAllPermissions()" class="btn-outline w-full">
+                                        <span class="btn-text">
+                                            <svg class="lucide" viewBox="0 0 24 24">
+                                                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                                <path d="m9 12 2 2 4-4"/>
+                                            </svg>
+                                            Verify Permissions
                                         </span>
-                                    </div>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="general-guidelines" id="general-guidelines-no"
-                                        value="false">
-                                    <span class="custom-radio"></span>
-                                    <div>
-                                        <span class="radio-title">I disagree</span><br>
-                                        <span class="radio-description">I, {{user.name}}, hereby confirm that I do not
-                                            agree to the terms and conditions. I am aware that Baxi will no longer
-                                            function on my server after applying this setting.</span>
-                                    </div>
-                                </label>
+                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                            stroke="currentColor" fill="none" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                        </svg>
+                                    </button>
+                                </section>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="general-lang">
-                                Language:
-                            </label>
-                            <select id="general-lang" name="general-lang"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
-                                <option value="en" selected>Englisch</option>
-                                <option value="de">Deutsch</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="general-nick">
-                                Bot Name:
-                            </label>
-                            <input type="text" id="general-nick" placeholder="Type a name for the bot." max="10"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
-                        </div>
-
-                        <button type="submit" class="submit-btn">
-                            <span class="btn-text">Save</span>
-                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
-                                    class="windows-loading-spinner">
-                                    <circle r="7px" cy="8px" cx="8px"></circle>
-                                </svg></span>
-                        </button>
-                    </form>
-                    <div class="project-card" style="margin-top: 2rem;">
-                        <h3 class="project-title">
-                            <i class="fa-solid fa-robot"></i> Bot Permissions
-                        </h3>
-                        <p class="project-description">
-                            Verify that Baxi has all required permissions in this server.
-                        </p>
-                        <div class="channel-perm-feedback" id="feedback-bot-general" style="display: none;"></div>
-                        <div class="channel-perm-feedback warning" id="feedback-bot-role"
-                            style="display: none; background-color: rgba(255, 165, 0, 0.2); border-color: rgba(255, 165, 0, 0.4);">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span id="bot-role-warning-text">Bot role is not at the top. Some features may not work
-                                properly.</span>
-                        </div>
-                        <button type="button" class="submit-btn" onclick="checkBotGeneralPermissions()"
-                            style="margin-top: 12px;">
-                            <span class="btn-text">Check Bot Permissions</span>
-                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
-                                    class="windows-loading-spinner">
-                                    <circle r="7px" cy="8px" cx="8px"></circle>
-                                </svg></span>
-                        </button>
-                    </div>
-                    <div class="project-date">Avocloud.net - Baxi</div>
+                        </section>
                 </div>
             </section>
 
-            <section style="margin-top: 15vh" id="chatfilter">
-                <div class="section-header">
-                    <div class="section-title">CHATFILTER</div>
-                </div>
+            <!-- Chatfilter Config -->
+            <section class="pb-16 dash-section" id="config-chatfilter">
+                <div class="section-label">CHATFILTER CONFIG</div>
+                <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
+                                    <path d="M12 15h.01"/>
+                                    <path d="M12 7v4"/>
+                                </svg>
+                                Chatfilter Config
+                            </h2>
+                            <p class="text-muted">Manage the chat filter for your server.</p>
+                        </header>
+                        <section>
+                            <form id="chatfilter-form" class="form grid gap-6 settings-form">
+                                <div class="form-group">
+                                    <label for="chatfilter-enabled">
+                                        <input type="checkbox" id="chatfilter-enabled" name="chatfilter-enabled" value="true">
+                                        Enable chatfilter
+                                    </label>
+                                    <input type="hidden" name="chatfilter-enabled" value="false">
+                                </div>
 
-                <div class="project-card">
+                                <div class="grid gap-2">
+                                    <label class="block text-sm font-medium">Choose system:</label>
+                                    <fieldset class="grid gap-3">
+                                        <label class="radio-label">
+                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
+                                                value="SafeText" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">Safetext</span>
+                                                <span class="block text-xs text-muted">
+                                                    An open source tool from avocloud.net that quickly checks individual words for problematic content. Ideal for high speed, but prone to false positives.
+                                                </span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-ai"
+                                                value="AI" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">AI</span>
+                                                <span class="block text-xs text-muted">
+                                                    A locally hosted LLM that analyses entire messages based on context. Slightly slower, but much more precise.
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </fieldset>
+                                </div>
 
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-comment-slash"></i> Chatfilter config
-                    </h3>
-                    <p class="project-description">
-                        Manage the chat filter for your server.
-                    </p>
-                    <form id="chatfilter-form" class="settings-form">
-                        <div class="form-group">
-                            <label for="chatfilter-enabled">
-                                <input type="checkbox" id="chatfilter-enabled" name="chatfilter-enabled" value="true">
-                                Enable chatfilter
-                            </label>
-                            <input type="hidden" name="chatfilter-enabled" value="false">
-                        </div>
+                                <div class="grid gap-2">
+                                    <label for="c_goodwords_input">Custom good-words:</label>
+                                    <input type="text" id="c_goodwords_input" placeholder="Type a word and press Enter">
+                                    <div id="c_goodwords_container" class="tag-input-container"></div>
+                                </div>
 
-                        <div class="form-group">
-                            <p style="margin-bottom: 0.5rem; font-weight: 500;">Choose system::</p>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
-                                        value="SafeText">
-                                    <span class="custom-radio"></span>
-                                    <div>
-                                        <span class="radio-title">Safetext</span><br>
-                                        <span class="radio-description">An open source tool from avocloud.net that
-                                            quickly checks individual words for problematic content. Ideal for high
-                                            speed, but prone to false positives.</span>
-                                    </div>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="chatfilter-system" id="chatfilter-system-ai" value="AI">
-                                    <span class="custom-radio"></span>
-                                    <div>
-                                        <span class="radio-title">AI</span><br>
-                                        <span class="radio-description">A locally hosted LLM that analyses entire
-                                            messages based on context. Slightly slower, but much more precise and
-                                            reliable in terms of recognition.</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
+                                <div class="grid gap-2">
+                                    <label for="c_badwords_input">Custom bad-words:</label>
+                                    <input type="text" id="c_badwords_input" placeholder="Type a word and press Enter">
+                                    <div id="c_badwords_container" class="tag-input-container"></div>
+                                </div>
 
-
-
-                        <div class="form-group">
-                            <label for="c_goodwords_input">Custom good-words:</label>
-                            <input type="text" id="c_goodwords_input" placeholder="Type a word and press Enter"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
-                            <div id="c_goodwords_container" class="tag-input-container"></div>
-                        </div>
-
-
-                        <div class="form-group">
-                            <label for="c_badwords_input">Custom bad-words:</label>
-                            <input type="text" id="c_badwords_input" placeholder="Type a word and press Enter"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke; padding: 8px;">
-                            <div id="c_badwords_container" class="tag-input-container"></div>
-                        </div>
-
-
-
-                        <button type="submit" class="submit-btn">
-                            <span class="btn-text">Save</span>
-                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
-                                    class="windows-loading-spinner">
-                                    <circle r="7px" cy="8px" cx="8px"></circle>
-                                </svg></span>
-                        </button>
-                    </form>
-
-                    <div class="project-date">Avocloud.net - Baxi - Security</div>
-                </div>
-            </section>
-
-            <section style="margin-top: 15vh" id="globalchat">
-                <div class="section-header">
-                    <div class="section-title">GLOBAL CHAT</div>
-                </div>
-
-                <div class="project-card">
-
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-gear"></i> Global chat config
-                    </h3>
-                    <p class="project-description">
-                        Manage the global chat connected to your server.
-                    </p>
-                    <form id="globalchat-form" class="settings-form">
-                        <div class="form-group">
-                            <label for="globalchat-enabled">
-                                <input type="checkbox" id="globalchat-enabled" name="globalchat-enabled" value="true">
-                                Enable globalchat
-                            </label>
-                            <input type="hidden" name="globalchat-enabled" value="false">
-                        </div>
-                        <div class="form-group">
-                            <label for="globalchat-channel">Channel:</label>
-                            <select name="globalchat-channel" id="globalchat-channel"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
-                                required>
-                                <option value="">-- Please select --</option>
-                                {% for id, name in channels.items() %}
-                                <option value="{{ id }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="channel-perm-feedback" id="feedback-globalchat-channel" style="display: none;">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="submit-btn">
-                            <span class="btn-text">Save</span>
-                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
-                                    class="windows-loading-spinner">
-                                    <circle r="7px" cy="8px" cx="8px"></circle>
-                                </svg></span>
-                        </button>
-                    </form>
-
-                    <div class="project-date">Avocloud.net - Baxi</div>
-                </div>
-            </section>
-
-            <section style="margin-top: 15vh" id="ticket">
-                <div class="section-header">
-                    <div class="section-title">SUPPORT TICKET</div>
-                </div>
-
-                <div class="project-card">
-
-                    <h3 class="project-title">
-                        <i class="fa-solid fa-gear"></i> Ticket config
-                    </h3>
-                    <p class="project-description">
-                        Manage the ticket system on your server.
-                    </p>
-                    <form id="ticket-form" class="settings-form">
-                        <div class="form-group">
-                            <label for="ticket-enabled">
-                                <input type="checkbox" id="ticket-enabled" name="ticket-enabled" value="true">
-                                Enable ticket
-                            </label>
-                            <input type="hidden" name="ticket-enabled" value="false">
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-channel">Channel:</label>
-                            <select name="ticket-channel" id="ticket-channel"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
-                                required>
-                                <option value="">-- Please select --</option>
-                                {% for id, name in channels.items() %}
-                                <option value="{{ id }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="channel-perm-feedback" id="feedback-ticket-channel" style="display: none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-role">Staff role:</label>
-                            <select name="ticket-role" id="ticket-role"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
-                                required>
-                                <option value="">-- Please select --</option>
-                                {% for id, name in roles.items() %}
-                                <option value="{{ id }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-cat">Category:</label>
-                            <select name="ticket-cat" id="ticket-cat"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
-                                required>
-                                <option value="">-- Please select --</option>
-                                {% for id, name in categorys.items() %}
-                                <option value="{{ id }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="channel-perm-feedback" id="feedback-category-channel" style="display: none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-transcript-channel">Transcript channel:</label>
-                            <select name="ticket-transcript-channel" id="ticket-transcript-channel"
-                                style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;"
-                                required>
-                                <option value="">-- Please select --</option>
-                                {% for id, name in channels.items() %}
-                                <option value="{{ id }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="channel-perm-feedback" id="feedback-ticket-transcript-channel"
-                                style="display: none;"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-color">
-                                Embed color:
-                            </label>
-                            <input type="text" id="ticket-color" placeholder="#rrggbb" pattern="#[0-9a-fA-F]{6}"
-                                maxlength="7"
-                                style="border: 1px solid #222222; margin: 5px; padding: 8px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
-                        </div>
-                        <div class="form-group">
-                            <label for="ticket-message">
-                                Embed message:
-                            </label>
-                            <textarea type="text" id="ticket-message" placeholder="Your custom message."
-                                maxlength="4096"
-                                style="border: 1px solid #222222; margin: 5px; padding: 8px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
-                            </textarea>
-                        </div>
-
-                        <button type="submit" class="submit-btn">
-                            <span class="btn-text">Save</span>
-                            <span class="spinner hidden"><svg viewBox="0 0 16 16" height="48" width="48"
-                                    class="windows-loading-spinner">
-                                    <circle r="7px" cy="8px" cx="8px"></circle>
-                                </svg></span>
-                        </button>
-                    </form>
-
-                    <div class="project-date">Avocloud.net - Baxi</div>
-                </div>
-            </section>
-
-            <br>
-            <br>
-
-            <section style="margin-top: 15vh" id="auditlog">
-                <div class="section-header">
-                    <div class="section-title">AUDIT LOG</div>
-                </div>
-                <div class="project-card">
-                    <!-- Filter Input -->
-                    <div style="margin-bottom: 20px;">
-                        <label for="logFilter">Filter by type:</label>
-                        <select id="logFilter"
-                            style="border: 1px solid #222222; margin: 5px; padding: 5px; border-radius: 8px; background-color: #222222; transition: all 0.3s ease, border 0.3s ease; color: whitesmoke;">
-                            <option value="all" selected>All</option>
-                            <option value="login">Login Attempt</option>
-                            <option value="chatfilter_log">Chatfilter Access Log</option>
-                            <option value="save">Settings Changed</option>
-                            <option value="ticket_transcript">Ticket Transcripts</option>
-                        </select>
+                                <button type="submit" class="btn-primary submit-btn w-full">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </section>
                     </div>
 
-                    <!-- Container für alle Logs -->
-                    <div id="logContainer">
-                        {% for log in data.audit_log %}
-                        <div class="log-entry" data-type="{{ log.type }}"
-                            style="border-radius: 8px; border: 1px solid #222222; margin-top: 40px; margin-bottom: 40px; padding: 20px; position: relative;">
-
-                            <!-- Nummerierung hinzugefügt -->
-                            <div
-                                style="position: absolute; top: -15px; left: -15px; background: #222; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">
-                                {{ data.audit_log|length - loop.index0 }}
-                            </div>
-
-                            {% if log.type == 'login' %}
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-right-to-bracket"></i> Login Attempt
-                            </h3>
-                            <p class="project-description">
-                                User tried to log in to the dashboard.
-                            </p>
-
-                            <div class="form-group">
-                                <label><strong>User:</strong> {{ log.user }}</label>
-                                <label><strong>Time:</strong> {{ log.time }}</label>
-                                <label><strong>Status:</strong>
-                                    {% if log.success %}
-                                    <span style="color: green;"><i class="fa-solid fa-check-circle"></i>
-                                        Success</span>
-                                    {% else %}
-                                    <span style="color: red;"><i class="fa-solid fa-times-circle"></i> Failed</span>
-                                    {% endif %}
-                                </label>
-                            </div>
-
-                            {% elif log.type == 'chatfilter_log' %}
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-eye"></i> Chatfilter access log
-                            </h3>
-                            <p class="project-description">
-                                User accessed the chatfilter log {{ log.id }}
-                            </p>
-
-                            <div class="form-group">
-                                <label><strong>User:</strong> {{ log.user }}</label>
-                                <label><strong>ID:</strong> {{ log.id }}</label>
-                                <label><strong>Time:</strong> {{ log.time }}</label>
-                            </div>
-
-                            {% elif log.type == 'ticket_transcript' %}
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-eye"></i> Ticket transcript access
-                            </h3>
-                            <p class="project-description">
-                                User accessed the ticket transcript {{ log.id }}
-                            </p>
-
-                            <div class="form-group">
-                                <label><strong>User:</strong> {{ log.user }}</label>
-                                <label><strong>ID:</strong> {{ log.id }}</label>
-                                <label><strong>Time:</strong> {{ log.time }}</label>
-                            </div>
-
-                            {% elif log.type == 'save' %}
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-gear"></i> Settings Changed
-                            </h3>
-                            <p class="project-description">
-                                User has made changes to the {{ log.sys }} system.
-                            </p>
-
-                            <div class="form-group">
-                                <label><strong>User:</strong> {{ log.user }}</label>
-                                <label><strong>System:</strong> {{ log.sys }}</label>
-                                <label><strong>Time:</strong> {{ log.time }}</label>
-                            </div>
-
-                            {% else %}
-                            <h3 class="project-title">
-                                <i class="fa-solid fa-circle-question"></i> Unknown Log Entry
-                            </h3>
-                            <p class="project-description">
-                                Unrecognized log type: {{ log.type }}
-                            </p>
-                            {% endif %}
-
-                            <div class="project-date">Avocloud.net - Baxi - Audit Log</div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div id="paginationControls" style="text-align: center; margin-top: 20px;">
-                        <button id="prevPage"
-                            style="padding: 8px 12px; margin-right: 10px; border-radius: 5px; border: 1px solid #222;">&larr;
-                            Prev</button>
-                        <span id="pageInfo">1 / 1</span>
-                        <button id="nextPage"
-                            style="padding: 8px 12px; margin-left: 10px; border-radius: 5px; border: 1px solid #222;">Next
-                            &rarr;</button>
-                    </div>
-                </div>
-
             </section>
 
+            <!-- Global Chat -->
+            <section class="pb-16 dash-section" id="globalchat">
+                <div class="section-label">GLOBAL CHAT</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/>
+                                <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>
+                            </svg>
+                            Global Chat Config
+                        </h2>
+                        <p class="text-muted">Manage the global chat connected to your server.</p>
+                    </header>
+                    <section>
+                        <form id="globalchat-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="globalchat-enabled">
+                                    <input type="checkbox" id="globalchat-enabled" name="globalchat-enabled" value="true">
+                                    Enable globalchat
+                                </label>
+                                <input type="hidden" name="globalchat-enabled" value="false">
+                            </div>
 
-            <footer style="margin-top: 15vh"></footer>
+                            <div class="grid gap-2">
+                                <label for="globalchat-channel">Channel:</label>
+                                <select name="globalchat-channel" id="globalchat-channel" class="select w-full" required>
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-globalchat-channel"></div>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Support Ticket -->
+            <section class="pb-16 dash-section" id="ticket">
+                <div class="section-label">SUPPORT TICKET</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+                                <path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
+                            </svg>
+                            Ticket Config
+                        </h2>
+                        <p class="text-muted">Manage the ticket system on your server.</p>
+                    </header>
+                    <section>
+                        <div id="ticket-role-warning" class="channel-perm-feedback error hidden mb-4">
+                            <svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                <path d="M12 9v4"/><path d="M12 17h.01"/>
+                            </svg>
+                            <span>The ticket system requires Baxi's role to be at the top of the role hierarchy. Move the bot role to the top in Server Settings → Roles, then re-check permissions.</span>
+                        </div>
+                        <form id="ticket-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="ticket-enabled">
+                                    <input type="checkbox" id="ticket-enabled" name="ticket-enabled" value="true">
+                                    Enable ticket system
+                                </label>
+                                <input type="hidden" name="ticket-enabled" value="false">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-channel">Channel:</label>
+                                <select name="ticket-channel" id="ticket-channel" class="select w-full" required>
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-ticket-channel"></div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-role">Staff role:</label>
+                                <select name="ticket-role" id="ticket-role" class="select w-full" required>
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-cat">Category:</label>
+                                <select name="ticket-cat" id="ticket-cat" class="select w-full" required>
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in categorys.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-category-channel"></div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-transcript-channel">Transcript channel:</label>
+                                <select name="ticket-transcript-channel" id="ticket-transcript-channel" class="select w-full" required>
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-ticket-transcript-channel"></div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-color">Embed color:</label>
+                                <input type="text" id="ticket-color" placeholder="#rrggbb"
+                                    pattern="#[0-9a-fA-F]{6}" maxlength="7" class="w-full">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-message">Embed message:</label>
+                                <textarea id="ticket-message" placeholder="Your custom message." maxlength="4096"
+                                    class="w-full min-h-[100px]"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Audit Log -->
+            <section class="pb-16 dash-section" id="auditlog">
+                <div class="section-label">AUDIT LOG</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            Audit Log
+                        </h2>
+                    </header>
+                    <section>
+                        <div class="grid gap-2 mb-6">
+                            <label for="logFilter">Filter by type:</label>
+                            <select id="logFilter" class="select w-[220px]">
+                                <option value="all" selected>All</option>
+                                <option value="login">Login Attempt</option>
+                                <option value="chatfilter_log">Chatfilter Access Log</option>
+                                <option value="save">Settings Changed</option>
+                                <option value="ticket_transcript">Ticket Transcripts</option>
+                            </select>
+                        </div>
+
+                        <div id="logContainer">
+                            {% for log in data.audit_log %}
+                            <div class="log-entry card mt-4" data-type="{{ log.type }}" style="position: relative;">
+                                <div style="position: absolute; top: -12px; left: -12px; background: #9333ea; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600;">
+                                    {{ data.audit_log|length - loop.index0 }}
+                                </div>
+
+                                {% if log.type == 'login' %}
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                                            <polyline points="10 17 15 12 10 7"/>
+                                            <line x1="15" y1="12" x2="3" y2="12"/>
+                                        </svg>
+                                        Login Attempt
+                                    </h2>
+                                    <p class="text-muted text-sm">User tried to log in to the dashboard.</p>
+                                </header>
+                                <section>
+                                    <div class="grid gap-1 text-sm text-muted">
+                                        <div><strong>User:</strong> {{ log.user }}</div>
+                                        <div><strong>Time:</strong> {{ log.time }}</div>
+                                        <div><strong>Status:</strong>
+                                            {% if log.success %}
+                                            <span style="color: #00C853;">Success</span>
+                                            {% else %}
+                                            <span style="color: #FF5252;">Failed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {% elif log.type == 'chatfilter_log' %}
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        Chatfilter Access Log
+                                    </h2>
+                                    <p class="text-muted text-sm">User accessed chatfilter log {{ log.id }}.</p>
+                                </header>
+                                <section>
+                                    <div class="grid gap-1 text-sm text-muted">
+                                        <div><strong>User:</strong> {{ log.user }}</div>
+                                        <div><strong>ID:</strong> {{ log.id }}</div>
+                                        <div><strong>Time:</strong> {{ log.time }}</div>
+                                    </div>
+                                </section>
+
+                                {% elif log.type == 'ticket_transcript' %}
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        Ticket Transcript Access
+                                    </h2>
+                                    <p class="text-muted text-sm">User accessed ticket transcript {{ log.id }}.</p>
+                                </header>
+                                <section>
+                                    <div class="grid gap-1 text-sm text-muted">
+                                        <div><strong>User:</strong> {{ log.user }}</div>
+                                        <div><strong>ID:</strong> {{ log.id }}</div>
+                                        <div><strong>Time:</strong> {{ log.time }}</div>
+                                    </div>
+                                </section>
+
+                                {% elif log.type == 'save' %}
+                                <header>
+                                    <h2 class="text-base font-semibold flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Settings Changed
+                                    </h2>
+                                    <p class="text-muted text-sm">User made changes to the {{ log.sys }} system.</p>
+                                </header>
+                                <section>
+                                    <div class="grid gap-1 text-sm text-muted">
+                                        <div><strong>User:</strong> {{ log.user }}</div>
+                                        <div><strong>System:</strong> {{ log.sys }}</div>
+                                        <div><strong>Time:</strong> {{ log.time }}</div>
+                                    </div>
+                                </section>
+
+                                {% else %}
+                                <header>
+                                    <h2 class="text-base font-semibold">Unknown Log Entry</h2>
+                                    <p class="text-muted text-sm">Unrecognized log type: {{ log.type }}</p>
+                                </header>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div id="paginationControls" class="flex items-center justify-center gap-4 mt-8">
+                            <button id="prevPage" class="btn-secondary">&larr; Prev</button>
+                            <span id="pageInfo" class="text-muted text-sm">1 / 1</span>
+                            <button id="nextPage" class="btn-secondary">Next &rarr;</button>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <footer class="site-footer">
+                <p>Avocloud.net &mdash; Baxi Dashboard</p>
+            </footer>
+
         </main>
     </div>
 
@@ -743,100 +654,6 @@
         const nick = JSON.parse('{{ nick | tojson }}');
 
         const parseWords = input => input.split(',').map(w => w.trim()).filter(w => w.length > 0);
-
-        function createTagInput(containerId, initialTags = []) {
-            const container = document.getElementById(containerId);
-            const input = document.createElement("input");
-            input.type = "text";
-            container.appendChild(input);
-
-            const tags = new Set(initialTags);
-
-            function updateTags() {
-                container.querySelectorAll(".tag").forEach(tag => tag.remove());
-
-                tags.forEach(tag => {
-                    const tagEl = document.createElement("span");
-                    tagEl.className = "tag";
-                    tagEl.innerHTML = `${tag}<span class="remove-tag">&times;</span>`;
-                    tagEl.querySelector(".remove-tag").onclick = () => {
-                        tags.delete(tag);
-                        updateTags();
-                    };
-                    container.insertBefore(tagEl, input);
-                });
-            }
-
-            input.addEventListener("keydown", (e) => {
-                if (["Enter", ","].includes(e.key)) {
-                    e.preventDefault();
-                    const value = input.value.trim();
-                    if (value && !tags.has(value)) {
-                        tags.add(value);
-                        input.value = "";
-                        updateTags();
-                    }
-                } else if (e.key === "Backspace" && input.value === "") {
-                    const last = Array.from(tags).pop();
-                    if (last) {
-                        tags.delete(last);
-                        updateTags();
-                    }
-                }
-            });
-
-            return {
-                getTags: () => Array.from(tags),
-                setTags: (tagList) => {
-                    tagList.forEach(tag => tags.add(tag));
-                    updateTags();
-                }
-            };
-        }
-
-        let goodwordInput, badwordInput;
-
-
-
-        function createDynamicFields() {
-            const enabledInput = document.getElementById('chatfilter-enabled');
-
-            if (data.chatfilter) {
-                enabledInput.checked = data.chatfilter.enabled === true;
-
-                if (data.chatfilter.system) {
-                    const system = data.chatfilter.system;
-                    const systemRadio = document.querySelector(`input[name="chatfilter-system"][value="${system}"]`);
-                    if (systemRadio) systemRadio.checked = true;
-                }
-
-                renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
-                renderTags('c_badwords', data.chatfilter.c_badwords || []);
-            }
-
-            document.getElementById("general-lang").value = data.lang || 'en';
-            document.getElementById("general-nick").value = nick || '';
-
-
-            if (data.terms !== undefined) {
-                const termsValue = data.terms.toString();
-                const systemRadio = document.querySelector(`input[name="general-guidelines"][value="${termsValue}"]`);
-                if (systemRadio) systemRadio.checked = true;
-            }
-
-            document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
-            document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
-
-            document.getElementById("ticket-role").value = data.ticket.role || '';
-            document.getElementById("ticket-channel").value = data.ticket.channel || '';
-            document.getElementById("ticket-transcript-channel").value = data.ticket.transcript || '';
-            document.getElementById("ticket-cat").value = data.ticket.catid || '';
-            document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
-            document.getElementById("ticket-message").value = data.ticket.message || '';
-            document.getElementById("ticket-color").value = data.ticket.color || '';
-
-            runInitialPermissionChecks();
-        }
 
         function renderTags(field, words) {
             const container = document.getElementById(`${field}_container`);
@@ -847,32 +664,25 @@
         function addTag(field, word) {
             if (!word) return;
             const container = document.getElementById(`${field}_container`);
-
             const existingTags = Array.from(container.getElementsByClassName('tag'))
                 .map(tag => tag.firstChild.textContent.trim().toLowerCase());
-
             if (existingTags.includes(word.toLowerCase())) {
                 const input = container.querySelector('input');
                 if (input) input.value = '';
                 return;
             }
-
             const tag = document.createElement('span');
             tag.className = 'tag';
             tag.textContent = word;
-
             const remove = document.createElement('span');
             remove.className = 'remove-tag';
             remove.innerHTML = '&times;';
             remove.onclick = () => tag.remove();
-
             tag.appendChild(remove);
             container.appendChild(tag);
-
             const input = container.querySelector('input');
             if (input) input.value = '';
         }
-
 
         function getTags(field) {
             const container = document.getElementById(`${field}_container`);
@@ -880,121 +690,110 @@
                 .map(tag => tag.firstChild.textContent.trim());
         }
 
-
         document.getElementById('c_goodwords_input').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag('c_goodwords', this.value.trim());
-                this.value = '';
-            }
+            if (e.key === 'Enter') { e.preventDefault(); addTag('c_goodwords', this.value.trim()); this.value = ''; }
         });
         document.getElementById('c_badwords_input').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag('c_badwords', this.value.trim());
-                this.value = '';
-            }
+            if (e.key === 'Enter') { e.preventDefault(); addTag('c_badwords', this.value.trim()); this.value = ''; }
         });
 
+        function createDynamicFields() {
+            const enabledInput = document.getElementById('chatfilter-enabled');
+            if (data.chatfilter) {
+                enabledInput.checked = data.chatfilter.enabled === true;
+                if (data.chatfilter.system) {
+                    const systemRadio = document.querySelector(`input[name="chatfilter-system"][value="${data.chatfilter.system}"]`);
+                    if (systemRadio) systemRadio.checked = true;
+                }
+                renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
+                renderTags('c_badwords', data.chatfilter.c_badwords || []);
+            }
+            document.getElementById("general-lang").value = data.lang || 'en';
+            document.getElementById("general-nick").value = nick || '';
+            if (data.terms !== undefined) {
+                const systemRadio = document.querySelector(`input[name="general-guidelines"][value="${data.terms.toString()}"]`);
+                if (systemRadio) systemRadio.checked = true;
+            }
+            document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
+            document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
+            document.getElementById("ticket-role").value = data.ticket.role || '';
+            document.getElementById("ticket-channel").value = data.ticket.channel || '';
+            document.getElementById("ticket-transcript-channel").value = data.ticket.transcript || '';
+            document.getElementById("ticket-cat").value = data.ticket.catid || '';
+            document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
+            document.getElementById("ticket-message").value = data.ticket.message || '';
+            document.getElementById("ticket-color").value = data.ticket.color || '';
+            runInitialPermissionChecks();
+        }
 
         document.getElementById('chatfilter-form').onsubmit = function (event) {
             event.preventDefault();
-
             const enabled = document.getElementById('chatfilter-enabled').checked;
             const system = document.querySelector('input[name="chatfilter-system"]:checked')?.value || null;
             const goodWords = getTags('c_goodwords');
             const badWords = getTags('c_badwords');
-
-            const payload = {
-                chatfilter: {
-                    enabled: enabled,
-                    system: system,
-                    c_goodwords: goodWords,
-                    c_badwords: badWords,
-                    bypass: []
-                }
-            };
-
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [] } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
                 }
             };
         };
 
-
-        window.onload = createDynamicFields;
-
-
-
-
-
-
-
-
         document.getElementById('general-form').onsubmit = function (event) {
             event.preventDefault();
-
             const lang = document.getElementById('general-lang').value;
             const nick = document.getElementById('general-nick').value;
             const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
-            const termsBoolean = terms === 'true';
-
-            const payload = {
-                general: {
-                    lang: lang,
-                    nick: nick,
-                    terms: termsBoolean
-                }
-            };
-
+            const payload = { general: { lang, nick, terms: terms === 'true' } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
                 }
             };
         };
 
-
         document.getElementById('globalchat-form').onsubmit = function (event) {
             event.preventDefault();
-
             const enabled = document.getElementById('globalchat-enabled').checked;
             const channel = document.getElementById('globalchat-channel').value;
-
-            const payload = {
-                globalchat: {
-                    enabled: enabled,
-                    channel: channel
-                }
-            };
-
+            const payload = { globalchat: { enabled, channel } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=globalchat&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
                 }
             };
         };
 
-
         document.getElementById('ticket-form').onsubmit = function (event) {
             event.preventDefault();
-
             const enabled = document.getElementById('ticket-enabled').checked;
             const channel = document.getElementById('ticket-channel').value;
             const channel_transcript = document.getElementById('ticket-transcript-channel').value;
@@ -1002,32 +801,24 @@
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
-
-
-            const payload = {
-                ticket: {
-                    enabled: enabled,
-                    channel: channel,
-                    channel_transcript: channel_transcript,
-                    role: role,
-                    category: category,
-                    color: color,
-                    message: message
-                }
-            };
-
+            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    location.href = "/dash/saved/?dash_login={{ data.dash_login }}";
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
                 }
             };
         };
 
+        window.onload = createDynamicFields;
     </script>
 
     <script>
@@ -1038,18 +829,12 @@
             const pageInfo = document.getElementById('pageInfo');
             const logContainer = document.getElementById('logContainer');
             const itemsPerPage = 6;
-
-            // Alle Log-Elemente als Array, umgedreht (neuester zuerst)
             const allLogs = Array.from(document.querySelectorAll('.log-entry')).reverse();
-
             let currentPage = 1;
-            let filteredLogs = allLogs; // initial ohne Filter
+            let filteredLogs = allLogs;
 
             function renderPage() {
-                // Clear Container
                 logContainer.innerHTML = '';
-
-                // Berechne Seitenanzahl
                 const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
                 if (totalPages === 0) {
                     pageInfo.textContent = '0 / 0';
@@ -1057,16 +842,8 @@
                     nextBtn.disabled = true;
                     return;
                 }
-
-                // Grenzen der anzuzeigenden Logs
                 const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const logsToShow = filteredLogs.slice(startIndex, endIndex);
-
-                // Füge die Logs ins DOM ein
-                logsToShow.forEach(log => logContainer.appendChild(log));
-
-                // Update Paginierungstext und Buttons
+                filteredLogs.slice(startIndex, startIndex + itemsPerPage).forEach(log => logContainer.appendChild(log));
                 pageInfo.textContent = `${currentPage} / ${totalPages}`;
                 prevBtn.disabled = currentPage <= 1;
                 nextBtn.disabled = currentPage >= totalPages;
@@ -1074,224 +851,221 @@
 
             function applyFilter() {
                 const selectedType = filterSelect.value;
-                if (selectedType === 'all') {
-                    filteredLogs = allLogs;
-                } else {
-                    filteredLogs = allLogs.filter(log => log.dataset.type === selectedType);
-                }
-                currentPage = 1; // zurück zur ersten Seite nach Filter
+                filteredLogs = selectedType === 'all' ? allLogs : allLogs.filter(log => log.dataset.type === selectedType);
+                currentPage = 1;
                 renderPage();
             }
 
-            // Events
             filterSelect.addEventListener('change', applyFilter);
-
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderPage();
-                }
-            });
-
+            prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
             nextBtn.addEventListener('click', () => {
-                const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderPage();
-                }
+                if (currentPage < Math.ceil(filteredLogs.length / itemsPerPage)) { currentPage++; renderPage(); }
             });
-
-            // Initial render
             applyFilter();
         });
     </script>
+
     <script>
         function checkChannelPermissions(system, channelId, feedbackElementId) {
             const feedbackEl = document.getElementById(feedbackElementId);
-            if (!channelId || !feedbackEl) {
-                if (feedbackEl) feedbackEl.style.display = 'none';
-                return;
-            }
-
-            const payload = {
-                guild_id: data.guild_id,
-                channel_id: channelId,
-                system: system
-            };
-
+            if (!channelId || !feedbackEl) { if (feedbackEl) feedbackEl.classList.add('hidden'); return; }
+            const payload = { guild_id: data.guild_id, channel_id: channelId, system };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/check/channel/perms/');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    const el = document.getElementById(feedbackElementId);
-                    if (!el) return;
-
-                    // Standardmäßig ausblenden
-                    el.style.display = 'none';
-
+                    feedbackEl.classList.add('hidden');
                     if (xhr.status === 200) {
                         try {
                             const resp = JSON.parse(xhr.responseText);
                             if (resp.valid === true) {
-                                // ✅ Alles OK
-                                el.innerHTML = '<i class="fas fa-check-circle"></i> Channel permissions seem correct';
-                                el.className = 'channel-perm-feedback'; // entfernt ggf. "error"
-                                el.style.display = 'flex';
+                                feedbackEl.innerHTML = 'Channel permissions seem correct';
+                                feedbackEl.classList.remove('error');
+                                feedbackEl.classList.remove('hidden');
                             } else if (Array.isArray(resp.missing) && resp.missing.length > 0) {
-                                // ❌ Fehlende Rechte
-                                const missingList = resp.missing.join(', ');
-                                el.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Missing permissions: ${missingList}`;
-                                el.className = 'channel-perm-feedback error';
-                                el.style.display = 'flex';
+                                feedbackEl.innerHTML = `Missing permissions: ${resp.missing.join(', ')}`;
+                                feedbackEl.classList.add('error');
+                                feedbackEl.classList.remove('hidden');
                             }
-                            // Falls valid=false, aber missing fehlt → nichts anzeigen (optional)
-                        } catch (e) {
-                            // Bei Parse-Fehler nichts anzeigen
-                        }
+                        } catch (e) {}
                     }
-                    // Bei 4xx/5xx → nichts anzeigen (bereits ausgeblendet)
                 }
             };
         }
 
-        // Initiale Prüfung nach createDynamicFields
         function runInitialPermissionChecks() {
             const gc = document.getElementById('globalchat-channel')?.value;
             const tc = document.getElementById('ticket-channel')?.value;
             const ttc = document.getElementById('ticket-transcript-channel')?.value;
             const tcat = document.getElementById('ticket-cat')?.value;
-
             if (gc) checkChannelPermissions('globalchat', gc, 'feedback-globalchat-channel');
             if (tc) checkChannelPermissions('ticket', tc, 'feedback-ticket-channel');
             if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
             if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
         }
 
-        // Event Listener für Änderungen
         document.addEventListener('DOMContentLoaded', () => {
-            const globalChatSelect = document.getElementById('globalchat-channel');
-            if (globalChatSelect) {
-                globalChatSelect.addEventListener('change', (e) => {
-                    checkChannelPermissions('globalchat', e.target.value, 'feedback-globalchat-channel');
-                });
-            }
-            const ticketChannelSelect = document.getElementById('ticket-channel');
-            if (ticketChannelSelect) {
-                ticketChannelSelect.addEventListener('change', (e) => {
-                    checkChannelPermissions('ticket', e.target.value, 'feedback-ticket-channel');
-                });
-            }
-            const ticketTranscriptSelect = document.getElementById('ticket-transcript-channel');
-            if (ticketTranscriptSelect) {
-                ticketTranscriptSelect.addEventListener('change', (e) => {
-                    checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel');
-                });
-            }
-            const categorySelect = document.getElementById('ticket-cat');
-            if (categorySelect) {
-                categorySelect.addEventListener('change', (e) => {
-                    checkChannelPermissions('category', e.target.value, 'feedback-category-channel');
-                });
-            }
+            document.getElementById('globalchat-channel')?.addEventListener('change', e =>
+                checkChannelPermissions('globalchat', e.target.value, 'feedback-globalchat-channel'));
+            document.getElementById('ticket-channel')?.addEventListener('change', e =>
+                checkChannelPermissions('ticket', e.target.value, 'feedback-ticket-channel'));
+            document.getElementById('ticket-transcript-channel')?.addEventListener('change', e =>
+                checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel'));
+            document.getElementById('ticket-cat')?.addEventListener('change', e =>
+                checkChannelPermissions('category', e.target.value, 'feedback-category-channel'));
         });
-
 
         function checkBotRolePosition() {
             const feedbackEl = document.getElementById('feedback-bot-role');
             if (!feedbackEl) return;
-
-            const payload = {
-                guild_id: data.guild_id,
-                system: "bot_role_position"
-            };
-
+            const payload = { guild_id: data.guild_id, system: "bot_role_position" };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/check/channel/perms/');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    feedbackEl.style.display = 'none';
-                    if (xhr.status === 200) {
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            if (resp.warning) {
-                                document.getElementById('bot-role-warning-text').textContent =
-                                    `Bot role "${resp.bot_role_name}" is not at the top. Some features may not work properly.`;
-                                feedbackEl.style.display = 'flex';
-                            }
-                        } catch (e) { /* ignore */ }
-                    }
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        const checkIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m9 12 2 2 4-4"/><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
+                        const warnIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+                        if (resp.warning) {
+                            feedbackEl.classList.add('error');
+                            feedbackEl.innerHTML = `${warnIcon} Bot role "${resp.bot_role_name}" is not at the top of the hierarchy. Some features may not work properly.`;
+                        } else {
+                            feedbackEl.classList.remove('error');
+                            feedbackEl.innerHTML = `${checkIcon} Bot role "${resp.bot_role_name}" is correctly positioned.`;
+                        }
+                        feedbackEl.classList.remove('hidden');
+                        updateRoleGatedFeatures(resp.warning);
+                    } catch (e) {}
                 }
             };
         }
 
         function checkBotGeneralPermissions() {
             const feedbackEl = document.getElementById('feedback-bot-general');
+            const btn = document.getElementById('btn-check-perms');
             if (!feedbackEl) return;
-
-            feedbackEl.style.display = 'none';
-            const payload = {
-                guild_id: data.guild_id,
-                system: "bot_general"
-                // ❗ Kein channel_id!
-            };
-
+            feedbackEl.classList.add('hidden');
+            if (btn) {
+                btn.disabled = true;
+                btn.querySelector('.spinner')?.classList.remove('hidden');
+                btn.querySelector('.btn-text')?.classList.add('hidden');
+            }
+            const payload = { guild_id: data.guild_id, system: "bot_general" };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/check/channel/perms/');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(payload));
-
             xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            if (resp.valid) {
-                                feedbackEl.innerHTML = '<i class="fas fa-check-circle"></i> Bot has all required guild permissions';
-                                feedbackEl.className = 'channel-perm-feedback';
-                            } else if (resp.missing && resp.missing.length) {
-                                feedbackEl.innerHTML = `<i class="fas fa-exclamation-triangle"></mi> Missing: ${resp.missing.join(', ')}`;
-                                feedbackEl.className = 'channel-perm-feedback error';
-                            } else {
-                                feedbackEl.style.display = 'none';
-                                return;
-                            }
-                            feedbackEl.style.display = 'flex';
-                        } catch (e) {
-                            feedbackEl.style.display = 'none';
-                        }
-                    } else {
-                        feedbackEl.style.display = 'none';
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.querySelector('.spinner')?.classList.add('hidden');
+                        btn.querySelector('.btn-text')?.classList.remove('hidden');
                     }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        const checkIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m9 12 2 2 4-4"/><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
+                        const warnIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+                        if (resp.valid) {
+                            feedbackEl.innerHTML = `${checkIcon} Bot has all required guild permissions`;
+                            feedbackEl.classList.remove('error');
+                            feedbackEl.classList.remove('hidden');
+                        } else if (resp.missing && resp.missing.length) {
+                            feedbackEl.innerHTML = `${warnIcon} Missing: ${resp.missing.join(', ')}`;
+                            feedbackEl.classList.add('error');
+                            feedbackEl.classList.remove('hidden');
+                        }
+                    } catch (e) {}
                 }
             };
         }
-        checkBotRolePosition(); 
+
+        function checkAllPermissions() {
+            checkBotRolePosition();
+            checkBotGeneralPermissions();
+        }
+
+        function updateRoleGatedFeatures(warning) {
+            const banner = document.getElementById('ticket-role-warning');
+            const form = document.getElementById('ticket-form');
+            if (!form) return;
+            if (warning) {
+                banner?.classList.remove('hidden');
+                form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
+                form.style.opacity = '0.5';
+                form.style.pointerEvents = 'none';
+            } else {
+                banner?.classList.add('hidden');
+                form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
+                form.style.opacity = '';
+                form.style.pointerEvents = '';
+            }
+        }
+
+        checkBotRolePosition();
     </script>
+
     <script>
+        function showSaveToast(success, message) {
+            document.dispatchEvent(new CustomEvent('basecoat:toast', {
+                detail: {
+                    config: {
+                        category: success ? 'success' : 'error',
+                        title: success ? 'Saved' : 'Error',
+                        description: message || (success ? 'Settings applied successfully.' : 'Failed to save. Please try again.'),
+                        cancel: { label: 'Dismiss' }
+                    }
+                }
+            }));
+            document.querySelectorAll('.submit-btn[disabled]').forEach(btn => {
+                btn.disabled = false;
+                btn.querySelector('.spinner')?.classList.add('hidden');
+                btn.querySelector('.btn-text')?.classList.remove('hidden');
+            });
+        }
+
         document.querySelectorAll('.settings-form').forEach(form => {
             form.addEventListener('submit', function () {
                 const button = form.querySelector('.submit-btn');
                 const spinner = button.querySelector('.spinner');
                 const text = button.querySelector('.btn-text');
-
-                // Button deaktivieren & Spinner anzeigen
                 button.disabled = true;
                 spinner.classList.remove('hidden');
-                text.textContent = "";
+                text.classList.add('hidden');
             });
         });
     </script>
 
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 
+    <script>
+        /* Highlight active nav item based on scroll position */
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('.dash-section');
+            const navLinks = document.querySelectorAll('.dash-nav-item');
 
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        const active = document.querySelector(`.dash-nav-item[href="#${entry.target.id}"]`);
+                        if (active) active.classList.add('active');
+                    }
+                });
+            }, { rootMargin: '-10% 0px -80% 0px' });
+
+            sections.forEach(s => observer.observe(s));
+
+            /* Set first item active on load */
+            if (navLinks.length) navLinks[0].classList.add('active');
+        });
+    </script>
 
 </body>
-<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 
 </html>
