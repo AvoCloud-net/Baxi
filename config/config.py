@@ -7,7 +7,7 @@ class Discord:
     color = discord.Color.from_rgb(111, 131, 170)
     danger_color = discord.Color.from_rgb(220, 53, 69)
     warn_color = discord.Color.from_rgb(255, 193, 7)
-    version = "6 - BETAs"
+    version = "6.2002.1"
 
 
 class Web:
