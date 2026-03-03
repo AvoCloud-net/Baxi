@@ -1,5 +1,5 @@
 import quart
-from quart import redirect, url_for, Markup
+from quart import redirect, url_for, Markup, session
 from assets.data import load_data, save_data
 from quart import render_template, send_from_directory, abort
 from discord.ext import commands
@@ -41,6 +41,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def callback():
         try:
             await discord_auth.callback()
+            session['show_intro'] = True
             return redirect(url_for("index"))
         except Exception as e:
             print(f"Error in callback route: {e}")
@@ -57,136 +58,58 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         if 5 <= hour < 12:
             greetings = [
-                Markup(
-                    f"Good morning, <span class='highlight-purple'>{username}</span>"
-                ),
-                Markup(
-                    f"Rise and shine, <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, ready to conquer the day?"
-                ),
-                Markup(
-                    f"Fresh start for you, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"Hey <span class='highlight-purple'>{username}</span>, coffee's brewing!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, let's make today count!"
-                ),
-                Markup(
-                    f"Morning hustle, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"Greetings, early bird <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, the guild awaits your magic!"
-                ),
-                Markup(
-                    f"Sun's up, <span class='highlight-purple'>{username}</span> – time to shine!"
-                ),
+                f"Good morning, {username}",
+                f"Rise and shine, {username}!",
+                f"{username}, ready to conquer the day?",
+                f"Fresh start for you, {username}?",
+                f"Hey {username}, coffee's brewing!",
+                f"{username}, let's make today count!",
+                f"Morning hustle, {username}?",
+                f"Greetings, early bird {username}!",
+                f"{username}, the guild awaits your magic!",
+                f"Sun's up, {username} – time to shine!",
             ]
 
         elif 12 <= hour < 17:
             greetings = [
-                Markup(
-                    f"Good afternoon, <span class='highlight-purple'>{username}</span>"
-                ),
-                Markup(
-                    f"Back at it, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, how's the guild today?"
-                ),
-                Markup(
-                    f"Afternoon vibes, <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, productivity mode: ON?"
-                ),
-                Markup(
-                    f"Hey <span class='highlight-purple'>{username}</span>, need a dashboard break?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, let's tweak that guild!"
-                ),
-                Markup(
-                    f"Crushing goals, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, the guild misses you!"
-                ),
-                Markup(
-                    f"Afternoon fuel for <span class='highlight-purple'>{username}</span>!"
-                ),
+                f"Good afternoon, {username}",
+                f"Back at it, {username}?",
+                f"{username}, how's the guild today?",
+                f"Afternoon vibes, {username}!",
+                f"{username}, productivity mode: ON?",
+                f"Hey {username}, need a dashboard break?",
+                f"{username}, let's tweak that guild!",
+                f"Crushing goals, {username}?",
+                f"{username}, the guild misses you!",
+                f"Afternoon fuel for {username}!",
             ]
 
         elif 17 <= hour < 22:
             greetings = [
-                Markup(
-                    f"Good evening, <span class='highlight-purple'>{username}</span>"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, still in the grind?"
-                ),
-                Markup(
-                    f"Evening guild session, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, time to wrap up!"
-                ),
-                Markup(
-                    f"Hey <span class='highlight-purple'>{username}</span>, dinner then guild?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, let's polish that guild!"
-                ),
-                Markup(
-                    f"Evening vibes with <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, guild leader extraordinaire!"
-                ),
-                Markup(
-                    f"Sunset checks by <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, the guild's nightwatch!"
-                ),
+                f"Good evening, {username}",
+                f"{username}, still in the grind?",
+                f"Evening guild session, {username}?",
+                f"{username}, time to wrap up!",
+                f"Hey {username}, dinner then guild?",
+                f"{username}, let's polish that guild!",
+                f"Evening vibes with {username}!",
+                f"{username}, guild leader extraordinaire!",
+                f"Sunset checks by {username}!",
+                f"{username}, the guild's nightwatch!",
             ]
 
         else:
             greetings = [
-                Markup(f"Night owl <span class='highlight-purple'>{username}</span>?"),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, burning midnight oil?"
-                ),
-                Markup(
-                    f"Hey <span class='highlight-purple'>{username}</span>, the guild never sleeps!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, vampire mode activated!"
-                ),
-                Markup(
-                    f"3 AM guild updates, <span class='highlight-purple'>{username}</span>?"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, the dashboard misses you!"
-                ),
-                Markup(
-                    f"Shhh... <span class='highlight-purple'>{username}</span> is night-configuring!"
-                ),
-                Markup(
-                    f"Respect the grind, <span class='highlight-purple'>{username}</span>!"
-                ),
-                Markup(
-                    f"<span class='highlight-purple'>{username}</span>, guardian of the night guild!"
-                ),
-                Markup(
-                    f"Insomnia? Or guild passion, <span class='highlight-purple'>{username}</span>?"
-                ),
+                f"Night owl {username}?",
+                f"{username}, burning midnight oil?",
+                f"Hey {username}, the guild never sleeps!",
+                f"{username}, vampire mode activated!",
+                f"3 AM guild updates, {username}?",
+                f"{username}, the dashboard misses you!",
+                f"Shhh... {username} is night-configuring!",
+                f"Respect the grind, {username}!",
+                f"{username}, guardian of the night guild!",
+                f"Insomnia? Or guild passion, {username}?",
             ]
 
         return random.choice(greetings)
@@ -266,12 +189,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if guild_id in bot_guild_ids
             }
             stats: dict = dict(load_data(1001, "stats"))
+            show_intro = session.pop('show_intro', False)
             return await render_template(
                 "dash_home.html",
                 managed_guilds=valid_guilds,
                 greeting=get_time_based_greeting(user.name),
                 user=user,
-                stats=stats
+                stats=stats,
+                show_intro=show_intro
             )
         except Exception as e:
             print(f"Error in index route: {e}")

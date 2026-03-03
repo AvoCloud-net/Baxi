@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baxi Dashboard — {{data.name}}</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta property="og:title" content="Baxi Dashboard — {{data.name}}">
     <meta property="og:description" content="5 minute administrative access for the Discord guild {{data.name}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
@@ -14,15 +17,37 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
 </head>
 
 <body>
     <div id="gradientbar"></div>
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
-    </button>
+
+    <!-- Nav -->
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 100 75" fill="none">
+                        <path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12"
+                            stroke="currentColor" stroke-width="8.5"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            pathLength="200"/>
+                    </svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap">
+                <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+            </span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        </button>
+    </nav>
+
     <div id="toaster" class="toaster"></div>
 
     <div class="button-group local-button-group" data-orientation="vertical">
@@ -1042,6 +1067,7 @@
     </script>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="https://avocloud.net/assets/js/main.js"></script>
 
     <script>
         /* Highlight active nav item based on scroll position */

@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baxi Dashboard</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta property="og:title" content="Avocloud.net — Baxi">
     <meta property="og:description" content="This is the home page of the Baxi dashboard.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
@@ -12,15 +15,123 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
+    {% if show_intro %}
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block"></noscript>
+    <style>
+        #avo-intro-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            background: oklch(0.09 0.015 280);
+            transition: opacity 0.7s ease;
+            color: #e8e4db;
+        }
+        #avo-intro-overlay.avo-fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .avo-tagline {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(0.65rem, 2vw, 0.85rem);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.77,0,.18,1);
+        }
+        .avo-intro { display: inline-flex; align-items: center; }
+        .avo-icon-slot { display: inline-grid; flex-shrink: 0; }
+        .avo-icon-slot > * { grid-area: 1/1; display: flex; align-items: center; }
+        .avo-icon svg { height: clamp(1.5rem, 7vw, 5rem); width: auto; }
+        .avo-path {
+            stroke-dasharray: 200;
+            stroke-dashoffset: 200;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .avo-av, .avo-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(1.5rem, 7vw, 5rem);
+            letter-spacing: .04em;
+            white-space: nowrap;
+        }
+        .avo-av {
+            opacity: 0;
+            transform: translateX(6px);
+            transition: opacity .6s ease, transform .6s cubic-bezier(.77,0,.18,1);
+        }
+        .avo-text-wrap {
+            overflow: hidden;
+            max-width: 0;
+            display: flex;
+            align-items: baseline;
+            transition: max-width .7s cubic-bezier(.77,0,.18,1);
+        }
+        .avo-text {
+            opacity: 0;
+            transform: translateX(20px);
+            transition: transform .7s cubic-bezier(.77,0,.18,1), opacity .5s ease .05s;
+        }
+        .avo-dot { opacity: .55; font-family: 'Syne', sans-serif; font-weight: 800; font-size: inherit; letter-spacing: inherit; }
+        .avo-icon { transition: opacity .6s ease, transform .6s cubic-bezier(.77,0,.18,1); }
+    </style>
+    {% endif %}
 </head>
 
 <body>
+    {% if show_intro %}
+    <div id="avo-intro-overlay">
+        <span class="avo-tagline">Developed by</span>
+        <div class="avo-intro">
+            <span class="avo-icon-slot">
+                <span class="avo-icon">
+                    <svg viewBox="0 0 100 75" fill="none" stroke="currentColor" stroke-width="8.5">
+                        <path class="avo-path" d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12" pathLength="200"/>
+                    </svg>
+                </span>
+                <span class="avo-av">AV</span>
+            </span>
+            <span class="avo-text-wrap">
+                <span class="avo-text">OCLOUD<span class="avo-dot">.NET</span></span>
+            </span>
+        </div>
+    </div>
+    {% endif %}
     <div id="gradientbar"></div>
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
-    </button>
+
+    <!-- Nav -->
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 100 75" fill="none">
+                        <path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12"
+                            stroke="currentColor" stroke-width="8.5"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            pathLength="200"/>
+                    </svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap">
+                <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+            </span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        </button>
+    </nav>
 
     <div class="button-group local-button-group" data-orientation="vertical">
         <button type="button" class="btn-lg-outline p-6">
@@ -212,6 +323,61 @@
     </div>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="https://avocloud.net/assets/js/main.js"></script>
+    {% if show_intro %}
+    <script>
+        (function () {
+            var overlay = document.getElementById('avo-intro-overlay');
+            if (!overlay) return;
+
+            function playAvoIntro() {
+                var path    = overlay.querySelector('.avo-path');
+                var icon    = overlay.querySelector('.avo-icon');
+                var av      = overlay.querySelector('.avo-av');
+                var wrap    = overlay.querySelector('.avo-text-wrap');
+                var text    = overlay.querySelector('.avo-text');
+                var tagline = overlay.querySelector('.avo-tagline');
+
+                // Phase 1: typewriter SVG draw (1400ms)
+                path.style.transition = 'none';
+                path.style.strokeDashoffset = '200';
+                void path.getBoundingClientRect();
+                path.style.transition = 'stroke-dashoffset 1400ms cubic-bezier(.4,0,.2,1)';
+                path.style.strokeDashoffset = '0';
+
+                // Phase 2: icon fades out, AV + OCLOUD.NET + tagline slide in
+                setTimeout(function () {
+                    icon.style.opacity   = '0';
+                    icon.style.transform = 'translateX(-10px)';
+                    av.style.opacity     = '1';
+                    av.style.transform   = 'translateX(0)';
+                    setTimeout(function () {
+                        wrap.style.maxWidth     = '100vw';
+                        text.style.opacity      = '1';
+                        text.style.transform    = 'translateX(0)';
+                        tagline.style.opacity   = '0.35';
+                        tagline.style.transform = 'translateY(0)';
+                    }, 500);
+                }, 1500);
+
+                // Phase 3: hold, then fade out and remove
+                setTimeout(function () {
+                    overlay.classList.add('avo-fade-out');
+                    setTimeout(function () {
+                        overlay.remove();
+                    }, 700);
+                }, 3800);
+            }
+
+            // Wait specifically for Syne so AV width matches the SVG before animating
+            document.fonts.load("800 1em 'Syne'").then(function () {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(playAvoIntro);
+                });
+            });
+        })();
+    </script>
+    {% endif %}
     <script>
         document.querySelectorAll('.login-form').forEach(form => {
             form.addEventListener('submit', function () {

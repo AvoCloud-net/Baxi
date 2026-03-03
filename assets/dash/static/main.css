@@ -32,13 +32,74 @@ html::-webkit-scrollbar {
   100% { background-position: 100% 50%; }
 }
 
+/* ── Site navigation bar ────────────────────────────────────── */
+
+.site-nav {
+  position: fixed;
+  top: 4px;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.5rem;
+  background: rgba(10, 11, 11, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+html:not(.dark) .site-nav {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+}
+
+.avocloud-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.avocloud-logo__slot {
+  display: inline-grid;
+  flex-shrink: 0;
+}
+
+.avocloud-logo__icon,
+.avocloud-logo__av {
+  grid-area: 1/1;
+  display: flex;
+  align-items: center;
+}
+
+.avocloud-logo__icon svg {
+  height: 1.5rem;
+  width: auto;
+}
+
+.avocloud-logo__av {
+  font-weight: 800;
+}
+
+.avocloud-logo__rest-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.avocloud-logo__dot {
+  opacity: 0.45;
+}
+
 /* ── Theme toggle ─────────────────────────────────────────── */
 
 .theme-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 9999;
+  flex-shrink: 0;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -167,7 +228,7 @@ h2 {
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding-top: 14px;
+  padding-top: 80px;
 }
 
 .hero-content {
@@ -186,7 +247,7 @@ h2 {
 /* ── Page header (compact, for dashboard pages) ───────────── */
 
 .page-header {
-  padding-top: 5rem;
+  padding-top: 6rem;
   padding-bottom: 2rem;
 }
 
@@ -194,7 +255,7 @@ h2 {
 
 .dash-nav {
   position: sticky;
-  top: 4px;            /* just below the gradientbar */
+  top: 56px;           /* just below the site-nav */
   z-index: 500;
   display: flex;
   gap: 0;
@@ -546,4 +607,61 @@ fieldset {
     height: 1.5rem !important;
     font-size: initial;
   }
+}
+
+/* ── Avocloud logo animation ────────────────────────────────── */
+
+.avo-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  text-decoration: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* Icon + AV text share same grid cell */
+.avo-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  transition: opacity .32s ease,
+              transform .32s cubic-bezier(.77,0,.18,1);
+}
+.avo-icon > * { grid-area: 1/1; display: flex; align-items: center; }
+
+.avo-av {
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity .32s ease,
+              transform .32s cubic-bezier(.77,0,.18,1);
+}
+
+.avo-text-wrap {
+  overflow: hidden;
+  max-width: 0;
+  display: flex;
+  align-items: baseline;
+  transition: max-width .4s cubic-bezier(.77,0,.18,1);
+}
+
+.avo-text {
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: transform .4s cubic-bezier(.77,0,.18,1),
+              opacity .3s ease .05s;
+}
+
+.avo-dot { opacity: .55; }
+
+.avo-path {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
 }
