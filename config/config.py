@@ -51,6 +51,34 @@ class datasys:
     "ticket": {
         "enabled": False
     },
-    "audit_log": []
+    "audit_log": [],
+    "warnings": {},
+    "warn_config": {
+        "mute_at": 3,
+        "kick_at": 5,
+        "ban_at": 7,
+        "mute_duration": 600
+    },
+    "antispam": {
+        "enabled": False,
+        "max_messages": 5,
+        "interval": 5,
+        "max_duplicates": 3,
+        "action": "mute"
+    },
+    "welcomer": {
+        "enabled": False,
+        "channel": 0,
+        "message": "Welcome {user} to {server}!",
+        "leave_enabled": False,
+        "leave_channel": 0,
+        "leave_message": "{user} has left {server}.",
+        "color": "#6F83AA",
+        "image_mode": "none",
+        "card_color": "#1a1a2e",
+        "has_custom_bg": False,
+        "leave_color": "#FFC107"
+    },
+    "custom_commands": {}
 }
 

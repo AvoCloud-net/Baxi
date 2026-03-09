@@ -91,6 +91,35 @@
                 "deflag_user": {
                     "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
                     "success": "Der Benutzer wurde erfolgreich aus dem System ausgetragen."
+                },
+                "warn": {
+                    "title": "Verwarnung",
+                    "success": "{user} wurde verwarnt.\n**Grund:** {reason}\n**Verwarnungen:** {count}",
+                    "escalation_mute": "{user} wurde automatisch für {duration} Minuten stummgeschaltet. ({count} Verwarnungen)",
+                    "escalation_kick": "{user} wurde automatisch vom Server entfernt. ({count} Verwarnungen)",
+                    "escalation_ban": "{user} wurde automatisch gebannt. ({count} Verwarnungen)",
+                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu verwarnen.",
+                    "error": "Ein Fehler ist aufgetreten: {error}"
+                },
+                "unwarn": {
+                    "title": "Verwarnung entfernen",
+                    "success": "Verwarnung `{id}` wurde von {user} entfernt.",
+                    "not_found": "Verwarnung mit ID `{id}` wurde nicht gefunden.",
+                    "error": "Ein Fehler ist aufgetreten: {error}"
+                },
+                "warnings": {
+                    "title": "Verwarnungen",
+                    "no_warnings": "{user} hat keine Verwarnungen.",
+                    "entry": "**ID:** `{id}`\n**Grund:** {reason}\n**Moderator:** {mod}\n**Datum:** {date}"
+                },
+                "customcmd": {
+                    "title": "Custom Commands",
+                    "added": "Command `{trigger}` wurde erfolgreich erstellt.",
+                    "removed": "Command `{trigger}` wurde erfolgreich entfernt.",
+                    "not_found": "Command `{trigger}` wurde nicht gefunden.",
+                    "already_exists": "Command `{trigger}` existiert bereits.",
+                    "no_commands": "Es gibt noch keine Custom Commands auf diesem Server.",
+                    "list_entry": "`{trigger}` - erstellt von {author}"
                 }
             }
         },
@@ -146,6 +175,18 @@
             },
             "terms": {
                 "description": "Der Inhaber dieses Servers hat den Nutzungsbedingungen der Dienste von Baxi und Avocloud.net nicht zugestimmt. Daher wurde dieser Dienst auf diesem Server gesperrt. \n\nUm die Baxi-Dienste wieder zu aktivieren, muss sich jemand aus dem Server Team beim [Baxi-Dashboard]({url}) anmelden und die Nutzungsbedingungen akzeptieren."
+            },
+            "antispam": {
+                "title": "Anti-Spam",
+                "triggered": "{user}, du sendest zu viele Nachrichten. Bitte verlangsame dich.",
+                "duplicate": "{user}, bitte sende nicht die gleiche Nachricht mehrfach.",
+                "muted": "{user} wurde wegen Spam stummgeschaltet.",
+                "warned": "{user} wurde wegen Spam verwarnt."
+            },
+            "welcomer": {
+                "title": "Willkommen",
+                "default_welcome": "Willkommen {user} auf {server}!",
+                "default_leave": "{user} hat {server} verlassen."
             }
         },
         "events": {
@@ -262,6 +303,35 @@
                 "deflag_user": {
                     "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
                     "success": "The user was successfully removed from the system."
+                },
+                "warn": {
+                    "title": "Warning",
+                    "success": "{user} has been warned.\n**Reason:** {reason}\n**Warnings:** {count}",
+                    "escalation_mute": "{user} has been automatically muted for {duration} minutes. ({count} warnings)",
+                    "escalation_kick": "{user} has been automatically kicked from the server. ({count} warnings)",
+                    "escalation_ban": "{user} has been automatically banned. ({count} warnings)",
+                    "missing_perms": "You do not have the necessary permissions to warn this user.",
+                    "error": "An error occurred: {error}"
+                },
+                "unwarn": {
+                    "title": "Remove Warning",
+                    "success": "Warning `{id}` has been removed from {user}.",
+                    "not_found": "Warning with ID `{id}` was not found.",
+                    "error": "An error occurred: {error}"
+                },
+                "warnings": {
+                    "title": "Warnings",
+                    "no_warnings": "{user} has no warnings.",
+                    "entry": "**ID:** `{id}`\n**Reason:** {reason}\n**Moderator:** {mod}\n**Date:** {date}"
+                },
+                "customcmd": {
+                    "title": "Custom Commands",
+                    "added": "Command `{trigger}` has been created successfully.",
+                    "removed": "Command `{trigger}` has been removed successfully.",
+                    "not_found": "Command `{trigger}` was not found.",
+                    "already_exists": "Command `{trigger}` already exists.",
+                    "no_commands": "There are no custom commands on this server yet.",
+                    "list_entry": "`{trigger}` - created by {author}"
                 }
             }
         },
@@ -317,6 +387,18 @@
             },
             "terms": {
                 "description": "The owner of this server has not agreed to the terms and conditions of Baxi and Avocloud.net services. Therefore, this service has been blocked on this server. \n\nTo reactivate Baxi services, someone from the team must log in to the [Baxi Dashboard]({url}) and accept the terms and conditions."
+            },
+            "antispam": {
+                "title": "Anti-Spam",
+                "triggered": "{user}, you are sending too many messages. Please slow down.",
+                "duplicate": "{user}, please do not send the same message multiple times.",
+                "muted": "{user} has been muted for spamming.",
+                "warned": "{user} has been warned for spamming."
+            },
+            "welcomer": {
+                "title": "Welcome",
+                "default_welcome": "Welcome {user} to {server}!",
+                "default_leave": "{user} has left {server}."
             }
         },
         "events": {

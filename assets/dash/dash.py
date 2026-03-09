@@ -713,7 +713,251 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "antispam":
+            data: dict = await quart.request.get_json()
+            antispam = data.get("antispam")
+
+            if not isinstance(antispam, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'antispam' must be an object."}), 400
+
+            if not isinstance(antispam.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            settings = {
+                "enabled": antispam["enabled"],
+                "max_messages": max(2, min(20, int(antispam.get("max_messages", 5)))),
+                "interval": max(2, min(30, int(antispam.get("interval", 5)))),
+                "max_duplicates": max(2, min(10, int(antispam.get("max_duplicates", 3)))),
+                "action": antispam.get("action", "mute") if antispam.get("action") in ["mute", "warn", "kick", "ban"] else "mute",
+            }
+
+            save_data(int(guild_id), "antispam", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "antispam",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "welcomer":
+            data: dict = await quart.request.get_json()
+            welcomer = data.get("welcomer")
+
+            if not isinstance(welcomer, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'welcomer' must be an object."}), 400
+
+            if not isinstance(welcomer.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            # Validate color hex
+            color = str(welcomer.get("color", "#6F83AA"))[:7]
+            if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+                color = "#6F83AA"
+
+            card_color = str(welcomer.get("card_color", "#1a1a2e"))[:7]
+            if not re.match(r'^#[0-9a-fA-F]{6}$', card_color):
+                card_color = "#1a1a2e"
+
+            leave_color = str(welcomer.get("leave_color", "#FFC107"))[:7]
+            if not re.match(r'^#[0-9a-fA-F]{6}$', leave_color):
+                leave_color = "#FFC107"
+
+            image_mode = str(welcomer.get("image_mode", "none"))
+            if image_mode not in ("none", "generate"):
+                image_mode = "none"
+
+            # Check if custom bg exists
+            import os
+            bg_path = f"data/{guild_id}/welcomer_bg.png"
+            has_custom_bg = os.path.exists(bg_path)
+
+            # Convert channel IDs to strings for consistency with frontend
+            channel_val = welcomer.get("channel", "")
+            channel_str = str(channel_val) if channel_val and str(channel_val).isdigit() else ""
+            
+            leave_channel_val = welcomer.get("leave_channel", "")
+            leave_channel_str = str(leave_channel_val) if leave_channel_val and str(leave_channel_val).isdigit() else ""
+            
+            settings = {
+                "enabled": welcomer["enabled"],
+                "channel": channel_str,
+                "message": str(welcomer.get("message", ""))[:1024],
+                "leave_enabled": bool(welcomer.get("leave_enabled", False)),
+                "leave_channel": leave_channel_str,
+                "leave_message": str(welcomer.get("leave_message", ""))[:1024],
+                "color": color,
+                "image_mode": image_mode,
+                "card_color": card_color,
+                "leave_color": leave_color,
+                "has_custom_bg": has_custom_bg,
+            }
+
+            save_data(int(guild_id), "welcomer", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "welcomer",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "custom_commands":
+            data: dict = await quart.request.get_json()
+            cmd_data = data.get("custom_commands")
+
+            if not isinstance(cmd_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            action = cmd_data.get("action")
+            custom_commands: dict = dict(load_data(int(guild_id), "custom_commands"))
+
+            if action == "add":
+                trigger = str(cmd_data.get("trigger", "")).strip()
+                response = str(cmd_data.get("response", "")).strip()
+                embed = bool(cmd_data.get("embed", True))
+
+                if not trigger or not response:
+                    return quart.jsonify({"success": False, "message": "Trigger and response are required."}), 400
+
+                if len(trigger) > 50:
+                    return quart.jsonify({"success": False, "message": "Trigger must be 50 characters or less."}), 400
+
+                if len(response) > 2000:
+                    return quart.jsonify({"success": False, "message": "Response must be 2000 characters or less."}), 400
+
+                if trigger.lower() in {k.lower() for k in custom_commands}:
+                    return quart.jsonify({"success": False, "message": f"Command '{trigger}' already exists."}), 400
+
+                # Embed styling fields
+                embed_color = str(cmd_data.get("embed_color", ""))[:7]
+                if embed_color and not re.match(r'^#[0-9a-fA-F]{6}$', embed_color):
+                    embed_color = ""
+                embed_title = str(cmd_data.get("embed_title", ""))[:256]
+                embed_footer = str(cmd_data.get("embed_footer", ""))[:256]
+
+                user = await discord_auth.fetch_user()
+                custom_commands[trigger] = {
+                    "response": response,
+                    "embed": embed,
+                    "embed_color": embed_color,
+                    "embed_title": embed_title,
+                    "embed_footer": embed_footer,
+                    "created_by": str(user.name),
+                    "created_by_id": int(user.id),
+                    "created_at": str(datetime.now().strftime("%Y-%m-%d")),
+                }
+
+            elif action == "remove":
+                trigger = str(cmd_data.get("trigger", "")).strip()
+                found_key = None
+                for key in custom_commands:
+                    if key.lower() == trigger.lower():
+                        found_key = key
+                        break
+                if found_key is None:
+                    return quart.jsonify({"success": False, "message": f"Command '{trigger}' not found."}), 404
+                del custom_commands[found_key]
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action. Use 'add' or 'remove'."}), 400
+
+            save_data(int(guild_id), "custom_commands", custom_commands)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "custom_commands",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
         return quart.jsonify({"success": True, "message": "Settings applied successfully."})
+
+    @app.route("/api/dash/welcomer-bg/", methods=["GET", "POST", "DELETE"])
+    @requires_authorization
+    async def welcomer_bg():
+        import os
+        guild_id = quart.request.args.get("guild_id") or quart.request.args.get("dash_login")
+
+        if not guild_id:
+            return quart.jsonify({"success": False, "message": "Missing guild_id parameter."}), 400
+
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            guild_member = await guild.fetch_member(user.id)
+            if not guild_member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "You don't have permission to manage this guild."}), 403
+        except Exception:
+            return quart.jsonify({"success": False, "message": "Authorization failed."}), 403
+
+        bg_dir = f"data/{guild_id}"
+        bg_path = f"{bg_dir}/welcomer_bg.png"
+
+        if quart.request.method == "GET":
+            if os.path.exists(bg_path):
+                return await quart.send_file(bg_path, mimetype="image/png")
+            return quart.jsonify({"success": False, "message": "No background image."}), 404
+
+        elif quart.request.method == "POST":
+            files = await quart.request.files
+            bg_file = files.get("bg")
+            if not bg_file:
+                return quart.jsonify({"success": False, "message": "No file uploaded."}), 400
+
+            # Validate file size (max 5MB)
+            bg_data = bg_file.read()
+            if len(bg_data) > 5 * 1024 * 1024:
+                return quart.jsonify({"success": False, "message": "File too large (max 5MB)."}), 400
+
+            os.makedirs(bg_dir, exist_ok=True)
+
+            # Convert to PNG using Pillow for safety
+            from PIL import Image
+            import io
+            try:
+                img = Image.open(io.BytesIO(bg_data))
+                img = img.convert("RGB")
+                img.thumbnail((2048, 2048))
+                img.save(bg_path, "PNG")
+            except Exception:
+                return quart.jsonify({"success": False, "message": "Invalid image file."}), 400
+
+            # Update has_custom_bg in welcomer settings
+            welcomer_data = dict(load_data(int(guild_id), "welcomer"))
+            welcomer_data["has_custom_bg"] = True
+            save_data(int(guild_id), "welcomer", welcomer_data)
+
+            return quart.jsonify({"success": True, "message": "Background uploaded."})
+
+        elif quart.request.method == "DELETE":
+            if os.path.exists(bg_path):
+                os.remove(bg_path)
+            welcomer_data = dict(load_data(int(guild_id), "welcomer"))
+            welcomer_data["has_custom_bg"] = False
+            save_data(int(guild_id), "welcomer", welcomer_data)
+            return quart.jsonify({"success": True, "message": "Background removed."})
 
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():
@@ -847,6 +1091,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "send_messages",
                         "attach_files",
                         "embed_links",
+                    }
+                elif system == "welcomer":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "send_messages",
+                        "embed_links",
+                        "attach_files",
                     }
                 elif system == "category":
                     required_perms = {

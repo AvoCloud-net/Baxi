@@ -11,6 +11,9 @@ import random
 import assets.data as datasys
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
+import assets.message.welcomer as welcomer
+import assets.message.customcmd as customcmd
+from assets.message.antispam import AntiSpam
 import config.config as config
 import discord
 
@@ -24,6 +27,9 @@ from assets.dash.dash import dash_web
 
 
 logger = Logger()
+
+
+antispam_instance = AntiSpam()
 
 
 def events(bot: commands.AutoShardedBot, web):
@@ -210,6 +216,14 @@ def events(bot: commands.AutoShardedBot, web):
 
         asyncio.create_task(process_message(message, bot))
 
+    @bot.event
+    async def on_member_join(member: discord.Member):
+        await welcomer.on_member_join(member, bot)
+
+    @bot.event
+    async def on_member_remove(member: discord.Member):
+        await welcomer.on_member_remove(member, bot)
+
 
 async def process_message(message: discord.Message, bot: commands.AutoShardedBot):
     if message.author.bot:
@@ -221,6 +235,20 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     stats["prossesed_messages"] = int(stats.get("prossesed_messages", 0)) + 1
     datasys.save_data(1001, "stats", stats)
     try:
+        # Anti-Spam check (before other processing)
+        is_spam = await antispam_instance.check(message, bot)
+        if is_spam:
+            try:
+                await message.delete()
+            except discord.Forbidden:
+                pass
+            return
+
+        # Custom commands check
+        handled = await customcmd.check_custom_command(message, bot)
+        if handled:
+            return
+
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
         guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))
         guild_id: int = message.guild.id if message.guild is not None else 0

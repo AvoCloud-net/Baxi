@@ -77,8 +77,12 @@ def load_data(
 
     else:
         data = load_json(f"data/{sid}/conf.json")
-        req_data = data[sys]
-        return req_data
+        if sys in data:
+            return data[sys]
+        # Fall back to default if key missing (e.g. new features on old guilds)
+        if sys in config.datasys.default_data:
+            return config.datasys.default_data[sys]
+        return {}
 
 
 def load_lang(sid: int):

@@ -13,6 +13,7 @@ from assets.buttons import (
     UbanConfirmView,
     ClearConfirmView,
 )
+from assets.message.warnings import add_warning, remove_warning, get_warnings
 import reds_simple_logger
 
 logger = reds_simple_logger.Logger()
@@ -314,6 +315,97 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
             return
         await interaction.response.send_message(embed=embed, view=view)
+
+    # --- Warning System ---
+
+    @bot.tree.command(name="warn", description="Warn a user.")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.describe(user="The user to warn.", reason="Reason for the warning.")
+    async def warn_cmd(interaction: Interaction, user: discord.Member, reason: str = "N/A"):
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+            )
+        await interaction.response.defer()
+        lang = datasys.load_lang_file(interaction.guild.id)
+        try:
+            await add_warning(
+                guild_id=interaction.guild.id,
+                user=user,
+                moderator=interaction.user,
+                reason=reason,
+                bot=bot,
+                channel=interaction.channel,
+            )
+            await interaction.delete_original_response()
+        except Exception as e:
+            await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title=lang["commands"]["admin"]["warn"]["title"],
+                    description=str(lang["commands"]["admin"]["warn"]["error"]).format(error=str(e)),
+                    color=config.Discord.danger_color,
+                )
+            )
+
+    @bot.tree.command(name="unwarn", description="Remove a warning from a user.")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.describe(user="The user to remove the warning from.", warn_id="The warning ID to remove.")
+    async def unwarn_cmd(interaction: Interaction, user: discord.Member, warn_id: str):
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
+        removed = await remove_warning(interaction.guild.id, user.id, warn_id)
+        if removed:
+            embed = discord.Embed(
+                title=f"{config.Icons.info} {lang['commands']['admin']['unwarn']['title']}",
+                description=str(lang["commands"]["admin"]["unwarn"]["success"]).format(id=warn_id, user=user.mention),
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title=lang["commands"]["admin"]["unwarn"]["title"],
+                description=str(lang["commands"]["admin"]["unwarn"]["not_found"]).format(id=warn_id),
+                color=config.Discord.danger_color,
+            )
+        await interaction.response.send_message(embed=embed)
+
+    @bot.tree.command(name="warnings", description="View all warnings for a user.")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.describe(user="The user to check warnings for.")
+    async def warnings_cmd(interaction: Interaction, user: discord.Member):
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+            )
+        lang = datasys.load_lang_file(interaction.guild.id)
+        warns = get_warnings(interaction.guild.id, user.id)
+
+        if not warns:
+            embed = discord.Embed(
+                title=f"{config.Icons.info} {lang['commands']['admin']['warnings']['title']}",
+                description=str(lang["commands"]["admin"]["warnings"]["no_warnings"]).format(user=user.mention),
+                color=config.Discord.color,
+            )
+        else:
+            description = ""
+            for warn in warns:
+                description += str(lang["commands"]["admin"]["warnings"]["entry"]).format(
+                    id=warn["id"], reason=warn["reason"], mod=warn["mod"], date=warn["date"]
+                ) + "\n\n"
+            embed = discord.Embed(
+                title=f"{config.Icons.alert} {lang['commands']['admin']['warnings']['title']} - {user.name} ({len(warns)})",
+                description=description,
+                color=config.Discord.warn_color,
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+
 
 def bot_admin_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Bot admin commands loaded.")

@@ -100,6 +100,18 @@
                 <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
                 Tickets
             </a>
+            <a href="#antispam" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                Anti-Spam
+            </a>
+            <a href="#welcomer" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Welcomer
+            </a>
+            <a href="#customcmds" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                Custom Commands
+            </a>
             <a href="#auditlog" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Audit Log
@@ -529,6 +541,282 @@
                 </div>
             </section>
 
+            <!-- Anti-Spam Config -->
+            <section class="pb-16 dash-section" id="antispam">
+                <div class="section-label">ANTI-SPAM</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                            </svg>
+                            Anti-Spam Config
+                        </h2>
+                        <p class="text-muted">Protect your server from spam and duplicate messages.</p>
+                    </header>
+                    <section>
+                        <form id="antispam-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="antispam-enabled">
+                                    <input type="checkbox" id="antispam-enabled" name="antispam-enabled" value="true">
+                                    Enable Anti-Spam
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antispam-max-messages">Max messages per interval:</label>
+                                <input type="number" id="antispam-max-messages" min="2" max="20" value="5" class="w-full">
+                                <p class="text-muted text-xs">How many messages a user can send within the interval before triggering anti-spam.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antispam-interval">Interval (seconds):</label>
+                                <input type="number" id="antispam-interval" min="2" max="30" value="5" class="w-full">
+                                <p class="text-muted text-xs">Time window in seconds for counting messages.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antispam-max-duplicates">Max duplicate messages:</label>
+                                <input type="number" id="antispam-max-duplicates" min="2" max="10" value="3" class="w-full">
+                                <p class="text-muted text-xs">How many identical messages in a row trigger anti-spam.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antispam-action">Action on spam:</label>
+                                <select id="antispam-action" class="select w-full">
+                                    <option value="mute">Mute (5 min timeout)</option>
+                                    <option value="warn">Warn</option>
+                                    <option value="kick">Kick</option>
+                                    <option value="ban">Ban</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Welcomer Config -->
+            <section class="pb-16 dash-section" id="welcomer">
+                <div class="section-label">WELCOMER</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            Welcomer Config
+                        </h2>
+                        <p class="text-muted">Send welcome and leave messages when members join or leave your server.</p>
+                    </header>
+                    <section>
+                        <form id="welcomer-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="welcomer-enabled">
+                                    <input type="checkbox" id="welcomer-enabled" name="welcomer-enabled" value="true">
+                                    Enable welcome messages
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-channel">Welcome channel:</label>
+                                <select id="welcomer-channel" class="select w-full">
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-welcomer-channel"></div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-message">Welcome message:</label>
+                                <textarea id="welcomer-message" placeholder="Welcome {user} to {server}!" maxlength="1024"
+                                    class="w-full min-h-[80px]"></textarea>
+                                <p class="text-muted text-xs">Variables: {user}, {username}, {displayname}, {server}, {membercount}</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-color">Embed color:</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="welcomer-color" value="#6F83AA" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-color-hex').value=this.value">
+                                    <input type="text" id="welcomer-color-hex" value="#6F83AA" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-color').value=this.value">
+                                </div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-image-mode">Welcome image:</label>
+                                <select id="welcomer-image-mode" class="select w-full" onchange="document.getElementById('welcomer-image-upload-section').classList.toggle('hidden', this.value !== 'generate')">
+                                    <option value="none">No image</option>
+                                    <option value="generate">Auto-generate welcome card</option>
+                                </select>
+                            </div>
+
+                            <div id="welcomer-image-upload-section" class="hidden grid gap-4 pl-4 border-l-2 border-muted">
+                                <div class="grid gap-2">
+                                    <label>Background image:</label>
+                                    <p class="text-muted text-xs">Upload a custom background (1024x500 recommended) or leave empty for the default.</p>
+                                    <input type="file" id="welcomer-bg-upload" accept="image/png,image/jpeg,image/webp" class="w-full">
+                                    <div id="welcomer-bg-preview" class="hidden mt-2">
+                                        <img id="welcomer-bg-img" class="rounded max-h-32 object-cover" alt="Background preview">
+                                        <button type="button" class="btn-outline mt-1 text-xs" style="color:#ef4444;border-color:#ef4444;" onclick="removeWelcomerBg()">Remove background</button>
+                                    </div>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="welcomer-card-color">Card overlay color:</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="welcomer-card-color" value="#1a1a2e" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-card-color-hex').value=this.value">
+                                        <input type="text" id="welcomer-card-color-hex" value="#1a1a2e" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-card-color').value=this.value">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="form-group">
+                                <label for="welcomer-leave-enabled">
+                                    <input type="checkbox" id="welcomer-leave-enabled" name="welcomer-leave-enabled" value="true">
+                                    Enable leave messages
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-leave-channel">Leave channel:</label>
+                                <select id="welcomer-leave-channel" class="select w-full">
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-welcomer-leave-channel"></div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-leave-message">Leave message:</label>
+                                <textarea id="welcomer-leave-message" placeholder="{user} has left {server}." maxlength="1024"
+                                    class="w-full min-h-[80px]"></textarea>
+                                <p class="text-muted text-xs">Variables: {user}, {username}, {displayname}, {server}, {membercount}</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="welcomer-leave-color">Leave embed color:</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="welcomer-leave-color" value="#FFC107" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-leave-color-hex').value=this.value">
+                                    <input type="text" id="welcomer-leave-color-hex" value="#FFC107" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-leave-color').value=this.value">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Custom Commands -->
+            <section class="pb-16 dash-section" id="customcmds">
+                <div class="section-label">CUSTOM COMMANDS</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <polyline points="4 17 10 11 4 5"/>
+                                <line x1="12" y1="19" x2="20" y2="19"/>
+                            </svg>
+                            Custom Commands
+                        </h2>
+                        <p class="text-muted">Create custom text commands for your server. Members can trigger them by typing the trigger word in chat.</p>
+                    </header>
+                    <section>
+                        <!-- Add new command form -->
+                        <form id="customcmd-add-form" class="form grid gap-4 mb-6">
+                            <div class="grid gap-2">
+                                <label for="customcmd-trigger">Trigger:</label>
+                                <input type="text" id="customcmd-trigger" placeholder="!rules" maxlength="50" class="w-full" required>
+                                <p class="text-muted text-xs">The word or phrase users type to trigger this command.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="customcmd-response">Response:</label>
+                                <textarea id="customcmd-response" placeholder="Please follow our rules: ..." maxlength="2000"
+                                    class="w-full min-h-[80px]" required></textarea>
+                                <p class="text-muted text-xs">Variables: {user}, {username}, {server}, {membercount}</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="customcmd-embed">
+                                    <input type="checkbox" id="customcmd-embed" checked onchange="document.getElementById('customcmd-embed-options').classList.toggle('hidden', !this.checked)">
+                                    Send as embed
+                                </label>
+                            </div>
+
+                            <div id="customcmd-embed-options" class="grid gap-4 pl-4 border-l-2 border-muted">
+                                <div class="grid gap-2">
+                                    <label for="customcmd-embed-title">Embed title:</label>
+                                    <input type="text" id="customcmd-embed-title" placeholder="Optional title" maxlength="256" class="w-full">
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="customcmd-embed-color">Embed color:</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="customcmd-embed-color" value="#6F83AA" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('customcmd-embed-color-hex').value=this.value">
+                                        <input type="text" id="customcmd-embed-color-hex" value="#6F83AA" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('customcmd-embed-color').value=this.value">
+                                    </div>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="customcmd-embed-footer">Embed footer:</label>
+                                    <input type="text" id="customcmd-embed-footer" placeholder="Optional footer text" maxlength="256" class="w-full">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary w-full">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M5 12h14"/><path d="M12 5v14"/>
+                                </svg>
+                                Add Command
+                            </button>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <!-- Command list -->
+                        <div id="customcmd-list" class="grid gap-3">
+                            <p class="text-muted text-sm" id="customcmd-empty">No custom commands yet.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
             <!-- Audit Log -->
             <section class="pb-16 dash-section" id="auditlog">
                 <div class="section-label">AUDIT LOG</div>
@@ -748,7 +1036,146 @@
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
             document.getElementById("ticket-color").value = data.ticket.color || '';
+
+            // Anti-Spam
+            if (data.antispam) {
+                document.getElementById('antispam-enabled').checked = data.antispam.enabled === true;
+                document.getElementById('antispam-max-messages').value = data.antispam.max_messages || 5;
+                document.getElementById('antispam-interval').value = data.antispam.interval || 5;
+                document.getElementById('antispam-max-duplicates').value = data.antispam.max_duplicates || 3;
+                document.getElementById('antispam-action').value = data.antispam.action || 'mute';
+            }
+
+            // Welcomer
+            if (data.welcomer) {
+                document.getElementById('welcomer-enabled').checked = data.welcomer.enabled === true;
+                document.getElementById('welcomer-channel').value = (data.welcomer.channel && String(data.welcomer.channel) !== '0') ? String(data.welcomer.channel) : '';
+                document.getElementById('welcomer-message').value = data.welcomer.message || '';
+                document.getElementById('welcomer-leave-enabled').checked = data.welcomer.leave_enabled === true;
+                document.getElementById('welcomer-leave-channel').value = (data.welcomer.leave_channel && String(data.welcomer.leave_channel) !== '0') ? String(data.welcomer.leave_channel) : '';
+                document.getElementById('welcomer-leave-message').value = data.welcomer.leave_message || '';
+                if (data.welcomer.color) {
+                    document.getElementById('welcomer-color').value = data.welcomer.color;
+                    document.getElementById('welcomer-color-hex').value = data.welcomer.color;
+                }
+                document.getElementById('welcomer-image-mode').value = data.welcomer.image_mode || 'none';
+                document.getElementById('welcomer-image-upload-section').classList.toggle('hidden', (data.welcomer.image_mode || 'none') !== 'generate');
+                if (data.welcomer.card_color) {
+                    document.getElementById('welcomer-card-color').value = data.welcomer.card_color;
+                    document.getElementById('welcomer-card-color-hex').value = data.welcomer.card_color;
+                }
+                if (data.welcomer.leave_color) {
+                    document.getElementById('welcomer-leave-color').value = data.welcomer.leave_color;
+                    document.getElementById('welcomer-leave-color-hex').value = data.welcomer.leave_color;
+                }
+                if (data.welcomer.has_custom_bg) {
+                    document.getElementById('welcomer-bg-preview').classList.remove('hidden');
+                    document.getElementById('welcomer-bg-img').src = '/api/dash/welcomer-bg/?guild_id={{ guild.id }}&dash_login={{ data.dash_login }}';
+                }
+            }
+
+            // Custom Commands
+            renderCustomCommands();
+
             runInitialPermissionChecks();
+        }
+
+        // --- Custom Commands ---
+        function renderCustomCommands() {
+            const list = document.getElementById('customcmd-list');
+            const empty = document.getElementById('customcmd-empty');
+            const cmds = data.custom_commands || {};
+            const keys = Object.keys(cmds);
+
+            // Clear existing command cards (keep the empty message)
+            list.querySelectorAll('.customcmd-card').forEach(el => el.remove());
+
+            if (keys.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            keys.forEach(trigger => {
+                const cmd = cmds[trigger];
+                const card = document.createElement('div');
+                card.className = 'card customcmd-card';
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-semibold"><code>${trigger}</code></h3>
+                            <p class="text-muted text-xs">by ${cmd.created_by || 'Unknown'} &mdash; ${cmd.created_at || ''}</p>
+                        </div>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                            Delete
+                        </button>
+                    </header>
+                    <section>
+                        <p class="text-sm text-muted">${cmd.response || ''}</p>
+                        <p class="text-xs text-muted mt-1">Embed: ${cmd.embed !== false ? 'Yes' : 'No'}${cmd.embed !== false && cmd.embed_color ? ' &bull; Color: <span style="color:'+cmd.embed_color+'">'+cmd.embed_color+'</span>' : ''}${cmd.embed !== false && cmd.embed_title ? ' &bull; Title: '+cmd.embed_title : ''}</p>
+                    </section>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function deleteCustomCmd(trigger) {
+            const payload = { custom_commands: { action: 'remove', trigger: trigger } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=custom_commands&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            delete data.custom_commands[trigger];
+                            renderCustomCommands();
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        document.getElementById('customcmd-add-form').onsubmit = function (event) {
+            event.preventDefault();
+            const trigger = document.getElementById('customcmd-trigger').value.trim();
+            const response = document.getElementById('customcmd-response').value.trim();
+            const embed = document.getElementById('customcmd-embed').checked;
+            const embed_color = document.getElementById('customcmd-embed-color-hex').value.trim();
+            const embed_title = document.getElementById('customcmd-embed-title').value.trim();
+            const embed_footer = document.getElementById('customcmd-embed-footer').value.trim();
+            if (!trigger || !response) return;
+            const payload = { custom_commands: { action: 'add', trigger, response, embed, embed_color, embed_title, embed_footer } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=custom_commands&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (!data.custom_commands) data.custom_commands = {};
+                            data.custom_commands[trigger] = { response, embed, embed_color, embed_title, embed_footer, created_by: '{{ user.name }}', created_at: new Date().toISOString().split('T')[0] };
+                            renderCustomCommands();
+                            document.getElementById('customcmd-trigger').value = '';
+                            document.getElementById('customcmd-response').value = '';
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
         }
 
         document.getElementById('chatfilter-form').onsubmit = function (event) {
@@ -829,6 +1256,90 @@
             const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('antispam-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('antispam-enabled').checked;
+            const max_messages = parseInt(document.getElementById('antispam-max-messages').value);
+            const interval = parseInt(document.getElementById('antispam-interval').value);
+            const max_duplicates = parseInt(document.getElementById('antispam-max-duplicates').value);
+            const action = document.getElementById('antispam-action').value;
+            const payload = { antispam: { enabled, max_messages, interval, max_duplicates, action } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=antispam&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        function removeWelcomerBg() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('DELETE', '/api/dash/welcomer-bg/?guild_id={{ guild.id }}&dash_login={{ data.dash_login }}');
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            document.getElementById('welcomer-bg-preview').classList.add('hidden');
+                            document.getElementById('welcomer-bg-upload').value = '';
+                            if (data.welcomer) data.welcomer.has_custom_bg = false;
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        document.getElementById('welcomer-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('welcomer-enabled').checked;
+            const channel = document.getElementById('welcomer-channel').value;
+            const message = document.getElementById('welcomer-message').value;
+            const leave_enabled = document.getElementById('welcomer-leave-enabled').checked;
+            const leave_channel = document.getElementById('welcomer-leave-channel').value;
+            const leave_message = document.getElementById('welcomer-leave-message').value;
+            const color = document.getElementById('welcomer-color-hex').value.trim();
+            const image_mode = document.getElementById('welcomer-image-mode').value;
+            const card_color = document.getElementById('welcomer-card-color-hex').value.trim();
+            const leave_color = document.getElementById('welcomer-leave-color-hex').value.trim();
+            const payload = { welcomer: { enabled, channel, message, leave_enabled, leave_channel, leave_message, color, image_mode, card_color, leave_color } };
+
+            // Upload background image if selected
+            const bgFile = document.getElementById('welcomer-bg-upload').files[0];
+            if (bgFile && image_mode === 'generate') {
+                const formData = new FormData();
+                formData.append('bg', bgFile);
+                const uploadXhr = new XMLHttpRequest();
+                uploadXhr.open('POST', '/api/dash/welcomer-bg/?guild_id={{ guild.id }}&dash_login={{ data.dash_login }}');
+                uploadXhr.send(formData);
+            }
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=welcomer&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
@@ -925,10 +1436,14 @@
             const tc = document.getElementById('ticket-channel')?.value;
             const ttc = document.getElementById('ticket-transcript-channel')?.value;
             const tcat = document.getElementById('ticket-cat')?.value;
+            const wc = document.getElementById('welcomer-channel')?.value;
+            const wlc = document.getElementById('welcomer-leave-channel')?.value;
             if (gc) checkChannelPermissions('globalchat', gc, 'feedback-globalchat-channel');
             if (tc) checkChannelPermissions('ticket', tc, 'feedback-ticket-channel');
             if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
             if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
+            if (wc) checkChannelPermissions('welcomer', wc, 'feedback-welcomer-channel');
+            if (wlc) checkChannelPermissions('welcomer', wlc, 'feedback-welcomer-leave-channel');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -940,6 +1455,10 @@
                 checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel'));
             document.getElementById('ticket-cat')?.addEventListener('change', e =>
                 checkChannelPermissions('category', e.target.value, 'feedback-category-channel'));
+            document.getElementById('welcomer-channel')?.addEventListener('change', e =>
+                checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-channel'));
+            document.getElementById('welcomer-leave-channel')?.addEventListener('change', e =>
+                checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-leave-channel'));
         });
 
         function checkBotRolePosition() {
