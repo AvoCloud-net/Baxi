@@ -339,6 +339,29 @@ html:not(.dark) .dash-nav {
   60%  { transform: translateY(-5px); }
 }
 
+/* ── Feature adoption badge ───────────────────────────────── */
+
+.adoption-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(147, 51, 234, 0.15);
+  color: rgb(192, 132, 252);
+  border: 1px solid rgba(147, 51, 234, 0.25);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+html:not(.dark) .adoption-badge {
+  background-color: rgba(147, 51, 234, 0.1);
+  color: rgb(109, 40, 217);
+  border-color: rgba(147, 51, 234, 0.2);
+}
+
 /* ── Highlight badges ─────────────────────────────────────── */
 
 .highlight-purple {

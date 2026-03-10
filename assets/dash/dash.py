@@ -17,6 +17,69 @@ from typing import cast
 import config.config as config
 from assets.buttons import TicketView
 import time
+import json
+import os
+
+
+def get_feature_adoption() -> dict:
+    """Calculate what percentage of all servers use each feature."""
+    data_dir = "data"
+    counts = {
+        "chatfilter": 0,
+        "ticket": 0,
+        "antispam": 0,
+        "welcomer": 0,
+        "livestream": 0,
+        "custom_commands": 0,
+        "globalchat": 0,
+    }
+    try:
+        guild_dirs = [
+            d for d in os.listdir(data_dir)
+            if os.path.isdir(os.path.join(data_dir, d)) and d.isdigit() and d != "1001"
+        ]
+    except FileNotFoundError:
+        return {k: 0 for k in counts}
+
+    total = len(guild_dirs)
+    if total == 0:
+        return {k: 0 for k in counts}
+
+    gc_enabled_guilds: set = set()
+    try:
+        with open(os.path.join(data_dir, "1001", "conf.json"), "r", encoding="utf-8") as f:
+            gc_data = json.load(f)
+        for gid, gc_conf in gc_data.get("globalchat", {}).items():
+            if gc_conf.get("enabled", False):
+                gc_enabled_guilds.add(gid)
+    except Exception:
+        pass
+
+    for guild_id in guild_dirs:
+        conf_path = os.path.join(data_dir, guild_id, "conf.json")
+        if not os.path.exists(conf_path):
+            continue
+        try:
+            with open(conf_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+        except Exception:
+            continue
+        if conf.get("chatfilter", {}).get("enabled", False):
+            counts["chatfilter"] += 1
+        if conf.get("ticket", {}).get("enabled", False):
+            counts["ticket"] += 1
+        if conf.get("antispam", {}).get("enabled", False):
+            counts["antispam"] += 1
+        if conf.get("welcomer", {}).get("enabled", False):
+            counts["welcomer"] += 1
+        if conf.get("livestream", {}).get("enabled", False):
+            counts["livestream"] += 1
+        if conf.get("custom_commands"):
+            counts["custom_commands"] += 1
+        if guild_id in gc_enabled_guilds:
+            counts["globalchat"] += 1
+
+    return {k: round(v / total * 100) for k, v in counts.items()}
 
 
 def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
@@ -330,6 +393,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 else {"enabled": False, "channel": ""}
             )
             guild_conf["guild_id"] = str(guild.id)
+            guild_conf["dash_login"] = guild_id
+            guild_conf["name"] = guild.name
+            guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
 
             channels = await guild.fetch_channels()
 
@@ -393,6 +459,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 nick=bot_nick,
                 stats=stats,
                 greeting=get_time_based_greeting(user.name),
+                feature_adoption=get_feature_adoption(),
             )
 
         except discord.NotFound:

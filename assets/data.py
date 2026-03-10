@@ -59,15 +59,22 @@ def load_data(
             return {}
         guild = bot.get_guild(int(sid))
         if guild is None:
-            return {}
-        guild_icon = guild.icon.url if guild.icon is not None else ""
-        guild_info = {
-            "name": guild.name,
-            "id": guild.id,
-            "icon_url": guild_icon,
-            "member_count": len(guild.members),
-            "dash_login": dash_login,
-        }
+            guild_info = {
+                "name": "",
+                "id": sid,
+                "icon_url": "",
+                "member_count": 0,
+                "dash_login": dash_login,
+            }
+        else:
+            guild_icon = guild.icon.url if guild.icon is not None else ""
+            guild_info = {
+                "name": guild.name,
+                "id": guild.id,
+                "icon_url": guild_icon,
+                "member_count": len(guild.members),
+                "dash_login": dash_login,
+            }
         if str(sid) in gc_data:
             guild_gc_data = {"globalchat": gc_data[str(sid)]}
             guild_conf = {**guild_info, **guild_data, **guild_gc_data}

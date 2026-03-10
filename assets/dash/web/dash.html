@@ -304,7 +304,8 @@
             <section class="pb-16 dash-section" id="config-chatfilter">
                 <div class="section-label">CHATFILTER CONFIG</div>
                 <div class="card">
-                        <header>
+                        <header style="position:relative;">
+                            <span class="adoption-badge">used by {{ feature_adoption.chatfilter }}% of servers</span>
                             <h2 class="text-xl font-semibold flex items-center gap-2">
                                 <svg class="lucide" viewBox="0 0 24 24">
                                     <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
@@ -388,7 +389,8 @@
             <section class="pb-16 dash-section" id="globalchat">
                 <div class="section-label">GLOBAL CHAT</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.globalchat }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/>
@@ -443,7 +445,8 @@
             <section class="pb-16 dash-section" id="ticket">
                 <div class="section-label">SUPPORT TICKET</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.ticket }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
@@ -549,7 +552,8 @@
             <section class="pb-16 dash-section" id="antispam">
                 <div class="section-label">ANTI-SPAM</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.antispam }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
@@ -619,7 +623,8 @@
             <section class="pb-16 dash-section" id="welcomer">
                 <div class="section-label">WELCOMER</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.welcomer }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -752,7 +757,8 @@
             <section class="pb-16 dash-section" id="livestream">
                 <div class="section-label">LIVESTREAM</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.livestream }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <polygon points="23 7 16 12 23 17 23 7"/>
@@ -838,7 +844,8 @@
             <section class="pb-16 dash-section" id="customcmds">
                 <div class="section-label">CUSTOM COMMANDS</div>
                 <div class="card">
-                    <header>
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.custom_commands }}% of servers</span>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <polyline points="4 17 10 11 4 5"/>
@@ -1053,8 +1060,8 @@
     </div>
 
     <script>
-        const data = JSON.parse('{{ data | tojson }}');
-        const nick = JSON.parse('{{ nick | tojson }}');
+        const data = {{ data | tojson }};
+        const nick = {{ nick | tojson }};
 
         const parseWords = input => input.split(',').map(w => w.trim()).filter(w => w.length > 0);
 
