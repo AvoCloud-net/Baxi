@@ -15,5 +15,9 @@ class Ai:
     uri: str = "http://localhost:8080/api/chat/completions" #NOT NEEDED
     api_key: str = "OPENWEBUI-API-KEY" #NOT NEEDED
 
+class Twitch:
+    client_id: str = "YOUR-TWITCH-CLIENT-ID"
+    client_secret: str = "YOUR-TWITCH-CLIENT-SECRET"
+
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED

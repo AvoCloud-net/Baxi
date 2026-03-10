@@ -1,11 +1,14 @@
 import quart
 from quart import redirect, url_for, Markup, session
 from assets.data import load_data, save_data
+import assets.data as datasys
 from quart import render_template, send_from_directory, abort
 from discord.ext import commands
 import discord
+import aiohttp
 import config.auth as auth
 from typing import Optional
+from assets.livestream import twitch_api
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from datetime import datetime
 import random
@@ -885,6 +888,154 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "success": True,
                 "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
                 "sys": "custom_commands",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "livestream":
+            data: dict = await quart.request.get_json()
+            livestream = data.get("livestream")
+
+            if not isinstance(livestream, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'livestream' must be an object."}), 400
+
+            action = livestream.get("action", "save")
+
+            if action == "add":
+                login = str(livestream.get("login", "")).strip().lower()
+                if not login:
+                    return quart.jsonify({"success": False, "message": "Twitch username is required."}), 400
+                if not re.fullmatch(r"[a-z0-9_]{2,25}", login):
+                    return quart.jsonify({"success": False, "message": "Invalid Twitch username format."}), 400
+
+                ls_config = dict(load_data(int(guild_id), "livestream"))
+                streamers = ls_config.get("streamers", [])
+
+                if len(streamers) >= 10:
+                    return quart.jsonify({"success": False, "message": "Maximum of 10 streamers reached."}), 400
+
+                if any(s.get("login", "").lower() == login for s in streamers):
+                    return quart.jsonify({"success": False, "message": f"'{login}' is already being tracked."}), 400
+
+                # Validate that the Twitch user exists
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                    users = await twitch_api.get_users(session, [login])
+                if login not in users:
+                    return quart.jsonify({"success": False, "message": f"Twitch user '{login}' not found."}), 404
+
+                display_name = users[login]["display_name"]
+
+                # Create a text channel for this streamer
+                category_id = ls_config.get("category_id", "")
+                category = None
+                if category_id:
+                    try:
+                        cat_channel = await guild.fetch_channel(int(category_id))
+                        if isinstance(cat_channel, discord.CategoryChannel):
+                            category = cat_channel
+                    except (discord.NotFound, discord.HTTPException, ValueError):
+                        pass
+
+                lang_file = datasys.load_lang_file(int(guild_id))
+                ls_lang = lang_file.get("systems", {}).get("livestream", {})
+                channel_name = ls_lang.get("channel_name_offline", "\U0001f534\u2502{name}").format(
+                    name=display_name.lower()
+                )
+
+                try:
+                    new_channel = await guild.create_text_channel(
+                        name=channel_name,
+                        category=category,
+                        reason=f"Baxi Livestream: tracking {display_name}",
+                    )
+                except discord.Forbidden:
+                    return quart.jsonify({"success": False, "message": "Bot does not have permission to create channels."}), 403
+
+                # Build initial offline embed
+                profile = users[login]
+                offline_embed = discord.Embed(
+                    title=ls_lang.get("embed_offline_title", "{name} is offline").format(name=display_name),
+                    description=ls_lang.get("embed_offline_description", "{name} is not streaming right now. Check back later!").format(name=display_name),
+                    url=f"https://twitch.tv/{login}",
+                    color=discord.Color.red(),
+                )
+                if profile.get("offline_image_url"):
+                    offline_embed.set_image(url=profile["offline_image_url"])
+                if profile.get("profile_image_url"):
+                    offline_embed.set_thumbnail(url=profile["profile_image_url"])
+                offline_embed.set_footer(text=ls_lang.get("embed_footer", "Baxi Livestream - avocloud.net"))
+
+                msg = await new_channel.send(embed=offline_embed)
+
+                streamer_entry = {
+                    "login": login,
+                    "display_name": display_name,
+                    "channel_id": str(new_channel.id),
+                    "message_id": str(msg.id),
+                    "profile_image_url": profile.get("profile_image_url", ""),
+                }
+                streamers.append(streamer_entry)
+                ls_config["streamers"] = streamers
+                save_data(int(guild_id), "livestream", ls_config)
+
+            elif action == "remove":
+                login = str(livestream.get("login", "")).strip().lower()
+                if not login:
+                    return quart.jsonify({"success": False, "message": "Twitch username is required."}), 400
+
+                ls_config = dict(load_data(int(guild_id), "livestream"))
+                streamers = ls_config.get("streamers", [])
+                found = None
+                for s in streamers:
+                    if s.get("login", "").lower() == login:
+                        found = s
+                        break
+
+                if not found:
+                    return quart.jsonify({"success": False, "message": f"'{login}' is not being tracked."}), 404
+
+                # Delete the channel
+                channel_id = found.get("channel_id")
+                if channel_id:
+                    try:
+                        ch = await guild.fetch_channel(int(channel_id))
+                        await ch.delete(reason=f"Baxi Livestream: stopped tracking {login}")
+                    except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        pass
+
+                streamers = [s for s in streamers if s.get("login", "").lower() != login]
+                ls_config["streamers"] = streamers
+                save_data(int(guild_id), "livestream", ls_config)
+
+            elif action == "save":
+                if not isinstance(livestream.get("enabled"), bool):
+                    return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+                ls_config = dict(load_data(int(guild_id), "livestream"))
+                ls_config["enabled"] = livestream["enabled"]
+
+                category_id = str(livestream.get("category_id", "")).strip()
+                if category_id and not re.fullmatch(r"\d{17,19}", category_id):
+                    return quart.jsonify({"success": False, "message": "Invalid category ID format."}), 400
+                ls_config["category_id"] = category_id
+
+                ping_role = str(livestream.get("ping_role", "")).strip()
+                if ping_role and not re.fullmatch(r"\d{17,19}", ping_role):
+                    return quart.jsonify({"success": False, "message": "Invalid ping role ID format."}), 400
+                ls_config["ping_role"] = ping_role
+
+                save_data(int(guild_id), "livestream", ls_config)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "livestream",
             }
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)

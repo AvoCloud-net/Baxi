@@ -7,7 +7,7 @@ class Discord:
     color = discord.Color.from_rgb(111, 131, 170)
     danger_color = discord.Color.from_rgb(220, 53, 69)
     warn_color = discord.Color.from_rgb(255, 193, 7)
-    version = "6.5.0"
+    version = "6.6.1"
 
 
 class Web:
@@ -33,6 +33,13 @@ class Icons:
     share = "<:Share:1397351564414423171>"
     user = "<:person:1397349540906008597>"
     message = "<:Message:1397352374376599695>"
+
+
+class Twitch:
+    api_url = "https://api.twitch.tv/helix"
+    token_url = "https://id.twitch.tv/oauth2/token"
+    max_checks_per_minute = 20
+    check_interval_seconds = 60
 
 
 class Globalchat:
@@ -79,6 +86,11 @@ class datasys:
         "has_custom_bg": False,
         "leave_color": "#FFC107"
     },
-    "custom_commands": {}
+    "custom_commands": {},
+    "livestream": {
+        "enabled": False,
+        "streamers": [],
+        "category_id": ""
+    }
 }
 

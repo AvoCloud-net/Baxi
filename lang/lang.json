@@ -187,6 +187,18 @@
                 "title": "Willkommen",
                 "default_welcome": "Willkommen {user} auf {server}!",
                 "default_leave": "{user} hat {server} verlassen."
+            },
+            "livestream": {
+                "title": "Livestream",
+                "channel_name_online": "\ud83d\udfe2\u2502{name}",
+                "channel_name_offline": "\ud83d\udd34\u2502{name}",
+                "embed_online_title": "{name} ist jetzt LIVE!",
+                "embed_online_game": "Spiel",
+                "embed_online_viewers": "Zuschauer",
+                "embed_online_started": "Gestartet",
+                "embed_offline_title": "{name} ist offline",
+                "embed_offline_description": "{name} streamt gerade nicht. Schau sp\u00e4ter wieder vorbei!",
+                "embed_footer": "Baxi Livestream - avocloud.net"
             }
         },
         "events": {
@@ -399,6 +411,18 @@
                 "title": "Welcome",
                 "default_welcome": "Welcome {user} to {server}!",
                 "default_leave": "{user} has left {server}."
+            },
+            "livestream": {
+                "title": "Livestream",
+                "channel_name_online": "\ud83d\udfe2\u2502{name}",
+                "channel_name_offline": "\ud83d\udd34\u2502{name}",
+                "embed_online_title": "{name} is now LIVE!",
+                "embed_online_game": "Game",
+                "embed_online_viewers": "Viewers",
+                "embed_online_started": "Started",
+                "embed_offline_title": "{name} is offline",
+                "embed_offline_description": "{name} is not streaming right now. Check back later!",
+                "embed_footer": "Baxi Livestream - avocloud.net"
             }
         },
         "events": {
