@@ -19,7 +19,7 @@ import discord
 
 from typing import cast
 from assets.share import globalchat_message_data
-from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask
+from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -139,6 +139,11 @@ def events(bot: commands.AutoShardedBot, web):
             livestream_task = LivestreamTask(bot)
             livestream_task.check_streams.start()
             logger.debug.success("Livestream check task started.")
+
+            logger.working("Starting StatsChannels task...")
+            stats_channels_task = StatsChannelsTask(bot)
+            stats_channels_task.update_stats_channels.start()
+            logger.debug.success("Stats channels update task started.")
 
         except Exception as e:
             await bot.change_presence(

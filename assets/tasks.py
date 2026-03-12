@@ -381,3 +381,89 @@ class LivestreamTask:
             return int(dt.timestamp())
         except (ValueError, AttributeError):
             return 0
+
+
+STAT_TYPES = ["members", "humans", "bots", "channels", "roles"]
+
+
+class StatsChannelsTask:
+    """Background task that updates voice channel names with server statistics.
+
+    Runs every 10 minutes to stay within Discord's channel rename rate limits.
+    Only updates a channel if the displayed value has actually changed.
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+        # Cache last displayed values: {guild_id: {stat_type: last_count}}
+        self._last_values: dict[int, dict[str, int]] = {}
+
+    @tasks.loop(minutes=10)
+    async def update_stats_channels(self):
+        try:
+            await self._do_update()
+        except Exception as e:
+            logger.error(f"[StatsChannels] Error in update_stats_channels: {e}")
+
+    async def _do_update(self):
+        for guild in self.bot.guilds:
+            try:
+                sc_config = dict(datasys.load_data(guild.id, "stats_channels"))
+                if not sc_config.get("enabled", False):
+                    continue
+
+                stats_cfg = sc_config.get("stats", {})
+                counts = self._compute_counts(guild)
+
+                for stat_type in STAT_TYPES:
+                    stat = stats_cfg.get(stat_type, {})
+                    if not stat.get("enabled", False):
+                        continue
+
+                    channel_id = stat.get("channel_id", "")
+                    if not channel_id:
+                        continue
+
+                    channel = guild.get_channel(int(channel_id))
+                    if not isinstance(channel, discord.VoiceChannel):
+                        continue
+
+                    count = counts.get(stat_type, 0)
+                    last = self._last_values.get(guild.id, {}).get(stat_type)
+                    if last == count:
+                        continue
+
+                    template = stat.get("template", f"{stat_type.capitalize()}: {{count}}")
+                    new_name = template.replace("{count}", str(count))
+
+                    try:
+                        await channel.edit(name=new_name)
+                        if guild.id not in self._last_values:
+                            self._last_values[guild.id] = {}
+                        self._last_values[guild.id][stat_type] = count
+                        logger.debug.info(
+                            f"[StatsChannels] {guild.id} | {stat_type} -> {new_name}"
+                        )
+                    except discord.Forbidden:
+                        logger.error(
+                            f"[StatsChannels] Cannot edit channel in guild {guild.id}"
+                        )
+                    except discord.HTTPException as e:
+                        logger.error(
+                            f"[StatsChannels] HTTP error for guild {guild.id}: {e}"
+                        )
+            except Exception as e:
+                logger.error(f"[StatsChannels] Error processing guild {guild.id}: {e}")
+
+    @staticmethod
+    def _compute_counts(guild: discord.Guild) -> dict[str, int]:
+        all_members = guild.members
+        bots = sum(1 for m in all_members if m.bot)
+        humans = len(all_members) - bots
+        return {
+            "members": guild.member_count or len(all_members),
+            "humans": humans,
+            "bots": bots,
+            "channels": len(guild.channels),
+            "roles": len(guild.roles),
+        }

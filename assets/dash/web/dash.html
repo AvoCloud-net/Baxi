@@ -112,6 +112,10 @@
                 <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                 Livestream
             </a>
+            <a href="#stats-channels" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Stats Channels
+            </a>
             <a href="#customcmds" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 Custom Commands
@@ -840,6 +844,111 @@
                 </div>
             </section>
 
+            <!-- Server Stats Channels -->
+            <section class="pb-16 dash-section" id="stats-channels">
+                <div class="section-label">SERVER STATS CHANNELS</div>
+                <div class="card">
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.stats_channels }}% of servers</span>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <line x1="18" y1="20" x2="18" y2="10"/>
+                                <line x1="12" y1="20" x2="12" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                            Stats Channels
+                        </h2>
+                        <p class="text-muted">Display server statistics in voice channel names. Channels update every 10 minutes.</p>
+                    </header>
+                    <section>
+                        <form id="stats-channels-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="sc-enabled">
+                                    <input type="checkbox" id="sc-enabled" name="sc-enabled" value="true">
+                                    Enable Stats Channels
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="sc-category">Channel category:</label>
+                                <select id="sc-category" class="select w-full">
+                                    <option value="">-- No category (root) --</option>
+                                    {% for id, name in categorys.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-3">
+                                <p class="text-sm font-medium">Select which stats to display. A dedicated voice channel is created per enabled stat.</p>
+
+                                <div class="card p-4 grid gap-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" id="sc-members-enabled">
+                                        <span class="font-medium">Total Members</span>
+                                    </label>
+                                    <div class="grid gap-1">
+                                        <label for="sc-members-template" class="text-sm text-muted">Template (use <code>{count}</code>):</label>
+                                        <input type="text" id="sc-members-template" class="input w-full" maxlength="64" placeholder="Members: {count}">
+                                    </div>
+                                </div>
+
+                                <div class="card p-4 grid gap-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" id="sc-humans-enabled">
+                                        <span class="font-medium">Humans (no Bots)</span>
+                                    </label>
+                                    <div class="grid gap-1">
+                                        <label for="sc-humans-template" class="text-sm text-muted">Template:</label>
+                                        <input type="text" id="sc-humans-template" class="input w-full" maxlength="64" placeholder="Humans: {count}">
+                                    </div>
+                                </div>
+
+                                <div class="card p-4 grid gap-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" id="sc-bots-enabled">
+                                        <span class="font-medium">Bots</span>
+                                    </label>
+                                    <div class="grid gap-1">
+                                        <label for="sc-bots-template" class="text-sm text-muted">Template:</label>
+                                        <input type="text" id="sc-bots-template" class="input w-full" maxlength="64" placeholder="Bots: {count}">
+                                    </div>
+                                </div>
+
+                                <div class="card p-4 grid gap-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" id="sc-channels-enabled">
+                                        <span class="font-medium">Channels</span>
+                                    </label>
+                                    <div class="grid gap-1">
+                                        <label for="sc-channels-template" class="text-sm text-muted">Template:</label>
+                                        <input type="text" id="sc-channels-template" class="input w-full" maxlength="64" placeholder="Channels: {count}">
+                                    </div>
+                                </div>
+
+                                <div class="card p-4 grid gap-3">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" id="sc-roles-enabled">
+                                        <span class="font-medium">Roles</span>
+                                    </label>
+                                    <div class="grid gap-1">
+                                        <label for="sc-roles-template" class="text-sm text-muted">Template:</label>
+                                        <input type="text" id="sc-roles-template" class="input w-full" maxlength="64" placeholder="Roles: {count}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button type="submit" class="btn-primary" id="sc-save-btn">
+                                    <span id="sc-save-spinner" class="spinner hidden"></span>
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Custom Commands -->
             <section class="pb-16 dash-section" id="customcmds">
                 <div class="section-label">CUSTOM COMMANDS</div>
@@ -1178,6 +1287,18 @@
                 document.getElementById('livestream-ping-role').value = data.livestream.ping_role || '';
             }
             renderStreamers();
+
+            // Stats Channels
+            if (data.stats_channels) {
+                document.getElementById('sc-enabled').checked = data.stats_channels.enabled === true;
+                document.getElementById('sc-category').value = data.stats_channels.category_id || '';
+                const scStats = data.stats_channels.stats || {};
+                ['members', 'humans', 'bots', 'channels', 'roles'].forEach(function(t) {
+                    const s = scStats[t] || {};
+                    document.getElementById('sc-' + t + '-enabled').checked = s.enabled === true;
+                    document.getElementById('sc-' + t + '-template').value = s.template || '';
+                });
+            }
 
             // Custom Commands
             renderCustomCommands();
@@ -1533,6 +1654,43 @@
         document.getElementById('livestream-add-login').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); addStreamer(); }
         });
+
+        document.getElementById('stats-channels-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('sc-enabled').checked;
+            const category_id = document.getElementById('sc-category').value;
+            const stats = {};
+            ['members', 'humans', 'bots', 'channels', 'roles'].forEach(function (t) {
+                const tmpl = document.getElementById('sc-' + t + '-template').value.trim();
+                stats[t] = {
+                    enabled: document.getElementById('sc-' + t + '-enabled').checked,
+                    template: tmpl || (t.charAt(0).toUpperCase() + t.slice(1) + ': {count}'),
+                };
+            });
+            const payload = { stats_channels: { enabled, category_id, stats } };
+            const spinner = document.getElementById('sc-save-spinner');
+            spinner.classList.remove('hidden');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=stats_channels&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    spinner.classList.add('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.stats_channels) {
+                            data.stats_channels.enabled = enabled;
+                            data.stats_channels.category_id = category_id;
+                            data.stats_channels.stats = stats;
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
 
         function removeWelcomerBg() {
             const xhr = new XMLHttpRequest();

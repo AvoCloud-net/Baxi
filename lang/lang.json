@@ -199,6 +199,9 @@
                 "embed_offline_title": "{name} ist offline",
                 "embed_offline_description": "{name} streamt gerade nicht. Schau sp\u00e4ter wieder vorbei!",
                 "embed_footer": "Baxi Livestream - avocloud.net"
+            },
+            "stats_channels": {
+                "title": "Stats Channels"
             }
         },
         "events": {
@@ -423,6 +426,9 @@
                 "embed_offline_title": "{name} is offline",
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
                 "embed_footer": "Baxi Livestream - avocloud.net"
+            },
+            "stats_channels": {
+                "title": "Stats Channels"
             }
         },
         "events": {

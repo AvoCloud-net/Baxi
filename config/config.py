@@ -7,7 +7,7 @@ class Discord:
     color = discord.Color.from_rgb(111, 131, 170)
     danger_color = discord.Color.from_rgb(220, 53, 69)
     warn_color = discord.Color.from_rgb(255, 193, 7)
-    version = "6.6.1"
+    version = "6.7.0"
 
 
 class Web:
@@ -91,6 +91,17 @@ class datasys:
         "enabled": False,
         "streamers": [],
         "category_id": ""
+    },
+    "stats_channels": {
+        "enabled": False,
+        "category_id": "",
+        "stats": {
+            "members":  {"enabled": False, "channel_id": "", "template": "Members: {count}"},
+            "humans":   {"enabled": False, "channel_id": "", "template": "Humans: {count}"},
+            "bots":     {"enabled": False, "channel_id": "", "template": "Bots: {count}"},
+            "channels": {"enabled": False, "channel_id": "", "template": "Channels: {count}"},
+            "roles":    {"enabled": False, "channel_id": "", "template": "Roles: {count}"}
+        }
     }
 }
 

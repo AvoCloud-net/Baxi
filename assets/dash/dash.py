@@ -32,6 +32,7 @@ def get_feature_adoption() -> dict:
         "livestream": 0,
         "custom_commands": 0,
         "globalchat": 0,
+        "stats_channels": 0,
     }
     try:
         guild_dirs = [
@@ -78,6 +79,8 @@ def get_feature_adoption() -> dict:
             counts["custom_commands"] += 1
         if guild_id in gc_enabled_guilds:
             counts["globalchat"] += 1
+        if conf.get("stats_channels", {}).get("enabled", False):
+            counts["stats_channels"] += 1
 
     return {k: round(v / total * 100) for k, v in counts.items()}
 
@@ -1103,6 +1106,121 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "success": True,
                 "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
                 "sys": "livestream",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "stats_channels":
+            data: dict = await quart.request.get_json()
+            sc_data = data.get("stats_channels")
+
+            if not isinstance(sc_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'stats_channels' must be an object."}), 400
+
+            if not isinstance(sc_data.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            category_id = str(sc_data.get("category_id", "")).strip()
+            if category_id and not re.fullmatch(r"\d{17,19}", category_id):
+                return quart.jsonify({"success": False, "message": "Invalid category ID format."}), 400
+
+            allowed_stat_types = ["members", "humans", "bots", "channels", "roles"]
+            sc_config = dict(load_data(int(guild_id), "stats_channels"))
+            old_stats = sc_config.get("stats", {})
+            new_stats = {}
+
+            incoming_stats = sc_data.get("stats", {})
+            if not isinstance(incoming_stats, dict):
+                return quart.jsonify({"success": False, "message": "'stats' must be an object."}), 400
+
+            for stat_type in allowed_stat_types:
+                stat = incoming_stats.get(stat_type, {})
+                if not isinstance(stat, dict):
+                    stat = {}
+
+                stat_enabled = bool(stat.get("enabled", False))
+                template = str(stat.get("template", f"{stat_type.capitalize()}: {{count}}"))[:64]
+                # Replace any literal \{count\} variant back to {count}
+                if "{count}" not in template:
+                    template = f"{stat_type.capitalize()}: {{count}}"
+
+                old_stat = old_stats.get(stat_type, {})
+                old_channel_id = old_stat.get("channel_id", "")
+
+                if stat_enabled and not old_channel_id:
+                    # Create a new voice channel for this stat
+                    try:
+                        category = None
+                        if category_id:
+                            fetched_cat = await guild.fetch_channel(int(category_id))
+                            if isinstance(fetched_cat, discord.CategoryChannel):
+                                category = fetched_cat
+
+                        cached_guild = bot.get_guild(int(guild_id))
+                        if cached_guild is not None:
+                            _counts = {
+                                "members": cached_guild.member_count or 0,
+                                "humans": sum(1 for m in cached_guild.members if not m.bot),
+                                "bots": sum(1 for m in cached_guild.members if m.bot),
+                                "channels": len(cached_guild.channels),
+                                "roles": len(cached_guild.roles),
+                            }
+                            initial_name = template.replace("{count}", str(_counts.get(stat_type, 0)))
+                        else:
+                            initial_name = template.replace("{count}", "…")
+                        new_ch = await guild.create_voice_channel(
+                            name=initial_name,
+                            category=category,
+                            reason="Baxi Stats Channel setup",
+                        )
+                        # Make the channel read-only for everyone
+                        await new_ch.set_permissions(
+                            guild.default_role,
+                            connect=False,
+                            view_channel=True,
+                        )
+                        new_stats[stat_type] = {
+                            "enabled": True,
+                            "channel_id": str(new_ch.id),
+                            "template": template,
+                        }
+                    except discord.Forbidden:
+                        return quart.jsonify({"success": False, "message": f"Missing permissions to create voice channel for '{stat_type}'."}), 403
+                    except Exception as e:
+                        return quart.jsonify({"success": False, "message": f"Could not create channel for '{stat_type}': {e}"}), 500
+
+                elif not stat_enabled and old_channel_id:
+                    # Delete the voice channel
+                    try:
+                        ch = await guild.fetch_channel(int(old_channel_id))
+                        await ch.delete(reason="Baxi Stats Channel removed")
+                    except (discord.Forbidden, discord.NotFound, discord.HTTPException):
+                        pass
+                    new_stats[stat_type] = {"enabled": False, "channel_id": "", "template": template}
+
+                else:
+                    # Keep existing channel_id, just update template/enabled
+                    new_stats[stat_type] = {
+                        "enabled": stat_enabled,
+                        "channel_id": old_channel_id,
+                        "template": template,
+                    }
+
+            sc_config["enabled"] = sc_data["enabled"]
+            sc_config["category_id"] = category_id
+            sc_config["stats"] = new_stats
+            save_data(int(guild_id), "stats_channels", sc_config)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "stats_channels",
             }
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
