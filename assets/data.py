@@ -1,5 +1,7 @@
 import json
 import os
+import re as _re
+import datetime
 import discord
 from discord.ext import commands
 from typing import Optional, Union
@@ -164,6 +166,55 @@ class Server_info_return:
         self.icon = guild.icon
         self.id = guild.id
         self.name = guild.name
+
+
+def parse_duration(s: str) -> Optional[datetime.timedelta]:
+    """Parse '7d', '2h30m', '1w', '30m', '10s' → timedelta. Returns None if invalid."""
+    m = _re.fullmatch(r'(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?', s.strip().lower())
+    if not m or not any(m.groups()):
+        return None
+    td = datetime.timedelta(
+        weeks=int(m.group(1) or 0),
+        days=int(m.group(2) or 0),
+        hours=int(m.group(3) or 0),
+        minutes=int(m.group(4) or 0),
+        seconds=int(m.group(5) or 0),
+    )
+    return td if td.total_seconds() > 0 else None
+
+
+def format_duration(td: datetime.timedelta) -> str:
+    """Format a timedelta as a compact human-readable string like '7d 2h 30m'."""
+    total = int(td.total_seconds())
+    weeks, rem = divmod(total, 604800)
+    days, rem = divmod(rem, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, seconds = divmod(rem, 60)
+    parts = []
+    if weeks:   parts.append(f"{weeks}w")
+    if days:    parts.append(f"{days}d")
+    if hours:   parts.append(f"{hours}h")
+    if minutes: parts.append(f"{minutes}m")
+    if seconds and not (weeks or days or hours): parts.append(f"{seconds}s")
+    return " ".join(parts) if parts else "0s"
+
+
+def load_temp_actions(sid: int) -> dict:
+    """Load temp_actions.json for a guild. Returns default if missing."""
+    file_path = os.path.join("data", str(sid), "temp_actions.json")
+    if not os.path.exists(file_path):
+        return {"bans": [], "timeouts": []}
+    try:
+        return load_json(file_path)
+    except Exception:
+        return {"bans": [], "timeouts": []}
+
+
+def save_temp_actions(sid: int, data: dict):
+    guild_data_dir = os.path.join("data", str(sid))
+    if not os.path.exists(guild_data_dir):
+        os.makedirs(guild_data_dir)
+    save_json(os.path.join(guild_data_dir, "temp_actions.json"), data)
 
 
 def get_guild_data(gid: int) -> Optional[Server_info_return]:

@@ -102,6 +102,10 @@ class datasys:
             "channels": {"enabled": False, "channel_id": "", "template": "Channels: {count}"},
             "roles":    {"enabled": False, "channel_id": "", "template": "Roles: {count}"}
         }
+    },
+    "auto_roles": {
+        "enabled": False,
+        "roles": []
     }
 }
 

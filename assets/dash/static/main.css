@@ -258,9 +258,8 @@ h2 {
   top: 56px;           /* just below the site-nav */
   z-index: 500;
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
   background: rgba(10, 11, 11, 0.92);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(128, 128, 128, 0.1);
@@ -551,8 +550,7 @@ fieldset {
 /* ── Mobile overrides ─────────────────────────────────────── */
 
 @media (max-width: 639px) {
-  /* Nav: fixed (sticky misbehaves when mobile browser chrome hides/shows).
-     Right-edge gradient mask signals that the nav scrolls horizontally. */
+  /* Nav: fixed (sticky misbehaves when mobile browser chrome hides/shows). */
   .dash-nav {
     position: fixed;
     top: 4px;
@@ -563,8 +561,6 @@ fieldset {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     margin-bottom: 0;
-    -webkit-mask: linear-gradient(to right, black 78%, transparent 100%);
-    mask: linear-gradient(to right, black 78%, transparent 100%);
   }
 
   /* Push main content below the now-fixed nav */

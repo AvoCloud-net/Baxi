@@ -17,11 +17,12 @@ import datetime
 
 
 class BanConfirmView(ui.View):
-    def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str):
+    def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str, duration: Optional[datetime.timedelta] = None):
         super().__init__(timeout=None)
         self.user = user
         self.moderator = moderator
         self.reason = reason
+        self.duration = duration
 
     @ui.button(
         label="✅", style=discord.ButtonStyle.danger, custom_id="ban_admin_confirm"
@@ -37,11 +38,43 @@ class BanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
+            duration_str = datasys.format_duration(self.duration) if self.duration else "Permanent"
+            expires_at = datetime.datetime.utcnow() + self.duration if self.duration else None
+
+            # DM user before ban
+            try:
+                dm_embed = discord.Embed(
+                    title=f"You have been banned from **{interaction.guild.name}**",
+                    color=discord.Color.red(),
+                )
+                dm_embed.add_field(name="Reason", value=self.reason, inline=False)
+                dm_embed.add_field(name="Duration", value=duration_str, inline=False)
+                dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+                if expires_at:
+                    dm_embed.add_field(name="Expires", value=f"<t:{int(expires_at.timestamp())}:F>", inline=False)
+                dm_embed.set_footer(text="Baxi - avocloud.net")
+                await self.user.send(embed=dm_embed)
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
             await self.user.ban(
                 reason=str(lang["commands"]["admin"]["ban"]["audit_reason"]).format(
                     moderator=self.user.name, reason=self.reason
                 )
             )
+
+            # Store temp-ban entry for auto-unban
+            if self.duration and expires_at:
+                ta = datasys.load_temp_actions(interaction.guild.id)
+                ta["bans"].append({
+                    "user_id": self.user.id,
+                    "user_name": str(self.user),
+                    "reason": self.reason,
+                    "expires_at": expires_at.isoformat(),
+                    "moderator_name": str(interaction.user),
+                    "guild_name": interaction.guild.name,
+                })
+                datasys.save_temp_actions(interaction.guild.id, ta)
 
             embed = discord.Embed(
                 title=lang["commands"]["admin"]["ban"]["title"],
@@ -63,6 +96,7 @@ class BanConfirmView(ui.View):
                 value=self.reason,
                 inline=False,
             )
+            embed.add_field(name="Duration", value=duration_str, inline=False)
 
             for item in self.children:
                 button = cast(discord.ui.Button, item)
@@ -126,6 +160,19 @@ class KickConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
+            # DM user before kick
+            try:
+                dm_embed = discord.Embed(
+                    title=f"You have been kicked from **{interaction.guild.name}**",
+                    color=discord.Color.orange(),
+                )
+                dm_embed.add_field(name="Reason", value=self.reason, inline=False)
+                dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+                dm_embed.set_footer(text="Baxi - avocloud.net")
+                await self.user.send(embed=dm_embed)
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
             await self.user.kick(
                 reason=str(lang["commands"]["admin"]["kick"]["audit_reason"]).format(
                     moderator=self.user.name, reason=self.reason

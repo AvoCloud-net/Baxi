@@ -19,7 +19,7 @@ import discord
 
 from typing import cast
 from assets.share import globalchat_message_data
-from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask
+from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask, TempActionsTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -145,6 +145,11 @@ def events(bot: commands.AutoShardedBot, web):
             stats_channels_task.update_stats_channels.start()
             logger.debug.success("Stats channels update task started.")
 
+            logger.working("Starting TempActions task...")
+            temp_actions_task = TempActionsTask(bot)
+            temp_actions_task.check_temp_actions.start()
+            logger.debug.success("Temp actions task started.")
+
         except Exception as e:
             await bot.change_presence(
                 activity=discord.Activity(
@@ -229,6 +234,16 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_member_join(member: discord.Member):
         await welcomer.on_member_join(member, bot)
+
+        ar_config: dict = dict(datasys.load_data(member.guild.id, "auto_roles"))
+        if ar_config.get("enabled") and ar_config.get("roles"):
+            for role_id in ar_config["roles"]:
+                try:
+                    role = member.guild.get_role(int(role_id))
+                    if role:
+                        await member.add_roles(role, reason="Baxi Auto-Roles")
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
 
     @bot.event
     async def on_member_remove(member: discord.Member):

@@ -104,9 +104,17 @@
                 <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
                 Anti-Spam
             </a>
+            <a href="#warn-config" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/><path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/></svg>
+                Warnings
+            </a>
             <a href="#welcomer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Welcomer
+            </a>
+            <a href="#auto-roles" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-4"/><path d="M20 9v4"/></svg>
+                Auto-Roles
             </a>
             <a href="#livestream" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -623,6 +631,66 @@
                 </div>
             </section>
 
+            <!-- Auto-Escalation / Warn Config -->
+            <section class="pb-16 dash-section" id="warn-config">
+                <div class="section-label">MODERATION</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/>
+                                <path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/>
+                            </svg>
+                            Auto-Escalation Settings
+                        </h2>
+                        <p class="text-muted">Configure when warnings automatically escalate to mute, kick or ban.</p>
+                    </header>
+                    <section>
+                        <form id="warn-config-form" class="form grid gap-6 settings-form">
+                            <div class="grid gap-2">
+                                <label for="wc-mute-at">Mute at X warnings:</label>
+                                <input type="number" id="wc-mute-at" min="1" max="20" value="3" class="w-full">
+                                <p class="text-muted text-xs">User gets muted after this many warnings.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="wc-kick-at">Kick at X warnings:</label>
+                                <input type="number" id="wc-kick-at" min="1" max="30" value="5" class="w-full">
+                                <p class="text-muted text-xs">User gets kicked after this many warnings.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="wc-ban-at">Ban at X warnings:</label>
+                                <input type="number" id="wc-ban-at" min="1" max="50" value="7" class="w-full">
+                                <p class="text-muted text-xs">User gets permanently banned after this many warnings.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="wc-mute-duration">Mute duration (seconds):</label>
+                                <input type="number" id="wc-mute-duration" min="60" max="604800" value="600" class="w-full">
+                                <p class="text-muted text-xs">How long the auto-mute lasts. 600 = 10 min, 3600 = 1 h, 86400 = 1 day.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Welcomer Config -->
             <section class="pb-16 dash-section" id="welcomer">
                 <div class="section-label">WELCOMER</div>
@@ -734,6 +802,66 @@
                                 <div class="flex items-center gap-2">
                                     <input type="color" id="welcomer-leave-color" value="#FFC107" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-leave-color-hex').value=this.value">
                                     <input type="text" id="welcomer-leave-color-hex" value="#FFC107" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-leave-color').value=this.value">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Auto-Roles -->
+            <section class="pb-16 dash-section" id="auto-roles">
+                <div class="section-label">AUTO-ROLES</div>
+                <div class="card">
+                    <header style="position:relative;">
+                        <span class="adoption-badge">used by {{ feature_adoption.auto_roles }}% of servers</span>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M22 11h-4"/><path d="M20 9v4"/>
+                            </svg>
+                            Auto-Roles
+                        </h2>
+                        <p class="text-muted">Automatically assign roles to every member when they join the server.</p>
+                    </header>
+                    <section>
+                        <form id="auto-roles-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="ar-enabled">
+                                    <input type="checkbox" id="ar-enabled" name="ar-enabled" value="true">
+                                    Enable Auto-Roles
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Roles to assign on join:</label>
+                                <p class="text-muted text-xs">Select one or more roles. Members receive all selected roles instantly when they join.</p>
+                                <div id="ar-roles-list" class="grid gap-2 max-h-64 overflow-y-auto border border-muted rounded p-3">
+                                    {% for role_id, role_name in roles.items() %}
+                                    {% if role_name != '@everyone' %}
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" class="ar-role-cb" value="{{ role_id }}">
+                                        <span class="text-sm">{{ role_name }}</span>
+                                    </label>
+                                    {% endif %}
+                                    {% endfor %}
                                 </div>
                             </div>
 
@@ -938,12 +1066,21 @@
                                 </div>
                             </div>
 
-                            <div class="flex justify-end">
-                                <button type="submit" class="btn-primary" id="sc-save-btn">
-                                    <span id="sc-save-spinner" class="spinner hidden"></span>
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
                                     Save
-                                </button>
-                            </div>
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
                         </form>
                     </section>
                 </div>
@@ -1252,6 +1389,14 @@
                 document.getElementById('antispam-action').value = data.antispam.action || 'mute';
             }
 
+            // Warn Config (auto-escalation)
+            if (data.warn_config) {
+                document.getElementById('wc-mute-at').value = data.warn_config.mute_at ?? 3;
+                document.getElementById('wc-kick-at').value = data.warn_config.kick_at ?? 5;
+                document.getElementById('wc-ban-at').value = data.warn_config.ban_at ?? 7;
+                document.getElementById('wc-mute-duration').value = data.warn_config.mute_duration ?? 600;
+            }
+
             // Welcomer
             if (data.welcomer) {
                 document.getElementById('welcomer-enabled').checked = data.welcomer.enabled === true;
@@ -1278,6 +1423,15 @@
                     document.getElementById('welcomer-bg-preview').classList.remove('hidden');
                     document.getElementById('welcomer-bg-img').src = '/api/dash/welcomer-bg/?guild_id={{ guild.id }}&dash_login={{ data.dash_login }}';
                 }
+            }
+
+            // Auto-Roles
+            if (data.auto_roles) {
+                document.getElementById('ar-enabled').checked = data.auto_roles.enabled === true;
+                const enabledRoles = data.auto_roles.roles || [];
+                document.querySelectorAll('.ar-role-cb').forEach(cb => {
+                    cb.checked = enabledRoles.includes(cb.value);
+                });
             }
 
             // Livestream
@@ -1629,6 +1783,53 @@
             };
         };
 
+        document.getElementById('warn-config-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = {
+                warn_config: {
+                    mute_at: parseInt(document.getElementById('wc-mute-at').value),
+                    kick_at: parseInt(document.getElementById('wc-kick-at').value),
+                    ban_at: parseInt(document.getElementById('wc-ban-at').value),
+                    mute_duration: parseInt(document.getElementById('wc-mute-duration').value),
+                }
+            };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=warn_config&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('auto-roles-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('ar-enabled').checked;
+            const roles = Array.from(document.querySelectorAll('.ar-role-cb:checked')).map(cb => cb.value);
+            const payload = { auto_roles: { enabled, roles } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=auto_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
         document.getElementById('livestream-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('livestream-enabled').checked;
@@ -1668,15 +1869,12 @@
                 };
             });
             const payload = { stats_channels: { enabled, category_id, stats } };
-            const spinner = document.getElementById('sc-save-spinner');
-            spinner.classList.remove('hidden');
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=stats_channels&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    spinner.classList.add('hidden');
                     try {
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
@@ -1992,15 +2190,17 @@
             const sections = document.querySelectorAll('.dash-section');
             const navLinks = document.querySelectorAll('.dash-nav-item');
 
+            let scrollLock = false;
+            let scrollLockTimer = null;
+
             const observer = new IntersectionObserver(entries => {
+                if (scrollLock) return;
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         navLinks.forEach(l => l.classList.remove('active'));
                         const active = document.querySelector(`.dash-nav-item[href="#${entry.target.id}"]`);
                         if (active) {
                             active.classList.add('active');
-                            /* Scroll the nav so the active item is always visible,
-                               even when partially off-screen behind the right-edge mask. */
                             active.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
                         }
                     }
@@ -2011,6 +2211,28 @@
 
             /* Set first item active on load */
             if (navLinks.length) navLinks[0].classList.add('active');
+
+            /* Center target section when clicking a nav item */
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').slice(1);
+                    const target = document.getElementById(targetId);
+                    if (!target) return;
+
+                    /* Immediately highlight the clicked item */
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    this.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+
+                    /* Lock observer until scroll animation finishes (~600ms) */
+                    scrollLock = true;
+                    clearTimeout(scrollLockTimer);
+                    scrollLockTimer = setTimeout(() => { scrollLock = false; }, 600);
+
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
         });
     </script>
 

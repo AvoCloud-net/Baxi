@@ -33,6 +33,7 @@ def get_feature_adoption() -> dict:
         "custom_commands": 0,
         "globalchat": 0,
         "stats_channels": 0,
+        "auto_roles": 0,
     }
     try:
         guild_dirs = [
@@ -81,6 +82,8 @@ def get_feature_adoption() -> dict:
             counts["globalchat"] += 1
         if conf.get("stats_channels", {}).get("enabled", False):
             counts["stats_channels"] += 1
+        if conf.get("auto_roles", {}).get("enabled", False):
+            counts["auto_roles"] += 1
 
     return {k: round(v / total * 100) for k, v in counts.items()}
 
@@ -820,6 +823,43 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "warn_config":
+            data: dict = await quart.request.get_json()
+            wc = data.get("warn_config")
+
+            if not isinstance(wc, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            try:
+                mute_at = max(1, min(20, int(wc.get("mute_at", 3))))
+                kick_at = max(1, min(30, int(wc.get("kick_at", 5))))
+                ban_at = max(1, min(50, int(wc.get("ban_at", 7))))
+                mute_duration = max(60, min(604800, int(wc.get("mute_duration", 600))))
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "All fields must be integers."}), 400
+
+            settings = {
+                "mute_at": mute_at,
+                "kick_at": kick_at,
+                "ban_at": ban_at,
+                "mute_duration": mute_duration,
+            }
+            save_data(int(guild_id), "warn_config", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "warn_config",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
         elif system == "welcomer":
             data: dict = await quart.request.get_json()
             welcomer = data.get("welcomer")
@@ -1221,6 +1261,37 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "success": True,
                 "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
                 "sys": "stats_channels",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "auto_roles":
+            data: dict = await quart.request.get_json()
+            ar_data = data.get("auto_roles")
+
+            if not isinstance(ar_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'auto_roles' must be an object."}), 400
+
+            if not isinstance(ar_data.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            role_ids = ar_data.get("roles", [])
+            if not isinstance(role_ids, list) or not all(isinstance(r, str) and re.fullmatch(r"\d{17,19}", r) for r in role_ids):
+                return quart.jsonify({"success": False, "message": "'roles' must be a list of valid Discord role ID strings."}), 400
+
+            ar_config = {"enabled": ar_data["enabled"], "roles": role_ids}
+            save_data(int(guild_id), "auto_roles", ar_config)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "auto_roles",
             }
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)

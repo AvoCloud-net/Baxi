@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import datetime
 import discord
 from collections import deque
 from discord.ext import tasks, commands
@@ -467,3 +468,91 @@ class StatsChannelsTask:
             "channels": len(guild.channels),
             "roles": len(guild.roles),
         }
+
+
+class TempActionsTask:
+    """Background task that checks expired temp-bans and timeouts, unbans users and sends DMs."""
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=60)
+    async def check_temp_actions(self):
+        try:
+            await self._do_check()
+        except Exception as e:
+            logger.error(f"[TempActions] Error in check_temp_actions: {e}")
+
+    async def _do_check(self):
+        now = datetime.datetime.utcnow()
+
+        for guild in self.bot.guilds:
+            try:
+                ta = datasys.load_temp_actions(guild.id)
+                changed = False
+
+                # --- Temp bans ---
+                remaining_bans = []
+                for entry in ta.get("bans", []):
+                    try:
+                        expires_at = datetime.datetime.fromisoformat(entry["expires_at"])
+                        if now >= expires_at:
+                            user_id = int(entry["user_id"])
+                            try:
+                                user = await self.bot.fetch_user(user_id)
+                                await guild.unban(user, reason="Temporary ban expired")
+                                try:
+                                    dm_embed = discord.Embed(
+                                        title=f"Your ban in **{entry.get('guild_name', guild.name)}** has expired",
+                                        description="Your temporary ban has been lifted. You may rejoin the server.",
+                                        color=discord.Color.green(),
+                                    )
+                                    dm_embed.add_field(name="Original reason", value=entry.get("reason", "N/A"), inline=False)
+                                    dm_embed.set_footer(text="Baxi - avocloud.net")
+                                    await user.send(embed=dm_embed)
+                                except (discord.Forbidden, discord.HTTPException):
+                                    pass
+                                changed = True
+                            except discord.NotFound:
+                                changed = True  # Already unbanned, drop entry
+                            except discord.HTTPException:
+                                remaining_bans.append(entry)  # Retry next cycle
+                        else:
+                            remaining_bans.append(entry)
+                    except Exception as e:
+                        logger.error(f"[TempActions] Error processing ban entry: {e}")
+                        remaining_bans.append(entry)
+                ta["bans"] = remaining_bans
+
+                # --- Temp timeouts (DM on expiry) ---
+                remaining_timeouts = []
+                for entry in ta.get("timeouts", []):
+                    try:
+                        expires_at = datetime.datetime.fromisoformat(entry["expires_at"])
+                        if now >= expires_at:
+                            user_id = int(entry["user_id"])
+                            try:
+                                user = await self.bot.fetch_user(user_id)
+                                dm_embed = discord.Embed(
+                                    title=f"Your mute in **{entry.get('guild_name', guild.name)}** has expired",
+                                    description="You can now send messages again.",
+                                    color=discord.Color.green(),
+                                )
+                                dm_embed.add_field(name="Original reason", value=entry.get("reason", "N/A"), inline=False)
+                                dm_embed.set_footer(text="Baxi - avocloud.net")
+                                await user.send(embed=dm_embed)
+                            except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+                                pass
+                            changed = True
+                        else:
+                            remaining_timeouts.append(entry)
+                    except Exception as e:
+                        logger.error(f"[TempActions] Error processing timeout entry: {e}")
+                        remaining_timeouts.append(entry)
+                ta["timeouts"] = remaining_timeouts
+
+                if changed:
+                    datasys.save_temp_actions(guild.id, ta)
+
+            except Exception as e:
+                logger.error(f"[TempActions] Error for guild {guild.id}: {e}")

@@ -141,10 +141,9 @@ def utility_commands(bot: commands.AutoShardedBot):
 
     @bot.tree.command(name="ban", description="Ban a user from the server.")
     @app_commands.checks.has_permissions(ban_members=True)
-    @app_commands.describe(user="The user you want to ban.")
-    @app_commands.describe(reason="The reason for the ban.")
+    @app_commands.describe(user="The user you want to ban.", reason="The reason for the ban.", duration="Optional duration, e.g. 7d, 2h, 30m. Leave empty for permanent.")
     async def ban_cmd(
-        interaction: Interaction, user: discord.Member, reason: str = "N/A"
+        interaction: Interaction, user: discord.Member, reason: str = "N/A", duration: Optional[str] = None
     ):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
@@ -163,6 +162,16 @@ def utility_commands(bot: commands.AutoShardedBot):
                 lang["commands"]["admin"]["ban"]["missing_perms"], ephemeral=True
             )
             return
+
+        parsed_duration = None
+        if duration:
+            parsed_duration = datasys.parse_duration(duration)
+            if parsed_duration is None:
+                return await interaction.response.send_message(
+                    "❌ Invalid duration format. Use e.g. `7d`, `2h`, `30m`, `1w`.", ephemeral=True
+                )
+
+        duration_str = datasys.format_duration(parsed_duration) if parsed_duration else "Permanent"
 
         embed = discord.Embed(
             title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["ban"]["title"]}',
@@ -184,8 +193,9 @@ def utility_commands(bot: commands.AutoShardedBot):
             value=reason,
             inline=False,
         )
+        embed.add_field(name="Duration", value=duration_str, inline=False)
 
-        view = BanConfirmView(user, member, reason)
+        view = BanConfirmView(user, member, reason, parsed_duration)
 
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -315,6 +325,122 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
             return
         await interaction.response.send_message(embed=embed, view=view)
+
+    @bot.tree.command(name="mute", description="Timeout (mute) a user.")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.describe(user="The user to mute.", duration="Duration, e.g. 10m, 1h, 7d (max 28 days).", reason="Reason for the mute.")
+    async def mute_cmd(interaction: Interaction, user: discord.Member, duration: str = "10m", reason: str = "N/A"):
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+            )
+        await interaction.response.defer(ephemeral=True)
+        lang = datasys.load_lang_file(interaction.guild.id)
+        member = cast(discord.Member, interaction.user)
+
+        if member.top_role <= user.top_role:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description="❌ You cannot mute someone with an equal or higher role.", color=config.Discord.danger_color)
+            )
+
+        parsed = datasys.parse_duration(duration)
+        if not parsed:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description="❌ Invalid duration format. Use e.g. `10m`, `1h`, `7d`.", color=config.Discord.danger_color)
+            )
+        if parsed.total_seconds() > 28 * 86400:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description="❌ Maximum timeout duration is 28 days.", color=config.Discord.danger_color)
+            )
+
+        duration_str = datasys.format_duration(parsed)
+        until = discord.utils.utcnow() + parsed
+        until_naive = datetime.datetime.utcnow() + parsed
+
+        try:
+            dm_embed = discord.Embed(
+                title=f"You have been muted in **{interaction.guild.name}**",
+                color=config.Discord.warn_color,
+            )
+            dm_embed.add_field(name="Duration", value=duration_str, inline=False)
+            dm_embed.add_field(name="Reason", value=reason, inline=False)
+            dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+            dm_embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
+            dm_embed.set_footer(text="Baxi - avocloud.net")
+            await user.send(embed=dm_embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+        try:
+            await user.timeout(until, reason=reason)
+        except discord.Forbidden:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description="❌ Missing permissions to timeout this user.", color=config.Discord.danger_color)
+            )
+
+        ta = datasys.load_temp_actions(interaction.guild.id)
+        ta["timeouts"].append({
+            "user_id": user.id,
+            "user_name": str(user),
+            "reason": reason,
+            "expires_at": until_naive.isoformat(),
+            "moderator_name": str(interaction.user),
+            "guild_name": interaction.guild.name,
+        })
+        datasys.save_temp_actions(interaction.guild.id, ta)
+
+        embed = discord.Embed(
+            title=f"{config.Icons.people_crossed} User muted",
+            description=f"{user.mention} has been muted.",
+            color=config.Discord.warn_color,
+        )
+        embed.add_field(name="Duration", value=duration_str, inline=False)
+        embed.add_field(name="Reason", value=reason, inline=False)
+        embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
+        await interaction.edit_original_response(embed=embed)
+
+    @bot.tree.command(name="unmute", description="Remove the timeout from a user.")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.describe(user="The user to unmute.", reason="Reason for unmuting.")
+    async def unmute_cmd(interaction: Interaction, user: discord.Member, reason: str = "N/A"):
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(
+                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+            )
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            await user.timeout(None, reason=reason)
+        except discord.Forbidden:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description="❌ Missing permissions to unmute this user.", color=config.Discord.danger_color)
+            )
+
+        # Remove stored timeout entry + DM user
+        ta = datasys.load_temp_actions(interaction.guild.id)
+        ta["timeouts"] = [t for t in ta["timeouts"] if t.get("user_id") != user.id]
+        datasys.save_temp_actions(interaction.guild.id, ta)
+
+        try:
+            dm_embed = discord.Embed(
+                title=f"Your mute in **{interaction.guild.name}** has been removed",
+                description="You can now send messages again.",
+                color=discord.Color.green(),
+            )
+            dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+            dm_embed.set_footer(text="Baxi - avocloud.net")
+            await user.send(embed=dm_embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+        embed = discord.Embed(
+            title=f"{config.Icons.info} User unmuted",
+            description=f"{user.mention} has been unmuted.",
+            color=discord.Color.green(),
+        )
+        await interaction.edit_original_response(embed=embed)
 
     # --- Warning System ---
 
