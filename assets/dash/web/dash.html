@@ -987,6 +987,10 @@
                             Stats Channels
                         </h2>
                         <p class="text-muted">Display server statistics in voice channel names. Channels update every 10 minutes.</p>
+                        <p class="text-muted text-xs flex items-center gap-1" style="margin-top:0.35rem;">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Next channel update in: <span id="sc-update-timer" style="font-variant-numeric:tabular-nums;font-weight:600;">—</span>
+                        </p>
                     </header>
                     <section>
                         <form id="stats-channels-form" class="form grid gap-6 settings-form">
@@ -2234,6 +2238,22 @@
                 });
             });
         });
+
+        // Stats Channels update countdown (aligns to clock's 10-min marks)
+        (function () {
+            const el = document.getElementById('sc-update-timer');
+            if (!el) return;
+            function tick() {
+                const now = new Date();
+                const secIntoInterval = (now.getMinutes() % 10) * 60 + now.getSeconds();
+                const secLeft = 600 - secIntoInterval;
+                const m = Math.floor(secLeft / 60);
+                const s = secLeft % 60;
+                el.textContent = m + ':' + String(s).padStart(2, '0');
+            }
+            tick();
+            setInterval(tick, 1000);
+        })();
     </script>
 
 <dialog id="remove-streamer-dialog" class="dialog" aria-labelledby="remove-streamer-dialog-title" aria-describedby="remove-streamer-dialog-description">
