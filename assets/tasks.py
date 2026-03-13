@@ -6,7 +6,7 @@ from collections import deque
 from discord.ext import tasks, commands
 
 from reds_simple_logger import Logger
-from assets.share import globalchat_message_data
+from assets.share import globalchat_message_data, phishing_url_list
 from assets.livestream import twitch_api
 import assets.data as datasys
 import config.config as config
@@ -556,3 +556,35 @@ class TempActionsTask:
 
             except Exception as e:
                 logger.error(f"[TempActions] Error for guild {guild.id}: {e}")
+
+
+class PhishingListTask:
+    """Background task that downloads and refreshes the phishing domain list every 12 hours.
+
+    Source: https://github.com/Discord-AntiScam/scam-links
+    """
+
+    @tasks.loop(hours=12)
+    async def update_phishing_list(self):
+        try:
+            await self._fetch_list()
+        except Exception as e:
+            logger.error(f"[PhishingList] Error updating phishing list: {e}")
+
+    async def _fetch_list(self):
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+            async with session.get(config.Chatfilter.phishing_list_url) as response:
+                if response.status == 200:
+                    text = await response.text()
+                    domains = set()
+                    for line in text.splitlines():
+                        line = line.strip().lower()
+                        if line and not line.startswith("#"):
+                            domains.add(line)
+                    phishing_url_list.clear()
+                    phishing_url_list.update(domains)
+                    logger.debug.success(
+                        f"[PhishingList] Updated: {len(phishing_url_list)} phishing domains loaded"
+                    )
+                else:
+                    logger.error(f"[PhishingList] Fetch returned HTTP {response.status}")

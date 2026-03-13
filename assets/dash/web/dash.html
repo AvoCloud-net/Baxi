@@ -128,6 +128,10 @@
                 <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 Custom Commands
             </a>
+            <a href="#temp-voice" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+                Temp Voice
+            </a>
             <a href="#auditlog" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Audit Log
@@ -374,6 +378,17 @@
                                     <label for="c_badwords_input">Custom bad-words:</label>
                                     <input type="text" id="c_badwords_input" placeholder="Type a word and press Enter">
                                     <div id="c_badwords_container" class="tag-input-container"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="chatfilter-phishing">
+                                        <input type="checkbox" id="chatfilter-phishing" name="chatfilter-phishing" value="true">
+                                        Enable Phishing URL Filter
+                                    </label>
+                                    <p class="text-xs text-muted mt-1">
+                                        Detects and blocks known Discord phishing &amp; scam links. Updated every 12 hours from
+                                        <a href="https://github.com/Discord-AntiScam/scam-links" target="_blank" rel="noopener noreferrer" class="underline">Discord-AntiScam/scam-links</a> on GitHub.
+                                    </p>
                                 </div>
 
                                 <button type="submit" class="btn-primary submit-btn w-full">
@@ -1164,6 +1179,77 @@
                 </div>
             </section>
 
+            <!-- Temp Voice Channels -->
+            <section class="pb-16 dash-section" id="temp-voice">
+                <div class="section-label">TEMP VOICE CHANNELS</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="22"/>
+                                <line x1="8" y1="22" x2="16" y2="22"/>
+                            </svg>
+                            Temp Voice Channels
+                        </h2>
+                        <p class="text-muted">When a user joins the trigger channel, a private voice channel is automatically created for them and deleted once it's empty.</p>
+                    </header>
+                    <section>
+                        <form id="temp-voice-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="tv-enabled">
+                                    <input type="checkbox" id="tv-enabled" name="tv-enabled" value="true">
+                                    Enable Temp Voice Channels
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tv-create-channel">Trigger channel (voice channel users join to create a room):</label>
+                                <select id="tv-create-channel" class="select w-full">
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in voice_channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tv-category">Category for new channels:</label>
+                                <select id="tv-category" class="select w-full">
+                                    <option value="">-- Same category as trigger --</option>
+                                    {% for id, name in categorys.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tv-name-template">Channel name template:</label>
+                                <input type="text" id="tv-name-template" class="input w-full" maxlength="64" placeholder="{user}'s Channel">
+                                <p class="text-xs text-muted">Variable: <code>{user}</code> — replaced with the member's display name.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Audit Log -->
             <section class="pb-16 dash-section" id="auditlog">
                 <div class="section-label">AUDIT LOG</div>
@@ -1367,6 +1453,7 @@
                 }
                 renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
                 renderTags('c_badwords', data.chatfilter.c_badwords || []);
+                document.getElementById('chatfilter-phishing').checked = data.chatfilter.phishing_filter === true;
             }
             document.getElementById("general-lang").value = data.lang || 'en';
             document.getElementById("general-nick").value = nick || '';
@@ -1456,6 +1543,14 @@
                     document.getElementById('sc-' + t + '-enabled').checked = s.enabled === true;
                     document.getElementById('sc-' + t + '-template').value = s.template || '';
                 });
+            }
+
+            // Temp Voice
+            if (data.temp_voice) {
+                document.getElementById('tv-enabled').checked = data.temp_voice.enabled === true;
+                document.getElementById('tv-create-channel').value = data.temp_voice.create_channel_id || '';
+                document.getElementById('tv-category').value = data.temp_voice.category_id || '';
+                document.getElementById('tv-name-template').value = data.temp_voice.name_template || "{user}'s Channel";
             }
 
             // Custom Commands
@@ -1677,7 +1772,8 @@
             const system = document.querySelector('input[name="chatfilter-system"]:checked')?.value || null;
             const goodWords = getTags('c_goodwords');
             const badWords = getTags('c_badwords');
-            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [] } };
+            const phishing = document.getElementById('chatfilter-phishing').checked;
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [], phishing_filter: phishing } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -1887,6 +1983,29 @@
                             data.stats_channels.category_id = category_id;
                             data.stats_channels.stats = stats;
                         }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('temp-voice-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('tv-enabled').checked;
+            const create_channel_id = document.getElementById('tv-create-channel').value;
+            const category_id = document.getElementById('tv-category').value;
+            const name_template = document.getElementById('tv-name-template').value.trim() || "{user}'s Channel";
+            const payload = { temp_voice: { enabled, create_channel_id, category_id, name_template } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=temp_voice&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
                     }

@@ -1,7 +1,9 @@
 import aiohttp
 import asyncio
+import re
 from typing import Dict, Any
 from assets.translate import translate_api
+from assets.share import phishing_url_list
 import config.config as config
 import config.auth as auth
 import assets.data as datasys
@@ -13,6 +15,12 @@ class Chatfilter:
 
     async def check(self, message: str, gid: int, cid: int) -> Dict[str, Any]:
         chatfilter_data: dict = dict(datasys.load_data(gid, "chatfilter"))
+
+        if chatfilter_data.get("phishing_filter", False):
+            phishing_result = self._check_phishing_urls(message)
+            if phishing_result.get("flagged"):
+                return phishing_result
+
         preferred_system = chatfilter_data.get("system", "SafeText").lower()
 
         safetext_task = asyncio.create_task(
@@ -140,3 +148,25 @@ class Chatfilter:
         except (aiohttp.ClientError, asyncio.TimeoutError, KeyError) as e:
             print(f"AI check failed: {str(e)}")
             return None
+
+    _URL_PATTERN = re.compile(
+        r"https?://([^\s/]+)"
+        r"|(?<![.\w])([a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+)(?![.\w])"
+    )
+
+    def _check_phishing_urls(self, message: str) -> Dict[str, Any]:
+        if not phishing_url_list:
+            return {"code": "safe", "flagged": False, "distance": None, "reason": None, "json": {}}
+
+        for match in self._URL_PATTERN.finditer(message):
+            raw = (match.group(1) or match.group(2)).lower()
+            domain = raw.split("/")[0].split(":")[0].lstrip("www.")
+            if domain in phishing_url_list:
+                return {
+                    "code": "phishing",
+                    "flagged": True,
+                    "distance": None,
+                    "reason": "phishing",
+                    "json": {"domain": domain},
+                }
+        return {"code": "safe", "flagged": False, "distance": None, "reason": None, "json": {}}

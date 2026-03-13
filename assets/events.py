@@ -18,8 +18,8 @@ import config.config as config
 import discord
 
 from typing import cast
-from assets.share import globalchat_message_data
-from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask, TempActionsTask
+from assets.share import globalchat_message_data, temp_voice_channels
+from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask, TempActionsTask, PhishingListTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -150,6 +150,12 @@ def events(bot: commands.AutoShardedBot, web):
             temp_actions_task.check_temp_actions.start()
             logger.debug.success("Temp actions task started.")
 
+            logger.working("Starting PhishingList task...")
+            phishing_list_task = PhishingListTask()
+            phishing_list_task.update_phishing_list.start()
+            await phishing_list_task._fetch_list()
+            logger.debug.success("Phishing list task started.")
+
         except Exception as e:
             await bot.change_presence(
                 activity=discord.Activity(
@@ -248,6 +254,52 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_member_remove(member: discord.Member):
         await welcomer.on_member_remove(member, bot)
+
+    @bot.event
+    async def on_voice_state_update(
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ):
+        guild = member.guild
+        tv_config: dict = dict(datasys.load_data(guild.id, "temp_voice"))
+
+        # Clean up empty temp channels regardless of feature state
+        if before.channel and before.channel.id in temp_voice_channels:
+            if len(before.channel.members) == 0:
+                try:
+                    await before.channel.delete(reason="Temporary voice channel empty")
+                    temp_voice_channels.discard(before.channel.id)
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+
+        if not tv_config.get("enabled", False):
+            return
+
+        create_channel_id = str(tv_config.get("create_channel_id", ""))
+        name_template = tv_config.get("name_template", "{user}'s Channel")
+        category_id = str(tv_config.get("category_id", ""))
+
+        if after.channel and str(after.channel.id) == create_channel_id:
+            try:
+                category = None
+                if category_id:
+                    cat = guild.get_channel(int(category_id))
+                    if isinstance(cat, discord.CategoryChannel):
+                        category = cat
+                if category is None:
+                    category = after.channel.category
+
+                new_name = name_template.replace("{user}", member.display_name)
+                new_channel = await guild.create_voice_channel(
+                    name=new_name,
+                    category=category,
+                    reason="Baxi Temp Voice",
+                )
+                temp_voice_channels.add(new_channel.id)
+                await member.move_to(new_channel)
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
 
 
 async def process_message(message: discord.Message, bot: commands.AutoShardedBot):
@@ -402,6 +454,7 @@ async def del_chatfilter(
     reason_list: dict = {
         "custom": "Custom badword",
         "internal": "Badword",
+        "phishing": "Phishing / Scam Link",
         "S3": "S3 - Sex-Related Crimes",
         "S4": "S4 - Child Sexual Exploitation",
         "S5": "S5 - Defamation",

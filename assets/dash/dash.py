@@ -411,6 +411,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if isinstance(channel, discord.TextChannel)
             }
 
+            voice_channels = {
+                str(channel.id): channel.name
+                for channel in channels
+                if isinstance(channel, discord.VoiceChannel)
+            }
+
             roles = await guild.fetch_roles()
 
             roles_list = {str(role.id): role.name for role in roles}
@@ -460,6 +466,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 guild=guild,
                 user=user,
                 channels=text_channels,
+                voice_channels=voice_channels,
                 categorys=catrgorys_list,
                 roles=roles_list,
                 nick=bot_nick,
@@ -573,6 +580,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["bypass"] = [
                 w.strip() for w in chatfilter.get("bypass", []) if w and w.strip()
             ]
+            guild_conf["phishing_filter"] = bool(chatfilter.get("phishing_filter", False))
 
             print(guild_conf)
 
@@ -1292,6 +1300,50 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "success": True,
                 "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
                 "sys": "auto_roles",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "temp_voice":
+            data: dict = await quart.request.get_json()
+            tv_data = data.get("temp_voice")
+
+            if not isinstance(tv_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'temp_voice' must be an object."}), 400
+
+            if not isinstance(tv_data.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            create_channel_id = str(tv_data.get("create_channel_id", "")).strip()
+            if create_channel_id and not re.fullmatch(r"\d{17,19}", create_channel_id):
+                return quart.jsonify({"success": False, "message": "Invalid create_channel_id format."}), 400
+
+            category_id = str(tv_data.get("category_id", "")).strip()
+            if category_id and not re.fullmatch(r"\d{17,19}", category_id):
+                return quart.jsonify({"success": False, "message": "Invalid category_id format."}), 400
+
+            name_template = str(tv_data.get("name_template", "{user}'s Channel"))[:64].strip()
+            if not name_template:
+                name_template = "{user}'s Channel"
+
+            tv_config = {
+                "enabled": tv_data["enabled"],
+                "create_channel_id": create_channel_id,
+                "category_id": category_id,
+                "name_template": name_template,
+            }
+            save_data(int(guild_id), "temp_voice", tv_config)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "sys": "temp_voice",
             }
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)

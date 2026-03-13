@@ -7,7 +7,7 @@ class Discord:
     color = discord.Color.from_rgb(111, 131, 170)
     danger_color = discord.Color.from_rgb(220, 53, 69)
     warn_color = discord.Color.from_rgb(255, 193, 7)
-    version = "6.7.0"
+    version = "6.8.0"
 
 
 class Web:
@@ -21,6 +21,8 @@ class Web:
 class Chatfilter:
     chatfilter_url = "http://solyra.avocloud.net:1652/chatfilter"
     ai_url = "https://owui.avocloud.net/api/chat/completions"
+    phishing_list_url = "https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.txt"
+    phishing_list_source = "https://github.com/Discord-AntiScam/scam-links"
 
 
 class Icons:
@@ -53,7 +55,8 @@ class datasys:
     "guild_name": "",
     "terms": False,
     "chatfilter": {
-        "enabled": False
+        "enabled": False,
+        "phishing_filter": False
     },
     "ticket": {
         "enabled": False
@@ -106,6 +109,12 @@ class datasys:
     "auto_roles": {
         "enabled": False,
         "roles": []
+    },
+    "temp_voice": {
+        "enabled": False,
+        "create_channel_id": "",
+        "category_id": "",
+        "name_template": "{user}'s Channel"
     }
 }
 
