@@ -123,7 +123,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     @app.errorhandler(Unauthorized)
     async def redirect_unauthorized(e):
-        return redirect(url_for("login"))
+        return redirect(url_for("welcome"))
+
+    @app.route("/welcome/")
+    async def welcome():
+        stats: dict = dict(load_data(1001, "stats"))
+        return await render_template(
+            "welcome.html",
+            stats=stats,
+            version=config.Discord.version,
+        )
 
     def get_time_based_greeting(username):
         hour = datetime.now().hour
