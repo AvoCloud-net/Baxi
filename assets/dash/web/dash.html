@@ -43,6 +43,12 @@
                 <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
             </span>
         </a>
+        <!-- Hamburger nav toggle (mobile only, hidden on desktop) -->
+        <button class="dash-nav-toggle" id="dash-nav-toggle" aria-expanded="false" aria-controls="dash-nav">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+            <span id="dash-nav-current">Navigate</span>
+            <svg class="dash-nav-toggle__chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
             <svg id="theme-icon" viewBox="0 0 24 24"></svg>
         </button>

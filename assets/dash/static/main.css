@@ -312,7 +312,7 @@ html:not(.dark) .dash-nav {
 
 /* offset anchor scroll targets so they don't hide under the sticky nav */
 .dash-section {
-  scroll-margin-top: 3.5rem;
+  scroll-margin-top: 5.5rem;
 }
 
 /* ── Scroll indicator ─────────────────────────────────────── */
@@ -547,35 +547,112 @@ fieldset {
   min-width: 0;
 }
 
+/* ── Hamburger nav toggle (mobile only) ──────────────────── */
+
+.dash-nav-toggle {
+  display: none; /* hidden on desktop */
+}
+
 /* ── Mobile overrides ─────────────────────────────────────── */
 
 @media (max-width: 639px) {
-  /* Nav: fixed (sticky misbehaves when mobile browser chrome hides/shows). */
-  .dash-nav {
-    position: fixed;
-    top: 4px;
-    left: 0;
-    right: 0;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    margin-bottom: 0;
+
+  /* ── Hamburger toggle: sits inside site-nav between logo and theme toggle ── */
+  .dash-nav-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    border-radius: 2rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1;
+    justify-content: center;
+    margin: 0 0.5rem;
+    max-width: 45vw;
   }
 
-  /* Push main content below the now-fixed nav */
+  .dash-nav-toggle svg {
+    width: 1rem;
+    height: 1rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  .dash-nav-toggle__chevron {
+    opacity: 0.5;
+    transition: transform 0.2s;
+  }
+
+  .dash-nav-toggle[aria-expanded="true"] .dash-nav-toggle__chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ── Dash nav: full-screen overlay on mobile ── */
+  .dash-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9500;
+    flex-direction: column;
+    background: var(--color-bg, #0f0f0f);
+    padding: 5rem 1rem 2rem;
+    overflow-y: auto;
+    gap: 0.15rem;
+    margin: 0;
+    border-top: none;
+    border-bottom: none;
+    margin-bottom: 0;
+    display: none;
+  }
+
+  html:not(.dark) .dash-nav {
+    background: #fff;
+  }
+
+  .dash-nav.open {
+    display: flex;
+  }
+
+  /* Nav items: full-width rows in the overlay */
+  .dash-nav-item {
+    padding: 0.85rem 1rem;
+    border-radius: 0.5rem;
+    border-bottom: none !important;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .dash-nav-item svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .dash-nav-item:hover,
+  .dash-nav-item.active {
+    background: rgba(147, 51, 234, 0.1);
+  }
+
+  /* Push main content below the toggle pill */
   main {
     padding-top: 3.5rem;
   }
 
-  /* Theme toggle: push below the fixed nav so they don't overlap */
-  .theme-toggle {
-    top: 3.25rem; /* nav bottom ≈ 40px + 12px gap */
-  }
-
-  /* Increase scroll-margin so anchor links land below the fixed nav */
+  /* Increase scroll-margin so anchor links land below the toggle pill */
   .dash-section {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: 7rem;
   }
 
   /* ── Button group: compact icon-only pill at bottom center ── */
@@ -605,13 +682,16 @@ fieldset {
     display: none;
   }
 
-  /* Shrink all buttons to icon-only square pills */
+  /* Shrink all buttons to icon-only square pills, centered */
   .local-button-group button {
     padding: 0.65rem !important;
     border-radius: 2rem !important;
-    font-size: 0 !important;   /* hides text nodes */
+    font-size: 0 !important;
     line-height: 0;
     min-width: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* Restore icon sizes inside the shrunken buttons */

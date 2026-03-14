@@ -147,19 +147,22 @@ class LivestreamTask:
         for guild_id, streamer in batch:
             login = streamer["login"].lower()
             is_live = login in live_data
-            was_live = self._was_live.get(guild_id, {}).get(login, False)
 
             if guild_id not in self._was_live:
                 self._was_live[guild_id] = {}
 
-            if is_live != was_live:
-                # Status changed
+            first_check = login not in self._was_live[guild_id]
+            was_live = self._was_live[guild_id].get(login, False)
+
+            if first_check or is_live != was_live:
+                # Status changed (or first check — sync channel name/embed regardless)
                 self._was_live[guild_id][login] = is_live
                 await self._update_channel(
                     guild_id,
                     streamer,
                     is_live,
                     live_data.get(login),
+                    ping=is_live and not first_check,
                 )
             elif is_live and was_live:
                 # Still live - update embed with current viewer count etc.
@@ -183,7 +186,7 @@ class LivestreamTask:
                 if streamer.get("login"):
                     self._check_queue.append((guild.id, streamer))
 
-        logger.debug.info(
+        logger.info(
             f"[Livestream] Queue rebuilt: {len(self._check_queue)} streamer checks queued"
         )
 
@@ -193,6 +196,7 @@ class LivestreamTask:
         streamer: dict,
         is_live: bool,
         stream_data: dict | None,
+        ping: bool = True,
     ):
         """Update the Discord channel name and embed when status changes."""
         guild = self.bot.get_guild(guild_id)
@@ -211,13 +215,13 @@ class LivestreamTask:
         if not isinstance(channel, discord.TextChannel):
             return
 
-        # Update channel name with green/red dot
+        # Update channel name: red dot when live, black dot when offline
         if is_live:
-            new_name = ls_lang.get("channel_name_online", "\U0001f7e2\u2502{name}").format(
+            new_name = ls_lang.get("channel_name_online", "\U0001f534\u2502{name}").format(
                 name=display_name.lower()
             )
         else:
-            new_name = ls_lang.get("channel_name_offline", "\U0001f534\u2502{name}").format(
+            new_name = ls_lang.get("channel_name_offline", "\u26ab\u2502{name}").format(
                 name=display_name.lower()
             )
 
@@ -230,26 +234,36 @@ class LivestreamTask:
         # Build embed
         embed = self._build_embed(ls_lang, display_name, is_live, stream_data, profile)
 
-        # Build ping content for going-live notifications
-        ping_content = None
-        if is_live:
+        # Send a temporary ping message when going live (deleted after short delay).
+        # Discord only sends push notifications for new messages, not edits.
+        # We wait 2s before deleting so Discord has time to dispatch the notification.
+        if is_live and ping:
             ls_config = dict(datasys.load_data(guild_id, "livestream"))
             ping_role_id = ls_config.get("ping_role", "")
             if ping_role_id:
-                ping_content = f"<@&{ping_role_id}>"
+                game = stream_data.get("game_name", "") if stream_data else ""
+                ping_text = ls_lang.get(
+                    "ping_message", "{role} \u2014 **{name}** is now live playing **{game}**!"
+                ).format(role=f"<@&{ping_role_id}>", name=display_name, game=game)
+                try:
+                    ping_msg = await channel.send(content=ping_text)
+                    await asyncio.sleep(2)
+                    await ping_msg.delete()
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
 
-        # Update or send message
+        # Always edit the one permanent embed message (or create it if it doesn't exist yet)
         try:
             if message_id:
                 try:
                     msg = await channel.fetch_message(int(message_id))
-                    await msg.edit(content=ping_content if is_live else None, embed=embed)
+                    await msg.edit(content=None, embed=embed)
                     return
                 except (discord.NotFound, discord.HTTPException):
                     pass
 
-            # Send new message and save its ID
-            msg = await channel.send(content=ping_content, embed=embed)
+            # No existing message yet — send it and save the ID
+            msg = await channel.send(content=None, embed=embed)
             self._save_message_id(guild_id, login, msg.id)
         except discord.Forbidden:
             logger.error(f"[Livestream] Cannot send message in guild {guild_id}")

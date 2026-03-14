@@ -450,7 +450,12 @@ async def del_chatfilter(
     id = os.urandom(8).hex()
     assert message.guild is not None, "Message guild unknown!"
     lang = datasys.load_lang_file(message.guild.id)
-    await message.delete()
+    try:
+        await message.delete()
+        deleted = True
+    except Exception as e:
+        print(f"Chatfilter: Could not delete message: {e}")
+        deleted = False
     reason_list: dict = {
         "custom": "Custom badword",
         "internal": "Badword",
@@ -463,11 +468,12 @@ async def del_chatfilter(
         "S12": "S12 - Sexual Content",
         "S13": "S13 - Elections",
     }
+    desc_key = "description" if deleted else "description_not_deleted"
     embed = discord.Embed(
         title=config.Icons.messageexclamation
         + " "
         + lang["systems"]["chatfilter"]["title"],
-        description=str(lang["systems"]["chatfilter"]["description"]).format(
+        description=str(lang["systems"]["chatfilter"][desc_key]).format(
             user=f"{message.author.mention}",
             id=f"{id}",
             link=f"https://baxi.avocloud.net?id_chatfilter={id}",
@@ -509,3 +515,9 @@ async def del_chatfilter(
     }
     save_data(1001, "chatfilter_log", chatfilter_logs)
     await message.channel.send(embed=embed)
+    if not deleted and reason == "phishing":
+        await message.channel.send(
+            str(lang["systems"]["chatfilter"]["phishing_warning"]).format(
+                user=message.author.mention
+            )
+        )

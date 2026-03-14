@@ -127,6 +127,8 @@
             "chatfilter": {
                 "title": "Chatfilter",
                 "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
+                "description_not_deleted": "Eine Nachricht von {user} wurde als potenziell schädlich eingestuft, konnte jedoch **nicht automatisch gelöscht** werden.\n\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
+                "phishing_warning": "⚠️ **Achtung {user}!** Die obige Nachricht enthält möglicherweise einen **Scam- oder Phishing-Link**. Klicke **NICHT** darauf! Der Link könnte darauf abzielen, deine Daten zu stehlen.",
                 "footer": "Baxi Security - avocloud.net"
             },
             "globalchat": {
@@ -190,15 +192,16 @@
             },
             "livestream": {
                 "title": "Livestream",
-                "channel_name_online": "\ud83d\udfe2\u2502{name}",
-                "channel_name_offline": "\ud83d\udd34\u2502{name}",
+                "channel_name_online": "\ud83d\udd34\u2502{name}",
+                "channel_name_offline": "\u26ab\u2502{name}",
                 "embed_online_title": "{name} ist jetzt LIVE!",
                 "embed_online_game": "Spiel",
                 "embed_online_viewers": "Zuschauer",
                 "embed_online_started": "Gestartet",
                 "embed_offline_title": "{name} ist offline",
                 "embed_offline_description": "{name} streamt gerade nicht. Schau sp\u00e4ter wieder vorbei!",
-                "embed_footer": "Baxi Livestream - avocloud.net"
+                "embed_footer": "Baxi Livestream - avocloud.net",
+                "ping_message": "{role} \u2014 **{name}** streamt jetzt **{game}** live!"
             },
             "stats_channels": {
                 "title": "Stats Channels"
@@ -354,6 +357,8 @@
             "chatfilter": {
                 "title": "Chat Filter",
                 "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
+                "description_not_deleted": "A message from {user} was flagged as potentially harmful, but could **not be deleted automatically**.\n\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
+                "phishing_warning": "⚠️ **Warning {user}!** The message above may contain a **scam or phishing link**. Do **NOT** click on it! The link may be designed to steal your data.",
                 "footer": "Baxi Security - avocloud.net"
             },
             "globalchat": {
@@ -417,15 +422,16 @@
             },
             "livestream": {
                 "title": "Livestream",
-                "channel_name_online": "\ud83d\udfe2\u2502{name}",
-                "channel_name_offline": "\ud83d\udd34\u2502{name}",
+                "channel_name_online": "\ud83d\udd34\u2502{name}",
+                "channel_name_offline": "\u26ab\u2502{name}",
                 "embed_online_title": "{name} is now LIVE!",
                 "embed_online_game": "Game",
                 "embed_online_viewers": "Viewers",
                 "embed_online_started": "Started",
                 "embed_offline_title": "{name} is offline",
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
-                "embed_footer": "Baxi Livestream - avocloud.net"
+                "embed_footer": "Baxi Livestream - avocloud.net",
+                "ping_message": "{role} \u2014 **{name}** is now live playing **{game}**!"
             },
             "stats_channels": {
                 "title": "Stats Channels"
