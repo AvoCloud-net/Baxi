@@ -5,3 +5,5 @@ phishing_url_list: set = set()
 
 temp_voice_channels: set = set()
 
+livestream_task = None
+

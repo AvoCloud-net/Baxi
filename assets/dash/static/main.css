@@ -684,27 +684,33 @@ fieldset {
 
   /* Shrink all buttons to icon-only square pills, centered */
   .local-button-group button {
-    padding: 0.65rem !important;
-    border-radius: 2rem !important;
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
     font-size: 0 !important;
     line-height: 0;
-    min-width: 0;
+    min-width: 0 !important;
+    flex: 0 0 2.75rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 0 !important;
+    overflow: hidden;
   }
 
-  /* Restore icon sizes inside the shrunken buttons */
+  /* Icon sizes inside the shrunken buttons */
   .local-button-group button svg {
     width: 1.15rem !important;
     height: 1.15rem !important;
-    font-size: initial;
+    flex-shrink: 0;
   }
 
   .local-button-group button img {
-    width: 1.5rem !important;
-    height: 1.5rem !important;
-    font-size: initial;
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    flex-shrink: 0;
+    border-radius: 50%;
   }
 }
 

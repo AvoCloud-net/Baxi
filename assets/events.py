@@ -19,6 +19,7 @@ import discord
 
 from typing import cast
 from assets.share import globalchat_message_data, temp_voice_channels
+import assets.share as share
 from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask, TempActionsTask, PhishingListTask
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -136,8 +137,8 @@ def events(bot: commands.AutoShardedBot, web):
             logger.debug.success("Update stats task started.")
 
             logger.working("Starting Livestream task...")
-            livestream_task = LivestreamTask(bot)
-            livestream_task.check_streams.start()
+            share.livestream_task = LivestreamTask(bot)
+            share.livestream_task.check_streams.start()
             logger.debug.success("Livestream check task started.")
 
             logger.working("Starting StatsChannels task...")
@@ -236,6 +237,13 @@ def events(bot: commands.AutoShardedBot, web):
             return
 
         asyncio.create_task(process_message(message, bot))
+
+    @bot.event
+    async def on_message_delete(message: discord.Message):
+        """Resend the livestream embed immediately if it gets deleted."""
+        if share.livestream_task is None or message.guild is None:
+            return
+        await share.livestream_task.on_embed_deleted(message)
 
     @bot.event
     async def on_member_join(member: discord.Member):

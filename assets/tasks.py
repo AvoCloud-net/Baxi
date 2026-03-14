@@ -375,6 +375,42 @@ class LivestreamTask:
         )
         return embed
 
+    async def on_embed_deleted(self, message: discord.Message):
+        """Called when any message is deleted. If it was a livestream embed, resend it immediately."""
+        if message.guild is None:
+            return
+
+        guild_id = message.guild.id
+        ls_config = dict(datasys.load_data(guild_id, "livestream"))
+        if not ls_config.get("enabled", False):
+            return
+
+        for streamer in ls_config.get("streamers", []):
+            if str(streamer.get("message_id", "")) == str(message.id):
+                # This was the livestream embed — clear the saved ID and resend
+                login = streamer["login"].lower()
+                streamer["message_id"] = ""
+                ls_config["streamers"] = ls_config["streamers"]
+                datasys.save_data(guild_id, "livestream", ls_config)
+
+                is_live = self._was_live.get(guild_id, {}).get(login, False)
+                # Fetch fresh stream data if live
+                stream_data = None
+                if is_live:
+                    import aiohttp
+                    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
+                        live_data = await twitch_api.get_streams(session, [login])
+                        stream_data = live_data.get(login)
+
+                await self._update_channel(
+                    guild_id,
+                    streamer,
+                    is_live,
+                    stream_data,
+                    ping=False,
+                )
+                break
+
     def _save_message_id(self, guild_id: int, login: str, message_id: int):
         """Save the message ID back to the guild config so we can edit it later."""
         ls_config = dict(datasys.load_data(guild_id, "livestream"))
