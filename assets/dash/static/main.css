@@ -607,15 +607,23 @@ fieldset {
     bottom: 0;
     z-index: 9500;
     flex-direction: column;
+    flex-wrap: nowrap;
     background: var(--color-bg, #0f0f0f);
     padding: 5rem 1rem 2rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     gap: 0.15rem;
     margin: 0;
     border-top: none;
     border-bottom: none;
     margin-bottom: 0;
     display: none;
+  }
+
+  body.nav-open {
+    overflow: hidden;
+    touch-action: none;
   }
 
   html:not(.dark) .dash-nav {

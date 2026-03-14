@@ -12,17 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const navCurrentLabel = document.getElementById('dash-nav-current');
 
     if (navToggle && dashNav) {
+        function closeNav() {
+            dashNav.classList.remove('open');
+            navToggle.setAttribute('aria-expanded', 'false');
+            document.body.classList.remove('nav-open');
+        }
+
         navToggle.addEventListener('click', () => {
             const isOpen = dashNav.classList.toggle('open');
             navToggle.setAttribute('aria-expanded', isOpen);
+            document.body.classList.toggle('nav-open', isOpen);
         });
 
         // Close overlay when a nav item is clicked
         dashNav.querySelectorAll('.dash-nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                dashNav.classList.remove('open');
-                navToggle.setAttribute('aria-expanded', 'false');
-            });
+            item.addEventListener('click', closeNav);
         });
 
         // Update the toggle label to show the active section name
