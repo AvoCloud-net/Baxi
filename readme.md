@@ -1,133 +1,117 @@
+# Baxi — Privacy-Focused Discord Bot
 
-# 🌟 Baxi – The Privacy-Focused Discord Bot
+> Your all-in-one solution for a safer, smarter Discord community
 
-Welcome to **Baxi**, a modern and versatile Discord bot designed to make your server **safer, smarter, and easier to manage**.  
-Baxi combines **powerful moderation tools**, a **customizable verification system**, and an **global chat**, all wrapped in an **easy-to-use web dashboard**.
+Baxi is a modern, privacy-focused Discord bot designed to make server management **safer, smarter, and easier**.
+It combines powerful moderation tools, an AI-powered chat filter, cross-server global chat, and much more —
+all configurable through an easy-to-use **web dashboard**.
 
-One of Baxi’s core principles is **privacy**:  
-➡️ We collect **as little data as possible** and store only what is strictly necessary for the bot’s functionality (see [Privacy](#-privacy-first)).  
-You stay in full control at all times.
+Baxi is part of the **[AvoCloud](https://avocloud.net)** project, focused on creating modern, privacy-friendly tools for Discord communities.
+Everything is open source under the **MIT license** — self-host it, audit it, contribute to it.
 
 ---
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Chat Filter (SafeText + AI)**  
-  Baxi comes with **two powerful filtering systems** to keep your server safe:  
-  - **SafeText** – our own lightweight bad-word detection system (open source: [SafeText on GitHub](https://github.com/AvoCloud-net/SafeText))  
-  - **AI Filter** – a large language model (LLM) hosted on our own servers, designed to detect more complex or harmful content beyond simple keyword checks.  
+- 🛡️ **Moderation** — ban, kick, mute, warn, temp actions with auto-expiry, auto-escalation on warning thresholds, DM notifications
+- 🚫 **Anti-Spam** — detects message spam, mention floods & repeated content in real time
+- 🤖 **AI Chat Filter** — multi-tier filtering: SafeText (bad-word detection) + Llama Guard AI (context-aware) + phishing link scanner
+- 🌐 **Global Chat** — cross-server chatroom connecting all Baxi servers, always AI-filtered *(official hosted bot only)*
+- 🎫 **Ticket System** — modal-based tickets, staff can claim, close & archive as transcripts
+- 👋 **Welcome & Leave** — customizable messages with variables + optional welcome image with custom background
+- ⚙️ **Custom Commands** — define your own commands with dynamic variables (`{user}`, `{server}`, `{membercount}`) and embed support
+- ✅ **Auto-Roles** — automatically assign one or more roles when a user joins
+- 🔴 **Twitch Tracking** — auto-post live announcements with title, viewer count & role ping; channel name updates live
+- 📊 **Stats Channels** — voice channels displaying live server stats, updated every 10 minutes
+- 🎙️ **Temp Voice** — joining a creator channel auto-creates a private voice channel, deleted when empty
+- 🚩 **Global User Flagging** — shared flagged-user database across the Baxi network; use `/scan_users` proactively *(official hosted bot only)*
 
-- 🌍 **Global Chat**  
-  Connect multiple servers together with an **inter-server chatroom**.  
-  - Perfect for community networking or cross-server events.  
-  - *(Note: This feature is only available when using the official hosted bot. Self-hosted bots cannot join the global chat network.)*
+---
 
-- ✅ **Flexible Verification System**  
-  Secure your server with customizable onboarding methods:  
-  - Button only  
-  - Button + CAPTCHA  
-  - Button + Password  
+## 🖥️ Web Dashboard
 
-- 🎟️ **Ticket System**  
-  Let your members easily create support tickets – ideal for help requests or moderation reports.  
+Configure **every** Baxi feature through a clean web interface — login with Discord OAuth2, no slash commands or config files needed.
 
-- ⚙️ **Web Dashboard**  
-  Every system and feature can be enabled, disabled, and fully configured via the dashboard.  
-  No confusing commands – just point, click, and customize.  
+- Manage moderation, welcome messages, custom commands, Twitch tracking, auto-roles & more
+- Built-in **audit log** and feature adoption statistics
+- Changes apply **instantly**
 
-*(Fun minigames are currently disabled, but may return in future updates.)*
+🔗 [baxi.avocloud.net](https://baxi.avocloud.net)
 
 ---
 
 ## 🚀 Getting Started
 
-### Invite the Official Bot  
-The simplest way to get started:  
-👉 [**Invite Baxi to your server**](https://avocloud.net/baxi/)
+### Official Hosted Bot *(recommended)*
 
-### Self-Hosting  
-If you prefer to run Baxi yourself:  
+Get started in seconds — invite the bot and configure everything via the dashboard.
+
+👉 [**Invite Baxi**](https://avocloud.net/baxi/invite/)
+
+### Self-Hosting
 
 ```bash
 git clone https://github.com/AvoCloud-net/Baxi.git
 cd Baxi
 pip install -r requirements.txt
-
 ```
 
-1.  Open `config/auth.py` and add your **Bot Token** and other required values.
-    
-    -   Fields marked with `#NOT NEEDED` are optional.
-        
-2.  Start the bot:
-    
-    ```bash
-    python main.py
-    
-    ```
-    
+1. Open `config/auth.py` and fill in your **Bot Token** and required values.
+2. Start the bot:
 
-⚠️ **Important for Self-Hosting:**  
+```bash
+python main.py
+```
 
-When running Baxi yourself, there are some limitations compared to the official hosted version:  
+**Limitations when self-hosting:**
 
-- 🌍 **Global Chat**  
-  Not available when self-hosting, since it requires access to the official Baxi network.  
+| Feature | Self-Hosted |
+|---|---|
+| 🌐 Global Chat | ❌ Not available (requires official network) |
+| 🤖 AI Filter (Llama Guard) | ⚠️ Self-host with [Ollama](https://ollama.ai/) + Llama Guard 3 |
+| 🔍 SafeText | ⚠️ Requires a Public API Key (request via support) |
+| Everything else | ✅ Fully functional |
 
-- 🤖 **Chat Filter**  
-  - **SafeText**: Supports public usage, but requires a **Public API Key**.  
-    You can request one from us if you want to use SafeText in your own hosting environment.  
-  - **AI Filter**: Needs to be hosted by you.  
-    Recommended setup: [OpenWebUI](https://github.com/open-webui/open-webui) with [Ollama](https://ollama.ai/) running the **Llama-Guard 3** model.  
-
-- ✅ **Other Features** (verification system, tickets, dashboard, etc.) work fully without restrictions.  
-
-
-----------
+---
 
 ## 🔧 Commands
 
-Baxi uses **Discord Slash Commands** (`/`).  
-Just type `/` in your server to explore all available commands.  
-Each command includes helpful descriptions and options right inside Discord.
+Baxi uses **Discord Slash Commands** (`/`).
+Type `/` in your server to browse all available commands — each includes descriptions and options directly in Discord.
 
-----------
+---
+
+## 🔒 Privacy by Design
+
+We believe **your data belongs to you**.
+Baxi follows a strict **minimal data collection** principle — every feature is opt-in, and only data required for an active feature is ever stored.
+
+**Stored (only if feature is enabled):**
+- Chat filter logs — only for removed messages
+- Server configuration — your dashboard settings
+- Global chat images — for cross-server delivery
+
+**Never stored:**
+- Regular messages or chat history
+- Personal data or user profiles
+- Tracking or analytics data of any kind
+
+*Privacy is not an afterthought — it's our foundation.*
+
+---
 
 ## 💬 Support
 
-Need help or want to suggest new features? We’re here for you:
+- 🌐 [Discord Support Server](https://avocloud.net/discord/)
+- 📧 [support@avocloud.net](mailto:support@avocloud.net)
+- 🐛 [Open an Issue](https://github.com/AvoCloud-net/Baxi/issues)
 
--   🌐 [Join our Support Discord](https://avocloud.net/discord/)
-    
--   📧 Email: [support@avocloud.net](mailto:support@avocloud.net)
-    
+---
 
-----------
+## 📄 License
 
-## 🔒 Privacy First
+[MIT](LICENSE) — free to use, modify, and distribute.
 
-We believe **your data belongs to you**.  
-Baxi is built around the principle of **minimizing data collection** and **maximizing transparency**.
+---
 
-The only information stored is:
-
--   📝 **Chat Filter Logs** – Only if the filter is enabled, and only for messages that get removed.
-    
--   ⚙️ **Server Configuration** – Your dashboard settings so Baxi remembers your preferences.
-    
--   🖼️ **Global Chat Images** – Images sent in the Global Chat, so they can be delivered across servers.
-    
-
-✅ **We do NOT log or store any other messages, personal data, or private information.**  
-✅ **No tracking, no selling, no hidden data collection.**  
-✅ **All systems are optional** – you decide what features to use, and what data (if any) is stored.
-
-With Baxi, **privacy is not an afterthought – it’s our foundation.**
-
-----------
-
-## 💡 About
-
-Baxi is part of the **AvoCloud** project, focused on creating modern, privacy-friendly tools for Discord communities.  
-We’re always improving and adding features – so stay tuned for updates!
-
+*Made with ❤️ by [AvoCloud](https://avocloud.net)*
