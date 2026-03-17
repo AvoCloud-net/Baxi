@@ -4,7 +4,7 @@
             "guild_only": "Dieser Befehl kann nur innerhalb eines Discord-Servers ausgeführt werden, nicht über private Nachrichten (DM).",
             "user": {
                 "help": {
-                    "title": "Hilfe",
+                    "title": "SYS // HILFE",
                     "content": "Alle Befehle beginnen mit dem Präfix „/“.",
                     "footer": "Baxi Bot - Avocloud.net",
                     "prefix": {
@@ -12,7 +12,7 @@
                         "content": "Der Prefix für diesen Bot ist „/“."
                     },
                     "about": {
-                        "title": "Über dieses Projekt",
+                        "title": "SYS // ABOUT",
                         "content": "Dieser Bot wurde von Avocloud.net erstellt. Weitere Informationen findest du auf unserer Website."
                     },
                     "icons": {
@@ -25,7 +25,7 @@
                     }
                 },
                 "scan_users": {
-                    "title": "Scan Report",
+                    "title": "SYS // SCAN REPORT",
                     "reason": "Grund",
                     "date": "Makiert am",
                     "id": "Benutzer ID",
@@ -46,7 +46,7 @@
                 "amount": "Mänge: ",
                 "channel": "Kanal: ",
                 "ban": {
-                    "title": "Bann",
+                    "title": "AKTION // BANN",
                     "confirmation": "Möchtest du diesen Benutzer wirklich mit folgendem Grund bannen?",
                     "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
                     "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
@@ -56,7 +56,7 @@
                     "abort": "Der Bannvorgang wurde abgebrochen."
                 },
                 "unban": {
-                    "title": "Entbannung",
+                    "title": "AKTION // ENTBANN",
                     "confirmation": "Möchtest du diesen Benutzer wirklich entbannen?",
                     "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
                     "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
@@ -66,7 +66,7 @@
                     "abort": "Der Entbannvorgang wurde abgebrochen."
                 },
                 "kick": {
-                    "title": "Kick",
+                    "title": "AKTION // KICK",
                     "confirmation": "Möchtest du diesen Benutzer wirklich aus dem Server entfernen?",
                     "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
                     "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
@@ -76,7 +76,7 @@
                     "abort": "Der Entbannvorgang wurde abgebrochen."
                 },
                 "clear": {
-                    "title": "Löschen",
+                    "title": "AKTION // CLEAR",
                     "confirmation": "Möchtest du die Nachrichten wirklich löschen?",
                     "missing_perms": "Du hast nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
                     "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
@@ -93,7 +93,7 @@
                     "success": "Der Benutzer wurde erfolgreich aus dem System ausgetragen."
                 },
                 "warn": {
-                    "title": "Verwarnung",
+                    "title": "AKTION // WARN",
                     "success": "{user} wurde verwarnt.\n**Grund:** {reason}\n**Verwarnungen:** {count}",
                     "escalation_mute": "{user} wurde automatisch für {duration} Minuten stummgeschaltet. ({count} Verwarnungen)",
                     "escalation_kick": "{user} wurde automatisch vom Server entfernt. ({count} Verwarnungen)",
@@ -102,18 +102,18 @@
                     "error": "Ein Fehler ist aufgetreten: {error}"
                 },
                 "unwarn": {
-                    "title": "Verwarnung entfernen",
+                    "title": "AKTION // WARN ENTFERNT",
                     "success": "Verwarnung `{id}` wurde von {user} entfernt.",
                     "not_found": "Verwarnung mit ID `{id}` wurde nicht gefunden.",
                     "error": "Ein Fehler ist aufgetreten: {error}"
                 },
                 "warnings": {
-                    "title": "Verwarnungen",
+                    "title": "SYS // WARN LOG",
                     "no_warnings": "{user} hat keine Verwarnungen.",
                     "entry": "**ID:** `{id}`\n**Grund:** {reason}\n**Moderator:** {mod}\n**Datum:** {date}"
                 },
                 "customcmd": {
-                    "title": "Custom Commands",
+                    "title": "SYS // CUSTOM CMD",
                     "added": "Command `{trigger}` wurde erfolgreich erstellt.",
                     "removed": "Command `{trigger}` wurde erfolgreich entfernt.",
                     "not_found": "Command `{trigger}` wurde nicht gefunden.",
@@ -125,14 +125,14 @@
         },
         "systems": {
             "chatfilter": {
-                "title": "Chatfilter",
+                "title": "SYS // CHATFILTER",
                 "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
                 "description_not_deleted": "Eine Nachricht von {user} wurde als potenziell schädlich eingestuft, konnte jedoch **nicht automatisch gelöscht** werden.\n\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
                 "phishing_warning": "⚠️ **Achtung {user}!** Die obige Nachricht enthält möglicherweise einen **Scam- oder Phishing-Link**. Klicke **NICHT** darauf! Der Link könnte darauf abzielen, deine Daten zu stehlen.",
                 "footer": "Baxi Security - avocloud.net"
             },
             "globalchat": {
-                "title": "Globalchat",
+                "title": "SYS // GLOBALCHAT",
                 "error": {
                     "file_not_image": "Diese Datei ist kein Bild oder Video und kann daher nicht im globalen Chat versendet werden.",
                     "to_many_files": "Du kannst maximal ein Bild anhängen und versenden.",
@@ -142,7 +142,7 @@
                 }
             },
             "verify": {
-                "title": "Verifizierung",
+                "title": "SYS // VERIFY",
                 "description_not_enabled": "Dieses System ist auf diesem Server nicht aktiviert. Bitte kontaktieren einen Administrator.",
                 "description_success": "Die verifizierung war erfolgreich. Willkommen auf dem Server!",
                 "captcha": {
@@ -153,7 +153,7 @@
                 }
             },
             "ticket": {
-                "title": "Support Ticket",
+                "title": "SYS // TICKET",
                 "channel_name": "support-{user}",
                 "description_creation_successfull": "Das Ticket wurde erfolgreich erstellt. Ein Teammitglied wird sich in Kürze bei dir melden.\nDein Ticket: {channel}",
                 "description_already_open": "Du hast bereits ein offenes Ticket. Bitte warte bis ein Teammitglied antwortet.\nDein Ticket: {channel}",
@@ -165,7 +165,7 @@
                 "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen."
             },
             "ai": {
-                "title": "AI",
+                "title": "SYS // AI",
                 "waiting": {
                     "content": "Baxi AI arbeitet an einer Antwort..."
                 },
@@ -179,37 +179,37 @@
                 "description": "Der Inhaber dieses Servers hat den Nutzungsbedingungen der Dienste von Baxi und Avocloud.net nicht zugestimmt. Daher wurde dieser Dienst auf diesem Server gesperrt. \n\nUm die Baxi-Dienste wieder zu aktivieren, muss sich jemand aus dem Server Team beim [Baxi-Dashboard]({url}) anmelden und die Nutzungsbedingungen akzeptieren."
             },
             "antispam": {
-                "title": "Anti-Spam",
+                "title": "SYS // ANTISPAM",
                 "triggered": "{user}, du sendest zu viele Nachrichten. Bitte verlangsame dich.",
                 "duplicate": "{user}, bitte sende nicht die gleiche Nachricht mehrfach.",
                 "muted": "{user} wurde wegen Spam stummgeschaltet.",
                 "warned": "{user} wurde wegen Spam verwarnt."
             },
             "welcomer": {
-                "title": "Willkommen",
+                "title": "SYS // WILLKOMMEN",
                 "default_welcome": "Willkommen {user} auf {server}!",
                 "default_leave": "{user} hat {server} verlassen."
             },
             "livestream": {
-                "title": "Livestream",
+                "title": "SYS // LIVESTREAM",
                 "channel_name_online": "\ud83d\udd34\u2502{name}",
                 "channel_name_offline": "\u26ab\u2502{name}",
-                "embed_online_title": "{name} ist jetzt LIVE!",
+                "embed_online_title": "LIVESTREAM // {name} // JETZT LIVE",
                 "embed_online_game": "Spiel",
                 "embed_online_viewers": "Zuschauer",
                 "embed_online_started": "Gestartet",
-                "embed_offline_title": "{name} ist offline",
+                "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
                 "embed_offline_description": "{name} streamt gerade nicht. Schau sp\u00e4ter wieder vorbei!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} \u2014 **{name}** streamt jetzt **{game}** live!"
             },
             "stats_channels": {
-                "title": "Stats Channels"
+                "title": "SYS // STATS"
             }
         },
         "events": {
             "on_guild_join": {
-                "title": "Hallooo!",
+                "title": "SYS // INIT",
                 "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, musst du das Baxi Dashboard öffnen.\n\n-# {saved_data}",
                 "saved_data": {
                     "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard beliebige Systeme aktivieren und einstellen.",
@@ -219,12 +219,12 @@
         },
         "games": {
             "counting": {
-                "title": "Zählspiel",
+                "title": "GAME // COUNT",
                 "description_wrong_number": "{user}, die Zahl die du gesendet hast ist nicht die richtige. Wir beginnen wieder bei 1.",
                 "description_same_user": "{user}, du darfst nicht zweimal hintereinander eine Zahl senden. Ihr müsst abwechselnd zählen."
             },
             "guessing": {
-                "title": "Raten",
+                "title": "GAME // GUESS",
                 "description_correct": "{user}, du hast die Zahl richtig geraten!\nWir beginnen mit einer neuen Zahl, diese wurde zwischen 1 und {max_value} generiert.\nViel Erfolg!"
             }
         }
@@ -234,7 +234,7 @@
             "guild_only": "This command can only be used in a Discord server, not via direct message (DM).",
             "user": {
                 "help": {
-                    "title": "Help",
+                    "title": "SYS // HELP",
                     "content": "All commands start with the prefix “/”.",
                     "footer": "Baxi Bot - Avocloud.net",
                     "prefix": {
@@ -242,7 +242,7 @@
                         "content": "The prefix for this bot is “/”."
                     },
                     "about": {
-                        "title": "About this project",
+                        "title": "SYS // ABOUT",
                         "content": "This bot was created by Avocloud.net. For more information, please visit our website."
                     },
                     "icons": {
@@ -255,7 +255,7 @@
                     }
                 },
                 "scan_users": {
-                    "title": "Scan Report",
+                    "title": "SYS // SCAN REPORT",
                     "reason": "Reason",
                     "date": "Date Flagged",
                     "id": "User ID",
@@ -276,7 +276,7 @@
                 "amount": "Amount: ",
                 "channel": "Channel: ",
                 "ban": {
-                    "title": "Ban",
+                    "title": "ACTION // BAN",
                     "confirmation": "Do you really want to ban this user for the following reason?",
                     "missing_perms": "You do not have the necessary permissions to ban this user.",
                     "bot_missing_perms": "I do not have the necessary permissions to ban this user.",
@@ -286,7 +286,7 @@
                     "abort": "The ban process has been aborted."
                 },
                 "unban": {
-                    "title": "Unban",
+                    "title": "ACTION // UNBAN",
                     "confirmation": "Do you really want to unban this user?",
                     "missing_perms": "You do not have the necessary permissions to unban this user.",
                     "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
@@ -296,7 +296,7 @@
                     "abort": "The unban process has been aborted."
                 },
                 "kick": {
-                    "title": "Kick",
+                    "title": "ACTION // KICK",
                     "confirmation": "Do you really want to remove this user from the server?",
                     "missing_perms": "You do not have the necessary permissions to unban this user.",
                     "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
@@ -306,7 +306,7 @@
                     "abort": "The kick process has been aborted."
                 },
                 "clear": {
-                    "title": "Delete",
+                    "title": "ACTION // CLEAR",
                     "confirmation": "Do you really want to delete the messages?",
                     "missing_perms": "You do not have the necessary permissions to delete messages.",
                     "bot_missing_perms": "I do not have the necessary permissions to delete messages.",
@@ -323,7 +323,7 @@
                     "success": "The user was successfully removed from the system."
                 },
                 "warn": {
-                    "title": "Warning",
+                    "title": "ACTION // WARN",
                     "success": "{user} has been warned.\n**Reason:** {reason}\n**Warnings:** {count}",
                     "escalation_mute": "{user} has been automatically muted for {duration} minutes. ({count} warnings)",
                     "escalation_kick": "{user} has been automatically kicked from the server. ({count} warnings)",
@@ -332,18 +332,18 @@
                     "error": "An error occurred: {error}"
                 },
                 "unwarn": {
-                    "title": "Remove Warning",
+                    "title": "ACTION // UNWARN",
                     "success": "Warning `{id}` has been removed from {user}.",
                     "not_found": "Warning with ID `{id}` was not found.",
                     "error": "An error occurred: {error}"
                 },
                 "warnings": {
-                    "title": "Warnings",
+                    "title": "SYS // WARN LOG",
                     "no_warnings": "{user} has no warnings.",
                     "entry": "**ID:** `{id}`\n**Reason:** {reason}\n**Moderator:** {mod}\n**Date:** {date}"
                 },
                 "customcmd": {
-                    "title": "Custom Commands",
+                    "title": "SYS // CUSTOM CMD",
                     "added": "Command `{trigger}` has been created successfully.",
                     "removed": "Command `{trigger}` has been removed successfully.",
                     "not_found": "Command `{trigger}` was not found.",
@@ -355,14 +355,14 @@
         },
         "systems": {
             "chatfilter": {
-                "title": "Chat Filter",
+                "title": "SYS // CHATFILTER",
                 "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
                 "description_not_deleted": "A message from {user} was flagged as potentially harmful, but could **not be deleted automatically**.\n\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
                 "phishing_warning": "⚠️ **Warning {user}!** The message above may contain a **scam or phishing link**. Do **NOT** click on it! The link may be designed to steal your data.",
                 "footer": "Baxi Security - avocloud.net"
             },
             "globalchat": {
-                "title": "Global Chat",
+                "title": "SYS // GLOBALCHAT",
                 "error": {
                     "file_not_image": "This file is not an image or video and cannot be sent in the global chat.",
                     "to_many_files": "You can attach and send a maximum of one image.",
@@ -372,7 +372,7 @@
                 }
             },
             "verify": {
-                "title": "Verification",
+                "title": "SYS // VERIFY",
                 "description_not_enabled": "This system is not enabled on this server. Please contact an administrator.",
                 "description_success": "The verification was successful. Welcome to the server!",
                 "captcha": {
@@ -383,7 +383,7 @@
                 }
             },
             "ticket": {
-                "title": "Support Ticket",
+                "title": "SYS // TICKET",
                 "channel_name": "support-{user}",
                 "description_creation_successfull": "The ticket has been successfully created. A team member will get back to you shortly.\nYour ticket: {channel}",
                 "description_already_open": "You already have an open ticket. Please wait for a team member to respond.\nYour ticket: {channel}",
@@ -395,7 +395,7 @@
                 "close_cancel": "The ticket close process has been cancelled by {user}."
             },
             "ai": {
-                "title": "AI",
+                "title": "SYS // AI",
                 "waiting": {
                     "content": "Baxi AI is working on a response..."
                 },
@@ -409,37 +409,37 @@
                 "description": "The owner of this server has not agreed to the terms and conditions of Baxi and Avocloud.net services. Therefore, this service has been blocked on this server. \n\nTo reactivate Baxi services, someone from the team must log in to the [Baxi Dashboard]({url}) and accept the terms and conditions."
             },
             "antispam": {
-                "title": "Anti-Spam",
+                "title": "SYS // ANTISPAM",
                 "triggered": "{user}, you are sending too many messages. Please slow down.",
                 "duplicate": "{user}, please do not send the same message multiple times.",
                 "muted": "{user} has been muted for spamming.",
                 "warned": "{user} has been warned for spamming."
             },
             "welcomer": {
-                "title": "Welcome",
+                "title": "SYS // WELCOME",
                 "default_welcome": "Welcome {user} to {server}!",
                 "default_leave": "{user} has left {server}."
             },
             "livestream": {
-                "title": "Livestream",
+                "title": "SYS // LIVESTREAM",
                 "channel_name_online": "\ud83d\udd34\u2502{name}",
                 "channel_name_offline": "\u26ab\u2502{name}",
-                "embed_online_title": "{name} is now LIVE!",
+                "embed_online_title": "LIVESTREAM // {name} // NOW LIVE",
                 "embed_online_game": "Game",
                 "embed_online_viewers": "Viewers",
                 "embed_online_started": "Started",
-                "embed_offline_title": "{name} is offline",
+                "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} \u2014 **{name}** is now live playing **{game}**!"
             },
             "stats_channels": {
-                "title": "Stats Channels"
+                "title": "SYS // STATS"
             }
         },
         "events": {
             "on_guild_join": {
-                "title": "Hello!",
+                "title": "SYS // INIT",
                 "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo make settings, you need to open the Baxi Dashboard.\n\n-# {saved_data}",
                 "saved_data": {
                     "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard.",
@@ -449,12 +449,12 @@
         },
         "games": {
             "counting": {
-                "title": "Counting Game",
+                "title": "GAME // COUNT",
                 "description_wrong_number": "{user}, the number you sent is not correct. We will start again at 1.",
                 "description_same_user": "{user}, you cannot send a number twice in a row. You must take turns counting."
             },
             "guessing": {
-                "title": "Guessing Game",
+                "title": "GAME // GUESS",
                 "description_correct": "{user}, you guessed the number correctly!\nWe will start with a new number, which has been generated between 1 and {max_value}.\nGood luck!"
             }
         }

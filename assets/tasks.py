@@ -553,7 +553,7 @@ class TempActionsTask:
                                 await guild.unban(user, reason="Temporary ban expired")
                                 try:
                                     dm_embed = discord.Embed(
-                                        title=f"Your ban in **{entry.get('guild_name', guild.name)}** has expired",
+                                        title=f"ACTION // BAN EXPIRED // {entry.get('guild_name', guild.name)}",
                                         description="Your temporary ban has been lifted. You may rejoin the server.",
                                         color=discord.Color.green(),
                                     )
@@ -584,7 +584,7 @@ class TempActionsTask:
                             try:
                                 user = await self.bot.fetch_user(user_id)
                                 dm_embed = discord.Embed(
-                                    title=f"Your mute in **{entry.get('guild_name', guild.name)}** has expired",
+                                    title=f"ACTION // MUTE EXPIRED // {entry.get('guild_name', guild.name)}",
                                     description="You can now send messages again.",
                                     color=discord.Color.green(),
                                 )

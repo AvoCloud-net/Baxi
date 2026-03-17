@@ -102,7 +102,7 @@ async def _check_escalation(
             await user.ban(reason=f"Auto-ban: {warn_count} warnings reached")
             if channel:
                 embed = discord.Embed(
-                    title=f"{config.Icons.people_crossed} {lang['commands']['admin']['warn']['title']}",
+                    title=f"{config.Icons.people_crossed} AUTO BAN // {user.name} // {warn_count} WARNINGS",
                     description=str(lang["commands"]["admin"]["warn"]["escalation_ban"]).format(
                         user=user.mention, count=warn_count
                     ),
@@ -115,7 +115,7 @@ async def _check_escalation(
             await user.kick(reason=f"Auto-kick: {warn_count} warnings reached")
             if channel:
                 embed = discord.Embed(
-                    title=f"{config.Icons.people_crossed} {lang['commands']['admin']['warn']['title']}",
+                    title=f"{config.Icons.people_crossed} AUTO KICK // {user.name} // {warn_count} WARNINGS",
                     description=str(lang["commands"]["admin"]["warn"]["escalation_kick"]).format(
                         user=user.mention, count=warn_count
                     ),
@@ -131,7 +131,7 @@ async def _check_escalation(
             )
             if channel:
                 embed = discord.Embed(
-                    title=f"{config.Icons.alert} {lang['commands']['admin']['warn']['title']}",
+                    title=f"{config.Icons.alert} AUTO MUTE // {user.name} // {warn_count} WARNINGS",
                     description=str(lang["commands"]["admin"]["warn"]["escalation_mute"]).format(
                         user=user.mention, duration=duration_minutes, count=warn_count
                     ),

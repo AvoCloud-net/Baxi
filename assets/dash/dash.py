@@ -783,7 +783,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 settings["message"] = ticket["message"]
 
             embed = discord.Embed(
-                title=f"{config.Icons.questionmark} {guild.name} support",
+                title=f"{config.Icons.questionmark} SYS // {guild.name} SUPPORT",
                 description=ticket["message"],
                 color=discord.Color.from_str(ticket["color"]),
             )

@@ -62,7 +62,7 @@ def base_commands(bot: commands.AutoShardedBot):
             if interaction.guild is None:
                 
                 embed = discord.Embed(
-                    title="⚠️ " + lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     description="This command can only be used in a server.",
                     color=config.Discord.warn_color
                 )
@@ -88,7 +88,7 @@ def base_commands(bot: commands.AutoShardedBot):
                     flagged_users.append(users_list[str(member.id)])
 
             embed = discord.Embed(
-                title=f"{config.Icons.search} {lang['commands']['user']['scan_users']['title']}",
+                title=f"{config.Icons.search} SCAN USERS // {interaction.guild.name} // {interaction.guild.member_count} members",
                 description=str(lang["commands"]["user"]["scan_users"]["user_count"]).format(users=interaction.guild.member_count),
                 color=config.Discord.color if len(flagged_users) == 0 else config.Discord.danger_color
             )
@@ -129,7 +129,7 @@ def base_commands(bot: commands.AutoShardedBot):
         except Exception as e:
             logger.error(str(e))
             error_embed = discord.Embed(
-                title="❌ An error occurred",
+                title="ERROR // SCAN FAILED",
                 description="Failed to complete the scan. Please try again later.",
                 color=config.Discord.danger_color
             )
@@ -149,7 +149,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -174,7 +174,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         duration_str = datasys.format_duration(parsed_duration) if parsed_duration else "Permanent"
 
         embed = discord.Embed(
-            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["ban"]["title"]}',
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["ban"]["title"]} // {user.name}',
             description=lang["commands"]["admin"]["ban"]["confirmation"],
             color=config.Discord.danger_color,
         )
@@ -211,7 +211,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -226,7 +226,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
             return
         embed = discord.Embed(
-            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["kick"]["title"]}',
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["kick"]["title"]} // {user.name}',
             description=lang["commands"]["admin"]["kick"]["confirmation"],
             color=config.Discord.danger_color,
         )
@@ -258,14 +258,14 @@ def utility_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["unban"]["title"]}',
+            title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["unban"]["title"]} // {user_member.name}',
             description=lang["commands"]["admin"]["unban"]["confirmation"],
             color=config.Discord.success_color,
         )
@@ -295,14 +295,14 @@ def utility_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=lang["commands"]["admin"]["clear"]["title"],
+            title=f'{lang["commands"]["admin"]["clear"]["title"]} // #{interaction.channel.name} // {amount} msgs',
             description=lang["commands"]["admin"]["clear"]["confirmation"],
             color=config.Discord.warn_color,
         )
@@ -333,7 +333,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
             )
         await interaction.response.defer(ephemeral=True)
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -360,7 +360,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         try:
             dm_embed = discord.Embed(
-                title=f"You have been muted in **{interaction.guild.name}**",
+                title=f"ACTION // MUTE // {interaction.guild.name}",
                 color=config.Discord.warn_color,
             )
             dm_embed.add_field(name="Duration", value=duration_str, inline=False)
@@ -391,7 +391,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         datasys.save_temp_actions(interaction.guild.id, ta)
 
         embed = discord.Embed(
-            title=f"{config.Icons.people_crossed} User muted",
+            title=f"{config.Icons.people_crossed} ACTION // MUTE",
             description=f"{user.mention} has been muted.",
             color=config.Discord.warn_color,
         )
@@ -408,7 +408,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
             )
         await interaction.response.defer(ephemeral=True)
 
@@ -426,7 +426,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         try:
             dm_embed = discord.Embed(
-                title=f"Your mute in **{interaction.guild.name}** has been removed",
+                title=f"ACTION // UNMUTE // {interaction.guild.name}",
                 description="You can now send messages again.",
                 color=config.Discord.success_color,
             )
@@ -437,7 +437,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             pass
 
         embed = discord.Embed(
-            title=f"{config.Icons.info} User unmuted",
+            title=f"{config.Icons.info} ACTION // UNMUTE",
             description=f"{user.mention} has been unmuted.",
             color=config.Discord.success_color,
         )
@@ -453,7 +453,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
             )
         await interaction.response.defer()
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -470,7 +470,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         except Exception as e:
             await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title=lang["commands"]["admin"]["warn"]["title"],
+                    title=f'WARN FAILED // {user.name}',
                     description=str(lang["commands"]["admin"]["warn"]["error"]).format(error=str(e)),
                     color=config.Discord.danger_color,
                 )
@@ -483,19 +483,19 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         removed = await remove_warning(interaction.guild.id, user.id, warn_id)
         if removed:
             embed = discord.Embed(
-                title=f"{config.Icons.info} {lang['commands']['admin']['unwarn']['title']}",
+                title=f"{config.Icons.info} {lang['commands']['admin']['unwarn']['title']} // {user.name}",
                 description=str(lang["commands"]["admin"]["unwarn"]["success"]).format(id=warn_id, user=user.mention),
                 color=config.Discord.success_color,
             )
         else:
             embed = discord.Embed(
-                title=lang["commands"]["admin"]["unwarn"]["title"],
+                title=f'WARN NOT FOUND // {user.name} // ID {warn_id}',
                 description=str(lang["commands"]["admin"]["unwarn"]["not_found"]).format(id=warn_id),
                 color=config.Discord.danger_color,
             )
@@ -508,14 +508,14 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title=lang["commands"]["guild_only"], color=config.Discord.warn_color)
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         warns = get_warnings(interaction.guild.id, user.id)
 
         if not warns:
             embed = discord.Embed(
-                title=f"{config.Icons.info} {lang['commands']['admin']['warnings']['title']}",
+                title=f"{config.Icons.info} {lang['commands']['admin']['warnings']['title']} // {user.name} // CLEAN",
                 description=str(lang["commands"]["admin"]["warnings"]["no_warnings"]).format(user=user.mention),
                 color=config.Discord.color,
             )
@@ -622,7 +622,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if not message_data:
             return await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title="❌ Message Not Found",
+                    title="ERROR // MSG NOT FOUND",
                     description=f"No global chat message found with ID `{message_id}`.",
                     color=config.Discord.danger_color,
                 )
@@ -634,7 +634,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if not is_admin and not is_author:
             return await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title="❌ Missing Permissions",
+                    title="ERROR // NO PERMISSION",
                     description="You can only delete your own messages.",
                     color=config.Discord.danger_color,
                 )
@@ -661,7 +661,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         del globalchat_message_data[message_id]
 
         embed = discord.Embed(
-            title=f"{config.Icons.people_crossed} Message Deleted",
+            title=f"{config.Icons.people_crossed} EXEC // MSG DELETED",
             description=f"Deleted **{deleted}** message cop{'y' if deleted == 1 else 'ies'} across all servers.",
             color=config.Discord.success_color,
         )
@@ -695,7 +695,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if feature not in valid_features:
             return await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title="❌ Invalid Feature",
+                    title="ERROR // INVALID FEATURE",
                     description=f"Valid features: {', '.join(f'`{f}`' for f in valid_features)}",
                     color=config.Discord.danger_color,
                 )
@@ -704,7 +704,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if action not in ("enable", "disable"):
             return await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title="❌ Invalid Action",
+                    title="ERROR // INVALID ACTION",
                     description="Action must be `enable` or `disable`.",
                     color=config.Discord.danger_color,
                 )
@@ -713,7 +713,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         if not 1 <= percent <= 100:
             return await interaction.edit_original_response(
                 embed=discord.Embed(
-                    title="❌ Invalid Percentage",
+                    title="ERROR // INVALID PERCENTAGE",
                     description="Percentage must be between 1 and 100.",
                     color=config.Discord.danger_color,
                 )
@@ -740,7 +740,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
                 failed += 1
 
         embed = discord.Embed(
-            title="⚙️ Bulk Config Applied",
+            title="EXEC // BULK CONFIG APPLIED",
             description=(
                 f"**{action.capitalize()}d** `{feature}` on **{success}** of **{len(target_guilds)}** servers "
                 f"({percent}% of {len(all_guilds)} total)."
@@ -787,7 +787,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
 
         if len(matching_guilds) == 0:
             embed = discord.Embed(
-                title=f"{config.Icons.search} Keine Server gefunden",
+                title=f"{config.Icons.search} ERROR // KEINE SERVER",
                 description=f"Keine Server gefunden für: `{query}`",
                 color=config.Discord.warn_color,
             )
@@ -813,7 +813,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
             boost_count = guild.premium_subscription_count or 0
 
             embed = discord.Embed(
-                title=f"{config.Icons.search} {guild.name}",
+                title=f"{config.Icons.search} INFO // {guild.name}",
                 color=config.Discord.color,
                 timestamp=discord.utils.utcnow(),
             )
@@ -853,7 +853,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
             lines.append(f"\n*... und {len(matching_guilds) - 25} weitere Ergebnisse. Verfeinere deine Suche.*")
 
         embed = discord.Embed(
-            title=f"{config.Icons.search} {len(matching_guilds)} Server gefunden",
+            title=f"{config.Icons.search} SYS // {len(matching_guilds)} SERVER GEFUNDEN",
             description="\n".join(lines),
             color=config.Discord.color,
         )
@@ -877,7 +877,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         
         if not message_data:
             embed = discord.Embed(
-                title="Message Not Found",
+                title="ERROR // MSG NOT FOUND",
                 description=f"No message data found for ID: `{mid}`",
                 color=config.Discord.danger_color
             )
@@ -885,7 +885,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
             return
 
         embed = discord.Embed(
-            title="Global Chat Message Information",
+            title="SYS // GLOBALCHAT MSG INFO",
             description=f"Information for message ID: `{mid}`",
             color=config.Discord.info_color,
             timestamp=discord.utils.utcnow()
@@ -962,7 +962,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         try:
             await guild.leave()
             embed = discord.Embed(
-                title=f"{config.Icons.info} Server verlassen",
+                title=f"{config.Icons.info} EXEC // SERVER VERLASSEN",
                 description=f"Der Bot hat **{guild_name}** (`{guild_id}`) erfolgreich verlassen.",
                 color=config.Discord.success_color,
             )

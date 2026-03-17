@@ -279,7 +279,7 @@ def events(bot: commands.AutoShardedBot, web):
                 channel = message.guild.get_channel(int(ticket_config["channel"]))
                 if isinstance(channel, discord.TextChannel):
                     embed = discord.Embed(
-                        title=f"{config.Icons.questionmark} {message.guild.name} support",
+                        title=f"{config.Icons.questionmark} SYS // {message.guild.name} SUPPORT",
                         description=ticket_config.get("message", ""),
                         color=discord.Color.from_str(ticket_config.get("color", "#5865F2")),
                     )
@@ -441,7 +441,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 dm_channel = await message.author.create_dm()
 
             embed = discord.Embed(
-                title="Hey there!",
+                title="SYS // NOTICE",
                 description="We saw that your message mentioned **self-harm**, **suicide**, or **disordered eating**, and we want you to know something really important: **you are not alone**. So many people struggle with these feelings, and it's okay to feel overwhelmed sometimes. What you're going through matters, and it's completely okay to ask for help—because you deserve support and kindness.\n\n"
                 "If you ever feel like talking to someone, whether it's a **friend**, **family member**, or a **mental health professional**, please don't hesitate. **You don't have to carry this by yourself.** There are people who care deeply and want to be there for you.\n\n"
                 "For immediate support, you can reach out to the **International Suicide Prevention Lifeline** at **+1-800-273-8255** (this number also connects you to help worldwide), or visit https://www.iasp.info/resources/Crisis_Centres/ to find a crisis center near you.\n\n"

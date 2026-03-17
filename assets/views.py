@@ -14,7 +14,7 @@ class Verify_Captcha_Modal(ui.Modal):
         guild: discord.Guild,
         role: discord.Role,
     ):
-        super().__init__(timeout=60, title="Verify Captcha")
+        super().__init__(timeout=60, title="SYS // VERIFY CAPTCHA")
         self.user: discord.abc.User = user
         self.guild: discord.Guild = guild
         self.role: discord.Role = role
@@ -61,7 +61,7 @@ class Verify_Password_Modal(ui.Modal):
         guild: discord.Guild,
         role: discord.Role,
     ):
-        super().__init__(timeout=60, title="Verify Password")
+        super().__init__(timeout=60, title="SYS // VERIFY PASSWORD")
         self.user: discord.abc.User = user
         self.guild: discord.Guild = guild
         self.role: discord.Role = role
@@ -105,7 +105,7 @@ class Verify_Password_Modal(ui.Modal):
 
 class Ticket_Creation_Modal(ui.Modal):
     def __init__(self, user: discord.abc.User, guild: discord.Guild):
-        super().__init__(timeout=60, title="Create Ticket")
+        super().__init__(timeout=60, title="SYS // CREATE TICKET")
         self.user: discord.abc.User = user
         self.guild: discord.Guild = guild
 

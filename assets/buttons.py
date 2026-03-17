@@ -32,7 +32,7 @@ class BanConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -44,7 +44,7 @@ class BanConfirmView(ui.View):
             # DM user before ban
             try:
                 dm_embed = discord.Embed(
-                    title=f"You have been banned from **{interaction.guild.name}**",
+                    title=f"ACTION // BAN // {interaction.guild.name}",
                     color=config.Discord.danger_color,
                 )
                 dm_embed.add_field(name="Reason", value=self.reason, inline=False)
@@ -77,7 +77,7 @@ class BanConfirmView(ui.View):
                 datasys.save_temp_actions(interaction.guild.id, ta)
 
             embed = discord.Embed(
-                title=lang["commands"]["admin"]["ban"]["title"],
+                title=f'{lang["commands"]["admin"]["ban"]["title"]} // {self.user.name}',
                 description=lang["commands"]["admin"]["ban"]["success"],
                 color=config.Discord.danger_color,
             )
@@ -121,13 +121,13 @@ class BanConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=lang["commands"]["admin"]["ban"]["title"],
+            title=f'BAN CANCELLED // {self.user.name}',
             description=lang["commands"]["admin"]["ban"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -154,7 +154,7 @@ class KickConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -163,7 +163,7 @@ class KickConfirmView(ui.View):
             # DM user before kick
             try:
                 dm_embed = discord.Embed(
-                    title=f"You have been kicked from **{interaction.guild.name}**",
+                    title=f"ACTION // KICK // {interaction.guild.name}",
                     color=config.Discord.warn_color,
                 )
                 dm_embed.add_field(name="Reason", value=self.reason, inline=False)
@@ -180,7 +180,7 @@ class KickConfirmView(ui.View):
             )
 
             embed = discord.Embed(
-                title=lang["commands"]["admin"]["kick"]["title"],
+                title=f'{lang["commands"]["admin"]["kick"]["title"]} // {self.user.name}',
                 description=lang["commands"]["admin"]["kick"]["success"],
                 color=config.Discord.danger_color,
             )
@@ -225,13 +225,13 @@ class KickConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=lang["commands"]["admin"]["kick"]["title"],
+            title=f'KICK CANCELLED // {self.user.name}',
             description=lang["commands"]["admin"]["kick"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -263,7 +263,7 @@ class UbanConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -277,7 +277,7 @@ class UbanConfirmView(ui.View):
             )
 
             embed = discord.Embed(
-                title=lang["commands"]["admin"]["unban"]["title"],
+                title=f'{lang["commands"]["admin"]["unban"]["title"]} // {self.user_id}',
                 description=lang["commands"]["admin"]["unban"]["success"],
                 color=config.Discord.success_color,
             )
@@ -322,13 +322,13 @@ class UbanConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=lang["commands"]["admin"]["unban"]["title"],
+            title=f'UNBAN CANCELLED // {self.user_id}',
             description=lang["commands"]["admin"]["unban"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -360,7 +360,7 @@ class ClearConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -370,7 +370,7 @@ class ClearConfirmView(ui.View):
             await text_channel.purge(limit=self.amount + 1)
 
             embed = discord.Embed(
-                title=lang["commands"]["admin"]["clear"]["title"],
+                title=f'{lang["commands"]["admin"]["clear"]["title"]} // #{self.channel.name} // {self.amount} msgs',
                 description=lang["commands"]["admin"]["clear"]["success"],
                 color=config.Discord.success_color,
             )
@@ -420,13 +420,13 @@ class ClearConfirmView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=lang["commands"]["admin"]["clear"]["title"],
+            title=f'CLEAR CANCELLED // #{self.channel.name}',
             description=lang["commands"]["admin"]["clear"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -448,7 +448,7 @@ class VerifyView(ui.View):
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
                 embed=discord.Embed(
-                    title=lang["commands"]["guild_only"],
+                    title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
                 )
             )
@@ -541,7 +541,7 @@ class TicketView(ui.View):
                 lang = datasys.load_lang_file(1001)
                 return await interaction.response.send_message(
                     embed=discord.Embed(
-                        title=lang["commands"]["guild_only"],
+                        title="ERROR // SERVER ONLY",
                         color=config.Discord.warn_color,
                     )
                 )
@@ -604,7 +604,7 @@ class TicketAdminButtons(ui.View):
                 lang = datasys.load_lang_file(1001)
                 return await interaction.response.send_message(
                     embed=discord.Embed(
-                        title=lang["commands"]["guild_only"],
+                        title="ERROR // SERVER ONLY",
                         color=config.Discord.warn_color,
                     ),
                     ephemeral=True,
@@ -792,7 +792,7 @@ class TicketAdminButtons(ui.View):
                 lang = datasys.load_lang_file(1001)
                 return await interaction.response.send_message(
                     embed=discord.Embed(
-                        title=lang["commands"]["guild_only"],
+                        title="ERROR // SERVER ONLY",
                         color=config.Discord.warn_color,
                     ),
                     ephemeral=True,
