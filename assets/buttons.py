@@ -45,14 +45,14 @@ class BanConfirmView(ui.View):
             try:
                 dm_embed = discord.Embed(
                     title=f"You have been banned from **{interaction.guild.name}**",
-                    color=discord.Color.red(),
+                    color=config.Discord.danger_color,
                 )
                 dm_embed.add_field(name="Reason", value=self.reason, inline=False)
                 dm_embed.add_field(name="Duration", value=duration_str, inline=False)
                 dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
                 if expires_at:
                     dm_embed.add_field(name="Expires", value=f"<t:{int(expires_at.timestamp())}:F>", inline=False)
-                dm_embed.set_footer(text="Baxi - avocloud.net")
+                dm_embed.set_footer(text="Baxi · avocloud.net")
                 await self.user.send(embed=dm_embed)
             except (discord.Forbidden, discord.HTTPException):
                 pass
@@ -79,7 +79,7 @@ class BanConfirmView(ui.View):
             embed = discord.Embed(
                 title=lang["commands"]["admin"]["ban"]["title"],
                 description=lang["commands"]["admin"]["ban"]["success"],
-                color=discord.Color.red(),
+                color=config.Discord.danger_color,
             )
             embed.add_field(
                 name=lang["commands"]["admin"]["user"],
@@ -129,7 +129,7 @@ class BanConfirmView(ui.View):
         embed = discord.Embed(
             title=lang["commands"]["admin"]["ban"]["title"],
             description=lang["commands"]["admin"]["ban"]["abort"],
-            color=discord.Color.yellow(),
+            color=config.Discord.warn_color,
         )
 
         for item in self.children:
@@ -164,11 +164,11 @@ class KickConfirmView(ui.View):
             try:
                 dm_embed = discord.Embed(
                     title=f"You have been kicked from **{interaction.guild.name}**",
-                    color=discord.Color.orange(),
+                    color=config.Discord.warn_color,
                 )
                 dm_embed.add_field(name="Reason", value=self.reason, inline=False)
                 dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
-                dm_embed.set_footer(text="Baxi - avocloud.net")
+                dm_embed.set_footer(text="Baxi · avocloud.net")
                 await self.user.send(embed=dm_embed)
             except (discord.Forbidden, discord.HTTPException):
                 pass
@@ -182,7 +182,7 @@ class KickConfirmView(ui.View):
             embed = discord.Embed(
                 title=lang["commands"]["admin"]["kick"]["title"],
                 description=lang["commands"]["admin"]["kick"]["success"],
-                color=discord.Color.red(),
+                color=config.Discord.danger_color,
             )
             embed.add_field(
                 name=lang["commands"]["admin"]["user"],
@@ -233,7 +233,7 @@ class KickConfirmView(ui.View):
         embed = discord.Embed(
             title=lang["commands"]["admin"]["kick"]["title"],
             description=lang["commands"]["admin"]["kick"]["abort"],
-            color=discord.Color.yellow(),
+            color=config.Discord.warn_color,
         )
 
         for item in self.children:
@@ -279,7 +279,7 @@ class UbanConfirmView(ui.View):
             embed = discord.Embed(
                 title=lang["commands"]["admin"]["unban"]["title"],
                 description=lang["commands"]["admin"]["unban"]["success"],
-                color=discord.Color.red(),
+                color=config.Discord.success_color,
             )
             embed.add_field(
                 name=lang["commands"]["admin"]["user"],
@@ -330,7 +330,7 @@ class UbanConfirmView(ui.View):
         embed = discord.Embed(
             title=lang["commands"]["admin"]["unban"]["title"],
             description=lang["commands"]["admin"]["unban"]["abort"],
-            color=discord.Color.yellow(),
+            color=config.Discord.warn_color,
         )
 
         for item in self.children:
@@ -372,7 +372,7 @@ class ClearConfirmView(ui.View):
             embed = discord.Embed(
                 title=lang["commands"]["admin"]["clear"]["title"],
                 description=lang["commands"]["admin"]["clear"]["success"],
-                color=discord.Color.red(),
+                color=config.Discord.success_color,
             )
             embed.add_field(
                 name=lang["commands"]["admin"]["user"],
@@ -428,7 +428,7 @@ class ClearConfirmView(ui.View):
         embed = discord.Embed(
             title=lang["commands"]["admin"]["clear"]["title"],
             description=lang["commands"]["admin"]["clear"]["abort"],
-            color=discord.Color.yellow(),
+            color=config.Discord.warn_color,
         )
 
         for item in self.children:
@@ -464,7 +464,7 @@ class VerifyView(ui.View):
                 ),
                 color=config.Discord.danger_color,
             )
-            embed.set_footer(text="Baxi - avocloud.net")
+            embed.set_footer(text="Baxi · avocloud.net")
             await interaction.response.send_message(embed=embed)
             return
 
@@ -491,7 +491,7 @@ class VerifyView(ui.View):
             embed_success = discord.Embed(
                 title=lang["systems"]["verify"]["title"],
                 description=lang["systems"]["verify"]["description_success"],
-                color=discord.Color.green(),
+                color=config.Discord.success_color,
             )
 
             if option == 0:
@@ -523,7 +523,7 @@ class VerifyView(ui.View):
             embed = discord.Embed(
                 title=lang["systems"]["verify"]["title"],
                 description=lang["systems"]["verify"]["description_not_enabled"],
-                color=discord.Color.red(),
+                color=config.Discord.danger_color,
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -556,7 +556,7 @@ class TicketView(ui.View):
                     ),
                     color=config.Discord.danger_color,
                 )
-                embed.set_footer(text="Baxi - avocloud.net")
+                embed.set_footer(text="Baxi · avocloud.net")
                 await interaction.response.send_message(embed=embed)
                 return
             tickets: dict = dict(
@@ -574,7 +574,7 @@ class TicketView(ui.View):
                             description=str(
                                 lang["systems"]["ticket"]["description_already_open"]
                             ).format(channel=channel.mention),
-                            color=discord.Color.red(),
+                            color=config.Discord.warn_color,
                         )
                         await interaction.response.send_message(
                             embed=embed, ephemeral=True
@@ -771,7 +771,7 @@ class TicketAdminButtons(ui.View):
                             description=lang["systems"]["ticket"][
                                 "description_no_permission_delete"
                             ],
-                            color=discord.Color.red(),
+                            color=config.Discord.danger_color,
                         ),
                         ephemeral=True,
                     )
@@ -855,7 +855,7 @@ class TicketAdminButtons(ui.View):
                             description=str(
                                 lang["systems"]["ticket"]["description_claimed"]
                             ).format(user=interaction.user.mention),
-                            color=discord.Color.green(),
+                            color=config.Discord.success_color,
                         )
                     )
                 else:
@@ -866,7 +866,7 @@ class TicketAdminButtons(ui.View):
                             description=lang["systems"]["ticket"][
                                 "description_no_permission_claim"
                             ],
-                            color=discord.Color.red(),
+                            color=config.Discord.danger_color,
                         ),
                         ephemeral=True,
                     )

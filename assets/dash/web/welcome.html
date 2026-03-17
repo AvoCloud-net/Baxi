@@ -306,6 +306,28 @@
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
     <script src="https://avocloud.net/assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+            document.querySelectorAll('.stat-value').forEach(el => {
+                const target = parseInt(el.textContent.replace(/[^0-9]/g, ''), 10);
+                if (isNaN(target) || target === 0) return;
+
+                const duration = Math.min(2000, Math.max(600, Math.log10(target + 1) * 550));
+                const startTime = performance.now();
+                el.textContent = '0';
+
+                const tick = now => {
+                    const progress = Math.min((now - startTime) / duration, 1);
+                    el.textContent = Math.round(easeOutCubic(progress) * target).toLocaleString('en-US');
+                    if (progress < 1) requestAnimationFrame(tick);
+                };
+
+                requestAnimationFrame(tick);
+            });
+        });
+    </script>
 </body>
 
 </html>

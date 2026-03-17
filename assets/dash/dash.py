@@ -734,7 +734,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             ):
                 return quart.jsonify({"success": False, "message": "You did not specify the color in a valid HEX format."}), 400
 
-            bot_member_check = await guild.fetch_member(bot.user.id)
+            bot_member_check = await guild.fetch_member(bot.user.id) # type: ignore
             bot_top_role = bot_member_check.top_role
             guild_roles_sorted = sorted(guild.roles, key=lambda r: r.position, reverse=True)
             if bot_top_role.position != guild_roles_sorted[0].position:
@@ -788,7 +788,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 color=discord.Color.from_str(ticket["color"]),
             )
 
-            await channel.send(embed=embed, view=TicketView())
+            panel_msg = await channel.send(embed=embed, view=TicketView())
+            settings["panel_message_id"] = str(panel_msg.id)
 
             save_data(guild.id, "ticket", settings)
 
@@ -1362,7 +1363,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         return quart.jsonify({"success": True, "message": "Settings applied successfully."})
 
-    @app.route("/api/dash/welcomer-bg/", methods=["GET", "POST", "DELETE"])
+    @app.route("/api/dash/welcomer-bg/", methods=["GET", "POST", "DELETE"])  # type: ignore
     @requires_authorization
     async def welcomer_bg():
         import os

@@ -52,6 +52,7 @@ async def add_warning(
             ),
             color=config.Discord.warn_color,
         )
+        embed.set_footer(text="Baxi · avocloud.net")
         await channel.send(embed=embed)
 
     # Escalation
@@ -107,6 +108,7 @@ async def _check_escalation(
                     ),
                     color=config.Discord.danger_color,
                 )
+                embed.set_footer(text="Baxi · avocloud.net")
                 await channel.send(embed=embed)
 
         elif warn_count >= kick_at:
@@ -119,6 +121,7 @@ async def _check_escalation(
                     ),
                     color=config.Discord.danger_color,
                 )
+                embed.set_footer(text="Baxi · avocloud.net")
                 await channel.send(embed=embed)
 
         elif warn_count >= mute_at:
@@ -134,6 +137,7 @@ async def _check_escalation(
                     ),
                     color=config.Discord.warn_color,
                 )
+                embed.set_footer(text="Baxi · avocloud.net")
                 await channel.send(embed=embed)
 
     except discord.Forbidden:

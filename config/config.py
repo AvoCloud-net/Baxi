@@ -4,9 +4,11 @@ import discord
 class Discord:
     shard_count = 4
     prefix = "b?"
-    color = discord.Color.from_rgb(111, 131, 170)
-    danger_color = discord.Color.from_rgb(220, 53, 69)
-    warn_color = discord.Color.from_rgb(255, 193, 7)
+    color         = discord.Color.from_rgb(147, 51, 234)   # #9333ea — Purple (avocloud primary)
+    danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 — Red
+    warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b — Amber
+    success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e — Green
+    info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 — Blue
     version = "6.8.3"
 
 
@@ -53,6 +55,9 @@ class datasys:
     default_data = {
     "lang": "en",
     "guild_name": "",
+    "guild_id": 0,
+    "owner_id": 0,
+    "owner_name": "",
     "terms": False,
     "chatfilter": {
         "enabled": False,
@@ -83,11 +88,11 @@ class datasys:
         "leave_enabled": False,
         "leave_channel": 0,
         "leave_message": "{user} has left {server}.",
-        "color": "#6F83AA",
+        "color": "#9333ea",
         "image_mode": "none",
         "card_color": "#1a1a2e",
         "has_custom_bg": False,
-        "leave_color": "#FFC107"
+        "leave_color": "#f59e0b"
     },
     "custom_commands": {},
     "livestream": {

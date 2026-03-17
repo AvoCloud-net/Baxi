@@ -12,6 +12,7 @@ import assets.data as datasys
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
+from assets.buttons import TicketView
 import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
 import config.config as config
@@ -20,7 +21,14 @@ import discord
 from typing import cast
 from assets.share import globalchat_message_data, temp_voice_channels
 import assets.share as share
-from assets.tasks import GCDH_Task, UpdateStatsTask, LivestreamTask, StatsChannelsTask, TempActionsTask, PhishingListTask
+from assets.tasks import (
+    GCDH_Task,
+    UpdateStatsTask,
+    LivestreamTask,
+    StatsChannelsTask,
+    TempActionsTask,
+    PhishingListTask,
+)
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -58,62 +66,52 @@ def events(bot: commands.AutoShardedBot, web):
 
         logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
 
-        guild_ids = [guild.id for guild in bot.guilds]
-
-        for guild_id in guild_ids:
+        for guild in bot.guilds:
+            guild_id = guild.id
             guild_folder = os.path.join("data", str(guild_id))
+            config_path = os.path.join(guild_folder, "conf.json")
+
+            # Resolve owner info from cache, fall back to API fetch
+            owner_id: int = guild.owner_id or 0
+            owner_name: str = ""
+            if owner_id:
+                owner_user = bot.get_user(owner_id)
+                if owner_user is None:
+                    try:
+                        owner_user = await bot.fetch_user(owner_id)
+                    except Exception:
+                        owner_user = None
+                if owner_user:
+                    owner_name = str(owner_user.name)
+
+            # Load or create config data
             if not os.path.exists(guild_folder):
                 os.makedirs(guild_folder)
-                config_path = os.path.join(guild_folder, "conf.json")
-
-                data: dict = config.datasys.default_data
-                guild = await bot.fetch_guild(int(guild_id))
-                data["guild_name"] = str(guild.name)
-
-                with open(config_path, "w") as config_file:
-                    json.dump(data, config_file, indent=4)
+                data: dict = dict(config.datasys.default_data)
                 logger.success(f"Ordner und conf.json für Guild {guild_id} erstellt.")
+            elif os.path.exists(config_path):
+                try:
+                    with open(config_path, "r") as config_file:
+                        data = json.load(config_file)
+                except (json.JSONDecodeError, Exception) as e:
+                    logger.error(f"Fehler beim Lesen der conf.json für Guild {guild_id}: {e}")
+                    data = dict(config.datasys.default_data)
             else:
-                config_path = os.path.join(guild_folder, "conf.json")
+                data = dict(config.datasys.default_data)
 
-                if os.path.exists(config_path):
-                    try:
+            # Ensure required fields exist
+            if "terms" not in data:
+                data["terms"] = False
 
-                        with open(config_path, "r") as config_file:
-                            data = json.load(config_file)
+            # Always update guild info on every start
+            data["guild_name"] = str(guild.name)
+            data["guild_id"] = guild_id
+            data["owner_id"] = owner_id
+            data["owner_name"] = owner_name
 
-                        if "terms" not in data:
-                            data["terms"] = False
-
-                            with open(config_path, "w") as config_file:
-                                json.dump(data, config_file, indent=4)
-
-                            logger.success(
-                                f"terms-Feld für Guild {guild_id} hinzugefügt und auf false gesetzt."
-                            )
-                        else:
-                            logger.success(
-                                f"terms-Feld für Guild {guild_id} existiert bereits."
-                            )
-
-                    except json.JSONDecodeError:
-                        logger.error(
-                            f"Fehler beim Lesen der conf.json für Guild {guild_id}"
-                        )
-                    except Exception as e:
-                        logger.error(f"Unerwarteter Fehler für Guild {guild_id}: {e}")
-                else:
-
-                    data: dict = config.datasys.default_data
-                    guild = await bot.fetch_guild(int(guild_id))
-                    data["guild_name"] = str(guild.name)
-                    data["terms"] = False
-
-                    with open(config_path, "w") as config_file:
-                        json.dump(data, config_file, indent=4)
-                    logger.success(
-                        f"conf.json für Guild {guild_id} erstellt mit terms-Feld."
-                    )
+            with open(config_path, "w") as config_file:
+                json.dump(data, config_file, indent=4)
+            logger.success(f"Guild {guild_id} ({guild.name}) config aktualisiert.")
 
         try:
             await bot.tree.sync()
@@ -219,7 +217,9 @@ def events(bot: commands.AutoShardedBot, web):
                 description=str(
                     lang["events"]["on_guild_join"]["content"] + "\n\n"
                 ).format(saved_data=data_text),
+                color=config.Discord.color,
             )
+            embed.set_footer(text="Baxi · avocloud.net")
             if isinstance(channel, discord.TextChannel):
                 await channel.send(embed=embed)
             else:
@@ -236,14 +236,58 @@ def events(bot: commands.AutoShardedBot, web):
         if message.author.id == bot.user.id:
             return
 
+        if message.guild is not None:
+            # Delete user messages in livestream channels
+            ls_config = dict(datasys.load_data(message.guild.id, "livestream"))
+            if ls_config.get("enabled", False):
+                for streamer in ls_config.get("streamers", []):
+                    if str(streamer.get("channel_id", "")) == str(message.channel.id):
+                        try:
+                            await message.delete()
+                        except (discord.Forbidden, discord.HTTPException):
+                            pass
+                        return
+
+            # Delete user messages in the ticket panel channel
+            ticket_config = dict(datasys.load_data(message.guild.id, "ticket"))
+            if ticket_config.get("enabled", False):
+                if str(message.channel.id) == str(ticket_config.get("channel", "")):
+                    try:
+                        await message.delete()
+                    except (discord.Forbidden, discord.HTTPException):
+                        pass
+                    return
+
         asyncio.create_task(process_message(message, bot))
 
     @bot.event
     async def on_message_delete(message: discord.Message):
-        """Resend the livestream embed immediately if it gets deleted."""
-        if share.livestream_task is None or message.guild is None:
+        if message.guild is None:
             return
-        await share.livestream_task.on_embed_deleted(message)
+
+        # Resend livestream embed if deleted
+        if share.livestream_task is not None:
+            await share.livestream_task.on_embed_deleted(message) # type: ignore
+
+        # Resend ticket panel embed if deleted
+        ticket_config = dict(datasys.load_data(message.guild.id, "ticket"))
+        if (
+            ticket_config.get("enabled", False)
+            and str(message.id) == str(ticket_config.get("panel_message_id", ""))
+        ):
+            try:
+                channel = message.guild.get_channel(int(ticket_config["channel"]))
+                if isinstance(channel, discord.TextChannel):
+                    embed = discord.Embed(
+                        title=f"{config.Icons.questionmark} {message.guild.name} support",
+                        description=ticket_config.get("message", ""),
+                        color=discord.Color.from_str(ticket_config.get("color", "#5865F2")),
+                    )
+                    panel_msg = await channel.send(embed=embed, view=TicketView())
+                    ticket_config["panel_message_id"] = str(panel_msg.id)
+                    datasys.save_data(message.guild.id, "ticket", ticket_config)
+            except (discord.Forbidden, discord.HTTPException, Exception):
+                pass
 
     @bot.event
     async def on_member_join(member: discord.Member):
@@ -347,7 +391,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
 
         if str(message.channel.id) in tickets:
-            guild_ticket_config: dict = dict(datasys.load_data(message.guild.id, "ticket"))
+            guild_ticket_config: dict = dict(
+                datasys.load_data(message.guild.id, "ticket")
+            )
             user_avatar: str = (
                 "" if message.author.avatar is None else message.author.avatar.url
             )
@@ -355,14 +401,21 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             if message.attachments:
                 for attachment in message.attachments:
                     file_path = (
-                        Path(config.Globalchat.attachments_dir) / f"ticket{message.channel.id}-{random.randint(100, 999)}.png"
+                        Path(config.Globalchat.attachments_dir)
+                        / f"ticket{message.channel.id}-{random.randint(100, 999)}.png"
                     )
                     image = Image.open(BytesIO(await attachment.read()))
                     image.save(file_path)
-                    attachments_list.append(str(file_path).replace(config.Globalchat.attachments_dir, "").replace("/", ""))
+                    attachments_list.append(
+                        str(file_path)
+                        .replace(config.Globalchat.attachments_dir, "")
+                        .replace("/", "")
+                    )
 
             user = await message.guild.fetch_member(message.author.id)
-            is_staff: bool = int(guild_ticket_config.get("role", 0)) in [role.id for role in user.roles]
+            is_staff: bool = int(guild_ticket_config.get("role", 0)) in [
+                role.id for role in user.roles
+            ]
 
             clean_msg = message.clean_content
 
@@ -434,7 +487,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                     ),
                     color=config.Discord.danger_color,
                 )
-                embed.set_footer(text="Baxi - avocloud.net")
+                embed.set_footer(text="Baxi · avocloud.net")
                 await message.reply(embed=embed)
                 return
             if chatfilter_req["flagged"] is True:

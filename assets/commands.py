@@ -71,7 +71,7 @@ def base_commands(bot: commands.AutoShardedBot):
             guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
             if not guild_terms:
                     embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
-                    embed.set_footer(text="Baxi - avocloud.net")
+                    embed.set_footer(text="Baxi · avocloud.net")
                     await interaction.response.send_message(embed=embed)
                     return
             if interaction.user.avatar is None:
@@ -90,11 +90,11 @@ def base_commands(bot: commands.AutoShardedBot):
             embed = discord.Embed(
                 title=f"{config.Icons.search} {lang['commands']['user']['scan_users']['title']}",
                 description=str(lang["commands"]["user"]["scan_users"]["user_count"]).format(users=interaction.guild.member_count),
-                color=0x2b2d31 if len(flagged_users) == 0 else 0xe74c3c
+                color=config.Discord.color if len(flagged_users) == 0 else config.Discord.danger_color
             )
             
             embed.set_thumbnail(url=interaction.guild.icon.url if interaction.guild.icon else None)
-            embed.set_footer(text=f"Requested by {interaction.user}", icon_url=user_avatar)
+            embed.set_footer(text=f"Baxi · avocloud.net  |  Requested by {interaction.user}", icon_url=user_avatar)
 
             if len(flagged_users) == 0:
                 embed.add_field(
@@ -176,7 +176,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["ban"]["title"]}',
             description=lang["commands"]["admin"]["ban"]["confirmation"],
-            color=discord.Color.red(),
+            color=config.Discord.danger_color,
         )
         embed.add_field(
             name=lang["commands"]["admin"]["user"],
@@ -228,7 +228,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["kick"]["title"]}',
             description=lang["commands"]["admin"]["kick"]["confirmation"],
-            color=discord.Color.red(),
+            color=config.Discord.danger_color,
         )
         embed.add_field(
             name=lang["commands"]["admin"]["user"],
@@ -267,7 +267,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["unban"]["title"]}',
             description=lang["commands"]["admin"]["unban"]["confirmation"],
-            color=discord.Color.green(),
+            color=config.Discord.success_color,
         )
         user_member = interaction.guild.get_member(user)
         if user_member is None:
@@ -304,7 +304,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=lang["commands"]["admin"]["clear"]["title"],
             description=lang["commands"]["admin"]["clear"]["confirmation"],
-            color=discord.Color.green(),
+            color=config.Discord.warn_color,
         )
         embed.add_field(
             name=lang["commands"]["admin"]["amount"],
@@ -367,7 +367,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             dm_embed.add_field(name="Reason", value=reason, inline=False)
             dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
             dm_embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
-            dm_embed.set_footer(text="Baxi - avocloud.net")
+            dm_embed.set_footer(text="Baxi · avocloud.net")
             await user.send(embed=dm_embed)
         except (discord.Forbidden, discord.HTTPException):
             pass
@@ -398,6 +398,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed.add_field(name="Duration", value=duration_str, inline=False)
         embed.add_field(name="Reason", value=reason, inline=False)
         embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
+        embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
     @bot.tree.command(name="unmute", description="Remove the timeout from a user.")
@@ -427,10 +428,10 @@ def utility_commands(bot: commands.AutoShardedBot):
             dm_embed = discord.Embed(
                 title=f"Your mute in **{interaction.guild.name}** has been removed",
                 description="You can now send messages again.",
-                color=discord.Color.green(),
+                color=config.Discord.success_color,
             )
             dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
-            dm_embed.set_footer(text="Baxi - avocloud.net")
+            dm_embed.set_footer(text="Baxi · avocloud.net")
             await user.send(embed=dm_embed)
         except (discord.Forbidden, discord.HTTPException):
             pass
@@ -438,8 +439,9 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=f"{config.Icons.info} User unmuted",
             description=f"{user.mention} has been unmuted.",
-            color=discord.Color.green(),
+            color=config.Discord.success_color,
         )
+        embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
     # --- Warning System ---
@@ -489,7 +491,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             embed = discord.Embed(
                 title=f"{config.Icons.info} {lang['commands']['admin']['unwarn']['title']}",
                 description=str(lang["commands"]["admin"]["unwarn"]["success"]).format(id=warn_id, user=user.mention),
-                color=discord.Color.green(),
+                color=config.Discord.success_color,
             )
         else:
             embed = discord.Embed(
@@ -606,6 +608,259 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         await interaction.response.send_message(config.Icons.people_crossed + "" + lang["commands"]["admin"]["deflag_user"]["success"])
 
 
+    @bot.tree.command(name="gc_delete", description="Delete a global chat message. Users can delete their own messages, admins can delete any.")
+    @app_commands.describe(message_id="The global chat message ID (shown in the message footer after '|')")
+    async def gc_delete_command(interaction: discord.Interaction, message_id: str):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        guild_id: int = interaction.guild.id if interaction.guild is not None else 0
+
+        await interaction.response.defer(ephemeral=True)
+
+        from assets.share import globalchat_message_data
+        message_data = globalchat_message_data.get(message_id)
+
+        if not message_data:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="❌ Message Not Found",
+                    description=f"No global chat message found with ID `{message_id}`.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+        is_admin: bool = interaction.user.id in admins
+        is_author: bool = message_data.get("author_id") == interaction.user.id
+
+        if not is_admin and not is_author:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="❌ Missing Permissions",
+                    description="You can only delete your own messages.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+        deleted = 0
+        failed = 0
+        for msg_entry in message_data.get("messages", []):
+            try:
+                guild = bot.get_guild(msg_entry["gid"])
+                if guild is None:
+                    failed += 1
+                    continue
+                channel = guild.get_channel(msg_entry["channel"])
+                if not isinstance(channel, discord.TextChannel):
+                    failed += 1
+                    continue
+                msg = await channel.fetch_message(msg_entry["mid"])
+                await msg.delete()
+                deleted += 1
+            except Exception:
+                failed += 1
+
+        del globalchat_message_data[message_id]
+
+        embed = discord.Embed(
+            title=f"{config.Icons.people_crossed} Message Deleted",
+            description=f"Deleted **{deleted}** message cop{'y' if deleted == 1 else 'ies'} across all servers.",
+            color=config.Discord.success_color,
+        )
+        if failed:
+            embed.add_field(name="⚠️ Failed", value=f"{failed} cop{'y' if failed == 1 else 'ies'} could not be deleted.", inline=False)
+        await interaction.edit_original_response(embed=embed)
+
+
+    @bot.tree.command(name="sys_bulk_config", description="[SYSTEM] Bulk-edit a feature setting across all or a percentage of servers.")
+    @app_commands.describe(
+        feature="Feature to configure: chatfilter, antispam, ticket, auto_roles, temp_voice, livestream",
+        action="'enable' or 'disable'",
+        percent="Percentage of servers to apply to (1–100, default: 100)",
+    )
+    async def sys_bulk_config_command(
+        interaction: discord.Interaction,
+        feature: str,
+        action: str,
+        percent: int = 100,
+    ):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        if interaction.user.id not in admins:
+            return await interaction.response.send_message(
+                embed=discord.Embed(description="❌ Missing permissions.", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        await interaction.response.defer(ephemeral=True)
+
+        valid_features = ["chatfilter", "antispam", "ticket", "auto_roles", "temp_voice", "livestream"]
+        if feature not in valid_features:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="❌ Invalid Feature",
+                    description=f"Valid features: {', '.join(f'`{f}`' for f in valid_features)}",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+        if action not in ("enable", "disable"):
+            return await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="❌ Invalid Action",
+                    description="Action must be `enable` or `disable`.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+        if not 1 <= percent <= 100:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="❌ Invalid Percentage",
+                    description="Percentage must be between 1 and 100.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+        import random
+
+        enable: bool = action == "enable"
+        all_guilds = list(bot.guilds)
+        count = max(1, round(len(all_guilds) * percent / 100))
+        target_guilds = random.sample(all_guilds, count) if percent < 100 else all_guilds
+
+        success = 0
+        failed = 0
+        for guild in target_guilds:
+            try:
+                feat_data = datasys.load_data(guild.id, feature)
+                if not isinstance(feat_data, dict):
+                    feat_data = {}
+                feat_data["enabled"] = enable
+                datasys.save_data(guild.id, feature, feat_data)
+                success += 1
+            except Exception:
+                failed += 1
+
+        embed = discord.Embed(
+            title="⚙️ Bulk Config Applied",
+            description=(
+                f"**{action.capitalize()}d** `{feature}` on **{success}** of **{len(target_guilds)}** servers "
+                f"({percent}% of {len(all_guilds)} total)."
+            ),
+            color=config.Discord.success_color if not failed else config.Discord.warn_color,
+        )
+        if failed:
+            embed.add_field(name="⚠️ Failed", value=f"{failed} server(s) could not be updated.", inline=False)
+
+        await interaction.edit_original_response(embed=embed)
+
+
+    @bot.tree.command(name="search_server", description="Search for servers by name, ID, owner name, or owner ID.")
+    @app_commands.describe(query="Partial name, server ID, owner name, or owner ID")
+    async def search_server_command(interaction: discord.Interaction, query: str):
+        admins: list = list(datasys.load_data(1001, "admins"))
+        if interaction.user.id not in admins:
+            guild_id = interaction.guild.id if interaction.guild else 0
+            lang = datasys.load_lang_file(guild_id)
+            await interaction.response.send_message(lang["commands"]["admin"]["missing_perms"])
+            return
+
+        await interaction.response.defer()
+
+        query_lower = query.lower().strip()
+        matching_guilds: list[discord.Guild] = []
+
+        for guild in bot.guilds:
+            if (
+                query_lower in guild.name.lower()
+                or query_lower in str(guild.id)
+                or (guild.owner_id and query_lower in str(guild.owner_id))
+            ):
+                matching_guilds.append(guild)
+                continue
+
+            # Also search owner name from config
+            try:
+                owner_name = str(datasys.load_data(guild.id, "owner_name"))
+                if owner_name and query_lower in owner_name.lower():
+                    matching_guilds.append(guild)
+            except Exception:
+                pass
+
+        if len(matching_guilds) == 0:
+            embed = discord.Embed(
+                title=f"{config.Icons.search} Keine Server gefunden",
+                description=f"Keine Server gefunden für: `{query}`",
+                color=config.Discord.warn_color,
+            )
+            return await interaction.edit_original_response(embed=embed)
+
+        if len(matching_guilds) == 1:
+            # Detailed view for a single result
+            guild = matching_guilds[0]
+            owner_id = guild.owner_id or 0
+            owner_user = bot.get_user(owner_id)
+            if owner_user is None and owner_id:
+                try:
+                    owner_user = await bot.fetch_user(owner_id)
+                except Exception:
+                    owner_user = None
+            owner_display = f"{owner_user.name} (`{owner_id}`)" if owner_user else f"`{owner_id}`"
+
+            text_channels = len(guild.text_channels)
+            voice_channels = len(guild.voice_channels)
+            categories = len(guild.categories)
+            created_at = guild.created_at.strftime("%d.%m.%Y")
+            boost_level = guild.premium_tier
+            boost_count = guild.premium_subscription_count or 0
+
+            embed = discord.Embed(
+                title=f"{config.Icons.search} {guild.name}",
+                color=config.Discord.color,
+                timestamp=discord.utils.utcnow(),
+            )
+            if guild.icon:
+                embed.set_thumbnail(url=guild.icon.url)
+            if guild.banner:
+                embed.set_image(url=guild.banner.url)
+
+            embed.add_field(name="Server ID", value=f"`{guild.id}`", inline=True)
+            embed.add_field(name="Inhaber", value=owner_display, inline=True)
+            embed.add_field(name="Erstellt am", value=created_at, inline=True)
+            embed.add_field(name="Mitglieder", value=str(guild.member_count), inline=True)
+            embed.add_field(name="Rollen", value=str(len(guild.roles)), inline=True)
+            embed.add_field(
+                name="Kanäle",
+                value=f"{text_channels} Text · {voice_channels} Voice · {categories} Kategorien",
+                inline=True,
+            )
+            embed.add_field(name="Boost Level", value=f"Level {boost_level} ({boost_count} Boosts)", inline=True)
+            embed.add_field(name="Sprache (Config)", value=str(datasys.load_data(guild.id, "lang") or "en"), inline=True)
+
+            terms = datasys.load_data(guild.id, "terms")
+            embed.add_field(name="Terms akzeptiert", value="Ja" if terms else "Nein", inline=True)
+
+            embed.set_footer(text="Baxi · avocloud.net")
+            return await interaction.edit_original_response(embed=embed)
+
+        # List view for multiple results (max 25 shown)
+        shown = matching_guilds[:25]
+        lines = []
+        for i, guild in enumerate(shown, 1):
+            owner_id = guild.owner_id or 0
+            lines.append(
+                f"**{i}.** {guild.name} · `{guild.id}` · {guild.member_count} Mitglieder · Inhaber: `{owner_id}`"
+            )
+        if len(matching_guilds) > 25:
+            lines.append(f"\n*... und {len(matching_guilds) - 25} weitere Ergebnisse. Verfeinere deine Suche.*")
+
+        embed = discord.Embed(
+            title=f"{config.Icons.search} {len(matching_guilds)} Server gefunden",
+            description="\n".join(lines),
+            color=config.Discord.color,
+        )
+        embed.set_footer(text=f"Suche: {query}  |  Baxi · avocloud.net")
+        await interaction.edit_original_response(embed=embed)
+
+
     @bot.tree.command(name="gc_msg_info", description="Displays information about a message in the global chat.")
     @app_commands.describe(mid="Message ID from message embed")
     async def gc_msg_info_command(interaction: discord.Interaction, mid: str):
@@ -624,15 +879,15 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
             embed = discord.Embed(
                 title="Message Not Found",
                 description=f"No message data found for ID: `{mid}`",
-                color=discord.Color.red()
+                color=config.Discord.danger_color
             )
             await interaction.response.send_message(embed=embed)
             return
-        
+
         embed = discord.Embed(
             title="Global Chat Message Information",
             description=f"Information for message ID: `{mid}`",
-            color=discord.Color.blue(),
+            color=config.Discord.info_color,
             timestamp=discord.utils.utcnow()
         )
         
@@ -683,4 +938,36 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
             )
         
         await interaction.response.send_message(embed=embed)
-            
+
+
+    @bot.tree.command(name="leave-server", description="Force the bot to leave a guild by its ID.")
+    @app_commands.describe(guild_id="The ID of the guild the bot should leave.")
+    async def leave_server_command(interaction: discord.Interaction, guild_id: str):
+        admins: list = list(datasys.load_data(1001, "admins"))
+
+        if interaction.user.id not in admins:
+            await interaction.response.send_message("❌ Missing permissions.", ephemeral=True)
+            return
+
+        if not guild_id.isdigit():
+            await interaction.response.send_message("❌ Invalid guild ID.", ephemeral=True)
+            return
+
+        guild = bot.get_guild(int(guild_id))
+        if guild is None:
+            await interaction.response.send_message(f"❌ Guild `{guild_id}` not found or bot is not a member.", ephemeral=True)
+            return
+
+        guild_name = guild.name
+        try:
+            await guild.leave()
+            embed = discord.Embed(
+                title=f"{config.Icons.info} Server verlassen",
+                description=f"Der Bot hat **{guild_name}** (`{guild_id}`) erfolgreich verlassen.",
+                color=config.Discord.success_color,
+            )
+            embed.set_footer(text="Baxi · avocloud.net")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Fehler: `{e}`", ephemeral=True)
+
