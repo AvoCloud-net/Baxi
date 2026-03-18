@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Baxi</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta property="og:title" content="Privacy Policy — Baxi">
+    <meta property="og:description" content="How Baxi handles your data — privacy-first, transparent, and always on your side.">
+    <meta property="og:url" content="https://baxi.avocloud.net/privacy/">
+    <meta property="og:color" content="#9333ea">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
+
+    <style>
+        .legal-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 1rem 2.5rem;
+            gap: 1rem;
+        }
+        .legal-hero .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+            opacity: 0.7;
+        }
+        .legal-hero h1 {
+            font-size: clamp(1.75rem, 5vw, 2.75rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .legal-hero p {
+            font-size: 1rem;
+            max-width: 460px;
+            opacity: 0.6;
+            line-height: 1.65;
+        }
+        .legal-section-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 0.375rem;
+            background: color-mix(in srgb, var(--color-primary, #9333ea) 15%, transparent);
+            color: var(--color-primary, #9333ea);
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .legal-section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        .legal-block {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .legal-item {
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+        }
+        .legal-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .legal-item p {
+            font-size: 0.875rem;
+            line-height: 1.7;
+            opacity: 0.75;
+        }
+        .legal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-top: 0.5rem;
+        }
+        .legal-list li {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            opacity: 0.75;
+            padding-left: 1.1rem;
+            position: relative;
+        }
+        .legal-list li::before {
+            content: "–";
+            position: absolute;
+            left: 0;
+            opacity: 0.5;
+        }
+        .legal-highlight {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            background: color-mix(in srgb, var(--color-primary, #9333ea) 12%, transparent);
+            color: var(--color-primary, #9333ea);
+            margin-bottom: 0.5rem;
+        }
+        .update-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            opacity: 0.45;
+            margin-bottom: 1rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0.6;
+            transition: opacity 0.15s;
+            text-decoration: none;
+        }
+        .back-link:hover { opacity: 1; }
+        .toc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .toc-list a {
+            font-size: 0.875rem;
+            opacity: 0.65;
+            text-decoration: none;
+            transition: opacity 0.15s;
+            padding: 0.2rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toc-list a:hover { opacity: 1; }
+    </style>
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+
+    <!-- Nav -->
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/welcome/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 100 75" fill="none">
+                        <path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12"
+                            stroke="currentColor" stroke-width="8.5"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            pathLength="200"/>
+                    </svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap">
+                <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+            </span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        </button>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+
+        <!-- Hero -->
+        <div class="legal-hero">
+            <span class="hero-badge">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                Legal — Baxi
+            </span>
+            <h1>Privacy Policy</h1>
+            <p>How we handle your data — minimal, transparent, and always stored on our own infrastructure.</p>
+            <a href="/welcome/" class="back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Back to Welcome
+            </a>
+        </div>
+
+        <main class="pb-24">
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                <!-- Table of Contents -->
+                <section>
+                    <div class="section-label">ON THIS PAGE</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-base font-semibold">Contents</h2>
+                        </header>
+                        <section>
+                            <div class="toc-list">
+                                <a href="#data-security">
+                                    <span class="legal-section-num">1</span> Data Security
+                                </a>
+                                <a href="#legal-basis">
+                                    <span class="legal-section-num">2</span> Legal Basis
+                                </a>
+                                <a href="#your-rights">
+                                    <span class="legal-section-num">3</span> Your Rights
+                                </a>
+                                <a href="#baxi-data">
+                                    <span class="legal-section-num">4</span> Data Processed by Baxi
+                                </a>
+                                <a href="#third-party">
+                                    <span class="legal-section-num">5</span> Third-Party Services
+                                </a>
+                                <a href="#contact">
+                                    <span class="legal-section-num">6</span> Contact
+                                </a>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 1: Data Security -->
+                <section id="data-security">
+                    <div class="section-label">SECTION 1</div>
+                    <div class="card">
+                        <header>
+                            <div class="update-badge">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                Last updated: 21 Aug 2025
+                            </div>
+                            <h2 class="text-xl font-semibold">Data Security</h2>
+                            <p class="text-muted">How we store and protect your information.</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <p>All data is stored on our own servers, accessible only to members of our administration team. Our use of self-developed or open source programs ensures transparency and accountability.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">1.1</span>
+                                        Cookies
+                                    </div>
+                                    <p>We do not use any tracking or analytics cookies. The Baxi Dashboard uses a single session cookie (<code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">session</code>) solely to maintain your login state after authenticating with Discord. This cookie contains no personal data beyond a session identifier and is deleted when you log out.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <p>We try to develop as much as possible ourselves, and only use open source software where necessary. We do not give away, sell or share any of the data we process or collect with third parties.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 2: Legal Basis -->
+                <section id="legal-basis">
+                    <div class="section-label">SECTION 2</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold">Legal Basis</h2>
+                            <p class="text-muted">The legal grounds under which we process personal data (GDPR Art. 6).</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">2.1</span>
+                                        Legitimate Interest — Art. 6(1)(f) GDPR
+                                    </div>
+                                    <p>The majority of data processing by Baxi is based on our legitimate interest in providing a functioning, secure Discord bot service. This includes storing guild and user IDs to associate settings with the correct server, and logging moderation actions to ensure transparency for server administrators.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">2.2</span>
+                                        Contract Performance — Art. 6(1)(b) GDPR
+                                    </div>
+                                    <p>Processing required to provide specific features that a server administrator has explicitly enabled — such as the chat filter, global chat, or welcome messages — is based on the performance of the service agreement between Avocloud and the server administrator.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <p>Avocloud.net is operated from Austria. All data processing is subject to Austrian law and, where applicable, the General Data Protection Regulation (GDPR / DSGVO) of the European Union.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 3: Your Rights -->
+                <section id="your-rights">
+                    <div class="section-label">SECTION 3</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold">Your Rights</h2>
+                            <p class="text-muted">Under applicable privacy laws, you have the following rights regarding your personal data.</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">2.1</span>
+                                        Rights Overview
+                                    </div>
+                                    <ul class="legal-list">
+                                        <li><strong>Right to Access:</strong> You may request a copy of the personal data we hold about you.</li>
+                                        <li><strong>Right to Rectification:</strong> You may ask us to correct inaccurate or incomplete data.</li>
+                                        <li><strong>Right to Erasure:</strong> You may request deletion of your personal data, subject to certain exceptions.</li>
+                                        <li><strong>Right to Restriction:</strong> You may ask us to stop processing all or some of your personal data.</li>
+                                        <li><strong>Right to Data Portability:</strong> You may request a copy of your data in a machine-readable format.</li>
+                                    </ul>
+                                </div>
+                                <div class="legal-item">
+                                    <p>To exercise any of these rights, contact us at <strong>support@avocloud.net</strong>. We will respond to all legitimate requests within 30 days.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 4: Baxi Data -->
+                <section id="baxi-data">
+                    <div class="section-label">SECTION 4</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold">Data Processed by Baxi</h2>
+                            <p class="text-muted">Baxi is designed with privacy as a fundamental principle. We only process and store the minimal information required to provide specific services enabled on each server.</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.1</span>
+                                        Data Types
+                                    </div>
+                                    <p>The following types of data may be processed, depending on which features are active on your server:</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li>User IDs</li>
+                                        <li>Guild IDs</li>
+                                        <li>Message IDs and content (in specific contexts)</li>
+                                        <li>Attached files (in specific contexts)</li>
+                                    </ul>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.2</span>
+                                        Chat Filter Logs
+                                    </div>
+                                    <p>If the chat filter deletes a message, a log entry is created containing the username, message content, guild name, and relevant IDs. These logs are accessible to server moderators via a secure access link. All processing is performed exclusively on our own servers. No data ever leaves the Avocloud network.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.3</span>
+                                        Global Chat
+                                    </div>
+                                    <p>For messages sent in global chat channels, we store the Message ID, Guild ID, and Author ID. Attached images are uploaded to our servers and served via a randomly generated link.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.4</span>
+                                        Web Dashboard Logs
+                                    </div>
+                                    <p>Actions taken via the dashboard are logged and visible to the guild owner for transparency. These logs help server administrators track configuration changes.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-highlight">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                                        Privacy-first
+                                    </div>
+                                    <p>Baxi operates 100% independently on our own infrastructure. We do not share or sell any data with third parties. All data processing happens exclusively within the Avocloud network.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 5: Third-Party Services -->
+                <section id="third-party">
+                    <div class="section-label">SECTION 5</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold">Third-Party Services</h2>
+                            <p class="text-muted">External services that Baxi interacts with as part of its operation.</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">5.1</span>
+                                        Discord API
+                                    </div>
+                                    <p>Baxi communicates with the Discord API (operated by Discord Inc.) to function as a Discord bot. This means that data such as user IDs, message content, and guild information is exchanged with Discord's infrastructure as part of normal bot operation. This exchange is governed by <a href="https://discord.com/privacy" style="color: var(--color-primary, #9333ea); text-decoration: none; font-weight: 600;">Discord's Privacy Policy</a>. We do not control or receive data from Discord beyond what is passed to the bot at the time of an event.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">5.2</span>
+                                        SafeText (Chat Filter)
+                                    </div>
+                                    <p>Message content may be sent to our self-developed SafeText backend for rule-based analysis. SafeText runs exclusively on our own infrastructure. No data is stored after the request is processed — all content is held in working memory only for the duration of the request and deleted immediately afterwards.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">5.3</span>
+                                        Self-Hosted AI (e.g. Chat Filter)
+                                    </div>
+                                    <p>Certain features may use our self-hosted AI model running on our own infrastructure. No data is transmitted to any third-party AI provider or external service. As with SafeText, no data is retained after a request completes — content is processed in memory and discarded immediately. Which backend is used depends on the configuration set by the respective server administrator in their guild settings.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <p>We do not integrate any advertising networks, analytics platforms, or other third-party data processors beyond those listed above.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Section 6: Contact -->
+                <section id="contact">
+                    <div class="section-label">SECTION 6</div>
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold">Contact</h2>
+                            <p class="text-muted">Questions, data requests, or concerns? Reach out to us.</p>
+                        </header>
+                        <section>
+                            <div class="legal-block">
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                        </span>
+                                        Email
+                                    </div>
+                                    <p><a href="mailto:support@avocloud.net" style="color: var(--color-primary, #9333ea); text-decoration: none; font-weight: 600;">support@avocloud.net</a></p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                        </span>
+                                        Discord
+                                    </div>
+                                    <p>Join our community at <a href="https://avocloud.net/discord" style="color: var(--color-primary, #9333ea); text-decoration: none; font-weight: 600;">avocloud.net/discord</a></p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Footer links -->
+                <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 1rem 0; flex-wrap: wrap;">
+                    <a href="/terms/" style="font-size: 0.8rem; opacity: 0.5; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">Terms of Service</a>
+                    <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.5; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">Impressum</a>
+                </div>
+
+                <footer class="site-footer">
+                    <p>Avocloud.net &mdash; Baxi Dashboard</p>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="https://avocloud.net/assets/js/main.js"></script>
+</body>
+
+</html>

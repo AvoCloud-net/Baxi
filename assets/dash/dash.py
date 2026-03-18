@@ -134,6 +134,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             version=config.Discord.version,
         )
 
+    @app.route("/privacy/")
+    async def privacy():
+        return await render_template("privacy.html")
+
+    @app.route("/terms/")
+    async def terms():
+        return await render_template("terms.html")
+
     def get_time_based_greeting(username):
         hour = datetime.now().hour
 
