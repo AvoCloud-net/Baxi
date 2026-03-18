@@ -1609,3 +1609,5 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return abort(400, "Ungültiger Dateiname")
 
         return await send_from_directory("attachments", filename)
+
+    app.config["BOT_READY"] = True

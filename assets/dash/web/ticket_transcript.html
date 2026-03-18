@@ -38,7 +38,7 @@
             display: flex;
             flex-direction: column;
             gap: var(--chat-spacing);
-            margin: 2rem 0;
+            margin: 2rem 0 0;
             padding: 1.5rem;
             background: rgba(17, 17, 17, 0.6);
             border: var(--chat-border);
@@ -124,7 +124,6 @@
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
-            margin-left: 0.5rem;
         }
 
         .status-open {
@@ -195,23 +194,79 @@
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
-            <h1 class="text-3xl font-bold">Ticket <span class="highlight-yellow">#{{data.id}}</span></h1>
+            <h1 class="text-3xl font-bold">Ticket <span class="highlight-yellow" style="font-family: inherit;">#{{data.id}}</span></h1>
             <p class="text-muted">{{ data.title }}</p>
         </div>
 
         <main class="pb-24">
-            <section class="pb-16" id="ticket-overview">
+
+            <!-- Ticket Metadata -->
+            <section class="pb-8" id="ticket-overview">
                 <div class="section-label flex items-center gap-3">
                     SUPPORT TICKET
-                    <span class="ticket-status status-{{data.status}}">{{ data.status|upper }}</span>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <div class="card card-hover mb-6">
+                    <div class="card">
+                        <header>
+                            <h2 class="text-base font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                </svg>
+                                Status
+                            </h2>
+                        </header>
+                        <section style="display: flex; justify-content: center;">
+                            <span class="ticket-status status-closed" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                                CLOSED
+                            </span>
+                        </section>
+                    </div>
+
+                    <div class="card">
+                        <header>
+                            <h2 class="text-base font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                                Closed
+                            </h2>
+                        </header>
+                        <section>
+                            <p class="text-muted">{{ data.closed_on }}</p>
+                        </section>
+                    </div>
+
+                    <div class="card">
+                        <header>
+                            <h2 class="text-base font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                Closed by
+                            </h2>
+                        </header>
+                        <section>
+                            <p class="text-muted"><span class="highlight-yellow">{{ data.closed_by }}</span></p>
+                        </section>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Initial Request -->
+            <section class="pb-8" id="initial-request">
+                <div class="section-label">INITIAL REQUEST</div>
+                <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <polyline points="22,6 12,13 2,6"/>
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                             </svg>
                             {{ data.title }}
                         </h2>
@@ -220,8 +275,11 @@
                         <p class="text-muted" style="white-space: pre-wrap;">{{ data.msg }}</p>
                     </section>
                 </div>
+            </section>
 
-                <div class="section-label mt-8">
+            <!-- Conversation Transcript -->
+            <section class="pb-16" id="transcript">
+                <div class="section-label">
                     CONVERSATION TRANSCRIPT
                     <span class="text-muted font-normal normal-case text-xs ml-2">{{ data.transcript|length }} messages</span>
                 </div>

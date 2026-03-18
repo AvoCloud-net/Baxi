@@ -95,20 +95,24 @@
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6" id="container">
         <div class="page-header">
-            <h1 class="text-3xl font-bold">Chatfilter Log <span class="highlight-yellow">#{{data.id}}</span></h1>
+            <h1 class="text-3xl font-bold">Chatfilter Log <span class="highlight-yellow" style="font-family: inherit;">#{{data.id}}</span></h1>
+            <p class="text-muted">Flagged on <strong>{{data.timestamp}}</strong> &mdash; <span class="highlight-yellow">{{data.reason}}</span></p>
         </div>
 
         <main class="pb-24">
-            <section class="pb-16" id="basic-info">
-                <div class="section-label">INFORMATION</div>
-                <div class="grid grid-cols-1 gap-6">
 
-                    <div class="card card-hover">
+            <!-- Origin -->
+            <section class="pb-8" id="origin">
+                <div class="section-label">ORIGIN</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold flex items-center gap-2">
                                 <img src="{{data.uicon}}" alt="Profile Picture"
-                                    class="size-10 rounded-full object-cover flex-shrink-0">
-                                <svg class="lucide" viewBox="0 0 24 24">
+                                    class="size-8 rounded-full object-cover flex-shrink-0"
+                                    onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
+                                <svg class="lucide" style="display:none" viewBox="0 0 24 24">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                     <circle cx="12" cy="7" r="4"/>
                                 </svg>
@@ -117,19 +121,24 @@
                         </header>
                         <section>
                             <p class="text-muted">
-                                The user named <span class="highlight-yellow">{{data.uname}}</span> has the ID
-                                <span class="highlight-yellow">{{data.uid}}</span>, and their account was created on
-                                <span class="highlight-yellow">{{data.user_created_at}}</span>.
+                                <span class="highlight-yellow">{{data.uname}}</span>
+                            </p>
+                            <p class="text-muted text-sm" style="margin-top: 0.4rem;">
+                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.uid}}</code>
+                            </p>
+                            <p class="text-muted text-sm" style="margin-top: 0.25rem;">
+                                Account created: {{data.user_created_at}}
                             </p>
                         </section>
                     </div>
 
-                    <div class="card card-hover">
+                    <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold flex items-center gap-2">
                                 <img src="{{data.sicon}}" alt="Server Picture"
-                                    class="size-10 rounded-full object-cover flex-shrink-0">
-                                <svg class="lucide" viewBox="0 0 24 24">
+                                    class="size-8 rounded-full object-cover flex-shrink-0"
+                                    onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
+                                <svg class="lucide" style="display:none" viewBox="0 0 24 24">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                                     <circle cx="9" cy="7" r="4"/>
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -140,34 +149,43 @@
                         </header>
                         <section>
                             <p class="text-muted">
-                                The guild named <span class="highlight-yellow">{{data.sname}}</span> is associated with
-                                the guild ID <span class="highlight-yellow">{{data.sid}}</span>.
+                                <span class="highlight-yellow">{{data.sname}}</span>
+                            </p>
+                            <p class="text-muted text-sm" style="margin-top: 0.4rem;">
+                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.sid}}</code>
+                            </p>
+                            <p class="text-muted text-sm" style="margin-top: 0.25rem;">
+                                Channel: <span class="highlight-yellow">#{{data.cname}}</span>
+                                (<code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.cid}}</code>)
                             </p>
                         </section>
                     </div>
 
-                    <div class="card card-hover">
-                        <header>
-                            <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <svg class="lucide" viewBox="0 0 24 24">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                </svg>
-                                Message
-                            </h2>
-                        </header>
-                        <section>
-                            <p class="text-muted">
-                                Sent on <span class="highlight-yellow">{{data.timestamp}}</span> in channel
-                                <span class="highlight-yellow">#{{data.cname}}</span>
-                                (ID: <span class="highlight-yellow">{{data.cid}}</span>).<br>
-                                Removed because it was potentially associated with:
-                                <span class="highlight-yellow">{{data.reason}}</span>.
-                            </p>
-                            <hr class="my-4" style="opacity: 0.2;">
-                            <p>{{data.message}}</p>
-                        </section>
-                    </div>
+                </div>
+            </section>
 
+            <!-- Flagged Message -->
+            <section class="pb-16" id="message">
+                <div class="section-label">FLAGGED MESSAGE</div>
+                <div class="card">
+                    <header>
+                        <div class="update-badge" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            {{data.timestamp}}
+                        </div>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                <path d="M12 9v4"/>
+                                <path d="M12 17h.01"/>
+                            </svg>
+                            Flagged Content
+                        </h2>
+                        <p class="text-muted">Removed because it was potentially associated with <span class="highlight-yellow">{{data.reason}}</span>.</p>
+                    </header>
+                    <section>
+                        <p>{{data.message}}</p>
+                    </section>
                 </div>
             </section>
 

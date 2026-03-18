@@ -9,7 +9,7 @@ class Discord:
     warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b — Amber
     success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e — Green
     info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 — Blue
-    version = "6.8.3"
+    version = "6.8.4"
 
 
 class Web:

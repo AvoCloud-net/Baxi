@@ -47,7 +47,17 @@ web = Quart(
 )
 web = cors(web)
 web.config["PREFERRED_URL_SCHEME"] = "https"
+web.config["BOT_READY"] = False
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+
+@web.errorhandler(404)
+async def not_found(e):
+    if not web.config.get("BOT_READY"):
+        from quart import render_template
+        return await render_template("starting.html"), 503
+    from quart import render_template
+    return await render_template("error.html", message="Page not found."), 404
 
 
 events(bot=bot, web=web)
