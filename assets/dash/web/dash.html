@@ -267,6 +267,38 @@
                                         minlength="2" maxlength="15" class="w-full">
                                 </div>
 
+                                <div class="grid gap-2">
+                                    <label>Prism — Trust Scoring <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#9333ea) 15%,transparent);color:var(--color-primary,#9333ea);vertical-align:middle;">BETA</span></label>
+                                    <p class="text-muted text-sm">
+                                        Prism analyzes user behavior on your server (chat filter violations, spam, warnings, bans and kicks)
+                                        and contributes to a network-wide trust score per user. Users that fall below the trust threshold
+                                        are automatically flagged and will appear in <code>/scan_users</code>. Disabling this means actions
+                                        on your server will <strong>not</strong> feed into the global Prism score.
+                                    </p>
+                                    <fieldset class="grid gap-3">
+                                        <label class="radio-label">
+                                            <input type="radio" name="prism-enabled" id="prism-enabled-yes"
+                                                value="true" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">Enabled</span>
+                                                <span class="block text-xs text-muted">
+                                                    User behavior on this server contributes to Prism trust scores.
+                                                </span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="prism-enabled" id="prism-enabled-no"
+                                                value="false" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">Disabled</span>
+                                                <span class="block text-xs text-muted">
+                                                    This server's moderation actions are excluded from Prism scoring.
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </fieldset>
+                                </div>
+
                                 <button type="submit" class="btn-primary submit-btn w-full">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
@@ -1466,6 +1498,8 @@
                 const systemRadio = document.querySelector(`input[name="general-guidelines"][value="${data.terms.toString()}"]`);
                 if (systemRadio) systemRadio.checked = true;
             }
+            const prismRadio = document.querySelector(`input[name="prism-enabled"][value="${(data.prism_enabled !== false).toString()}"]`);
+            if (prismRadio) prismRadio.checked = true;
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
             document.getElementById("ticket-role").value = data.ticket.role || '';
@@ -1800,7 +1834,8 @@
             const lang = document.getElementById('general-lang').value;
             const nick = document.getElementById('general-nick').value;
             const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
-            const payload = { general: { lang, nick, terms: terms === 'true' } };
+            const prismEnabled = document.querySelector('input[name="prism-enabled"]:checked')?.value || 'true';
+            const payload = { general: { lang, nick, terms: terms === 'true', prism_enabled: prismEnabled === 'true' } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

@@ -654,6 +654,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             save_data(sid=int(guild_id), sys="terms", data=guild_conf_terms)
 
+            prism_enabled = general.get("prism_enabled", True)
+            if not isinstance(prism_enabled, bool):
+                prism_enabled = True
+            save_data(sid=int(guild_id), sys="prism_enabled", data=prism_enabled)
+
             user = await discord_auth.fetch_user()
             audit_log_new: dict = {
                 "type": "save",

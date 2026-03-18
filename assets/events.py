@@ -15,6 +15,7 @@ import assets.message.welcomer as welcomer
 from assets.buttons import TicketView
 import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
+import assets.trust as sentinel
 import config.config as config
 import discord
 
@@ -28,6 +29,7 @@ from assets.tasks import (
     StatsChannelsTask,
     TempActionsTask,
     PhishingListTask,
+    TrustScoreTask,
 )
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -154,6 +156,11 @@ def events(bot: commands.AutoShardedBot, web):
             phishing_list_task.update_phishing_list.start()
             await phishing_list_task._fetch_list()
             logger.debug.success("Phishing list task started.")
+
+            logger.working("Starting Prism task...")
+            trust_score_task = TrustScoreTask()
+            trust_score_task.recalculate_scores.start()
+            logger.debug.success("Prism score recalculation task started.")
 
         except Exception as e:
             await bot.change_presence(
@@ -371,6 +378,15 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 await message.delete()
             except discord.Forbidden:
                 pass
+            account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
+            sentinel.record_event(
+                user_id=message.author.id,
+                user_name=message.author.name,
+                event_type="antispam",
+                guild_id=message.guild.id,
+                reason="Anti-Spam triggered",
+                account_age_days=account_age,
+            )
             return
 
         # Custom commands check
@@ -575,6 +591,22 @@ async def del_chatfilter(
         "message": str(message.content),
     }
     save_data(1001, "chatfilter_log", chatfilter_logs)
+
+    # Prism: record chatfilter violation
+    try:
+        account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
+        event_type = "chatfilter_phishing" if reason == "phishing" else "chatfilter_violation"
+        sentinel.record_event(
+            user_id=message.author.id,
+            user_name=message.author.name,
+            event_type=event_type,
+            guild_id=message.guild.id,
+            reason=reason_list.get(reason, reason),
+            account_age_days=account_age,
+        )
+    except Exception as _prism_err:
+        logger.error(f"[Prism] Hook error in del_chatfilter: {_prism_err}")
+
     await message.channel.send(embed=embed)
     if not deleted and reason == "phishing":
         await message.channel.send(

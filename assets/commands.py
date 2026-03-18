@@ -14,6 +14,7 @@ from assets.buttons import (
     ClearConfirmView,
 )
 from assets.message.warnings import add_warning, remove_warning, get_warnings
+import assets.trust as sentinel
 import reds_simple_logger
 
 logger = reds_simple_logger.Logger()
@@ -110,9 +111,20 @@ def base_commands(bot: commands.AutoShardedBot):
                 )
                 
                 for i, user in enumerate(flagged_users, 1):
+                    # Prism: enrich with trust profile if available
+                    trust_profile = sentinel.get_profile(int(user["id"]))
+                    if trust_profile:
+                        score     = trust_profile.get("score", "?")
+                        flag_src  = "🤖 Auto" if user.get("auto_flagged") else "👤 Manuell"
+                        event_cnt = len(trust_profile.get("events", []))
+                        score_str = f"`{score}/100` · {flag_src} · {event_cnt} Ereignisse"
+                    else:
+                        score_str = "kein Prism-Profil"
+
                     embed.add_field(
                         name=f"{i}. {user['name']}",
                         value=f"-  **{lang["commands"]["user"]["scan_users"]["reason"]}:** {user['reason']}\n"
+                            f"-  **Prism Score:** {score_str}\n"
                             f"-  **{lang["commands"]["user"]["scan_users"]["date"]}:** {user['entry_date']}\n"
                             f"-  **{lang["commands"]["user"]["scan_users"]["id"]}:** `{user['id']}`",
                         inline=False

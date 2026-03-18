@@ -120,6 +120,7 @@ class datasys:
         "create_channel_id": "",
         "category_id": "",
         "name_template": "{user}'s Channel"
-    }
+    },
+    "prism_enabled": True
 }
 

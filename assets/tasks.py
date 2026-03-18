@@ -9,6 +9,7 @@ from reds_simple_logger import Logger
 from assets.share import globalchat_message_data, phishing_url_list
 from assets.livestream import twitch_api
 import assets.data as datasys
+import assets.trust as sentinel
 import config.config as config
 import copy
 
@@ -606,6 +607,22 @@ class TempActionsTask:
 
             except Exception as e:
                 logger.error(f"[TempActions] Error for guild {guild.id}: {e}")
+
+
+class TrustScoreTask:
+    """Background task that recalculates Prism trust scores every 6 hours.
+
+    Applies score decay/recovery and triggers auto-flag/unflag logic for all
+    tracked users without needing a new event to fire.
+    """
+
+    @tasks.loop(hours=6)
+    async def recalculate_scores(self):
+        try:
+            await asyncio.to_thread(sentinel.recalculate_all)
+            logger.debug.success("[Prism] Periodic score recalculation complete")
+        except Exception as e:
+            logger.error(f"[Prism] Error in recalculate_scores: {e}")
 
 
 class PhishingListTask:

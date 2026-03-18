@@ -7,6 +7,7 @@ from discord.ext import commands
 from reds_simple_logger import Logger
 
 import assets.data as datasys
+import assets.trust as sentinel
 import config.config as config
 
 logger = Logger()
@@ -40,6 +41,20 @@ async def add_warning(
 
     warnings[user_key].append(warn_entry)
     datasys.save_data(guild_id, "warnings", warnings)
+
+    # Prism: record warning event
+    try:
+        account_age = (datetime.date.today() - user.created_at.date()).days
+        sentinel.record_event(
+            user_id=user.id,
+            user_name=user.name,
+            event_type="warning",
+            guild_id=guild_id,
+            reason=reason,
+            account_age_days=account_age,
+        )
+    except Exception as _prism_err:
+        logger.error(f"[Prism] Hook error in add_warning: {_prism_err}")
 
     warn_count = len(warnings[user_key])
 
