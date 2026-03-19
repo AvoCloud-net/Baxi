@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxi — Admin Panel</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <meta property="og:title" content="Avocloud.net — Baxi Admin">
+    <meta property="og:color" content="#9333ea">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <style>
+        /* ── Admin-specific overrides ─────────────────────────────── */
+        .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 220px;
+            overflow-y: auto;
+            background: var(--color-card, rgba(30,30,40,.92));
+            border-right: 1px solid var(--color-border, rgba(255,255,255,.08));
+            padding: 1.25rem 0.75rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .admin-sidebar .nav-brand {
+            font-size: 0.7rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            opacity: .45;
+            padding: 0.25rem 0.5rem 0.75rem;
+        }
+        .admin-sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            text-decoration: none;
+            color: inherit;
+            opacity: .7;
+            transition: opacity .15s, background .15s;
+        }
+        .admin-sidebar a:hover, .admin-sidebar a.active { opacity: 1; background: rgba(147,51,234,.15); }
+        .admin-sidebar a svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+        .admin-sidebar .nav-sep { height:1px; background: var(--color-border, rgba(255,255,255,.08)); margin: 0.5rem 0; }
+
+        .admin-main {
+            margin-left: 220px;
+            padding: 1.5rem 2rem 4rem;
+            max-width: 1400px;
+        }
+
+        /* ── Status badge ─────────────────────────────────────────── */
+        .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.2rem .55rem; border-radius:999px; font-weight:600; }
+        .badge-ok     { background:rgba(34,197,94,.15); color:#4ade80; }
+        .badge-running{ background:rgba(99,102,241,.15); color:#818cf8; }
+        .badge-error  { background:rgba(239,68,68,.15); color:#f87171; }
+        .badge-idle   { background:rgba(255,255,255,.06); color:#888; }
+        .badge-live   { background:rgba(34,197,94,.15); color:#4ade80; }
+        .badge-offline{ background:rgba(239,68,68,.12); color:#888; }
+        .badge-flagged{ background:rgba(239,68,68,.15); color:#f87171; }
+        .badge-auto   { background:rgba(251,146,60,.15); color:#fb923c; }
+        .badge-clean  { background:rgba(34,197,94,.12); color:#4ade80; }
+
+        /* ── Score bar ───────────────────────────────────────────── */
+        .score-bar { height:4px; border-radius:2px; background: rgba(255,255,255,.08); overflow:hidden; }
+        .score-bar-fill { height:100%; border-radius:2px; transition: width .4s; }
+
+        /* ── Log stream ──────────────────────────────────────────── */
+        #log-stream {
+            height: 340px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: .78rem;
+            padding: .75rem;
+            border-radius: 8px;
+            border: 1px solid var(--color-border, rgba(255,255,255,.08));
+            background: rgba(0,0,0,.25);
+        }
+        .log-line { display:flex; gap:.75rem; padding:.15rem 0; border-bottom:1px solid rgba(255,255,255,.03); }
+        .log-time  { opacity:.4; min-width:60px; }
+        .log-src   { opacity:.55; min-width:80px; }
+        .log-info    { color:#94a3b8; }
+        .log-success { color:#4ade80; }
+        .log-warning { color:#fb923c; }
+        .log-error   { color:#f87171; }
+
+        /* source-specific source label coloring */
+        .log-src-Chatfilter  { color:#c084fc !important; }
+        .log-src-AntiSpam    { color:#fb923c !important; }
+        .log-src-MemberJoin  { color:#4ade80 !important; }
+        .log-src-MemberLeave { color:#94a3b8 !important; }
+        .log-src-GuildJoin   { color:#60a5fa !important; }
+        .log-src-AdminDash   { color:#f59e0b !important; }
+        .log-src-TempVoice   { color:#818cf8 !important; }
+        .log-src-AutoRole    { color:#34d399 !important; }
+
+        /* ── Section label ───────────────────────────────────────── */
+        .section-badge {
+            font-size:.65rem; letter-spacing:.12em; text-transform:uppercase;
+            opacity:.4; margin-bottom:.5rem; padding-left:1px;
+        }
+
+        /* ── Stat number ─────────────────────────────────────────── */
+        .stat-num { font-size:2rem; font-weight:700; line-height:1; }
+
+        /* ── Task grid ───────────────────────────────────────────── */
+        .task-card {
+            border:1px solid var(--color-border, rgba(255,255,255,.08));
+            border-radius:10px;
+            padding:.85rem 1rem;
+            display:flex;
+            flex-direction:column;
+            gap:.35rem;
+        }
+
+        /* ── Action form ─────────────────────────────────────────── */
+        .action-result {
+            margin-top:.5rem; padding:.55rem .75rem; border-radius:6px; font-size:.8rem;
+            display:none;
+        }
+        .action-result.ok  { background:rgba(34,197,94,.12); color:#4ade80; display:block; }
+        .action-result.err { background:rgba(239,68,68,.12); color:#f87171; display:block; }
+
+        /* ── Search table ────────────────────────────────────────── */
+        .admin-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+        .admin-table th { text-align:left; padding:.4rem .6rem; opacity:.45; font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid rgba(255,255,255,.07); }
+        .admin-table td { padding:.45rem .6rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+        .admin-table tr:last-child td { border-bottom:none; }
+        .admin-table tr:hover td { background:rgba(255,255,255,.03); }
+
+        @media (max-width: 768px) {
+            .admin-sidebar { display:none; }
+            .admin-main { margin-left:0; padding:1rem; }
+        }
+    </style>
+</head>
+
+<body>
+<div id="gradientbar"></div>
+
+<!-- Sidebar -->
+<aside class="admin-sidebar">
+    <div class="nav-brand">⚡ Admin Panel</div>
+    <a href="#section-status">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        System Status
+    </a>
+    <a href="#section-logs">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Live Logs
+    </a>
+    <a href="#section-stats">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Global Stats
+    </a>
+    <a href="#section-prism">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        Prism Users
+    </a>
+    <a href="#section-flagged">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Flagged Users
+    </a>
+    <a href="#section-cf-logs">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Chatfilter Logs
+    </a>
+    <a href="#section-streamers">
+        <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Livestreamers
+    </a>
+    <a href="#section-guilds">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        All Guilds
+    </a>
+    <a href="#section-adoption">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Feature Adoption
+    </a>
+    <div class="nav-sep"></div>
+    <a href="#section-actions">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Admin Actions
+    </a>
+    <div class="nav-sep"></div>
+    <a href="/">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Dashboard
+    </a>
+    <a href="/logout/" style="color:#f87171; opacity:.6">
+        <svg viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+        Logout
+    </a>
+</aside>
+
+<!-- Main content -->
+<div class="admin-main">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h1 style="font-size:1.6rem; font-weight:700; margin:0;">{{ greeting }}</h1>
+            <p style="opacity:.45; font-size:.82rem; margin:.2rem 0 0;">Baxi Admin Panel · v{{ version }} · <span id="last-updated" style="opacity:.6;">–</span></p>
+        </div>
+        <div style="display:flex; align-items:center; gap:.75rem;">
+            <img src="{{ user.avatar_url }}" alt="{{ user.name }}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+            <span style="font-size:.85rem; opacity:.7;">{{ user.name }}</span>
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.35rem;">
+                <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ── SYSTEM STATUS ──────────────────────────────────────── -->
+    <section id="section-status" style="margin-bottom:2.5rem;">
+        <div class="section-badge">System Status</div>
+        <div id="task-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <!-- populated by JS -->
+            <div class="task-card" style="opacity:.4; font-size:.82rem;">Loading...</div>
+        </div>
+    </section>
+
+    <!-- ── SHARDS ─────────────────────────────────────────────── -->
+    <section id="section-shards" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Shards</div>
+        <div class="card">
+            <header><h2 style="font-size:1rem; font-weight:600;">Shard Latency</h2></header>
+            <section>
+                <div id="shard-list" style="display:flex; gap:.5rem; flex-wrap:wrap; font-size:.8rem;">
+                    <span style="opacity:.4;">Loading...</span>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── LIVE LOGS ──────────────────────────────────────────── -->
+    <section id="section-logs" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Live Logs</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600; display:flex; align-items:center; gap:.4rem;">
+                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Live Log Stream
+                    </h2>
+                    <p class="text-muted" style="font-size:.78rem;">Auto-refreshes every 3 s · <span id="log-count">0</span> entries · <span id="log-visible-count">0</span> visible</p>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                    <select id="log-source-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="applyLogFilter()">
+                        <option value="">All sources</option>
+                        <option value="Livestream">Livestream</option>
+                        <option value="Chatfilter">Chatfilter</option>
+                        <option value="AntiSpam">AntiSpam</option>
+                        <option value="MemberJoin">MemberJoin</option>
+                        <option value="MemberLeave">MemberLeave</option>
+                        <option value="GuildJoin">GuildJoin</option>
+                        <option value="TempVoice">TempVoice</option>
+                        <option value="StatsChannels">StatsChannels</option>
+                        <option value="TempActions">TempActions</option>
+                        <option value="TrustScore">TrustScore</option>
+                        <option value="GCDH">GCDH</option>
+                        <option value="UpdateStats">UpdateStats</option>
+                        <option value="PhishingList">PhishingList</option>
+                        <option value="AdminDash">AdminDash</option>
+                    </select>
+                    <select id="log-level-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="applyLogFilter()">
+                        <option value="">All levels</option>
+                        <option value="success">Success</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                    <button onclick="clearLogView()" class="btn-sm-outline">Clear view</button>
+                    <button onclick="logAutoScroll=!logAutoScroll; this.textContent=logAutoScroll?'Auto-scroll ON':'Auto-scroll OFF'" class="btn-sm-outline">Auto-scroll ON</button>
+                </div>
+            </header>
+            <section>
+                <div id="log-stream"></div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── GLOBAL STATS ───────────────────────────────────────── -->
+    <section id="section-stats" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Global Stats</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
+            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Guilds</h2></header><section><div class="stat-num" id="stat-guilds">–</div></section></div>
+            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Unique Users</h2></header><section><div class="stat-num" id="stat-users">–</div></section></div>
+            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Processed Messages</h2></header><section><div class="stat-num" id="stat-msgs">–</div></section></div>
+            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Phishing Domains</h2></header><section><div class="stat-num" id="stat-phishing">–</div></section></div>
+        </div>
+        <!-- Top Servers -->
+        <div class="card" style="margin-top:1rem;">
+            <header><h2 style="font-size:1rem; font-weight:600;">Top 10 Servers</h2></header>
+            <section>
+                <table class="admin-table" id="top-servers-table">
+                    <thead><tr><th>#</th><th>Name</th><th>Members</th></tr></thead>
+                    <tbody id="top-servers-body"><tr><td colspan="3" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── FEATURE ADOPTION ───────────────────────────────────── -->
+    <section id="section-adoption" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Feature Adoption</div>
+        <div class="card">
+            <header><h2 style="font-size:1rem; font-weight:600;">Feature Usage across all Guilds</h2></header>
+            <section>
+                <div id="adoption-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <span style="opacity:.4; font-size:.82rem;">Loading...</span>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── PRISM USERS ────────────────────────────────────────── -->
+    <section id="section-prism" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Prism Trust System</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600;">All Prism Users</h2>
+                    <p class="text-muted" style="font-size:.78rem;"><span id="prism-total">–</span> total tracked users · sorted worst-first</p>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <select id="prism-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="filterPrism()">
+                        <option value="all">All users</option>
+                        <option value="flagged">Flagged</option>
+                        <option value="clean">Clean</option>
+                    </select>
+                    <input id="prism-search" type="text" placeholder="Search name or ID…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:170px;" oninput="filterPrism()">
+                </div>
+            </header>
+            <section>
+                <table class="admin-table" id="prism-table">
+                    <thead><tr><th>User</th><th>Score</th><th>Events</th><th>Status</th><th>Last seen</th><th>Actions</th></tr></thead>
+                    <tbody id="prism-body"><tr><td colspan="6" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── FLAGGED USERS ──────────────────────────────────────── -->
+    <section id="section-flagged" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Flagged Users (users.json)</div>
+        <div class="card">
+            <header><h2 style="font-size:1rem; font-weight:600;">Globally Flagged Users</h2></header>
+            <section>
+                <table class="admin-table">
+                    <thead><tr><th>Name</th><th>ID</th><th>Reason</th><th>Date</th><th>Source</th><th>Actions</th></tr></thead>
+                    <tbody id="flagged-body"><tr><td colspan="6" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── CHATFILTER LOGS ───────────────────────────────────── -->
+    <section id="section-cf-logs" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Chatfilter Logs</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600;">Chatfilter Violation Log</h2>
+                    <p class="text-muted" style="font-size:.78rem;">
+                        <span id="cf-total">–</span> total ·
+                        <span id="cf-filtered">–</span> filtered ·
+                        <span id="cf-page-info">–</span> ·
+                        <button onclick="loadCfLogs()" style="background:none; border:none; cursor:pointer; font-size:.78rem; opacity:.6; text-decoration:underline; padding:0;">Refresh</button>
+                    </p>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                    <select id="cf-filter-system" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="loadCfLogs()">
+                        <option value="">All systems</option>
+                        <option value="safetext">SafeText</option>
+                        <option value="ai">AI</option>
+                        <option value="phishing">Phishing</option>
+                    </select>
+                    <input id="cf-search" type="text" placeholder="Search user, guild, message…"
+                        style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;"
+                        oninput="debounceCf()">
+                    <button onclick="loadCfLogs()" class="btn-sm-outline">Search</button>
+                </div>
+            </header>
+            <section style="overflow-x:auto;">
+                <table class="admin-table" id="cf-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>System</th>
+                            <th>User</th>
+                            <th>Guild / Channel</th>
+                            <th>Reason</th>
+                            <th>Message</th>
+                            <th>Log</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cf-body">
+                        <tr><td colspan="7" style="opacity:.4;">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <!-- Pagination controls -->
+            <footer style="display:flex; align-items:center; justify-content:space-between; padding:.75rem 0 0; flex-wrap:wrap; gap:.5rem;">
+                <div style="display:flex; align-items:center; gap:.4rem;">
+                    <button id="cf-prev" onclick="cfChangePage(-1)" class="btn-sm-outline" disabled>← Prev</button>
+                    <span id="cf-page-badge" style="font-size:.78rem; opacity:.6; padding:0 .3rem;">–</span>
+                    <button id="cf-next" onclick="cfChangePage(1)" class="btn-sm-outline" disabled>Next →</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:.4rem;">
+                    <span style="font-size:.78rem; opacity:.5;">Per page:</span>
+                    <select id="cf-page-size" class="select" style="font-size:.78rem; padding:.25rem .4rem; height:auto;" onchange="cfPageSize=+this.value; cfPage=1; renderCfPage()">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </footer>
+        </div>
+    </section>
+
+    <!-- ── ACTIVE STREAMERS ───────────────────────────────────── -->
+    <section id="section-streamers" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Livestream Monitoring</div>
+        <div class="card">
+            <header><h2 style="font-size:1rem; font-weight:600;">Active Streamers being tracked</h2></header>
+            <section>
+                <table class="admin-table">
+                    <thead><tr><th>Streamer</th><th>Guild</th><th>Status</th></tr></thead>
+                    <tbody id="streamers-body"><tr><td colspan="3" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── ALL GUILDS ─────────────────────────────────────────── -->
+    <section id="section-guilds" style="margin-bottom:2.5rem;">
+        <div class="section-badge">All Guilds</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600;">Guild List</h2>
+                    <p class="text-muted" style="font-size:.78rem;"><span id="guild-total">–</span> guilds total (showing top 50 by members)</p>
+                </div>
+                <input id="guild-search" type="text" placeholder="Filter guilds…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:180px;" oninput="filterGuilds()">
+            </header>
+            <section>
+                <table class="admin-table" id="guild-table">
+                    <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Members</th><th>Actions</th></tr></thead>
+                    <tbody id="guild-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── ADMIN ACTIONS ──────────────────────────────────────── -->
+    <section id="section-actions" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Admin Actions</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Flag User -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Flag User</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <input id="flag-uid" type="text" placeholder="User ID" class="w-full">
+                        <input id="flag-reason" type="text" placeholder="Reason" class="w-full">
+                        <button onclick="adminAction('flag_user')" class="btn-primary">Flag User</button>
+                        <div id="flag-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Deflag User -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Deflag User</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <input id="deflag-uid" type="text" placeholder="User ID" class="w-full">
+                        <button onclick="adminAction('deflag_user')" class="btn-primary">Deflag User</button>
+                        <div id="deflag-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Bulk Config -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Bulk Feature Config</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <select id="bulk-feature" class="select w-full">
+                            <option value="chatfilter">Chatfilter</option>
+                            <option value="antispam">Anti-Spam</option>
+                            <option value="ticket">Ticket</option>
+                            <option value="auto_roles">Auto Roles</option>
+                            <option value="temp_voice">Temp Voice</option>
+                            <option value="livestream">Livestream</option>
+                        </select>
+                        <div style="display:flex; gap:.5rem;">
+                            <select id="bulk-action" class="select" style="flex:1;">
+                                <option value="enable">Enable</option>
+                                <option value="disable">Disable</option>
+                            </select>
+                            <input id="bulk-percent" type="number" min="1" max="100" value="100" style="width:70px; text-align:center;" placeholder="%">
+                        </div>
+                        <button onclick="adminAction('bulk_config')" class="btn-primary">Apply Bulk Config</button>
+                        <div id="bulk-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Leave Server -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Leave Server</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <input id="leave-gid" type="text" placeholder="Guild ID" class="w-full">
+                        <button onclick="adminAction('leave_server')" class="btn-primary" style="background:rgba(239,68,68,.8);">Leave Server</button>
+                        <div id="leave-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Search Server -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Search Server</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <div style="display:flex; gap:.5rem;">
+                            <input id="search-query" type="text" placeholder="Name, ID, or owner ID…" style="flex:1;">
+                            <button onclick="adminAction('search_server')" class="btn-primary">Search</button>
+                        </div>
+                        <div id="search-result" class="action-result"></div>
+                        <div id="search-table-wrap" style="display:none; overflow-x:auto;">
+                            <table class="admin-table" id="search-result-table">
+                                <thead><tr><th>Name</th><th>ID</th><th>Members</th><th>Owner ID</th><th>Boosts</th><th>Terms</th><th>Lang</th><th>Actions</th></tr></thead>
+                                <tbody id="search-result-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Delete GC Message -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Delete Global Chat Message</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <input id="gc-mid" type="text" placeholder="Message ID (from footer)" class="w-full">
+                        <button onclick="adminAction('gc_delete')" class="btn-primary" style="background:rgba(239,68,68,.8);">Delete GC Message</button>
+                        <div id="gc-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </section>
+
+</div>
+
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+<script src="https://avocloud.net/assets/js/main.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Admin Panel — client-side logic
+   Polls /api/admin/data every 10s, /api/admin/logs every 3s
+   ══════════════════════════════════════════════════════════════ */
+
+let adminData = null;
+let logOffset = 0;
+let logAutoScroll = true;
+let allLogEntries = [];
+let allPrismUsers = [];
+let allGuilds = [];
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function fmt(n) { return Number(n).toLocaleString(); }
+
+function scoreBadge(score) {
+    if (score <= 30) return `<span class="badge badge-flagged">${score}/100</span>`;
+    if (score <= 60) return `<span class="badge badge-auto">${score}/100</span>`;
+    return `<span class="badge badge-clean">${score}/100</span>`;
+}
+
+function scoreBarColor(score) {
+    if (score <= 30) return '#f87171';
+    if (score <= 60) return '#fb923c';
+    return '#4ade80';
+}
+
+function taskBadge(status) {
+    const map = { ok:'badge-ok', running:'badge-running', error:'badge-error', idle:'badge-idle' };
+    return `<span class="badge ${map[status]||'badge-idle'}">${status}</span>`;
+}
+
+function setResult(id, msg, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'action-result ' + (ok ? 'ok' : 'err');
+    el.textContent = msg;
+}
+
+// ── Log Stream ────────────────────────────────────────────────
+
+function clearLogView() {
+    document.getElementById('log-stream').innerHTML = '';
+    logOffset = 0;
+    allLogEntries = [];
+    updateLogVisible();
+}
+
+// All log entries (raw, unfiltered) stored for client-side filtering
+
+function applyLogFilter() {
+    const srcFilter = document.getElementById('log-source-filter').value;
+    const lvlFilter = document.getElementById('log-level-filter').value;
+    const stream = document.getElementById('log-stream');
+    stream.innerHTML = '';
+    const visible = allLogEntries.filter(e =>
+        (!srcFilter || e.source === srcFilter) &&
+        (!lvlFilter || e.level === lvlFilter)
+    );
+    for (const entry of visible) {
+        stream.appendChild(buildLogLine(entry));
+    }
+    updateLogVisible();
+    if (logAutoScroll) stream.scrollTop = stream.scrollHeight;
+}
+
+function updateLogVisible() {
+    const stream = document.getElementById('log-stream');
+    document.getElementById('log-visible-count').textContent = fmt(stream.children.length);
+}
+
+function buildLogLine(entry) {
+    const div = document.createElement('div');
+    div.className = `log-line log-${entry.level}`;
+    div.dataset.source = entry.source;
+    div.dataset.level = entry.level;
+    div.innerHTML = `<span class="log-time">${entry.time}</span><span class="log-src log-src-${entry.source}">${entry.source}</span><span>${escHtml(entry.message)}</span>`;
+    return div;
+}
+
+async function pollLogs() {
+    try {
+        const res = await fetch(`/api/admin/logs?offset=${logOffset}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const stream = document.getElementById('log-stream');
+        document.getElementById('log-count').textContent = fmt(data.total);
+
+        const srcFilter = document.getElementById('log-source-filter').value;
+        const lvlFilter = document.getElementById('log-level-filter').value;
+
+        for (const entry of data.entries) {
+            allLogEntries.push(entry);
+            // Only append to DOM if it passes the current filter
+            if ((!srcFilter || entry.source === srcFilter) && (!lvlFilter || entry.level === lvlFilter)) {
+                stream.appendChild(buildLogLine(entry));
+            }
+        }
+        logOffset += data.entries.length;
+        updateLogVisible();
+        if (logAutoScroll && data.entries.length > 0) {
+            stream.scrollTop = stream.scrollHeight;
+        }
+    } catch(e) {}
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Main Data Poll ────────────────────────────────────────────
+
+async function pollData() {
+    try {
+        const res = await fetch('/api/admin/data');
+        if (!res.ok) return;
+        adminData = await res.json();
+        document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+        renderAll();
+    } catch(e) {}
+}
+
+function renderAll() {
+    if (!adminData) return;
+    renderStats();
+    renderTasks();
+    renderShards();
+    renderAdoption();
+    renderPrism();
+    renderFlagged();
+    renderStreamers();
+    renderGuilds();
+    renderTopServers();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+
+function renderStats() {
+    const s = adminData.stats || {};
+    document.getElementById('stat-guilds').textContent = fmt(s.guild_count || 0);
+    document.getElementById('stat-users').textContent = fmt(s.user_count || 0);
+    document.getElementById('stat-msgs').textContent = fmt(s.prossesed_messages || 0);
+    document.getElementById('stat-phishing').textContent = fmt(adminData.phishing_domain_count || 0);
+}
+
+function renderTopServers() {
+    const top = adminData.stats?.top_servers || {};
+    const body = document.getElementById('top-servers-body');
+    const entries = Object.entries(top);
+    if (!entries.length) { body.innerHTML = '<tr><td colspan="3" style="opacity:.4;">No data</td></tr>'; return; }
+    body.innerHTML = entries.map(([name, count], i) =>
+        `<tr><td style="opacity:.4;">${i+1}</td><td>${escHtml(name)}</td><td>${fmt(count)}</td></tr>`
+    ).join('');
+}
+
+// ── Tasks ─────────────────────────────────────────────────────
+
+function renderTasks() {
+    const tasks = adminData.task_status || {};
+    const grid = document.getElementById('task-grid');
+    grid.innerHTML = Object.entries(tasks).map(([key, t]) => `
+        <div class="task-card">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:.82rem; font-weight:600;">${escHtml(t.name)}</span>
+                ${taskBadge(t.status)}
+            </div>
+            <div style="font-size:.74rem; opacity:.55;">${escHtml(t.detail || '')}</div>
+            ${t.extra ? `<div style="font-size:.72rem; opacity:.4;">${escHtml(t.extra)}</div>` : ''}
+            ${t.last_run ? `<div style="font-size:.7rem; opacity:.35;">Last run: ${t.last_run}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+// ── Shards ────────────────────────────────────────────────────
+
+function renderShards() {
+    const shards = adminData.shard_info || [];
+    const el = document.getElementById('shard-list');
+    if (!shards.length) { el.innerHTML = '<span style="opacity:.4;">No shard info</span>'; return; }
+    el.innerHTML = shards.map(s => {
+        const lat = s.latency !== null ? `${s.latency} ms` : '–';
+        const color = s.closed ? '#f87171' : (s.latency > 200 ? '#fb923c' : '#4ade80');
+        return `<span style="background:rgba(255,255,255,.05); border-radius:6px; padding:.3rem .6rem; font-size:.78rem;">
+            <span style="color:${color}; font-weight:700;">●</span> Shard ${s.id} · ${lat}${s.closed ? ' · closed':''}
+        </span>`;
+    }).join('');
+}
+
+// ── Feature Adoption ──────────────────────────────────────────
+
+function renderAdoption() {
+    const fa = adminData.feature_adoption || {};
+    const names = {
+        chatfilter:'Chatfilter', ticket:'Ticket System', antispam:'Anti-Spam',
+        welcomer:'Welcomer', livestream:'Livestream', custom_commands:'Custom Commands',
+        globalchat:'Global Chat', stats_channels:'Stats Channels', auto_roles:'Auto Roles',
+    };
+    const grid = document.getElementById('adoption-grid');
+    grid.innerHTML = Object.entries(fa).map(([k, pct]) => `
+        <div style="padding:.6rem 0;">
+            <div style="display:flex; justify-content:space-between; font-size:.8rem; margin-bottom:.3rem;">
+                <span>${names[k]||k}</span>
+                <span style="opacity:.55;">${pct}%</span>
+            </div>
+            <div class="score-bar">
+                <div class="score-bar-fill" style="width:${pct}%; background:#9333ea;"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ── Prism Users ───────────────────────────────────────────────
+
+function renderPrism() {
+    allPrismUsers = adminData.prism_users || [];
+    document.getElementById('prism-total').textContent = fmt(adminData.prism_total || allPrismUsers.length);
+    filterPrism();
+}
+
+function filterPrism() {
+    const filter = document.getElementById('prism-filter').value;
+    const search = document.getElementById('prism-search').value.toLowerCase();
+    let users = allPrismUsers;
+    if (filter === 'flagged') users = users.filter(u => u.auto_flagged || u.manually_flagged);
+    if (filter === 'clean') users = users.filter(u => !u.auto_flagged && !u.manually_flagged);
+    if (search) users = users.filter(u => u.name.toLowerCase().includes(search) || u.uid.includes(search));
+
+    const body = document.getElementById('prism-body');
+    if (!users.length) { body.innerHTML = '<tr><td colspan="6" style="opacity:.4;">No users</td></tr>'; return; }
+    body.innerHTML = users.map(u => {
+        let statusBadge;
+        if (u.auto_flagged) statusBadge = '<span class="badge badge-auto">Auto-flagged</span>';
+        else if (u.manually_flagged) statusBadge = `<span class="badge badge-flagged">Manual</span>`;
+        else statusBadge = '<span class="badge badge-clean">Clean</span>';
+
+        const lastEvent = u.events && u.events.length ? u.events[u.events.length-1] : null;
+        const lastStr = lastEvent ? `${escHtml(lastEvent.type)} · ${(lastEvent.timestamp||'').slice(0,10)}` : '–';
+
+        return `<tr>
+            <td>
+                <div style="font-weight:600; font-size:.82rem;">${escHtml(u.name)}</div>
+                <div style="opacity:.4; font-size:.7rem;">${u.uid}</div>
+            </td>
+            <td>
+                ${scoreBadge(u.score)}
+                <div class="score-bar" style="margin-top:.3rem; width:80px;">
+                    <div class="score-bar-fill" style="width:${u.score}%; background:${scoreBarColor(u.score)};"></div>
+                </div>
+            </td>
+            <td style="opacity:.7;">${u.event_count}</td>
+            <td>${statusBadge}</td>
+            <td style="opacity:.5; font-size:.75rem;">${lastStr}</td>
+            <td style="display:flex; gap:.35rem; flex-wrap:wrap;">
+                ${u.auto_flagged || u.manually_flagged
+                    ? `<button onclick="quickDeflag('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#4ade80;">Deflag</button>`
+                    : `<button onclick="quickFlag('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Flag</button>`
+                }
+                <button onclick="quickClearEvents('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#facc15;" title="Delete all Prism events">Clear events</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function quickFlag(uid, name) {
+    const reason = prompt(`Flag ${name} (${uid})?\nEnter reason:`);
+    if (!reason) return;
+    const r = await doAction({ action:'flag_user', user_id:uid, reason });
+    alert(r.ok ? 'Flagged: ' + r.message : 'Error: ' + r.message);
+    if (r.ok) await pollData();
+}
+
+async function quickDeflag(uid) {
+    if (!confirm(`Deflag user ${uid}?`)) return;
+    const r = await doAction({ action:'deflag_user', user_id:uid });
+    alert(r.ok ? 'Deflagged!' : 'Error: ' + r.message);
+    if (r.ok) await pollData();
+}
+
+async function quickClearEvents(uid, name) {
+    if (!confirm(`Delete ALL Prism events for ${name} (${uid})?\nThis resets their score to 100.`)) return;
+    const r = await doAction({ action:'clear_prism_events', user_id:uid });
+    alert(r.ok ? 'Events cleared.' : 'Error: ' + r.message);
+    if (r.ok) await pollData();
+}
+
+// ── Flagged Users ─────────────────────────────────────────────
+
+function renderFlagged() {
+    const users = adminData.flagged_users || [];
+    const body = document.getElementById('flagged-body');
+    if (!users.length) { body.innerHTML = '<tr><td colspan="6" style="opacity:.4;">No flagged users</td></tr>'; return; }
+    body.innerHTML = users.map(u => `<tr>
+        <td style="font-weight:600;">${escHtml(u.name||'Unknown')}</td>
+        <td style="opacity:.5; font-size:.75rem;">${u.uid || u.id}</td>
+        <td>${escHtml(u.reason||'–')}</td>
+        <td style="opacity:.5;">${u.entry_date||'–'}</td>
+        <td>${u.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}</td>
+        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:#4ade80;">Deflag</button></td>
+    </tr>`).join('');
+}
+
+// ── Streamers ─────────────────────────────────────────────────
+
+function renderStreamers() {
+    const streamers = adminData.active_streamers || [];
+    const body = document.getElementById('streamers-body');
+    if (!streamers.length) { body.innerHTML = '<tr><td colspan="3" style="opacity:.4;">No streamers tracked</td></tr>'; return; }
+    body.innerHTML = streamers.map(s => `<tr>
+        <td style="font-weight:600;">${escHtml(s.display_name)} <span style="opacity:.4; font-size:.75rem;">(${escHtml(s.login)})</span></td>
+        <td>${escHtml(s.guild_name)} <span style="opacity:.4; font-size:.73rem;">${s.guild_id}</span></td>
+        <td>${s.live ? '<span class="badge badge-live">🔴 LIVE</span>' : '<span class="badge badge-offline">Offline</span>'}</td>
+    </tr>`).join('');
+}
+
+// ── Guilds ────────────────────────────────────────────────────
+
+function renderGuilds() {
+    allGuilds = adminData.guild_list || [];
+    document.getElementById('guild-total').textContent = fmt(adminData.guild_total || allGuilds.length);
+    filterGuilds();
+}
+
+function filterGuilds() {
+    const q = document.getElementById('guild-search').value.toLowerCase();
+    const guilds = q ? allGuilds.filter(g => g.name.toLowerCase().includes(q) || g.id.includes(q)) : allGuilds;
+    const body = document.getElementById('guild-body');
+    if (!guilds.length) { body.innerHTML = '<tr><td colspan="5" style="opacity:.4;">No guilds</td></tr>'; return; }
+    body.innerHTML = guilds.map((g, i) => `<tr>
+        <td style="opacity:.4;">${i+1}</td>
+        <td>
+            ${g.icon ? `<img src="${g.icon}" style="width:20px; height:20px; border-radius:50%; vertical-align:middle; margin-right:.4rem; object-fit:cover;">` : ''}
+            <span style="font-weight:600;">${escHtml(g.name)}</span>
+        </td>
+        <td style="opacity:.5; font-size:.75rem;">${g.id}</td>
+        <td>${fmt(g.member_count)}</td>
+        <td>
+            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Leave</button>
+        </td>
+    </tr>`).join('');
+}
+
+function leaveGuild(gid, name) {
+    if (!confirm(`Leave guild "${name}" (${gid})? This cannot be undone!`)) return;
+    document.getElementById('leave-gid').value = gid;
+    adminAction('leave_server');
+}
+
+// ── Admin Actions ─────────────────────────────────────────────
+
+async function doAction(payload) {
+    const res = await fetch('/api/admin/action', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    return { ok: data.success, message: data.message, data };
+}
+
+async function adminAction(action) {
+    const payload = { action };
+
+    if (action === 'flag_user') {
+        payload.user_id = document.getElementById('flag-uid').value.trim();
+        payload.reason  = document.getElementById('flag-reason').value.trim();
+        const r = await doAction(payload);
+        setResult('flag-result', r.message, r.ok);
+        if (r.ok) pollData();
+    } else if (action === 'deflag_user') {
+        payload.user_id = document.getElementById('deflag-uid').value.trim();
+        const r = await doAction(payload);
+        setResult('deflag-result', r.message, r.ok);
+        if (r.ok) pollData();
+    } else if (action === 'bulk_config') {
+        payload.feature     = document.getElementById('bulk-feature').value;
+        payload.action_type = document.getElementById('bulk-action').value;
+        payload.percent     = parseInt(document.getElementById('bulk-percent').value) || 100;
+        const r = await doAction(payload);
+        setResult('bulk-result', r.message, r.ok);
+    } else if (action === 'leave_server') {
+        payload.guild_id = document.getElementById('leave-gid').value.trim();
+        if (!confirm(`Really leave guild ${payload.guild_id}?`)) return;
+        const r = await doAction(payload);
+        setResult('leave-result', r.message, r.ok);
+        if (r.ok) pollData();
+    } else if (action === 'search_server') {
+        payload.query = document.getElementById('search-query').value.trim();
+        const r = await doAction(payload);
+        const wrap = document.getElementById('search-table-wrap');
+        const resultEl = document.getElementById('search-result');
+        if (!r.ok) {
+            setResult('search-result', r.message, false);
+            wrap.style.display = 'none';
+            return;
+        }
+        resultEl.style.display = 'none';
+        const results = r.data.results || [];
+        if (!results.length) {
+            setResult('search-result', 'No servers found.', false);
+            wrap.style.display = 'none';
+            return;
+        }
+        wrap.style.display = 'block';
+        document.getElementById('search-result-body').innerHTML = results.map(g => `<tr>
+            <td style="font-weight:600;">${escHtml(g.name)}</td>
+            <td style="opacity:.5; font-size:.75rem;">${g.id}</td>
+            <td>${fmt(g.member_count)}</td>
+            <td style="opacity:.5; font-size:.75rem;">${g.owner_id}</td>
+            <td style="opacity:.5;">${g.boost_count}</td>
+            <td>${g.terms ? '✅' : '❌'}</td>
+            <td style="opacity:.5;">${g.lang}</td>
+            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Leave</button></td>
+        </tr>`).join('');
+    } else if (action === 'gc_delete') {
+        payload.message_id = document.getElementById('gc-mid').value.trim();
+        if (!confirm(`Delete GC message ${payload.message_id} from all servers?`)) return;
+        const r = await doAction(payload);
+        setResult('gc-result', r.message, r.ok);
+    }
+}
+
+// ── Chatfilter Logs ───────────────────────────────────────────
+
+const CF_SYSTEM_BADGE = {
+    'SafeText': '<span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;">SafeText</span>',
+    'AI':       '<span class="badge" style="background:rgba(168,85,247,.15);color:#c084fc;">AI</span>',
+    'Phishing': '<span class="badge" style="background:rgba(239,68,68,.15);color:#f87171;">Phishing</span>',
+};
+
+let cfDebounceTimer = null;
+let cfAllEntries = [];
+let cfPage = 1;
+let cfPageSize = 50;
+
+function debounceCf() {
+    clearTimeout(cfDebounceTimer);
+    cfDebounceTimer = setTimeout(loadCfLogs, 400);
+}
+
+function cfChangePage(delta) {
+    const maxPage = Math.max(1, Math.ceil(cfAllEntries.length / cfPageSize));
+    cfPage = Math.max(1, Math.min(cfPage + delta, maxPage));
+    renderCfPage();
+}
+
+function renderCfPage() {
+    const body = document.getElementById('cf-body');
+    const total = cfAllEntries.length;
+    const maxPage = Math.max(1, Math.ceil(total / cfPageSize));
+    cfPage = Math.min(cfPage, maxPage);
+
+    const start = (cfPage - 1) * cfPageSize;
+    const slice = cfAllEntries.slice(start, start + cfPageSize);
+
+    document.getElementById('cf-page-info').textContent = total
+        ? `${start + 1}–${Math.min(start + cfPageSize, total)} of ${fmt(total)}`
+        : '0 entries';
+    document.getElementById('cf-page-badge').textContent = `Page ${cfPage} / ${maxPage}`;
+    document.getElementById('cf-prev').disabled = cfPage <= 1;
+    document.getElementById('cf-next').disabled = cfPage >= maxPage;
+
+    if (!slice.length) {
+        body.innerHTML = '<tr><td colspan="7" style="opacity:.4;">No entries found</td></tr>';
+        return;
+    }
+
+    body.innerHTML = slice.map(e => {
+        const sys = e.system || 'SafeText';
+        const sysBadge = CF_SYSTEM_BADGE[sys] || `<span class="badge badge-idle">${escHtml(sys)}</span>`;
+        const ts = e.timestamp || '–';
+        // old entries use 'word' for reason; new entries use 'reason'
+        const reasonText = e.reason || e.word || '–';
+        const msgShort = e.message ? escHtml(e.message.slice(0, 80)) + (e.message.length > 80 ? '…' : '') : '–';
+        return `<tr>
+            <td style="opacity:.5; font-size:.73rem; white-space:nowrap;">${escHtml(ts)}</td>
+            <td>${sysBadge}</td>
+            <td>
+                <span style="font-weight:600;">${escHtml(e.uname || '–')}</span>
+                <div style="opacity:.4; font-size:.7rem;">${escHtml(String(e.uid || ''))}</div>
+            </td>
+            <td>
+                <span style="font-size:.8rem;">${escHtml(e.sname || '–')}</span>
+                <div style="opacity:.4; font-size:.7rem;">#${escHtml(e.cname || '–')}</div>
+            </td>
+            <td><span class="badge badge-flagged" style="white-space:nowrap;">${escHtml(reasonText)}</span></td>
+            <td style="font-size:.75rem; max-width:260px; word-break:break-word;">${msgShort}</td>
+            <td><a href="/?id_chatfilter=${e.id}" target="_blank" class="btn-sm-outline" style="font-size:.72rem;">View</a></td>
+        </tr>`;
+    }).join('');
+}
+
+async function loadCfLogs() {
+    const system = document.getElementById('cf-filter-system').value;
+    const search = document.getElementById('cf-search').value.trim();
+    let url = '/api/admin/cf_logs?limit=2000';
+    if (system) url += '&system=' + encodeURIComponent(system);
+    if (search) url += '&search=' + encodeURIComponent(search);
+
+    const body = document.getElementById('cf-body');
+    body.innerHTML = '<tr><td colspan="7" style="opacity:.4;">Loading…</td></tr>';
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById('cf-total').textContent = fmt(data.total);
+        document.getElementById('cf-filtered').textContent = fmt(data.filtered);
+
+        cfAllEntries = data.entries;
+        cfPage = 1;
+        renderCfPage();
+    } catch(err) {
+        body.innerHTML = `<tr><td colspan="7" style="color:#f87171;">Error loading logs: ${escHtml(String(err))}</td></tr>`;
+    }
+}
+
+// ── Polling setup ─────────────────────────────────────────────
+
+pollData();
+pollLogs();
+loadCfLogs();
+setInterval(pollData, 10000);
+setInterval(pollLogs, 3000);
+setInterval(loadCfLogs, 30000);
+
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.admin-sidebar a[href^="#"]');
+window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+    navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+}, { passive:true });
+</script>
+
+</body>
+</html>

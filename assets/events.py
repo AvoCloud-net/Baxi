@@ -20,7 +20,7 @@ import config.config as config
 import discord
 
 from typing import cast
-from assets.share import globalchat_message_data, temp_voice_channels
+from assets.share import globalchat_message_data, temp_voice_channels, admin_log
 import assets.share as share
 from assets.tasks import (
     GCDH_Task,
@@ -178,6 +178,7 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_guild_join(guild: discord.Guild):
         logger.debug.info("on_guild_join")
+        admin_log("info", f"Bot joined guild: {guild.name} ({guild.id}) — {guild.member_count} members", source="GuildJoin")
         try:
             guild_data_dir = os.path.join("data", str(guild.id))
             data_dir_exists: bool = os.path.exists(guild_data_dir)
@@ -298,6 +299,7 @@ def events(bot: commands.AutoShardedBot, web):
 
     @bot.event
     async def on_member_join(member: discord.Member):
+        admin_log("info", f"Member joined: {member.name} ({member.id}) → {member.guild.name}", source="MemberJoin")
         await welcomer.on_member_join(member, bot)
 
         ar_config: dict = dict(datasys.load_data(member.guild.id, "auto_roles"))
@@ -307,11 +309,13 @@ def events(bot: commands.AutoShardedBot, web):
                     role = member.guild.get_role(int(role_id))
                     if role:
                         await member.add_roles(role, reason="Baxi Auto-Roles")
+                        admin_log("info", f"Auto-role '{role.name}' assigned to {member.name} in {member.guild.name}", source="AutoRole")
                 except (discord.Forbidden, discord.HTTPException):
                     pass
 
     @bot.event
     async def on_member_remove(member: discord.Member):
+        admin_log("info", f"Member left: {member.name} ({member.id}) ← {member.guild.name}", source="MemberLeave")
         await welcomer.on_member_remove(member, bot)
 
     @bot.event
@@ -357,6 +361,7 @@ def events(bot: commands.AutoShardedBot, web):
                 )
                 temp_voice_channels.add(new_channel.id)
                 await member.move_to(new_channel)
+                admin_log("info", f"Temp voice created: '{new_name}' for {member.name} in {guild.name}", source="TempVoice")
             except (discord.Forbidden, discord.HTTPException) as e:
                 logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
 
@@ -387,6 +392,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 reason="Anti-Spam triggered",
                 account_age_days=account_age,
             )
+            admin_log("warning", f"Anti-Spam: deleted message from {message.author.name} in #{message.channel.name} @ {message.guild.name}", source="AntiSpam")
             return
 
         # Custom commands check
@@ -400,8 +406,24 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         lang = datasys.load_lang_file(guild_id)
         chatfilter_data: dict = dict(datasys.load_data(message.guild.id, "chatfilter"))
         chatfilter_instance = chatfilter.Chatfilter()
+
+        # Fetch recent channel history for AI context (only when AI system is active)
+        ai_history: list[dict] | None = None
+        if chatfilter_data.get("system", "SafeText").lower() == "ai":
+            try:
+                ai_history = []
+                async for hist_msg in message.channel.history(limit=8, before=message):
+                    ai_history.append({
+                        "author":  hist_msg.author.name,
+                        "content": hist_msg.clean_content,
+                    })
+                ai_history.reverse()  # oldest first
+            except Exception:
+                ai_history = None
+
         chatfilter_req: dict = await chatfilter_instance.check(
-            message=message.clean_content, gid=message.guild.id, cid=message.channel.id
+            message=message.clean_content, gid=message.guild.id, cid=message.channel.id,
+            user_id=message.author.id, history=ai_history,
         )
 
         tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
@@ -448,8 +470,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             )
             datasys.save_data(message.guild.id, "open_tickets", tickets)
             return
-        print(str(chatfilter_req["reason"]).lower())
-        if str(chatfilter_req["reason"]).lower() == "s11":
+        _cf_reason = str(chatfilter_req["reason"]).lower()
+        if _cf_reason in {"s11", "5"}:
             if not guild_terms:
                 return
             dm_channel = message.author.dm_channel
@@ -490,8 +512,25 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                     return
                 else:
                     await del_chatfilter(
-                        message=message, reason=chatfilter_req["reason"], bot=bot
+                        message=message, reason=chatfilter_req["reason"], bot=bot,
+                        cf_system=chatfilter_data.get("system", "SafeText"),
                     )
+
+        elif chatfilter_req.get("flagged") and not bool(chatfilter_data.get("enabled", False)):
+            # Prism silent scan: chatfilter is OFF, but violation detected — record without taking action
+            try:
+                account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
+                event_type = "chatfilter_phishing" if chatfilter_req.get("reason") == "phishing" else "chatfilter_violation"
+                sentinel.record_event(
+                    user_id=message.author.id,
+                    user_name=message.author.name,
+                    event_type=event_type,
+                    guild_id=message.guild.id,
+                    reason=f"[Silent] {chatfilter_req.get('reason', 'unknown')}",
+                    account_age_days=account_age,
+                )
+            except Exception as _prism_err:
+                logger.error(f"[Prism] Silent scan error: {_prism_err}")
 
         if str(message.guild.id) in gc_data and message.channel.id == int(
             gc_data[str(message.guild.id)]["channel"]
@@ -508,7 +547,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 return
             if chatfilter_req["flagged"] is True:
                 await del_chatfilter(
-                    message=message, reason=chatfilter_req["reason"], bot=bot
+                    message=message, reason=chatfilter_req["reason"], bot=bot,
+                    cf_system=chatfilter_data.get("system", "SafeText"),
                 )
                 return
             else:
@@ -521,7 +561,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
 
 async def del_chatfilter(
-    message: discord.Message, reason: str, bot: commands.AutoShardedBot
+    message: discord.Message, reason: str, bot: commands.AutoShardedBot,
+    cf_system: str = "SafeText",
 ):
     chatfilter_logs: dict = dict(load_data(1001, "chatfilter_log"))
     id = os.urandom(8).hex()
@@ -534,12 +575,19 @@ async def del_chatfilter(
         print(f"Chatfilter: Could not delete message: {e}")
         deleted = False
     reason_list: dict = {
-        "custom": "Custom badword",
+        "custom":   "Custom badword",
         "internal": "Badword",
         "phishing": "Phishing / Scam Link",
-        "S3": "S3 - Sex-Related Crimes",
-        "S4": "S4 - Child Sexual Exploitation",
-        "S5": "S5 - Defamation",
+        # AI safety codes
+        "1": "NSFW / Explicit Content",
+        "2": "Insults / Toxicity",
+        "3": "Hate Speech / Discrimination",
+        "4": "Doxxing / Personal Data",
+        "5": "Suicide / Self-Harm",
+        # Legacy llama-guard codes (kept for existing logs)
+        "S3":  "S3 - Sex-Related Crimes",
+        "S4":  "S4 - Child Sexual Exploitation",
+        "S5":  "S5 - Defamation",
         "S10": "S10 - Hate",
         "S11": "S11 - Suicide & Self-Harm",
         "S12": "S12 - Sexual Content",
@@ -568,6 +616,15 @@ async def del_chatfilter(
         if isinstance(message.channel, discord.TextChannel)
         else "DM or Unknown"
     )
+    # Infer which system caught this message
+    ai_reasons = {"1", "2", "3", "4", "5", "S3", "S4", "S5", "S10", "S11", "S12", "S13"}
+    if reason == "phishing":
+        detected_system = "Phishing"
+    elif reason in ai_reasons:
+        detected_system = "AI"
+    else:
+        detected_system = cf_system  # "SafeText" or whatever was passed
+
     chatfilter_logs[str(id)] = {
         "id": str(id),
         "uid": int(message.author.id),
@@ -589,8 +646,14 @@ async def del_chatfilter(
         "user_created_at": str(formatted_time_user),
         "reason": str(reason_list[reason]),
         "message": str(message.content),
+        "system": detected_system,
     }
     save_data(1001, "chatfilter_log", chatfilter_logs)
+    admin_log("warning",
+        f"Chatfilter [{detected_system}] — {message.author.name} in #{cname} @ {message.guild.name}: "
+        f"{reason_list.get(reason, reason)} | \"{message.content[:80]}{'…' if len(message.content) > 80 else ''}\" | ID: {id}",
+        source="Chatfilter"
+    )
 
     # Prism: record chatfilter violation
     try:

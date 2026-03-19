@@ -6,7 +6,7 @@ from collections import deque
 from discord.ext import tasks, commands
 
 from reds_simple_logger import Logger
-from assets.share import globalchat_message_data, phishing_url_list
+from assets.share import globalchat_message_data, phishing_url_list, set_task_status, admin_log
 from assets.livestream import twitch_api
 import assets.data as datasys
 import assets.trust as sentinel
@@ -23,6 +23,7 @@ class GCDH_Task:
 
     @tasks.loop(seconds=15)
     async def sync_globalchat_message_data(self):
+        set_task_status("GCDH", "running", "Syncing global chat data...")
         async def save_globalchat_message_data():
             if self.old_data == globalchat_message_data:
                 return "ncds", True
@@ -42,11 +43,14 @@ class GCDH_Task:
         if success:
             if response == "ncds":
                 logger.debug.info("[GCDH] No change in data detected")
+                set_task_status("GCDH", "ok", "No changes detected")
             else:
                 logger.debug.success("[GCDH] Data synced with data-structure")
+                set_task_status("GCDH", "ok", "Data synced successfully")
                 self.old_data = copy.deepcopy(globalchat_message_data)
         else:
             logger.error(f"[GCDH] Sync failed: {response}")
+            set_task_status("GCDH", "error", f"Sync failed: {response}")
 
 
 class UpdateStatsTask:
@@ -55,14 +59,15 @@ class UpdateStatsTask:
 
     @tasks.loop(minutes=10)
     async def update_stats(self):
+        set_task_status("UpdateStats", "running", "Counting guilds and users...")
         guild_count = len(self.bot.guilds)
-        
+
         unique_user_ids = set()
         for guild in self.bot.guilds:
             for member in guild.members:
-                if not member.bot: 
+                if not member.bot:
                     unique_user_ids.add(member.id)
-        
+
         user_count = len(unique_user_ids)
 
         stats: dict = dict(datasys.load_data(1001, "stats"))
@@ -78,10 +83,10 @@ class UpdateStatsTask:
         )
         datasys.save_data(1001, "stats", stats)
 
-
         logger.debug.info(
             f"[Stats] Updated stats: Guilds: {guild_count}, Unique Users: {user_count}"
         )
+        set_task_status("UpdateStats", "ok", f"Guilds: {guild_count} · Unique users: {user_count}")
 
 
 class LivestreamTask:
@@ -103,9 +108,12 @@ class LivestreamTask:
     @tasks.loop(seconds=config.Twitch.check_interval_seconds)
     async def check_streams(self):
         try:
+            set_task_status("Livestream", "running", "Checking Twitch streams...", extra=f"Queue: {len(self._check_queue)} pending")
             await self._do_check()
+            set_task_status("Livestream", "ok", f"Stream check complete", extra=f"Queue: {len(self._check_queue)} remaining")
         except Exception as e:
             logger.error(f"[Livestream] Error in check_streams: {e}")
+            set_task_status("Livestream", "error", f"Error: {e}")
 
     async def _do_check(self):
         # Rebuild queue if empty
@@ -154,6 +162,11 @@ class LivestreamTask:
 
             first_check = login not in self._was_live[guild_id]
             was_live = self._was_live[guild_id].get(login, False)
+            guild = self.bot.get_guild(guild_id)
+            guild_name = guild.name if guild else str(guild_id)
+            profile = self._user_cache.get(login, {})
+            display = profile.get("display_name", streamer.get("login", login))
+            stream_info = live_data.get(login)
 
             if first_check or is_live != was_live:
                 # Status changed (or first check — sync channel name/embed regardless)
@@ -162,16 +175,37 @@ class LivestreamTask:
                     guild_id,
                     streamer,
                     is_live,
-                    live_data.get(login),
+                    stream_info,
                     ping=is_live and not first_check,
                 )
+                if not first_check:
+                    if is_live:
+                        game = stream_info.get("game_name", "") if stream_info else ""
+                        viewers = stream_info.get("viewer_count", 0) if stream_info else 0
+                        admin_log("success",
+                            f"{display} went LIVE · {viewers} viewers"
+                            + (f" · {game}" if game else "")
+                            + f" @ {guild_name}",
+                            source="Livestream")
+                    else:
+                        admin_log("info", f"{display} went offline @ {guild_name}", source="Livestream")
+                else:
+                    status_str = "live" if is_live else "offline"
+                    admin_log("info", f"First check: {display} is {status_str} @ {guild_name}", source="Livestream")
             elif is_live and was_live:
                 # Still live - update embed with current viewer count etc.
                 await self._update_embed_content(
                     guild_id,
                     streamer,
-                    live_data[login],
+                    stream_info,
                 )
+                viewers = stream_info.get("viewer_count", 0) if stream_info else 0
+                game = stream_info.get("game_name", "") if stream_info else ""
+                admin_log("info",
+                    f"Still live: {display} · {viewers} viewers"
+                    + (f" · {game}" if game else "")
+                    + f" @ {guild_name}",
+                    source="Livestream")
 
     def _rebuild_queue(self):
         """Rebuild the round-robin queue from all guilds with livestream enabled."""
@@ -190,6 +224,7 @@ class LivestreamTask:
         logger.info(
             f"[Livestream] Queue rebuilt: {len(self._check_queue)} streamer checks queued"
         )
+        admin_log("info", f"Queue rebuilt: {len(self._check_queue)} streamer checks queued", source="Livestream")
 
     async def _update_channel(
         self,
@@ -453,9 +488,12 @@ class StatsChannelsTask:
     @tasks.loop(minutes=10)
     async def update_stats_channels(self):
         try:
+            set_task_status("StatsChannels", "running", "Updating stats channels...")
             await self._do_update()
+            set_task_status("StatsChannels", "ok", "Stats channels updated")
         except Exception as e:
             logger.error(f"[StatsChannels] Error in update_stats_channels: {e}")
+            set_task_status("StatsChannels", "error", f"Error: {e}")
 
     async def _do_update(self):
         for guild in self.bot.guilds:
@@ -492,18 +530,24 @@ class StatsChannelsTask:
                         await channel.edit(name=new_name)
                         if guild.id not in self._last_values:
                             self._last_values[guild.id] = {}
+                        old_val = self._last_values.get(guild.id, {}).get(stat_type, "?")
                         self._last_values[guild.id][stat_type] = count
                         logger.debug.info(
                             f"[StatsChannels] {guild.id} | {stat_type} -> {new_name}"
                         )
+                        admin_log("info",
+                            f"{guild.name} · {stat_type}: {old_val} → {count} ({new_name})",
+                            source="StatsChannels")
                     except discord.Forbidden:
                         logger.error(
                             f"[StatsChannels] Cannot edit channel in guild {guild.id}"
                         )
+                        admin_log("error", f"{guild.name} · Cannot edit {stat_type} channel (Forbidden)", source="StatsChannels")
                     except discord.HTTPException as e:
                         logger.error(
                             f"[StatsChannels] HTTP error for guild {guild.id}: {e}"
                         )
+                        admin_log("error", f"{guild.name} · HTTP error for {stat_type}: {e}", source="StatsChannels")
             except Exception as e:
                 logger.error(f"[StatsChannels] Error processing guild {guild.id}: {e}")
 
@@ -530,9 +574,12 @@ class TempActionsTask:
     @tasks.loop(seconds=60)
     async def check_temp_actions(self):
         try:
+            set_task_status("TempActions", "running", "Checking expired bans/mutes...")
             await self._do_check()
+            set_task_status("TempActions", "ok", "Temp actions checked")
         except Exception as e:
             logger.error(f"[TempActions] Error in check_temp_actions: {e}")
+            set_task_status("TempActions", "error", f"Error: {e}")
 
     async def _do_check(self):
         now = datetime.datetime.utcnow()
@@ -552,6 +599,9 @@ class TempActionsTask:
                             try:
                                 user = await self.bot.fetch_user(user_id)
                                 await guild.unban(user, reason="Temporary ban expired")
+                                admin_log("info",
+                                    f"Temp ban expired: {user} ({user_id}) @ {guild.name} · Reason: {entry.get('reason', 'N/A')}",
+                                    source="TempActions")
                                 try:
                                     dm_embed = discord.Embed(
                                         title=f"ACTION // BAN EXPIRED // {entry.get('guild_name', guild.name)}",
@@ -584,6 +634,9 @@ class TempActionsTask:
                             user_id = int(entry["user_id"])
                             try:
                                 user = await self.bot.fetch_user(user_id)
+                                admin_log("info",
+                                    f"Temp mute expired: {user} ({user_id}) @ {guild.name} · Reason: {entry.get('reason', 'N/A')}",
+                                    source="TempActions")
                                 dm_embed = discord.Embed(
                                     title=f"ACTION // MUTE EXPIRED // {entry.get('guild_name', guild.name)}",
                                     description="You can now send messages again.",
@@ -610,19 +663,25 @@ class TempActionsTask:
 
 
 class TrustScoreTask:
-    """Background task that recalculates Prism trust scores every 6 hours.
+    """Background task that recalculates Prism trust scores every hour.
 
     Applies score decay/recovery and triggers auto-flag/unflag logic for all
     tracked users without needing a new event to fire.
     """
 
-    @tasks.loop(hours=6)
+    @tasks.loop(hours=1)
     async def recalculate_scores(self):
         try:
+            set_task_status("TrustScore", "running", "Recalculating Prism scores...")
+            total_before = len(sentinel.get_all_profiles())
             await asyncio.to_thread(sentinel.recalculate_all)
+            total_after = len(sentinel.get_all_profiles())
             logger.debug.success("[Prism] Periodic score recalculation complete")
+            set_task_status("TrustScore", "ok", f"Recalculated {total_after} users")
+            admin_log("success", f"Recalculated scores for {total_after} tracked users", source="TrustScore")
         except Exception as e:
             logger.error(f"[Prism] Error in recalculate_scores: {e}")
+            set_task_status("TrustScore", "error", f"Error: {e}")
 
 
 class PhishingListTask:
@@ -634,9 +693,12 @@ class PhishingListTask:
     @tasks.loop(hours=12)
     async def update_phishing_list(self):
         try:
+            set_task_status("PhishingList", "running", "Downloading phishing domain list...")
             await self._fetch_list()
+            set_task_status("PhishingList", "ok", f"Loaded {len(phishing_url_list)} phishing domains")
         except Exception as e:
             logger.error(f"[PhishingList] Error updating phishing list: {e}")
+            set_task_status("PhishingList", "error", f"Error: {e}")
 
     async def _fetch_list(self):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:

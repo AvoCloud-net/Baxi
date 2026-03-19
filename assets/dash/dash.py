@@ -19,6 +19,8 @@ from assets.buttons import TicketView
 import time
 import json
 import os
+import asyncio
+import assets.share as share
 
 
 def get_feature_adoption() -> dict:
@@ -279,13 +281,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             }
             stats: dict = dict(load_data(1001, "stats"))
             show_intro = session.pop('show_intro', False)
+            admins: list = list(datasys.load_data(1001, "admins"))
+            is_bot_admin_user: bool = user.id in admins
             return await render_template(
                 "dash_home.html",
                 managed_guilds=valid_guilds,
                 greeting=get_time_based_greeting(user.name),
                 user=user,
                 stats=stats,
-                show_intro=show_intro
+                show_intro=show_intro,
+                is_bot_admin=is_bot_admin_user,
             )
         except Exception as e:
             print(f"Error in index route: {e}")
@@ -580,11 +585,22 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 dict, load_data(sid=int(guild_id), sys="chatfilter")
             )
 
+            # Validate ai_categories if provided
+            raw_ai_cats = chatfilter.get("ai_categories")
+            if raw_ai_cats is not None:
+                valid_keys = {"1", "2", "3", "4", "5"}
+                if (
+                    not isinstance(raw_ai_cats, dict)
+                    or not all(k in valid_keys and isinstance(v, bool) for k, v in raw_ai_cats.items())
+                ):
+                    return quart.jsonify({"success": False, "message": "'ai_categories' must be an object with keys 1–5 and boolean values."}), 400
+
             guild_conf.setdefault("enabled", False)
             guild_conf.setdefault("system", "")
             guild_conf.setdefault("c_goodwords", [])
             guild_conf.setdefault("c_badwords", [])
             guild_conf.setdefault("bypass", [])
+            guild_conf.setdefault("ai_categories", {"1": True, "2": True, "3": True, "4": True, "5": True})
 
             guild_conf["enabled"] = chatfilter["enabled"]
             guild_conf["system"] = chatfilter["system"]
@@ -598,6 +614,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 w.strip() for w in chatfilter.get("bypass", []) if w and w.strip()
             ]
             guild_conf["phishing_filter"] = bool(chatfilter.get("phishing_filter", False))
+            if raw_ai_cats is not None:
+                guild_conf["ai_categories"] = {
+                    k: bool(raw_ai_cats.get(k, True)) for k in ("1", "2", "3", "4", "5")
+                }
 
             print(guild_conf)
 
@@ -1614,5 +1634,367 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return abort(400, "Ungültiger Dateiname")
 
         return await send_from_directory("attachments", filename)
+
+    # ── ADMIN DASHBOARD ──────────────────────────────────────────────────────
+
+    async def _require_bot_admin(discord_auth):
+        """Returns (user, True) if user is a bot admin, else (user, False)."""
+        try:
+            user = await discord_auth.fetch_user()
+            admins: list = list(datasys.load_data(1001, "admins"))
+            return user, (user.id in admins)
+        except Exception:
+            return None, False
+
+    @app.route("/admin/")
+    @requires_authorization
+    async def admin_dashboard():
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return await render_template(
+                "error.html",
+                message="Access denied. This page is restricted to Baxi bot admins.",
+            )
+        stats: dict = dict(load_data(1001, "stats"))
+        return await render_template(
+            "admin.html",
+            user=user,
+            stats=stats,
+            version=config.Discord.version,
+            greeting=get_time_based_greeting(user.name),
+        )
+
+    @app.route("/api/admin/data")
+    @requires_authorization
+    async def admin_data():
+        """Returns all admin data as JSON (polled by the frontend)."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        # Global stats
+        stats: dict = dict(load_data(1001, "stats"))
+
+        # Prism users
+        import assets.trust as sentinel
+        prism_profiles: dict = sentinel.get_all_profiles()
+        users_list: dict = dict(load_data(1001, "users"))
+
+        prism_users = []
+        for uid, profile in prism_profiles.items():
+            entry = users_list.get(uid, {})
+            prism_users.append({
+                "uid": uid,
+                "name": profile.get("name", uid),
+                "score": profile.get("score", 100),
+                "auto_flagged": profile.get("auto_flagged", False),
+                "manually_flagged": bool(entry.get("flagged", False)) and not entry.get("auto_flagged", False),
+                "flag_reason": entry.get("reason", ""),
+                "event_count": len(profile.get("events", [])),
+                "events": profile.get("events", [])[-5:],  # last 5 events
+                "first_seen": profile.get("first_seen", ""),
+                "last_seen": profile.get("last_seen", ""),
+                "account_age_days": profile.get("account_age_days", 0),
+            })
+        prism_users.sort(key=lambda u: u["score"])
+
+        # Flagged users (manual + auto)
+        flagged_users = [
+            {**v, "uid": k}
+            for k, v in users_list.items()
+            if v.get("flagged", False)
+        ]
+
+        # Feature adoption
+        feature_adoption = get_feature_adoption()
+
+        # Bot / shard info
+        shard_info = []
+        if hasattr(bot, "shards"):
+            for shard_id, shard in bot.shards.items():
+                shard_info.append({
+                    "id": shard_id,
+                    "latency": round(shard.latency * 1000, 1) if shard.latency else None,
+                    "closed": shard.is_closed(),
+                })
+
+        # Livestream active streamers
+        active_streamers = []
+        for guild in bot.guilds:
+            ls_config = dict(datasys.load_data(guild.id, "livestream"))
+            if not ls_config.get("enabled", False):
+                continue
+            for streamer in ls_config.get("streamers", []):
+                was_live = False
+                if share.livestream_task:
+                    was_live = share.livestream_task._was_live.get(guild.id, {}).get(
+                        streamer.get("login", "").lower(), False
+                    )
+                active_streamers.append({
+                    "guild_name": guild.name,
+                    "guild_id": str(guild.id),
+                    "login": streamer.get("login", ""),
+                    "display_name": streamer.get("display_name", ""),
+                    "live": was_live,
+                })
+
+        # Guild list (all guilds bot is in)
+        guild_list = sorted(
+            [
+                {
+                    "id": str(g.id),
+                    "name": g.name,
+                    "member_count": g.member_count or 0,
+                    "icon": str(g.icon.url) if g.icon else "",
+                }
+                for g in bot.guilds
+            ],
+            key=lambda x: x["member_count"],
+            reverse=True,
+        )
+
+        return quart.jsonify({
+            "stats": stats,
+            "task_status": share.task_status,
+            "prism_users": prism_users[:100],  # cap at 100 for payload size
+            "prism_total": len(prism_users),
+            "flagged_users": flagged_users,
+            "feature_adoption": feature_adoption,
+            "shard_info": shard_info,
+            "active_streamers": active_streamers,
+            "guild_list": guild_list[:50],
+            "guild_total": len(bot.guilds),
+            "phishing_domain_count": len(share.phishing_url_list),
+        })
+
+    @app.route("/api/admin/cf_logs")
+    @requires_authorization
+    async def admin_cf_logs():
+        """Returns chatfilter log entries for the admin dashboard."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        cf_log: dict = dict(datasys.load_data(1001, "chatfilter_log"))
+        entries = list(cf_log.values())
+
+        # Newest first — parse "DD.MM.YYYY - HH:MM" format for correct chronological order
+        import datetime as _dt
+        def _parse_cf_ts(ts: str):
+            try:
+                return _dt.datetime.strptime(ts, "%d.%m.%Y - %H:%M")
+            except Exception:
+                return _dt.datetime.min
+
+        entries.sort(key=lambda e: _parse_cf_ts(e.get("timestamp", "")), reverse=True)
+
+        # Optional filters via query params
+        system_filter = quart.request.args.get("system", "").strip().lower()
+        reason_filter = quart.request.args.get("reason", "").strip().lower()
+        search = quart.request.args.get("search", "").strip().lower()
+        limit = min(int(quart.request.args.get("limit", 200)), 5000)
+
+        if system_filter:
+            entries = [e for e in entries if e.get("system", "SafeText").lower() == system_filter]
+        if reason_filter:
+            entries = [e for e in entries if reason_filter in e.get("reason", "").lower()]
+        if search:
+            entries = [e for e in entries if (
+                search in e.get("uname", "").lower()
+                or search in e.get("sname", "").lower()
+                or search in e.get("message", "").lower()
+                or search in e.get("cname", "").lower()
+            )]
+
+        return quart.jsonify({
+            "entries": entries[:limit],
+            "total": len(cf_log),
+            "filtered": len(entries),
+        })
+
+    @app.route("/api/admin/logs")
+    @requires_authorization
+    async def admin_logs():
+        """Returns recent log entries + SSE stream."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        offset = int(quart.request.args.get("offset", 0))
+        entries = list(share.admin_log_buffer)
+        new_entries = entries[offset:]
+        return quart.jsonify({
+            "entries": new_entries,
+            "total": len(entries),
+        })
+
+    @app.route("/api/admin/action", methods=["POST"])
+    @requires_authorization
+    async def admin_action():
+        """Executes an admin action from the dashboard."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+
+        data: dict = await quart.request.get_json()
+        action = data.get("action")
+
+        share.admin_log("info", f"Admin action '{action}' triggered by {user.name}", source="AdminDash")
+
+        if action == "flag_user":
+            user_id_str = str(data.get("user_id", "")).strip()
+            reason = str(data.get("reason", "")).strip()
+            if not user_id_str.isdigit() or not reason:
+                return quart.jsonify({"success": False, "message": "Invalid user_id or empty reason."}), 400
+            try:
+                target = await bot.fetch_user(int(user_id_str))
+            except discord.NotFound:
+                return quart.jsonify({"success": False, "message": "User not found."}), 404
+            except Exception as e:
+                return quart.jsonify({"success": False, "message": str(e)}), 500
+
+            users_list: dict = dict(load_data(1001, "users"))
+            import datetime as dt
+            users_list[str(target.id)] = {
+                "entry_date": str(dt.date.today()),
+                "id": target.id,
+                "name": target.name,
+                "reason": reason,
+                "flagged": True,
+                "auto_flagged": False,
+            }
+            save_data(1001, "users", users_list)
+            share.admin_log("warning", f"User {target.name} ({target.id}) flagged by {user.name}: {reason}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"User {target.name} flagged."})
+
+        elif action == "deflag_user":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            import assets.trust as sentinel
+            users_list: dict = dict(load_data(1001, "users"))
+            # Remove from users.json entirely (mirrors how auto-unflag works)
+            if user_id_str in users_list:
+                del users_list[user_id_str]
+                save_data(1001, "users", users_list)
+            # Also clear auto_flagged in trust.json so the API reflects it immediately
+            sentinel.clear_flag(int(user_id_str))
+            share.admin_log("success", f"User {user_id_str} deflagged by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": "User deflagged."})
+
+        elif action == "clear_prism_events":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            import assets.trust as sentinel
+            sentinel.clear_events(int(user_id_str))
+            share.admin_log("info", f"Prism events cleared for {user_id_str} by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": "Events cleared."})
+
+        elif action == "leave_server":
+            guild_id_str = str(data.get("guild_id", "")).strip()
+            if not guild_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
+            guild = bot.get_guild(int(guild_id_str))
+            if not guild:
+                return quart.jsonify({"success": False, "message": "Guild not found."}), 404
+            guild_name = guild.name
+            await guild.leave()
+            share.admin_log("warning", f"Bot left guild {guild_name} ({guild_id_str}) — triggered by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Left guild {guild_name}."})
+
+        elif action == "bulk_config":
+            feature = str(data.get("feature", "")).strip()
+            act = str(data.get("action_type", "")).strip()
+            percent = int(data.get("percent", 100))
+            valid_features = ["chatfilter", "antispam", "ticket", "auto_roles", "temp_voice", "livestream"]
+            if feature not in valid_features:
+                return quart.jsonify({"success": False, "message": f"Invalid feature. Valid: {valid_features}"}), 400
+            if act not in ("enable", "disable"):
+                return quart.jsonify({"success": False, "message": "action_type must be 'enable' or 'disable'"}), 400
+            if not 1 <= percent <= 100:
+                return quart.jsonify({"success": False, "message": "percent must be 1-100"}), 400
+
+            import random as _rnd
+            enable = act == "enable"
+            all_guilds = list(bot.guilds)
+            count = max(1, round(len(all_guilds) * percent / 100))
+            target_guilds = _rnd.sample(all_guilds, count) if percent < 100 else all_guilds
+            success_count = 0
+            failed_count = 0
+            for g in target_guilds:
+                try:
+                    feat_data = datasys.load_data(g.id, feature)
+                    if not isinstance(feat_data, dict):
+                        feat_data = {}
+                    feat_data["enabled"] = enable
+                    datasys.save_data(g.id, feature, feat_data)
+                    success_count += 1
+                except Exception:
+                    failed_count += 1
+            share.admin_log("warning", f"Bulk {act} '{feature}' on {success_count}/{len(target_guilds)} guilds ({percent}%) by {user.name}", source="AdminDash")
+            return quart.jsonify({
+                "success": True,
+                "message": f"{act.capitalize()}d '{feature}' on {success_count} of {len(target_guilds)} guilds ({percent}% of {len(all_guilds)} total). Failed: {failed_count}",
+            })
+
+        elif action == "search_server":
+            query = str(data.get("query", "")).strip().lower()
+            if not query:
+                return quart.jsonify({"success": False, "message": "Query is empty."}), 400
+            results = []
+            for g in bot.guilds:
+                if (
+                    query in g.name.lower()
+                    or query in str(g.id)
+                    or (g.owner_id and query in str(g.owner_id))
+                ):
+                    results.append({
+                        "id": str(g.id),
+                        "name": g.name,
+                        "member_count": g.member_count or 0,
+                        "owner_id": str(g.owner_id),
+                        "icon": str(g.icon.url) if g.icon else "",
+                        "created_at": g.created_at.strftime("%d.%m.%Y"),
+                        "boost_level": g.premium_tier,
+                        "boost_count": g.premium_subscription_count or 0,
+                        "text_channels": len(g.text_channels),
+                        "voice_channels": len(g.voice_channels),
+                        "roles": len(g.roles),
+                        "terms": bool(datasys.load_data(g.id, "terms")),
+                        "lang": str(datasys.load_data(g.id, "lang") or "en"),
+                    })
+            results.sort(key=lambda x: x["member_count"], reverse=True)
+            return quart.jsonify({"success": True, "results": results[:25]})
+
+        elif action == "gc_delete":
+            message_id = str(data.get("message_id", "")).strip()
+            if not message_id:
+                return quart.jsonify({"success": False, "message": "message_id required."}), 400
+            message_data = share.globalchat_message_data.get(message_id)
+            if not message_data:
+                return quart.jsonify({"success": False, "message": "Message not found in cache."}), 404
+            deleted = 0
+            failed = 0
+            for msg_entry in message_data.get("messages", []):
+                try:
+                    g = bot.get_guild(msg_entry["gid"])
+                    if not g:
+                        failed += 1
+                        continue
+                    ch = g.get_channel(msg_entry["channel"])
+                    if not isinstance(ch, discord.TextChannel):
+                        failed += 1
+                        continue
+                    msg = await ch.fetch_message(msg_entry["mid"])
+                    await msg.delete()
+                    deleted += 1
+                except Exception:
+                    failed += 1
+            del share.globalchat_message_data[message_id]
+            share.admin_log("warning", f"GC message {message_id} deleted by {user.name} — {deleted} copies removed", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Deleted {deleted} message copies. Failed: {failed}."})
+
+        return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
 
     app.config["BOT_READY"] = True

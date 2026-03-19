@@ -61,7 +61,14 @@ class datasys:
     "terms": False,
     "chatfilter": {
         "enabled": False,
-        "phishing_filter": False
+        "phishing_filter": False,
+        "ai_categories": {
+            "1": True,
+            "2": True,
+            "3": True,
+            "4": True,
+            "5": True,
+        }
     },
     "ticket": {
         "enabled": False

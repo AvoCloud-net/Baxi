@@ -319,6 +319,9 @@
                 <a href="/privacy/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Privacy Policy</a>
                 <a href="/terms/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Terms of Service</a>
                 <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Impressum</a>
+                {% if is_bot_admin %}
+                <a href="/admin/" style="font-size: 0.8rem; opacity: 0.6; transition: opacity 0.15s; text-decoration: none; color: #9333ea; font-weight: 600;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">⚡ Admin Panel</a>
+                {% endif %}
             </div>
             <footer class="site-footer">
                 <p>Avocloud.net &mdash; Baxi Dashboard</p>

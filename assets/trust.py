@@ -106,10 +106,11 @@ def record_event(
     Record a Prism event for a user and return the new trust score.
     Automatically triggers auto-flag logic after recording.
     """
-    # Guild-level opt-out check
+    # Guild-level opt-out check (default: enabled — only skip if explicitly False)
     try:
-        if not bool(datasys.load_data(guild_id, "prism_enabled")):
-            return -1  # sentinel disabled for this guild
+        prism_setting = datasys.load_data(guild_id, "prism_enabled")
+        if prism_setting is False:
+            return -1
     except Exception:
         pass
 
@@ -152,6 +153,36 @@ def record_event(
 def get_profile(user_id: int) -> Optional[dict]:
     """Return the Prism profile for a user, or None if not tracked."""
     return _load().get(str(user_id))
+
+
+def get_all_profiles() -> dict:
+    """Return all Prism profiles (uid → profile dict)."""
+    return _load()
+
+
+def clear_flag(user_id: int):
+    """
+    Manually clear the auto_flagged flag for a user in trust.json.
+    Called by the admin dashboard deflag action.
+    Does NOT remove the user from trust tracking — only clears the flag.
+    """
+    data = _load()
+    uid  = str(user_id)
+    if uid in data:
+        data[uid]["auto_flagged"] = False
+        _save(data)
+        logger.info(f"[Prism] Manual deflag via admin dash for {uid}")
+
+
+def clear_events(user_id: int):
+    """Delete all recorded events for a user and reset their score to 0."""
+    data = _load()
+    uid  = str(user_id)
+    if uid in data:
+        data[uid]["events"] = []
+        data[uid]["score"]  = 100
+        _save(data)
+        logger.info(f"[Prism] Events cleared via admin dash for {uid}")
 
 
 def recalculate_all():

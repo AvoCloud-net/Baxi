@@ -418,6 +418,34 @@
                                     <div id="c_badwords_container" class="tag-input-container"></div>
                                 </div>
 
+                                <!-- AI category toggles (shown only when AI system is selected) -->
+                                <div id="ai-categories-section" class="grid gap-2" style="display:none;">
+                                    <label class="block text-sm font-medium">AI detection categories:</label>
+                                    <p class="text-xs text-muted">Enable or disable individual violation categories for the AI filter.</p>
+                                    <div class="grid gap-2 mt-1">
+                                        <label for="ai-cat-1">
+                                            <input type="checkbox" id="ai-cat-1" value="true">
+                                            <span class="text-sm"><strong>1 — NSFW / Explicit Content</strong> <span class="text-muted">— sexual content, graphic violence, gore</span></span>
+                                        </label>
+                                        <label for="ai-cat-2">
+                                            <input type="checkbox" id="ai-cat-2" value="true">
+                                            <span class="text-sm"><strong>2 — Insults / Toxicity</strong> <span class="text-muted">— direct insults, targeted harassment, sustained mockery</span></span>
+                                        </label>
+                                        <label for="ai-cat-3">
+                                            <input type="checkbox" id="ai-cat-3" value="true">
+                                            <span class="text-sm"><strong>3 — Hate Speech / Discrimination</strong> <span class="text-muted">— racism, homophobia, slurs with harmful intent</span></span>
+                                        </label>
+                                        <label for="ai-cat-4">
+                                            <input type="checkbox" id="ai-cat-4" value="true">
+                                            <span class="text-sm"><strong>4 — Doxxing / Personal Data</strong> <span class="text-muted">— real names + addresses, phone numbers, IPs</span></span>
+                                        </label>
+                                        <label for="ai-cat-5">
+                                            <input type="checkbox" id="ai-cat-5" value="true">
+                                            <span class="text-sm"><strong>5 — Suicide / Self-Harm</strong> <span class="text-muted">— method descriptions, active ideation, encouragement</span></span>
+                                        </label>
+                                    </div>
+                                </div>
+
                                 <div class="form-group">
                                     <label for="chatfilter-phishing">
                                         <input type="checkbox" id="chatfilter-phishing" name="chatfilter-phishing" value="true">
@@ -1491,7 +1519,22 @@
                 renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
                 renderTags('c_badwords', data.chatfilter.c_badwords || []);
                 document.getElementById('chatfilter-phishing').checked = data.chatfilter.phishing_filter === true;
+                // Populate AI category checkboxes
+                const cats = data.chatfilter.ai_categories || {};
+                for (let i = 1; i <= 5; i++) {
+                    const cb = document.getElementById(`ai-cat-${i}`);
+                    if (cb) cb.checked = cats[String(i)] !== false;
+                }
             }
+            // Show/hide AI categories based on selected system
+            function updateAiCategoriesVisibility() {
+                const selected = document.querySelector('input[name="chatfilter-system"]:checked')?.value;
+                document.getElementById('ai-categories-section').style.display = selected === 'AI' ? '' : 'none';
+            }
+            document.querySelectorAll('input[name="chatfilter-system"]').forEach(r => {
+                r.addEventListener('change', updateAiCategoriesVisibility);
+            });
+            updateAiCategoriesVisibility();
             document.getElementById("general-lang").value = data.lang || 'en';
             document.getElementById("general-nick").value = nick || '';
             if (data.terms !== undefined) {
@@ -1812,7 +1855,12 @@
             const goodWords = getTags('c_goodwords');
             const badWords = getTags('c_badwords');
             const phishing = document.getElementById('chatfilter-phishing').checked;
-            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [], phishing_filter: phishing } };
+            const ai_categories = {};
+            for (let i = 1; i <= 5; i++) {
+                const cb = document.getElementById(`ai-cat-${i}`);
+                ai_categories[String(i)] = cb ? cb.checked : true;
+            }
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [], phishing_filter: phishing, ai_categories } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
