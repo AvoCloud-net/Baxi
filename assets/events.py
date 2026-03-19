@@ -2,6 +2,9 @@ import asyncio
 import json
 import os
 import datetime
+from zoneinfo import ZoneInfo
+
+_VIENNA = ZoneInfo("Europe/Vienna")
 
 from pathlib import Path
 from PIL import Image
@@ -30,6 +33,7 @@ from assets.tasks import (
     TempActionsTask,
     PhishingListTask,
     TrustScoreTask,
+    GarbageCollectorTask,
 )
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -129,38 +133,51 @@ def events(bot: commands.AutoShardedBot, web):
             logger.working("Starting GCDHT task...")
             GCDTH_task = GCDH_Task(bot)
             GCDTH_task.sync_globalchat_message_data.start()
+            share.task_instances["GCDH"] = GCDTH_task
             logger.debug.success("Globalchat message data sync task started.")
 
             logger.working("Starting UpdateStats task...")
             update_stats_task = UpdateStatsTask(bot)
             update_stats_task.update_stats.start()
+            share.task_instances["UpdateStats"] = update_stats_task
             logger.debug.success("Update stats task started.")
 
             logger.working("Starting Livestream task...")
             share.livestream_task = LivestreamTask(bot)
             share.livestream_task.check_streams.start()
+            share.task_instances["Livestream"] = share.livestream_task
             logger.debug.success("Livestream check task started.")
 
             logger.working("Starting StatsChannels task...")
             stats_channels_task = StatsChannelsTask(bot)
             stats_channels_task.update_stats_channels.start()
+            share.task_instances["StatsChannels"] = stats_channels_task
             logger.debug.success("Stats channels update task started.")
 
             logger.working("Starting TempActions task...")
             temp_actions_task = TempActionsTask(bot)
             temp_actions_task.check_temp_actions.start()
+            share.task_instances["TempActions"] = temp_actions_task
             logger.debug.success("Temp actions task started.")
 
             logger.working("Starting PhishingList task...")
             phishing_list_task = PhishingListTask()
             phishing_list_task.update_phishing_list.start()
             await phishing_list_task._fetch_list()
+            share.task_instances["PhishingList"] = phishing_list_task
             logger.debug.success("Phishing list task started.")
 
             logger.working("Starting Prism task...")
             trust_score_task = TrustScoreTask()
             trust_score_task.recalculate_scores.start()
+            share.task_instances["TrustScore"] = trust_score_task
             logger.debug.success("Prism score recalculation task started.")
+
+            logger.working("Starting GarbageCollector task...")
+            gc_task = GarbageCollectorTask()
+            gc_task.collect.start()
+            share.task_instances["GarbageCollector"] = gc_task
+            logger.debug.success("Garbage collector task started.")
 
         except Exception as e:
             await bot.change_presence(
@@ -462,7 +479,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                     "type": "message",
                     "user": str(message.author.name),
                     "avatar": str(user_avatar),
-                    "timestamp": str(datetime.datetime.now()),
+                    "timestamp": str(datetime.datetime.now(_VIENNA)),
                     "message": clean_msg,
                     "attachments": attachments_list,
                     "is_staff": is_staff,
@@ -504,7 +521,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
         if (
             bool(chatfilter_data.get("enabled", False))
-            and message.channel.id not in chatfilter_data["bypass"]
+            and message.channel.id not in chatfilter_data.get("bypass", [])
         ):
 
             if chatfilter_req["flagged"] is True:
@@ -516,21 +533,36 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         cf_system=chatfilter_data.get("system", "SafeText"),
                     )
 
-        elif chatfilter_req.get("flagged") and not bool(chatfilter_data.get("enabled", False)):
-            # Prism silent scan: chatfilter is OFF, but violation detected — record without taking action
-            try:
-                account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-                event_type = "chatfilter_phishing" if chatfilter_req.get("reason") == "phishing" else "chatfilter_violation"
-                sentinel.record_event(
-                    user_id=message.author.id,
-                    user_name=message.author.name,
-                    event_type=event_type,
-                    guild_id=message.guild.id,
-                    reason=f"[Silent] {chatfilter_req.get('reason', 'unknown')}",
-                    account_age_days=account_age,
-                )
-            except Exception as _prism_err:
-                logger.error(f"[Prism] Silent scan error: {_prism_err}")
+        elif not bool(chatfilter_data.get("enabled", False)):
+            # Chatfilter OFF → Prism silent scan.
+            # SafeText alone is too weak on unconfigured servers, so if it came back clean
+            # we run an additional AI check specifically for Prism (no moderation action taken).
+            prism_req = chatfilter_req
+            if not chatfilter_req.get("flagged"):
+                try:
+                    prism_req = await chatfilter_instance._try_ai_check_queued(message.clean_content)
+                except Exception as _ai_err:
+                    logger.error(f"[Prism] Silent AI check error: {_ai_err}")
+                    prism_req = None
+
+            if prism_req and prism_req.get("flagged"):
+                try:
+                    account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
+                    event_type = "chatfilter_phishing" if prism_req.get("reason") == "phishing" else "chatfilter_violation"
+                    sentinel.record_event(
+                        user_id=message.author.id,
+                        user_name=message.author.name,
+                        event_type=event_type,
+                        guild_id=message.guild.id,
+                        reason=f"[Silent] {prism_req.get('reason', 'unknown')}",
+                        account_age_days=account_age,
+                    )
+                    logger.info(
+                        f"[Prism] Silent scan recorded — user={message.author.name} "
+                        f"guild={message.guild.id} reason={prism_req.get('reason')}"
+                    )
+                except Exception as _prism_err:
+                    logger.error(f"[Prism] Silent scan record error: {_prism_err}")
 
         if str(message.guild.id) in gc_data and message.channel.id == int(
             gc_data[str(message.guild.id)]["channel"]

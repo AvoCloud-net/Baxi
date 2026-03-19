@@ -6,6 +6,7 @@ import config.config as config
 import assets.data as datasys
 from typing import cast, Optional
 import datetime
+from datetime import timezone
 
 from assets.buttons import (
     BanConfirmView,
@@ -368,7 +369,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         duration_str = datasys.format_duration(parsed)
         until = discord.utils.utcnow() + parsed
-        until_naive = datetime.datetime.utcnow() + parsed
+        until_naive = datetime.datetime.now(timezone.utc) + parsed
 
         try:
             dm_embed = discord.Embed(

@@ -46,28 +46,48 @@
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <section class="hero">
-            <div class="hero-content">
-                <p class="text-xs font-mono tracking-widest mb-3" style="color: var(--color-primary, #9333ea); opacity: 0.7;">SYS // ERROR</p>
-                <h1 class="text-4xl font-bold mb-4 font-mono">
-                    REQUEST FAILED
-                </h1>
-                <p class="text-muted text-lg mb-6 font-mono">"{{message}}"</p>
-                <a href="/" class="btn-secondary inline-flex items-center gap-2 font-mono text-sm tracking-wide">
-                    <svg class="lucide" viewBox="0 0 24 24">
-                        <path d="m12 19-7-7 7-7"/>
-                        <path d="M19 12H5"/>
-                    </svg>
-                    BACK // HOME
-                </a>
-            </div>
-        </section>
-    </div>
+        <div class="page-header">
+            <p class="text-xs font-mono tracking-widest mb-1" style="color: var(--color-primary, #9333ea); opacity: 0.7;">SYS // ERROR</p>
+            <h1 class="text-3xl font-bold">Request Failed</h1>
+            <p class="text-muted">"{{message}}"</p>
+        </div>
 
-    <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 0.5rem 0 1rem; flex-wrap: wrap;">
-        <a href="/privacy/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Privacy Policy</a>
-        <a href="/terms/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Terms of Service</a>
-        <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Impressum</a>
+        <main class="pb-24">
+            <section class="pb-16">
+                <div class="section-label">WHAT HAPPENED</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Something went wrong
+                        </h2>
+                        <p class="text-muted">The request could not be completed. Please check the details above and try again.</p>
+                    </header>
+                    <section>
+                        <a href="/" class="btn-secondary inline-flex items-center gap-2 font-mono text-sm tracking-wide">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="m12 19-7-7 7-7"/>
+                                <path d="M19 12H5"/>
+                            </svg>
+                            BACK // HOME
+                        </a>
+                    </section>
+                </div>
+            </section>
+
+            <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 0.5rem 0 1rem; flex-wrap: wrap;">
+                <a href="/privacy/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Privacy Policy</a>
+                <a href="/terms/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Terms of Service</a>
+                <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Impressum</a>
+            </div>
+            <footer class="site-footer">
+                <p>Avocloud.net &mdash; Baxi Dashboard</p>
+            </footer>
+        </main>
     </div>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>

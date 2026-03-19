@@ -10,6 +10,9 @@ temp_voice_channels: set = set()
 
 livestream_task = None
 
+# ── Task instances (populated in on_ready) ────────────────────────────────────
+task_instances: dict = {}   # task_key -> task object
+
 # ── Admin: live log buffer (newest at right, max 500 entries) ─────────────────
 admin_log_buffer: deque = deque(maxlen=500)
 
@@ -57,6 +60,12 @@ task_status: dict = {
         "status": "idle",
         "last_run": None,
         "detail": "Refreshes phishing domain list every 12h",
+    },
+    "GarbageCollector": {
+        "name": "Garbage Collector",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Removes log entries older than 30 days (daily)",
     },
 }
 

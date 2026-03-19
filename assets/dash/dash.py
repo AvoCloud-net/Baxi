@@ -11,6 +11,9 @@ from typing import Optional
 from assets.livestream import twitch_api
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+_VIENNA = ZoneInfo("Europe/Vienna")
 import random
 import re
 from typing import cast
@@ -145,7 +148,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         return await render_template("terms.html")
 
     def get_time_based_greeting(username):
-        hour = datetime.now().hour
+        hour = datetime.now(_VIENNA).hour
 
         if 5 <= hour < 12:
             greetings = [
@@ -221,7 +224,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "type": "chatfilter_log",
                     "user": user.name,
                     "success": True,
-                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                     "id": chatfilter_log_id,
                 }
                 audit_log: list = cast(
@@ -238,7 +241,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "type": "login",
                     "user": user.name,
                     "success": True,
-                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 }
                 audit_log: list = cast(
                     list, load_data(sid=int(guild_login), sys="audit_log", bot=bot)
@@ -254,7 +257,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "type": "ticket_transcript",
                     "user": user.name,
                     "success": True,
-                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                     "id": f"{ticket_transcript}",
                 }
                 audit_log: list = cast(
@@ -382,7 +385,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "type": "login",
                     "user": user.name,
                     "success": False,
-                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 }
                 audit_log = cast(
                     list, load_data(sid=guild.id, sys="audit_log", bot=bot)
@@ -399,7 +402,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "type": "login",
                     "user": user.name,
                     "success": False,
-                    "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 }
                 audit_log = cast(
                     list, load_data(sid=guild.id, sys="audit_log", bot=bot)
@@ -628,7 +631,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "chatfilter",
             }
             audit_log: list = cast(
@@ -684,7 +687,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "general",
             }
             audit_log: list = cast(
@@ -732,7 +735,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "globalchat",
             }
             audit_log: list = cast(
@@ -831,7 +834,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "ticket",
             }
             audit_log: list = cast(
@@ -865,7 +868,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "antispam",
             }
             audit_log: list = cast(
@@ -902,7 +905,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "warn_config",
             }
             audit_log: list = cast(
@@ -971,7 +974,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "welcomer",
             }
             audit_log: list = cast(
@@ -1023,7 +1026,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "embed_footer": embed_footer,
                     "created_by": str(user.name),
                     "created_by_id": int(user.id),
-                    "created_at": str(datetime.now().strftime("%Y-%m-%d")),
+                    "created_at": str(datetime.now(_VIENNA).strftime("%Y-%m-%d")),
                 }
 
             elif action == "remove":
@@ -1047,7 +1050,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "custom_commands",
             }
             audit_log: list = cast(
@@ -1195,7 +1198,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "livestream",
             }
             audit_log: list = cast(
@@ -1310,7 +1313,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "stats_channels",
             }
             audit_log: list = cast(
@@ -1341,7 +1344,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "auto_roles",
             }
             audit_log: list = cast(
@@ -1385,7 +1388,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save",
                 "user": user.name,
                 "success": True,
-                "time": str(datetime.now().strftime("%d.%m.%Y - %H:%M")),
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "temp_voice",
             }
             audit_log: list = cast(
@@ -1994,6 +1997,30 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             del share.globalchat_message_data[message_id]
             share.admin_log("warning", f"GC message {message_id} deleted by {user.name} — {deleted} copies removed", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Deleted {deleted} message copies. Failed: {failed}."})
+
+        elif action == "run_task":
+            _TASK_METHODS = {
+                "GCDH":          "sync_globalchat_message_data",
+                "UpdateStats":   "update_stats",
+                "Livestream":    "check_streams",
+                "StatsChannels": "update_stats_channels",
+                "TempActions":   "check_temp_actions",
+                "PhishingList":  "update_phishing_list",
+                "TrustScore":    "recalculate_scores",
+                "GarbageCollector": "collect",
+            }
+            task_key = str(data.get("task_key", "")).strip()
+            if task_key not in _TASK_METHODS:
+                return quart.jsonify({"success": False, "message": f"Unknown task: {task_key}"}), 400
+            instance = share.task_instances.get(task_key)
+            if not instance:
+                return quart.jsonify({"success": False, "message": "Task not running (bot not ready?)"}), 503
+            method_name = _TASK_METHODS[task_key]
+            loop = getattr(instance, method_name)
+            import asyncio as _asyncio
+            _asyncio.get_event_loop().create_task(loop.coro(instance))
+            share.admin_log("info", f"Task {task_key} manually triggered by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Task {task_key} triggered."})
 
         return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
 

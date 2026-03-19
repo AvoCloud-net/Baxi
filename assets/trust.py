@@ -106,13 +106,16 @@ def record_event(
     Record a Prism event for a user and return the new trust score.
     Automatically triggers auto-flag logic after recording.
     """
+    logger.working(f"[Prism] record_event called — user={user_name} ({user_id}) event={event_type} guild={guild_id}")
+
     # Guild-level opt-out check (default: enabled — only skip if explicitly False)
     try:
         prism_setting = datasys.load_data(guild_id, "prism_enabled")
         if prism_setting is False:
+            logger.info(f"[Prism] Skipped — guild {guild_id} has Prism disabled")
             return -1
-    except Exception:
-        pass
+    except Exception as _opt_err:
+        logger.warn(f"[Prism] Could not read prism_enabled for guild {guild_id}: {_opt_err}")
 
     data = _load()
     uid  = str(user_id)
@@ -143,10 +146,16 @@ def record_event(
 
     score               = calculate_score(data[uid]["events"], account_age_days)
     data[uid]["score"]  = score
-    _save(data)
+
+    try:
+        _save(data)
+        logger.success(f"[Prism] Saved — {user_name} ({uid}) event={event_type} score={score} path={_trust_path()}")
+    except Exception as _save_err:
+        logger.error(f"[Prism] _save() FAILED for {user_name} ({uid}): {_save_err}")
+        return -1
 
     _auto_flag_check(uid, user_name, score, data)
-    logger.debug.info(f"[Prism] {user_name} ({uid}) event={event_type} score={score}")
+    logger.info(f"[Prism] {user_name} ({uid}) event={event_type} score={score}")
     return score
 
 

@@ -15,6 +15,9 @@ import asyncio
 import config.config as config
 from typing import cast, Optional, Union
 import datetime
+from zoneinfo import ZoneInfo
+
+_VIENNA = ZoneInfo("Europe/Vienna")
 
 
 class BanConfirmView(ui.View):
@@ -713,7 +716,7 @@ class TicketAdminButtons(ui.View):
                                 "title": ticket_data["title"],
                                 "msg": ticket_data["message"],
                                 "closed_by": str(interaction.user.name),
-                                "closed_on": str(datetime.datetime.now()),
+                                "closed_on": str(datetime.datetime.now(_VIENNA)),
                                 "transcript": ticket_data["transcript"],
                             }
 
@@ -773,7 +776,7 @@ class TicketAdminButtons(ui.View):
                                         lang["systems"]["ticket"]["close_cancel"]
                                     ).format(user=interaction.user.name),
                                     "avatar": "https://avocloud.net/img/icons/gear.svg",
-                                    "timestamp": str(datetime.datetime.now()),
+                                    "timestamp": str(datetime.datetime.now(_VIENNA)),
                                     "is_staff": True,
                                 }
                             )
@@ -788,7 +791,7 @@ class TicketAdminButtons(ui.View):
                                     lang["systems"]["ticket"]["close_cancel"]
                                 ).format(user=interaction.user.name),
                                 "avatar": "https://avocloud.net/img/icons/gear.svg",
-                                "timestamp": str(datetime.datetime.now()),
+                                "timestamp": str(datetime.datetime.now(_VIENNA)),
                                 "is_staff": True,
                             }
                         )
@@ -874,7 +877,7 @@ class TicketAdminButtons(ui.View):
                                 lang["systems"]["ticket"]["description_claimed"]
                             ).format(user=interaction.user.name),
                             "avatar": "https://avocloud.net/img/icons/gear.svg",
-                            "timestamp": str(datetime.datetime.now()),
+                            "timestamp": str(datetime.datetime.now(_VIENNA)),
                             "is_staff": True,
                         }
                     )

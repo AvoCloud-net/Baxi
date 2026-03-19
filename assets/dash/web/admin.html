@@ -271,6 +271,7 @@
                         <option value="GCDH">GCDH</option>
                         <option value="UpdateStats">UpdateStats</option>
                         <option value="PhishingList">PhishingList</option>
+                        <option value="GarbageCollector">GarbageCollector</option>
                         <option value="AdminDash">AdminDash</option>
                     </select>
                     <select id="log-level-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="applyLogFilter()">
@@ -740,7 +741,10 @@ function renderTasks() {
             </div>
             <div style="font-size:.74rem; opacity:.55;">${escHtml(t.detail || '')}</div>
             ${t.extra ? `<div style="font-size:.72rem; opacity:.4;">${escHtml(t.extra)}</div>` : ''}
-            ${t.last_run ? `<div style="font-size:.7rem; opacity:.35;">Last run: ${t.last_run}</div>` : ''}
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:.4rem;">
+                ${t.last_run ? `<span style="font-size:.7rem; opacity:.35;">Last run: ${t.last_run}</span>` : '<span></span>'}
+                <button onclick="runTask('${escHtml(key)}')" class="btn-sm-outline" style="font-size:.7rem; padding:.15rem .5rem;">▶ Run now</button>
+            </div>
         </div>
     `).join('');
 }
@@ -833,6 +837,11 @@ function filterPrism() {
             </td>
         </tr>`;
     }).join('');
+}
+
+async function runTask(taskKey) {
+    const r = await doAction({ action: 'run_task', task_key: taskKey });
+    if (!r.ok) alert('Error: ' + r.message);
 }
 
 async function quickFlag(uid, name) {

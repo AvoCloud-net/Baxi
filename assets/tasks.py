@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import datetime
 import discord
+import os
 from collections import deque
 from discord.ext import tasks, commands
 
@@ -717,3 +718,152 @@ class PhishingListTask:
                     )
                 else:
                     logger.error(f"[PhishingList] Fetch returned HTTP {response.status}")
+
+
+class GarbageCollectorTask:
+    """Background task that deletes log entries older than 30 days.
+
+    Runs once per day and cleans:
+    - data/1001/chatfilter_log.json
+    - data/1001/globalchat_message_data.json  (in-memory + on disk)
+    - data/<guild>/tickets.json  (per guild)
+    - data/1001/transcripts.json
+    """
+
+    RETENTION_DAYS = 30
+
+    @tasks.loop(hours=24)
+    async def collect(self):
+        try:
+            set_task_status("GarbageCollector", "running", "Cleaning log entries older than 30 days...")
+            removed = self._do_collect()
+            parts = [f"{v} {k}" for k, v in removed.items() if v > 0]
+            summary = " · ".join(parts) if parts else "nothing to clean"
+            logger.debug.success(f"[GC] Cleanup complete: {summary}")
+            set_task_status("GarbageCollector", "ok", f"Cleaned: {summary}")
+        except Exception as e:
+            logger.error(f"[GC] Error during garbage collection: {e}")
+            set_task_status("GarbageCollector", "error", f"Error: {e}")
+
+    def _do_collect(self) -> dict:
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=self.RETENTION_DAYS)
+        removed = {"chatfilter": 0, "globalchat": 0, "tickets": 0, "transcripts": 0}
+
+        # --- chatfilter_log.json ---
+        try:
+            log: dict = datasys.load_data(1001, "chatfilter_log")
+            cleaned = {
+                k: v for k, v in log.items()
+                if not self._is_old_chatfilter(v, cutoff)
+            }
+            removed["chatfilter"] = len(log) - len(cleaned)
+            if removed["chatfilter"] > 0:
+                datasys.save_data(1001, "chatfilter_log", cleaned)
+        except Exception as e:
+            logger.error(f"[GC] chatfilter_log: {e}")
+
+        # --- globalchat_message_data.json ---
+        # Operate on the shared in-memory dict so GCDH picks up the change.
+        try:
+            stale_keys = [
+                k for k, v in list(globalchat_message_data.items())
+                if self._is_old_globalchat(v, cutoff)
+            ]
+            for k in stale_keys:
+                globalchat_message_data.pop(k, None)
+            removed["globalchat"] = len(stale_keys)
+            if stale_keys:
+                datasys.save_data(1001, "globalchat_message_data", dict(globalchat_message_data))
+        except Exception as e:
+            logger.error(f"[GC] globalchat_message_data: {e}")
+
+        # --- tickets.json per guild ---
+        try:
+            data_root = "data"
+            for guild_dir in os.listdir(data_root):
+                tickets_path = os.path.join(data_root, guild_dir, "tickets.json")
+                if not os.path.exists(tickets_path):
+                    continue
+                tickets: dict = datasys.load_json(tickets_path)
+                cleaned_tickets = {
+                    tid: t for tid, t in tickets.items()
+                    if not self._is_old_ticket(t, cutoff)
+                }
+                delta = len(tickets) - len(cleaned_tickets)
+                removed["tickets"] += delta
+                if delta > 0:
+                    datasys.save_json(tickets_path, cleaned_tickets)
+        except Exception as e:
+            logger.error(f"[GC] tickets: {e}")
+
+        # --- transcripts.json ---
+        try:
+            transcripts: dict = datasys.load_data(1001, "transcripts")
+            cleaned_tr = {
+                k: v for k, v in transcripts.items()
+                if not self._is_old_transcript(v, cutoff)
+            }
+            removed["transcripts"] = len(transcripts) - len(cleaned_tr)
+            if removed["transcripts"] > 0:
+                datasys.save_data(1001, "transcripts", cleaned_tr)
+        except Exception as e:
+            logger.error(f"[GC] transcripts: {e}")
+
+        return removed
+
+    @staticmethod
+    def _is_old_chatfilter(entry: dict, cutoff: datetime.datetime) -> bool:
+        ts_str = entry.get("timestamp", "")
+        if not ts_str:
+            return False
+        try:
+            dt = datetime.datetime.strptime(ts_str, "%d.%m.%Y - %H:%M")
+            return dt < cutoff
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_old_globalchat(entry: dict, cutoff: datetime.datetime) -> bool:
+        # Extract timestamp from the first Discord snowflake ID found in messages or replies.
+        mid = None
+        if entry.get("messages"):
+            mid = entry["messages"][0].get("mid")
+        elif entry.get("replies"):
+            mid = entry["replies"][0].get("mid")
+        if mid is None:
+            return False
+        try:
+            ts_ms = (int(mid) >> 22) + 1420070400000
+            dt = datetime.datetime.fromtimestamp(ts_ms / 1000)
+            return dt < cutoff
+        except (ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def _is_old_ticket(ticket: dict, cutoff: datetime.datetime) -> bool:
+        transcript = ticket.get("transcript", [])
+        # Find the most recent message timestamp in the transcript.
+        for msg in reversed(transcript):
+            ts_str = msg.get("timestamp")
+            if ts_str:
+                try:
+                    dt = datetime.datetime.fromisoformat(ts_str)
+                    if dt.tzinfo is not None:
+                        dt = dt.replace(tzinfo=None)
+                    return dt < cutoff
+                except ValueError:
+                    continue
+        return False  # no parseable timestamp → keep
+
+    @staticmethod
+    def _is_old_transcript(entry: dict, cutoff: datetime.datetime) -> bool:
+        ts_str = entry.get("created_at") or entry.get("timestamp")
+        if not ts_str:
+            return False
+        try:
+            dt = datetime.datetime.fromisoformat(ts_str)
+            if dt.tzinfo is not None:
+                dt = dt.replace(tzinfo=None)
+            return dt < cutoff
+        except ValueError:
+            return False
