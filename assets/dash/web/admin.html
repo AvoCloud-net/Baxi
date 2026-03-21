@@ -163,6 +163,10 @@
         <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Global Stats
     </a>
+    <a href="#section-adoption">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Feature Adoption
+    </a>
     <a href="#section-prism">
         <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
         Prism Users
@@ -182,10 +186,6 @@
     <a href="#section-guilds">
         <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         All Guilds
-    </a>
-    <a href="#section-adoption">
-        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        Feature Adoption
     </a>
     <div class="nav-sep"></div>
     <a href="#section-actions">
@@ -282,7 +282,7 @@
                         <option value="error">Error</option>
                     </select>
                     <button onclick="clearLogView()" class="btn-sm-outline">Clear view</button>
-                    <button onclick="logAutoScroll=!logAutoScroll; this.textContent=logAutoScroll?'Auto-scroll ON':'Auto-scroll OFF'" class="btn-sm-outline">Auto-scroll ON</button>
+                    <button id="autoscroll-btn" onclick="logAutoScroll=!logAutoScroll; this.textContent=logAutoScroll?'Auto-scroll ON':'Auto-scroll OFF'" class="btn-sm-outline">Auto-scroll ON</button>
                 </div>
             </header>
             <section>
@@ -661,12 +661,18 @@ async function pollLogs() {
         const stream = document.getElementById('log-stream');
         document.getElementById('log-count').textContent = fmt(data.total);
 
+        // Detect buffer wrap: if server total went below our offset, entries were lost
+        if (data.total < logOffset) {
+            logOffset = 0;
+            allLogEntries = [];
+            stream.innerHTML = '';
+        }
+
         const srcFilter = document.getElementById('log-source-filter').value;
         const lvlFilter = document.getElementById('log-level-filter').value;
 
         for (const entry of data.entries) {
             allLogEntries.push(entry);
-            // Only append to DOM if it passes the current filter
             if ((!srcFilter || entry.source === srcFilter) && (!lvlFilter || entry.level === lvlFilter)) {
                 stream.appendChild(buildLogLine(entry));
             }
@@ -678,6 +684,24 @@ async function pollLogs() {
         }
     } catch(e) {}
 }
+
+// Auto-scroll: disable when user scrolls up, re-enable when back at bottom
+document.addEventListener('DOMContentLoaded', () => {
+    const stream = document.getElementById('log-stream');
+    if (!stream) return;
+    stream.addEventListener('scroll', () => {
+        const atBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 40;
+        if (!atBottom && logAutoScroll) {
+            logAutoScroll = false;
+            const btn = document.getElementById('autoscroll-btn');
+            if (btn) btn.textContent = 'Auto-scroll OFF';
+        } else if (atBottom && !logAutoScroll) {
+            logAutoScroll = true;
+            const btn = document.getElementById('autoscroll-btn');
+            if (btn) btn.textContent = 'Auto-scroll ON';
+        }
+    }, { passive: true });
+});
 
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

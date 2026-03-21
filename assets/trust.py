@@ -26,8 +26,8 @@ EVENT_WEIGHTS: dict[str, int] = {
 # ── Thresholds ─────────────────────────────────────────────────────────────────
 AUTO_FLAG_THRESHOLD   = 30   # score ≤ this → auto-flag
 AUTO_UNFLAG_THRESHOLD = 50   # score ≥ this → auto-unflag (only if auto-flagged)
-RECOVERY_SCORE        = 5    # +5 per 30 clean days
-RECOVERY_DAYS         = 30
+RECOVERY_SCORE        = 8    # +8 per 20 clean days
+RECOVERY_DAYS         = 20
 EVENT_DECAY_DAYS      = 90   # events older than this count at half weight
 
 

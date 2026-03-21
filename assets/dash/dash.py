@@ -1798,15 +1798,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         limit = min(int(quart.request.args.get("limit", 200)), 5000)
 
         if system_filter:
-            entries = [e for e in entries if e.get("system", "SafeText").lower() == system_filter]
+            entries = [e for e in entries if (e.get("system") or "SafeText").lower() == system_filter]
         if reason_filter:
-            entries = [e for e in entries if reason_filter in e.get("reason", "").lower()]
+            entries = [e for e in entries if reason_filter in (e.get("reason") or "").lower()]
         if search:
             entries = [e for e in entries if (
-                search in e.get("uname", "").lower()
-                or search in e.get("sname", "").lower()
-                or search in e.get("message", "").lower()
-                or search in e.get("cname", "").lower()
+                search in (e.get("uname") or "").lower()
+                or search in (e.get("sname") or "").lower()
+                or search in (e.get("message") or "").lower()
+                or search in (e.get("cname") or "").lower()
             )]
 
         return quart.jsonify({
@@ -1825,10 +1825,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         offset = int(quart.request.args.get("offset", 0))
         entries = list(share.admin_log_buffer)
-        new_entries = entries[offset:]
+        total_ever = share.admin_log_total
+        buffer_start = total_ever - len(entries)
+        effective_offset = max(offset - buffer_start, 0)
+        new_entries = entries[effective_offset:]
         return quart.jsonify({
             "entries": new_entries,
-            "total": len(entries),
+            "total": total_ever,
         })
 
     @app.route("/api/admin/action", methods=["POST"])

@@ -15,6 +15,7 @@ task_instances: dict = {}   # task_key -> task object
 
 # ── Admin: live log buffer (newest at right, max 500 entries) ─────────────────
 admin_log_buffer: deque = deque(maxlen=500)
+admin_log_total: int = 0  # total entries ever added (unbounded counter for offset tracking)
 
 # ── Admin: task status tracker ────────────────────────────────────────────────
 task_status: dict = {
@@ -72,6 +73,7 @@ task_status: dict = {
 
 def admin_log(level: str, message: str, source: str = "system"):
     """Append a log entry to the admin live log buffer."""
+    global admin_log_total
     entry = {
         "time": _time.strftime("%H:%M:%S"),
         "level": level,   # "info" | "success" | "warning" | "error"
@@ -79,6 +81,7 @@ def admin_log(level: str, message: str, source: str = "system"):
         "message": message,
     }
     admin_log_buffer.append(entry)
+    admin_log_total += 1
 
 
 def set_task_status(task_key: str, status: str, detail: str = "", extra: str = ""):

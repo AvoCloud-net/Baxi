@@ -125,14 +125,16 @@ class Chatfilter:
 
         # SafeText flagged → content clearly bad, skip AI
         if safetext_result and safetext_result.get("flagged"):
+            _st_json = safetext_result.get("json", {})
             logger.info(
                 f"Chatfilter | SafeText [flagged] — user={user_id} guild={gid} "
-                f"reason={safetext_result.get('reason')} "
-                f"distance={safetext_result.get('distance')} → AI skipped"
+                f"reason={safetext_result.get('reason')} distance={safetext_result.get('distance')} "
+                f"word={_st_json.get('word', '—')} → AI skipped"
             )
             _admin_log("warning",
-                f"SafeText flagged — user={user_id} guild={gid} "
-                f"reason={safetext_result.get('reason')} distance={safetext_result.get('distance')}",
+                f"SafeText flagged — user={user_id} guild={gid} | "
+                f"reason={safetext_result.get('reason')} distance={safetext_result.get('distance')} "
+                f"word={_st_json.get('word', '—')} full={_st_json}",
                 source="Chatfilter"
             )
             return safetext_result
@@ -170,21 +172,23 @@ class Chatfilter:
         )
 
         if ai_result is not None:
+            _raw = ai_result.get("_raw", "?")
             if ai_result.get("flagged"):
                 logger.info(
                     f"Chatfilter | AI [flagged] — user={user_id} guild={gid} "
-                    f"reason={ai_result.get('reason')}"
+                    f"reason={ai_result.get('reason')} raw=\"{_raw}\""
                 )
                 _admin_log("warning",
-                    f"AI flagged — user={user_id} guild={gid} reason={ai_result.get('reason')}",
+                    f"AI flagged — user={user_id} guild={gid} "
+                    f"reason={ai_result.get('reason')} | raw: \"{_raw}\"",
                     source="Chatfilter"
                 )
             else:
                 logger.info(
-                    f"Chatfilter | AI [clean] — user={user_id} guild={gid}"
+                    f"Chatfilter | AI [clean] — user={user_id} guild={gid} raw=\"{_raw}\""
                 )
                 _admin_log("info",
-                    f"AI clean — user={user_id} guild={gid}",
+                    f"AI clean — user={user_id} guild={gid} | raw: \"{_raw}\"",
                     source="Chatfilter"
                 )
             return ai_result
@@ -253,6 +257,8 @@ class Chatfilter:
                         data = await response.json()
 
                         if not data:
+                            logger.info(f"Chatfilter | SafeText raw → (empty / clean)")
+                            _admin_log("info", "SafeText raw → (empty / clean)", source="Chatfilter")
                             return {
                                 "code":     "safe",
                                 "flagged":  False,
@@ -261,6 +267,16 @@ class Chatfilter:
                                 "json":     {},
                             }
 
+                        logger.info(
+                            f"Chatfilter | SafeText raw → code={data.get('code')} "
+                            f"distance={data.get('distance')} word={data.get('word', '—')} "
+                            f"full={data}"
+                        )
+                        _admin_log("warning",
+                            f"SafeText raw → code={data.get('code')} distance={data.get('distance')} "
+                            f"word={data.get('word', '—')} full={data}",
+                            source="Chatfilter"
+                        )
                         return {
                             "code":     "safetext-filter",
                             "flagged":  True,
@@ -299,7 +315,7 @@ class Chatfilter:
                 user_content = translated_message
 
             payload = {
-                "model":       "ai_chatsafety_baxi:latest",
+                "model":       "ai_chatsafety_baxi_v2.1:latest",
                 "messages":    [{"role": "user", "content": user_content}],
                 "temperature": 0.1,
                 "max_tokens":  10,
@@ -316,8 +332,12 @@ class Chatfilter:
                     ai_response_json = await ai_response_raw.json()
 
             content = ai_response_json["choices"][0]["message"]["content"].strip()
-            # Expected response: "safe" or a digit "1"–"5"
-            code = content.split()[0].lower()
+            # Model may return "safe", "1"–"5", or "UNSAFE:1"–"UNSAFE:5"
+            raw_code = content.split()[0].upper()
+            if raw_code.startswith("UNSAFE:"):
+                code = raw_code.split(":", 1)[1].strip()
+            else:
+                code = raw_code.lower()  # "safe" or bare digit
 
             flagged = code in AI_CATEGORIES
             # Suppress flag if this category is disabled for the guild
@@ -329,6 +349,7 @@ class Chatfilter:
                 "flagged":  flagged,
                 "distance": None,
                 "reason":   code if flagged else "safe",
+                "_raw":     content,
                 "json":     {
                     "status":   "unsafe" if flagged else "safe",
                     "category": code,

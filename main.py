@@ -1,3 +1,8 @@
+import os
+import time
+os.environ["TZ"] = "Europe/Vienna"
+time.tzset()
+
 import asyncio
 
 import config.auth as auth
@@ -12,7 +17,6 @@ from assets.events import events
 from discord.ext import commands
 from quart import Quart
 from quart_cors import cors
-import os
 
 logger = reds_simple_logger.Logger()
 
