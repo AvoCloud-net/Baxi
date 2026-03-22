@@ -68,6 +68,12 @@
             </svg>
             Back
         </button>
+        <button onclick="window.open('https://baxi.avocloud.net/docs/', '_blank')" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>
+            </svg>
+            Documentation
+        </button>
         <button onclick="location.href = '/logout/'" class="btn-lg-outline">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m16 17 5-5-5-5"/>
@@ -141,6 +147,10 @@
             <a href="#auditlog" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Audit Log
+            </a>
+            <a href="https://baxi.avocloud.net/docs/" target="_blank" rel="noopener noreferrer" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
+                Docs
             </a>
         </nav>
 
@@ -381,15 +391,28 @@
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <label class="block text-sm font-medium">Choose system:</label>
+                                    <label class="block text-sm font-medium">Filter Pipeline</label>
+                                    <p class="text-xs text-muted">Every message passes through these stages in order. SafeText is always active — the option below only controls whether the AI stage is additionally enabled.</p>
+                                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 2px;font-size:0.75rem;">
+                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">📨 Message</span>
+                                        <span style="color:var(--text-muted,#888);">→</span>
+                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🔗 1. Phishing Check</span>
+                                        <span style="color:var(--text-muted,#888);">→</span>
+                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🔍 2. Keyword Filter <span style="opacity:0.6;">(SafeText, always on)</span></span>
+                                        <span style="color:var(--text-muted,#888);">→</span>
+                                        <span id="pipeline-ai-badge" style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🤖 3. AI Filter <span style="opacity:0.6;">(optional)</span></span>
+                                        <span style="color:var(--text-muted,#888);">→</span>
+                                        <span style="color:#4ade80;font-weight:600;">✅ Passed</span>
+                                    </div>
+                                    <label class="block text-sm font-medium" style="margin-top:8px;">AI Filter:</label>
                                     <fieldset class="grid gap-3">
                                         <label class="radio-label">
                                             <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
                                                 value="SafeText" class="mt-1 h-4 w-4">
                                             <div>
-                                                <span class="block text-sm font-medium">Safetext</span>
+                                                <span class="block text-sm font-medium">Disabled</span>
                                                 <span class="block text-xs text-muted">
-                                                    An open source tool from avocloud.net that quickly checks individual words for problematic content. Ideal for high speed, but prone to false positives.
+                                                    Only SafeText is used — fast word-level checks. No AI analysis.
                                                 </span>
                                             </div>
                                         </label>
@@ -397,9 +420,9 @@
                                             <input type="radio" name="chatfilter-system" id="chatfilter-system-ai"
                                                 value="AI" class="mt-1 h-4 w-4">
                                             <div>
-                                                <span class="block text-sm font-medium">AI</span>
+                                                <span class="block text-sm font-medium">Enabled</span>
                                                 <span class="block text-xs text-muted">
-                                                    A locally hosted LLM that analyses entire messages based on context. Slightly slower, but much more precise.
+                                                    SafeText runs first, then a locally hosted LLM analyses the full message in context. Slightly slower, but much more precise.
                                                 </span>
                                             </div>
                                         </label>
@@ -1526,10 +1549,13 @@
                     if (cb) cb.checked = cats[String(i)] !== false;
                 }
             }
-            // Show/hide AI categories based on selected system
+            // Show/hide AI categories and update pipeline badge based on selected system
             function updateAiCategoriesVisibility() {
                 const selected = document.querySelector('input[name="chatfilter-system"]:checked')?.value;
-                document.getElementById('ai-categories-section').style.display = selected === 'AI' ? '' : 'none';
+                const isAI = selected === 'AI';
+                document.getElementById('ai-categories-section').style.display = isAI ? '' : 'none';
+                const badge = document.getElementById('pipeline-ai-badge');
+                if (badge) badge.style.opacity = isAI ? '1' : '0.35';
             }
             document.querySelectorAll('input[name="chatfilter-system"]').forEach(r => {
                 r.addEventListener('change', updateAiCategoriesVisibility);
