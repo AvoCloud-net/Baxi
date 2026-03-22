@@ -15,7 +15,7 @@ Everything is open source under the **MIT license** — self-host it, audit it, 
 
 - 🛡️ **Moderation** — ban, kick, mute, warn, temp actions with auto-expiry, auto-escalation on warning thresholds, DM notifications
 - 🚫 **Anti-Spam** — detects message spam, mention floods & repeated content in real time
-- 🤖 **AI Chat Filter** — multi-tier filtering: SafeText (bad-word detection) + Llama Guard AI (context-aware) + phishing link scanner
+- 🤖 **AI Chat Filter** — multi-tier filtering: SafeText (bad-word detection) + Qwen2.5 AI (context-aware, powered by qwen2.5:3b via Ollama with a custom moderation system prompt) + phishing link scanner
 - 🌐 **Global Chat** — cross-server chatroom connecting all Baxi servers, always AI-filtered *(official hosted bot only)*
 - 🎫 **Ticket System** — modal-based tickets, staff can claim, close & archive as transcripts
 - 👋 **Welcome & Leave** — customizable messages with variables + optional welcome image with custom background
@@ -68,7 +68,7 @@ python main.py
 | Feature | Self-Hosted |
 |---|---|
 | 🌐 Global Chat | ❌ Not available (requires official network) |
-| 🤖 AI Filter (Llama Guard) | ⚠️ Self-host with [Ollama](https://ollama.ai/) + Llama Guard 3 |
+| 🤖 AI Filter (Qwen2.5) | ⚠️ Self-host with [Ollama](https://ollama.ai/) + qwen2.5:3b |
 | 🔍 SafeText | ⚠️ Requires a Public API Key (request via support) |
 | Everything else | ✅ Fully functional |
 
