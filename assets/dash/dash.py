@@ -677,11 +677,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             save_data(sid=int(guild_id), sys="terms", data=guild_conf_terms)
 
-            prism_enabled = general.get("prism_enabled", True)
-            if not isinstance(prism_enabled, bool):
-                prism_enabled = True
-            save_data(sid=int(guild_id), sys="prism_enabled", data=prism_enabled)
-
             notif_ch = str(general.get("notification_channel", "")).strip()
             if notif_ch and not notif_ch.isdigit():
                 return quart.jsonify({"success": False, "message": "'notification_channel' must be a channel ID or empty."}), 400
@@ -698,6 +693,27 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
             )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "prism":
+            data: dict = await quart.request.get_json()
+            prism = data.get("prism")
+            if not isinstance(prism, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'prism' must be an object."}), 400
+            prism_enabled = prism.get("enabled", True)
+            if not isinstance(prism_enabled, bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+            save_data(sid=int(guild_id), sys="prism_enabled", data=prism_enabled)
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "prism",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
@@ -1403,6 +1419,43 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             save_data(int(guild_id), "audit_log", audit_log)
 
         return quart.jsonify({"success": True, "message": "Settings applied successfully."})
+
+    @app.route("/api/dash/prism-scores/", methods=["GET"])
+    @requires_authorization
+    async def dash_prism_scores():
+        guild_id = quart.request.args.get("guild_id") or quart.request.args.get("dash_login")
+        if not guild_id:
+            return quart.jsonify({"success": False, "message": "Missing guild_id parameter."}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            try:
+                guild_member = await guild.fetch_member(user.id)
+            except discord.NotFound:
+                return quart.jsonify({"success": False, "message": "Not a member of this guild."}), 403
+            if not guild_member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "Unauthorized."}), 403
+        except discord.NotFound:
+            return quart.jsonify({"success": False, "message": "Guild not found."}), 404
+        except discord.Forbidden:
+            return quart.jsonify({"success": False, "message": "Bot doesn't have access to this guild."}), 403
+        except Exception as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 500
+
+        import assets.trust as sentinel
+        prism_profiles: dict = sentinel.get_all_profiles()
+        result = []
+        for uid, profile in prism_profiles.items():
+            events = profile.get("events", [])
+            if not any(str(e.get("guild_id")) == str(guild_id) for e in events):
+                continue
+            result.append({
+                "uid": uid,
+                "name": profile.get("name", uid),
+                "score": profile.get("score", 100),
+            })
+        result.sort(key=lambda u: u["score"])
+        return quart.jsonify({"success": True, "users": result[:200]})
 
     @app.route("/api/dash/welcomer-bg/", methods=["GET", "POST", "DELETE"])  # type: ignore
     @requires_authorization

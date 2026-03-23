@@ -20,9 +20,90 @@
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
+
+    <style>
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            background: var(--background, var(--color-background, canvas));
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #page-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #page-loader .loader-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+            opacity: 0.7;
+        }
+        #page-loader .loader-spinner {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 3px solid color-mix(in srgb, var(--color-primary, #6F83AA) 20%, transparent);
+            border-top-color: var(--color-primary, #6F83AA);
+            border-radius: 50%;
+            animation: loader-spin 0.9s linear infinite;
+        }
+        @keyframes loader-spin {
+            to { transform: rotate(360deg); }
+        }
+        #page-loader .loader-dots {
+            display: inline-flex;
+            gap: 0.35rem;
+            align-items: center;
+        }
+        #page-loader .loader-dots span {
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 50%;
+            background: var(--color-primary, #6F83AA);
+            opacity: 0.3;
+            animation: loader-pulse 1.2s ease-in-out infinite;
+        }
+        #page-loader .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        #page-loader .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes loader-pulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Full-page loader — hidden once window.load fires -->
+    <div id="page-loader" aria-hidden="true">
+        <span class="loader-badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+            Baxi Dashboard
+        </span>
+        <div class="loader-spinner"></div>
+        <p style="font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.03em;">Loading your data …</p>
+    </div>
+    <script>
+        (function () {
+            var l = document.getElementById('page-loader');
+            var bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
+                  || getComputedStyle(document.body).backgroundColor;
+            if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') l.style.background = bg;
+        })();
+    </script>
+
     <div id="gradientbar"></div>
 
     <!-- Nav -->
@@ -99,6 +180,10 @@
             <a href="#config-general" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 General
+            </a>
+            <a href="#prism" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                PRISM
             </a>
             <a href="#config-chatfilter" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
@@ -278,38 +363,6 @@
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <label>Prism — Trust Scoring <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#9333ea) 15%,transparent);color:var(--color-primary,#9333ea);vertical-align:middle;">BETA</span></label>
-                                    <p class="text-muted text-sm">
-                                        Prism analyzes user behavior on your server (chat filter violations, spam, warnings, bans and kicks)
-                                        and contributes to a network-wide trust score per user. Users that fall below the trust threshold
-                                        are automatically flagged and will appear in <code>/scan_users</code>. Disabling this means actions
-                                        on your server will <strong>not</strong> feed into the global Prism score.
-                                    </p>
-                                    <fieldset class="grid gap-3">
-                                        <label class="radio-label">
-                                            <input type="radio" name="prism-enabled" id="prism-enabled-yes"
-                                                value="true" class="mt-1 h-4 w-4">
-                                            <div>
-                                                <span class="block text-sm font-medium">Enabled</span>
-                                                <span class="block text-xs text-muted">
-                                                    User behavior on this server contributes to Prism trust scores.
-                                                </span>
-                                            </div>
-                                        </label>
-                                        <label class="radio-label">
-                                            <input type="radio" name="prism-enabled" id="prism-enabled-no"
-                                                value="false" class="mt-1 h-4 w-4">
-                                            <div>
-                                                <span class="block text-sm font-medium">Disabled</span>
-                                                <span class="block text-xs text-muted">
-                                                    This server's moderation actions are excluded from Prism scoring.
-                                                </span>
-                                            </div>
-                                        </label>
-                                    </fieldset>
-                                </div>
-
-                                <div class="grid gap-2">
                                     <label for="notification-channel">Notification Channel:</label>
                                     <p class="text-muted text-sm">
                                         Channel where Baxi posts notifications — including bot updates, announcements and Prism alerts
@@ -376,6 +429,95 @@
                                 </section>
                             </div>
                         </section>
+                </div>
+            </section>
+
+            <!-- PRISM -->
+            <section class="pb-16 dash-section" id="prism">
+                <div class="section-label">PRISM</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                                <path d="M12 9v4"/><path d="M12 17h.01"/>
+                            </svg>
+                            PRISM — Trust Scoring
+                            <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#9333ea) 15%,transparent);color:var(--color-primary,#9333ea);vertical-align:middle;">BETA</span>
+                        </h2>
+                        <p class="text-muted">Prism analyzes user behavior across all Baxi servers and generates a network-wide trust score per user.</p>
+                    </header>
+                    <section>
+                        <form id="prism-form" class="form grid gap-6 settings-form">
+                            <div class="grid gap-2">
+                                <label>Server participation</label>
+                                <p class="text-muted text-sm">
+                                    Prism analyzes user behavior on your server (chat filter violations, spam, warnings, bans and kicks)
+                                    and contributes to a network-wide trust score per user. Users that fall below the trust threshold
+                                    are automatically flagged and will appear in <code>/scan_users</code>. Disabling this means actions
+                                    on your server will <strong>not</strong> feed into the global Prism score.
+                                </p>
+                                <fieldset class="grid gap-3">
+                                    <label class="radio-label">
+                                        <input type="radio" name="prism-enabled" id="prism-enabled-yes"
+                                            value="true" class="mt-1 h-4 w-4">
+                                        <div>
+                                            <span class="block text-sm font-medium">Enabled</span>
+                                            <span class="block text-xs text-muted">
+                                                User behavior on this server contributes to Prism trust scores.
+                                            </span>
+                                        </div>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="prism-enabled" id="prism-enabled-no"
+                                            value="false" class="mt-1 h-4 w-4">
+                                        <div>
+                                            <span class="block text-sm font-medium">Disabled</span>
+                                            <span class="block text-xs text-muted">
+                                                This server's moderation actions are excluded from Prism scoring.
+                                            </span>
+                                        </div>
+                                    </label>
+                                </fieldset>
+                            </div>
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+
+                        <!-- User Scores -->
+                        <div class="card mt-6">
+                            <header>
+                                <h2 class="text-base font-semibold flex items-center gap-2">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    User Trust Scores
+                                </h2>
+                                <p class="text-muted text-sm">Members of this server sorted by trust score (lowest first).</p>
+                            </header>
+                            <section>
+                                <div id="prism-scores-loading" class="text-muted text-sm">Loading...</div>
+                                <div id="prism-scores-empty" class="text-muted text-sm hidden">No users with a low trust score on this server yet.</div>
+                                <div id="prism-scores-list" class="hidden" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;"></div>
+                            </section>
+                        </div>
+                    </section>
                 </div>
             </section>
 
@@ -1891,6 +2033,59 @@
             };
         }
 
+        document.getElementById('prism-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.querySelector('input[name="prism-enabled"]:checked')?.value === 'true';
+            const payload = { prism: { enabled } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=prism&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        function loadPrismScores() {
+            fetch('/api/dash/prism-scores/?dash_login={{ data.dash_login }}')
+                .then(r => r.json())
+                .then(resp => {
+                    document.getElementById('prism-scores-loading').classList.add('hidden');
+                    if (!resp.success || !resp.users || resp.users.length === 0) {
+                        document.getElementById('prism-scores-empty').classList.remove('hidden');
+                        return;
+                    }
+                    const list = document.getElementById('prism-scores-list');
+                    list.innerHTML = '';
+                    resp.users.forEach(u => {
+                        const score = u.score;
+                        const scoreColor = score >= 70 ? 'var(--color-success,#22c55e)' : score >= 40 ? 'var(--color-warning,#f59e0b)' : 'var(--color-destructive,#ef4444)';
+                        const avatarUrl = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
+                        const card = document.createElement('div');
+                        card.style.cssText = 'background:var(--bg-secondary,#1e2128);border:1px solid var(--border,#333);border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;';
+                        card.innerHTML = `
+                            <img src="${avatarUrl}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <span style="font-size:0.8rem;font-weight:500;word-break:break-word;max-width:100%;">${u.name.replace(/</g,'&lt;')}</span>
+                            <span style="font-size:1.1rem;font-weight:700;color:${scoreColor};">${score}</span>
+                        `;
+                        list.appendChild(card);
+                    });
+                    list.classList.remove('hidden');
+                    list.style.display = 'grid';
+                })
+                .catch(() => {
+                    document.getElementById('prism-scores-loading').textContent = 'Failed to load scores.';
+                });
+        }
+        loadPrismScores();
+
         document.getElementById('chatfilter-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('chatfilter-enabled').checked;
@@ -1925,9 +2120,8 @@
             const lang = document.getElementById('general-lang').value;
             const nick = document.getElementById('general-nick').value;
             const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
-            const prismEnabled = document.querySelector('input[name="prism-enabled"]:checked')?.value || 'true';
             const notifCh = document.getElementById('notification-channel')?.value || '';
-            const payload = { general: { lang, nick, terms: terms === 'true', prism_enabled: prismEnabled === 'true', notification_channel: notifCh } };
+            const payload = { general: { lang, nick, terms: terms === 'true', notification_channel: notifCh } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -2505,6 +2699,13 @@
             tick();
             setInterval(tick, 1000);
         })();
+    </script>
+
+    <script>
+        window.addEventListener('load', function () {
+            const loader = document.getElementById('page-loader');
+            if (loader) loader.classList.add('hidden');
+        });
     </script>
 
 <dialog id="remove-streamer-dialog" class="dialog" aria-labelledby="remove-streamer-dialog-title" aria-describedby="remove-streamer-dialog-description">
