@@ -75,6 +75,39 @@
         .score-bar { height:4px; border-radius:2px; background: rgba(255,255,255,.08); overflow:hidden; }
         .score-bar-fill { height:100%; border-radius:2px; transition: width .4s; }
 
+        /* ── Prism profile modal ─────────────────────────────────── */
+        #prism-modal-backdrop {
+            display: none; position: fixed; inset: 0; z-index: 999;
+            background: rgba(0,0,0,.65); backdrop-filter: blur(3px);
+            align-items: center; justify-content: center;
+        }
+        #prism-modal-backdrop.open { display: flex; }
+        #prism-modal {
+            background: var(--color-card, #1a1a2e);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px;
+            width: min(820px, 95vw);
+            max-height: 85vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        #prism-modal-header {
+            padding: 1rem 1.25rem .75rem;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+        }
+        #prism-modal-body { overflow-y: auto; padding: 1rem 1.25rem 1.25rem; flex: 1; }
+        .prism-event-table { width:100%; border-collapse:collapse; font-size:.78rem; margin-top:.5rem; }
+        .prism-event-table th { text-align:left; padding:.3rem .5rem; opacity:.4; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.07); }
+        .prism-event-table td { padding:.4rem .5rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:top; }
+        .prism-event-table tr:last-child td { border-bottom: none; }
+        .sev-critical { color:#f87171; }
+        .sev-severe   { color:#fb923c; }
+        .sev-high     { color:#fbbf24; }
+        .sev-medium   { color:#a3a3a3; }
+        .sev-low, .sev-minor, .sev-minimal { color:#6b7280; }
+        .decayed-note { font-size:.68rem; opacity:.5; }
+
         /* ── Log stream ──────────────────────────────────────────── */
         #log-stream {
             height: 340px;
@@ -564,9 +597,68 @@
                 </section>
             </div>
 
+            <!-- Send Notification -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <header>
+                    <h2 style="font-size:.95rem; font-weight:600;">Send Notification</h2>
+                    <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Sends a Baxi embed to the notification channel of every server (or a specific one). Leave Guild ID empty to broadcast to all.</p>
+                </header>
+                <section>
+                    <div class="grid gap-3">
+                        <div style="display:flex; gap:.5rem;">
+                            <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
+                            <input id="notif-gid" type="text" placeholder="Guild ID (optional — all if empty)" style="width:260px;">
+                        </div>
+                        <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#1a1a2e); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
+                        <button onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
+                        <div id="notif-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
         </div>
     </section>
 
+</div>
+
+<!-- ── Prism Profile Modal ───────────────────────────────────── -->
+<div id="prism-modal-backdrop" onclick="closePrismModal(event)">
+    <div id="prism-modal">
+        <div id="prism-modal-header">
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
+                    <span id="pm-name" style="font-size:1rem; font-weight:700;"></span>
+                    <span id="pm-score-badge"></span>
+                    <span id="pm-flag-badge"></span>
+                </div>
+                <div id="pm-uid" style="font-size:.72rem; opacity:.4; margin-top:.15rem;"></div>
+                <div style="margin-top:.5rem;">
+                    <div class="score-bar" style="width:200px; height:6px;">
+                        <div id="pm-score-bar" class="score-bar-fill" style="height:6px;"></div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closePrismModal()" style="background:none; border:none; cursor:pointer; opacity:.5; padding:.25rem; color:inherit; font-size:1.2rem; line-height:1;" title="Close">✕</button>
+        </div>
+        <div id="prism-modal-body">
+            <!-- Meta grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.5rem .75rem; margin-bottom:1rem;">
+                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Account age</div><div id="pm-age" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Account created</div><div id="pm-created" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">First seen by Prism</div><div id="pm-first" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Last seen</div><div id="pm-last" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Total events</div><div id="pm-evt-count" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+            </div>
+            <!-- Events table -->
+            <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Event History</div>
+            <div id="pm-events-wrap">
+                <table class="prism-event-table">
+                    <thead><tr><th>#</th><th>Type</th><th>Severity</th><th>Impact</th><th>Reason</th><th>Guild ID</th><th>Date</th></tr></thead>
+                    <tbody id="pm-events-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
@@ -858,6 +950,7 @@ function filterPrism() {
                     : `<button onclick="quickFlag('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Flag</button>`
                 }
                 <button onclick="quickClearEvents('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#facc15;" title="Delete all Prism events">Clear events</button>
+                <button onclick="viewPrismProfile('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#a78bfa;">View</button>
             </td>
         </tr>`;
     }).join('');
@@ -1023,8 +1116,83 @@ async function adminAction(action) {
         if (!confirm(`Delete GC message ${payload.message_id} from all servers?`)) return;
         const r = await doAction(payload);
         setResult('gc-result', r.message, r.ok);
+    } else if (action === 'send_notification') {
+        payload.title    = document.getElementById('notif-title').value.trim();
+        payload.text     = document.getElementById('notif-text').value.trim();
+        payload.guild_id = document.getElementById('notif-gid').value.trim();
+        if (!payload.title || !payload.text) {
+            setResult('notif-result', 'Title and text are required.', false);
+            return;
+        }
+        const scope = payload.guild_id ? `guild ${payload.guild_id}` : 'ALL servers';
+        if (!confirm(`Send notification "${payload.title}" to ${scope}?`)) return;
+        const r = await doAction(payload);
+        setResult('notif-result', r.message, r.ok);
     }
 }
+
+// ── Prism Profile Modal ───────────────────────────────────────
+
+const SEV_CLASS = { critical:'sev-critical', severe:'sev-severe', high:'sev-high', medium:'sev-medium', low:'sev-low', minor:'sev-minor', minimal:'sev-minimal' };
+
+function fmtTs(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString('de-AT', { dateStyle:'short', timeStyle:'short' }); }
+    catch { return iso.slice(0,16).replace('T',' '); }
+}
+
+async function viewPrismProfile(uid) {
+    const r = await doAction({ action: 'get_prism_profile', user_id: uid });
+    if (!r.ok) { alert('Error: ' + r.message); return; }
+    const p = r.data.profile;
+
+    document.getElementById('pm-name').textContent  = p.name;
+    document.getElementById('pm-uid').textContent   = p.uid;
+    document.getElementById('pm-score-badge').innerHTML = scoreBadge(p.score);
+    document.getElementById('pm-flag-badge').innerHTML  = p.auto_flagged
+        ? '<span class="badge badge-flagged">Auto-Flagged</span>' : '';
+
+    const bar = document.getElementById('pm-score-bar');
+    bar.style.width      = p.score + '%';
+    bar.style.background = scoreBarColor(p.score);
+
+    document.getElementById('pm-age').textContent      = p.account_age_days + ' days';
+    document.getElementById('pm-created').textContent  = fmtTs(p.account_created_at) || '—';
+    document.getElementById('pm-first').textContent    = fmtTs(p.first_seen);
+    document.getElementById('pm-last').textContent     = fmtTs(p.last_seen);
+    document.getElementById('pm-evt-count').textContent = p.event_count;
+
+    const tbody = document.getElementById('pm-events-body');
+    if (!p.events.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="opacity:.4; padding:.75rem .5rem;">No events recorded.</td></tr>';
+    } else {
+        tbody.innerHTML = p.events.map((ev, i) => {
+            const sevCls   = SEV_CLASS[ev.severity] || '';
+            const decayed  = ev.decayed ? '<span class="decayed-note"> (½ decay)</span>' : '';
+            const weight   = ev.weight >= 0 ? `<span style="color:#4ade80;">+${ev.weight}</span>` : `<span style="color:#f87171;">${ev.weight}</span>`;
+            return `<tr>
+                <td style="opacity:.35;">${p.event_count - i}</td>
+                <td style="font-weight:600;">${escHtml(ev.label)}</td>
+                <td class="${sevCls}">${ev.severity_label}</td>
+                <td>${weight}${decayed}</td>
+                <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '—')}</td>
+                <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '—'}</td>
+                <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
+            </tr>`;
+        }).join('');
+    }
+
+    document.getElementById('prism-modal-backdrop').classList.add('open');
+}
+
+function closePrismModal(e) {
+    if (e && e.target !== document.getElementById('prism-modal-backdrop')) return;
+    document.getElementById('prism-modal-backdrop').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('prism-modal-backdrop').classList.remove('open');
+});
 
 // ── Chatfilter Logs ───────────────────────────────────────────
 

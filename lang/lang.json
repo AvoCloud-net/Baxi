@@ -36,6 +36,20 @@
                     "no_threats": "Keine Bedrohungen entdeckt",
                     "users_found": "markierte Benutzer gefunden",
                     "users_found_description": "Diese Benutzer wurden wegen verdächtiger Aktivitäten markiert:"
+                },
+                "my_trust": {
+                    "title": "Prism // Dein Vertrauens-Score",
+                    "score_line": "**Score: {score}/100** {trend}  ·  {count} Ereignis(se)",
+                    "recent_events_title": "Letzte Ereignisse (max. 5)",
+                    "no_events": "Keine Ereignisse aufgezeichnet — weiter so!",
+                    "new_account_title": "Neues Konto",
+                    "new_account_value": "Dein Konto ist **{age} Tage** alt. Der volle Score wird nach **{full} Tagen** erreicht — dein Score steigt automatisch in ca. **{days} Tagen**.",
+                    "recovery_title": "Score-Erholung",
+                    "recovery_value": "Dein Score erholt sich automatisch durch gutes Verhalten. Geschätzte vollständige Erholung: **~{days} Tage**.",
+                    "perfect_value": "Dein Score ist perfekt!",
+                    "what_is_prism_title": "Was ist Prism?",
+                    "what_is_prism_value": "Prism ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. [Mehr erfahren](https://baxi.avocloud.net/docs/user-guide/prism)",
+                    "footer": "Baxi Prism · avocloud.net  |  Diese Nachricht ist nur für dich sichtbar."
                 }
             },
             "admin": {
@@ -266,6 +280,20 @@
                     "no_threats": "No threats detected",
                     "users_found": "Flagged Users Found",
                     "users_found_description": "These users have been flagged for suspicious activity:"
+                },
+                "my_trust": {
+                    "title": "Prism // Your Trust Score",
+                    "score_line": "**Score: {score}/100** {trend}  ·  {count} event(s)",
+                    "recent_events_title": "Recent Events (last 5)",
+                    "no_events": "No events recorded — keep it up!",
+                    "new_account_title": "New Account",
+                    "new_account_value": "Your account is **{age} days** old. The full score bonus kicks in after **{full} days** — your score will rise automatically in ~**{days} days**.",
+                    "recovery_title": "Score Recovery",
+                    "recovery_value": "Your score recovers automatically through good behavior. Estimated full recovery: **~{days} days**.",
+                    "perfect_value": "Your score is perfect!",
+                    "what_is_prism_title": "What is Prism?",
+                    "what_is_prism_value": "Prism is Baxi's network-wide trust scoring system. [Learn more](https://baxi.avocloud.net/docs/user-guide/prism)",
+                    "footer": "Baxi Prism · avocloud.net  |  This message is only visible to you."
                 }
             },
             "admin": {

@@ -71,6 +71,7 @@ def events(bot: commands.AutoShardedBot, web):
         globalchat_message_data.update(globalchat_message_data_file)
 
         logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
+        share.bot = bot  # Prism notifications
 
         for guild in bot.guilds:
             guild_id = guild.id
@@ -393,6 +394,13 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     stats["prossesed_messages"] = int(stats.get("prossesed_messages", 0)) + 1
     datasys.save_data(1001, "stats", stats)
     try:
+        # Prism: ensure profile exists for every user who sends a message
+        try:
+            _account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
+            sentinel.ensure_profile(message.author.id, message.author.name, _account_age)
+        except Exception:
+            pass
+
         # Anti-Spam check (before other processing)
         is_spam = await antispam_instance.check(message, bot)
         if is_spam:
@@ -548,7 +556,13 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             if prism_req and prism_req.get("flagged"):
                 try:
                     account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-                    event_type = "chatfilter_phishing" if prism_req.get("reason") == "phishing" else "chatfilter_violation"
+                    _pr = prism_req.get("reason", "")
+                    if _pr == "phishing":
+                        event_type = "chatfilter_phishing"
+                    elif _pr == "3":
+                        event_type = "chatfilter_hate"
+                    else:
+                        event_type = "chatfilter_violation"
                     sentinel.record_event(
                         user_id=message.author.id,
                         user_name=message.author.name,
@@ -687,10 +701,15 @@ async def del_chatfilter(
         source="Chatfilter"
     )
 
-    # Prism: record chatfilter violation
+    # Prism: record chatfilter violation (map AI category 3 = Hate Speech to chatfilter_hate)
     try:
         account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-        event_type = "chatfilter_phishing" if reason == "phishing" else "chatfilter_violation"
+        if reason == "phishing":
+            event_type = "chatfilter_phishing"
+        elif reason == "3":
+            event_type = "chatfilter_hate"
+        else:
+            event_type = "chatfilter_violation"
         sentinel.record_event(
             user_id=message.author.id,
             user_name=message.author.name,

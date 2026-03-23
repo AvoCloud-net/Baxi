@@ -128,6 +128,7 @@ class datasys:
         "category_id": "",
         "name_template": "{user}'s Channel"
     },
-    "prism_enabled": True
+    "prism_enabled": True,
+    "notification_channel": ""
 }
 

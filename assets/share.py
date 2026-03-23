@@ -2,6 +2,9 @@
 from collections import deque
 import time as _time
 
+# ── Bot instance (set in on_ready, used by Prism notifications) ───────────────
+bot = None
+
 globalchat_message_data: dict = {}
 
 phishing_url_list: set = set()

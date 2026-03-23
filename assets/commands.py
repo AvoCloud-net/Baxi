@@ -53,6 +53,105 @@ def base_commands(bot: commands.AutoShardedBot):
         await interaction.edit_original_response(embed=embed)
 
     @bot.tree.command(
+        name="my_trust",
+        description="Shows your personal Prism trust score and what has influenced it.",
+    )
+    async def my_trust_cmd(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            guild_id    = interaction.guild.id if interaction.guild else 1001
+            lang        = datasys.load_lang_file(guild_id)
+            t           = lang["commands"]["user"]["my_trust"]
+
+            account_age = (datetime.datetime.now(timezone.utc) - interaction.user.created_at).days
+            sentinel.ensure_profile(interaction.user.id, interaction.user.name, account_age)
+
+            explanation = sentinel.get_score_explanation(interaction.user.id)
+            score       = explanation["score"]
+            trend       = explanation["trend"]
+            impacts     = explanation["recent_impacts"]
+            recovery    = explanation["recovery_days_remaining"]
+            event_cnt   = explanation["event_count"]
+            account_age = explanation["account_age_days"]
+
+            trend_icon = {"falling": "↓", "rising": "↑", "stable": "→"}.get(trend, "→")
+            if score >= 75:
+                score_color = config.Discord.success_color
+            elif score >= 45:
+                score_color = config.Discord.warn_color
+            else:
+                score_color = config.Discord.danger_color
+
+            embed = discord.Embed(
+                title=f"{config.Icons.info} {t['title']}",
+                description=t["score_line"].format(score=score, trend=trend_icon, count=event_cnt),
+                color=score_color,
+            )
+
+            if impacts:
+                impact_lines = []
+                for ev in impacts:
+                    decay_note = " *(½)*" if ev["decayed"] else ""
+                    impact_lines.append(
+                        f"• **{ev['label']}** · {ev['severity_label']} · "
+                        f"`{ev['weight']:+d}` pts · {ev['age_days']}d{decay_note}"
+                        + (f"\n  *{ev['reason']}*" if ev["reason"] else "")
+                    )
+                embed.add_field(
+                    name=t["recent_events_title"],
+                    value="\n".join(impact_lines),
+                    inline=False,
+                )
+            else:
+                embed.add_field(
+                    name=t["recent_events_title"],
+                    value=t["no_events"],
+                    inline=False,
+                )
+
+            if account_age < sentinel.AGE_FULL_TRUST_DAYS:
+                embed.add_field(
+                    name=t["new_account_title"],
+                    value=t["new_account_value"].format(
+                        age=account_age,
+                        full=sentinel.AGE_FULL_TRUST_DAYS,
+                        days=sentinel.AGE_FULL_TRUST_DAYS - account_age,
+                    ),
+                    inline=False,
+                )
+
+            if score < 100 and recovery is not None:
+                embed.add_field(
+                    name=t["recovery_title"],
+                    value=t["recovery_value"].format(days=recovery),
+                    inline=False,
+                )
+            elif score == 100:
+                embed.add_field(
+                    name=t["recovery_title"],
+                    value=t["perfect_value"],
+                    inline=False,
+                )
+
+            embed.add_field(
+                name=t["what_is_prism_title"],
+                value=t["what_is_prism_value"],
+                inline=False,
+            )
+            embed.set_footer(text=t["footer"])
+            await interaction.edit_original_response(embed=embed)
+
+        except Exception as e:
+            logger.error(f"[my_trust] {e}")
+            await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="ERROR",
+                    description="Could not load your trust profile. Please try again later.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+    @bot.tree.command(
     name="scan_users",
     description="Scans this server for users flagged globally on Baxi for malicious or suspicious behavior.",
     )

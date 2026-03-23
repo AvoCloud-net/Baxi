@@ -309,6 +309,21 @@
                                     </fieldset>
                                 </div>
 
+                                <div class="grid gap-2">
+                                    <label for="notification-channel">Notification Channel:</label>
+                                    <p class="text-muted text-sm">
+                                        Channel where Baxi posts notifications — including bot updates, announcements and Prism alerts
+                                        (critical events, auto-flagged users). Leave on <em>Auto-detect</em> and Baxi will search for a channel
+                                        named <code>baxi-updates</code>, <code>staff</code>, <code>mod</code>, <code>admin</code>, etc.
+                                    </p>
+                                    <select id="notification-channel" name="notification-channel" class="select w-full">
+                                        <option value="">-- Auto-detect --</option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">#{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
                                 <button type="submit" class="btn-primary submit-btn w-full">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
@@ -1569,6 +1584,8 @@
             }
             const prismRadio = document.querySelector(`input[name="prism-enabled"][value="${(data.prism_enabled !== false).toString()}"]`);
             if (prismRadio) prismRadio.checked = true;
+            const notifChEl = document.getElementById('notification-channel');
+            if (notifChEl) notifChEl.value = data.notification_channel || '';
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
             document.getElementById("ticket-role").value = data.ticket.role || '';
@@ -1909,7 +1926,8 @@
             const nick = document.getElementById('general-nick').value;
             const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
             const prismEnabled = document.querySelector('input[name="prism-enabled"]:checked')?.value || 'true';
-            const payload = { general: { lang, nick, terms: terms === 'true', prism_enabled: prismEnabled === 'true' } };
+            const notifCh = document.getElementById('notification-channel')?.value || '';
+            const payload = { general: { lang, nick, terms: terms === 'true', prism_enabled: prismEnabled === 'true', notification_channel: notifCh } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

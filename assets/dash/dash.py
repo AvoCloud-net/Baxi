@@ -682,6 +682,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 prism_enabled = True
             save_data(sid=int(guild_id), sys="prism_enabled", data=prism_enabled)
 
+            notif_ch = str(general.get("notification_channel", "")).strip()
+            if notif_ch and not notif_ch.isdigit():
+                return quart.jsonify({"success": False, "message": "'notification_channel' must be a channel ID or empty."}), 400
+            save_data(sid=int(guild_id), sys="notification_channel", data=notif_ch)
+
             user = await discord_auth.fetch_user()
             audit_log_new: dict = {
                 "type": "save",
@@ -2024,6 +2029,102 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             _asyncio.get_event_loop().create_task(loop.coro(instance))
             share.admin_log("info", f"Task {task_key} manually triggered by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Task {task_key} triggered."})
+
+        elif action == "get_prism_profile":
+            import assets.trust as sentinel
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            profile = sentinel.get_profile(int(user_id_str))
+            if not profile:
+                return quart.jsonify({"success": False, "message": "No Prism profile found for this user."}), 404
+            import datetime as _dt
+            now = _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None)
+            events_detail = []
+            for ev in profile.get("events", []):
+                etype  = ev.get("type", "")
+                weight = sentinel.EVENT_WEIGHTS.get(etype, 0)
+                try:
+                    ts       = _dt.datetime.fromisoformat(ev["timestamp"])
+                    age_days = (now - ts).days
+                    decayed  = age_days > sentinel.EVENT_DECAY_DAYS
+                except Exception:
+                    age_days = 0
+                    decayed  = False
+                events_detail.append({
+                    "type":           etype,
+                    "label":          sentinel.EVENT_LABELS.get(etype, etype),
+                    "severity":       sentinel.get_event_severity(etype),
+                    "severity_label": sentinel.SEVERITY_LABELS.get(sentinel.get_event_severity(etype), ""),
+                    "weight":         weight // 2 if decayed else weight,
+                    "reason":         ev.get("reason", ""),
+                    "guild_id":       ev.get("guild_id", ""),
+                    "timestamp":      ev.get("timestamp", ""),
+                    "age_days":       age_days,
+                    "decayed":        decayed,
+                })
+            events_detail.reverse()  # newest first
+            created_at = profile.get("account_created_at", "")
+            if created_at:
+                try:
+                    age_days_current = (now - _dt.datetime.fromisoformat(created_at)).days
+                except Exception:
+                    age_days_current = profile.get("account_age_days", 0)
+            else:
+                age_days_current = profile.get("account_age_days", 0)
+            return quart.jsonify({
+                "success": True,
+                "profile": {
+                    "uid":               user_id_str,
+                    "name":              profile.get("name", user_id_str),
+                    "score":             profile.get("score", 100),
+                    "auto_flagged":      profile.get("auto_flagged", False),
+                    "event_count":       len(profile.get("events", [])),
+                    "first_seen":        profile.get("first_seen", ""),
+                    "last_seen":         profile.get("last_seen", ""),
+                    "account_age_days":  age_days_current,
+                    "account_created_at": created_at,
+                    "events":            events_detail,
+                },
+            })
+
+        elif action == "send_notification":
+            title = str(data.get("title", "")).strip()
+            text  = str(data.get("text",  "")).strip()
+            guild_id_str = str(data.get("guild_id", "")).strip()
+            if not title or not text:
+                return quart.jsonify({"success": False, "message": "Title and text are required."}), 400
+            if guild_id_str and not guild_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
+
+            from assets.trust import _resolve_notification_channel
+            target_guilds = [bot.get_guild(int(guild_id_str))] if guild_id_str else list(bot.guilds)
+            target_guilds = [g for g in target_guilds if g]
+
+            sent = 0
+            failed = 0
+            ts = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
+            for g in target_guilds:
+                try:
+                    channel = await _resolve_notification_channel(g)
+                    if channel is None:
+                        failed += 1
+                        continue
+                    embed = discord.Embed(
+                        title=title,
+                        description=text,
+                        color=config.Discord.color,
+                    )
+                    embed.set_author(name="Avocloud.net")
+                    embed.set_footer(text=f"Baxi · {ts}")
+                    await channel.send(embed=embed)
+                    sent += 1
+                except Exception:
+                    failed += 1
+
+            scope = f"guild {guild_id_str}" if guild_id_str else f"all {len(target_guilds)} guilds"
+            share.admin_log("info", f"Notification sent to {sent}/{len(target_guilds)} ({scope}) by {user.name}: \"{title}\"", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Sent to {sent} server(s). Failed: {failed}."})
 
         return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
 
