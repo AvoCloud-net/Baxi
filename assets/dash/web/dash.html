@@ -1155,7 +1155,7 @@
                             </svg>
                             Livestream Config
                         </h2>
-                        <p class="text-muted">Track Twitch streamers and get live notifications in dedicated channels.</p>
+                        <p class="text-muted">Track Twitch, YouTube, and TikTok streamers and get live notifications in dedicated channels.</p>
                     </header>
                     <section>
                         <form id="livestream-form" class="form grid gap-6 settings-form">
@@ -1215,7 +1215,12 @@
                         <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
                             <h4 class="text-sm font-semibold">Add Streamer</h4>
                             <div class="flex gap-2">
-                                <input type="text" id="livestream-add-login" placeholder="Twitch username" class="flex-1" maxlength="25" pattern="[a-zA-Z0-9_]+">
+                                <select id="livestream-add-platform" class="select" style="width:130px;" onchange="updateStreamerPlaceholder()">
+                                    <option value="twitch">Twitch</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="tiktok">TikTok</option>
+                                </select>
+                                <input type="text" id="livestream-add-login" placeholder="Twitch username" class="flex-1" maxlength="64">
                                 <button type="button" class="btn-primary" id="livestream-add-btn" onclick="addStreamer()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -1223,7 +1228,7 @@
                                     Add
                                 </button>
                             </div>
-                            <p class="text-muted text-xs">Enter the Twitch username (e.g. "shroud"). A dedicated channel will be created automatically.</p>
+                            <p class="text-muted text-xs" id="livestream-add-hint">Enter the Twitch username (e.g. "shroud"). A dedicated channel will be created automatically.</p>
                         </div>
                     </section>
                 </div>
@@ -1827,6 +1832,28 @@
         }
 
         // --- Livestream ---
+        const _platformColors = { twitch: '#9147ff', youtube: '#ff0000', tiktok: '#010101' };
+        const _platformLabels = { twitch: 'Twitch', youtube: 'YouTube', tiktok: 'TikTok' };
+        const _platformHints = {
+            twitch: 'Enter the Twitch username (e.g. "shroud"). A dedicated channel will be created automatically.',
+            youtube: 'Enter the YouTube channel handle (e.g. "@mkbhd") or channel ID (UCxxx).',
+            tiktok: 'Enter the TikTok username without @ (e.g. "charlidamelio").',
+        };
+
+        function updateStreamerPlaceholder() {
+            const platform = document.getElementById('livestream-add-platform').value;
+            const placeholders = { twitch: 'Twitch username', youtube: '@handle or UCxxx ID', tiktok: 'TikTok username' };
+            document.getElementById('livestream-add-login').placeholder = placeholders[platform] || 'Username';
+            document.getElementById('livestream-add-hint').textContent = _platformHints[platform] || '';
+        }
+
+        function _streamerProfileUrl(s) {
+            const p = s.platform || 'twitch';
+            if (p === 'youtube') return `https://www.youtube.com/channel/${s.login}`;
+            if (p === 'tiktok') return `https://www.tiktok.com/@${s.login}`;
+            return `https://twitch.tv/${s.login}`;
+        }
+
         function renderStreamers() {
             const list = document.getElementById('livestream-list');
             const empty = document.getElementById('livestream-empty');
@@ -1841,6 +1868,10 @@
             } else {
                 empty.classList.add('hidden');
                 streamers.forEach(s => {
+                    const platform = s.platform || 'twitch';
+                    const platformColor = _platformColors[platform] || '#888';
+                    const platformLabel = _platformLabels[platform] || platform;
+                    const profileUrl = _streamerProfileUrl(s);
                     const card = document.createElement('div');
                     card.className = 'card streamer-card';
                     card.innerHTML = `
@@ -1848,11 +1879,14 @@
                             <div class="flex items-center gap-3">
                                 <img src="${s.profile_image_url || ''}" alt="${s.display_name}" class="size-10 rounded-full object-cover" style="${s.profile_image_url ? '' : 'display:none'}">
                                 <div>
-                                    <h3 class="text-base font-semibold">${s.display_name || s.login}</h3>
-                                    <a href="https://twitch.tv/${s.login}" target="_blank" class="text-muted text-xs hover:underline">twitch.tv/${s.login}</a>
+                                    <h3 class="text-base font-semibold flex items-center gap-2">
+                                        ${s.display_name || s.login}
+                                        <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:${platformColor};color:#fff;font-weight:600;letter-spacing:0.03em;">${platformLabel}</span>
+                                    </h3>
+                                    <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
                             </div>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="removeStreamer('${s.login.replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="removeStreamer('${s.login.replace(/'/g, "\\'")}', '${platform}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -1868,13 +1902,14 @@
 
         function addStreamer() {
             const input = document.getElementById('livestream-add-login');
-            const login = input.value.trim().toLowerCase();
+            const platform = document.getElementById('livestream-add-platform').value;
+            const login = input.value.trim();
             if (!login) return;
             const btn = document.getElementById('livestream-add-btn');
             btn.disabled = true;
             btn.textContent = 'Adding...';
 
-            const payload = { livestream: { action: 'add', login: login } };
+            const payload = { livestream: { action: 'add', platform: platform, login: login } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=livestream&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -1888,7 +1923,6 @@
                         showSaveToast(resp.success, resp.message);
                         if (resp.success) {
                             input.value = '';
-                            // Reload page to get updated streamer list with channel IDs
                             location.reload();
                         }
                     } catch (e) {
@@ -1898,21 +1932,22 @@
             };
         }
 
-        let _pendingRemoveLogin = null;
+        let _pendingRemove = null;
 
-        function removeStreamer(login) {
-            _pendingRemoveLogin = login;
+        function removeStreamer(login, platform) {
+            _pendingRemove = { login, platform: platform || 'twitch' };
+            const label = _platformLabels[_pendingRemove.platform] || _pendingRemove.platform;
             document.getElementById('remove-streamer-dialog-description').textContent =
-                'Streamer "' + login + '" will be removed. The channel will be deleted. This action cannot be undone.';
+                `Streamer "${login}" (${label}) will be removed. The channel will be deleted. This action cannot be undone.`;
             document.getElementById('remove-streamer-dialog').showModal();
         }
 
         function confirmRemoveStreamer() {
-            const login = _pendingRemoveLogin;
-            _pendingRemoveLogin = null;
+            const pending = _pendingRemove;
+            _pendingRemove = null;
             document.getElementById('remove-streamer-dialog').close();
-            if (!login) return;
-            const payload = { livestream: { action: 'remove', login: login } };
+            if (!pending) return;
+            const payload = { livestream: { action: 'remove', login: pending.login, platform: pending.platform } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=livestream&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -1924,7 +1959,9 @@
                         showSaveToast(resp.success, resp.message);
                         if (resp.success) {
                             if (data.livestream && data.livestream.streamers) {
-                                data.livestream.streamers = data.livestream.streamers.filter(s => s.login.toLowerCase() !== login.toLowerCase());
+                                data.livestream.streamers = data.livestream.streamers.filter(
+                                    s => !(s.login.toLowerCase() === pending.login.toLowerCase() && (s.platform || 'twitch') === pending.platform)
+                                );
                             }
                             renderStreamers();
                         }
@@ -2070,10 +2107,14 @@
                         const avatarUrl = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
                         const card = document.createElement('div');
                         card.style.cssText = 'background:var(--bg-secondary,#1e2128);border:1px solid var(--border,#333);border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;';
+                        const summaryHtml = u.llm_summary
+                            ? `<span style="font-size:0.7rem;opacity:0.6;line-height:1.4;text-align:left;width:100%;margin-top:2px;">${u.llm_summary.replace(/</g,'&lt;')}</span>`
+                            : '';
                         card.innerHTML = `
                             <img src="${avatarUrl}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
                             <span style="font-size:0.8rem;font-weight:500;word-break:break-word;max-width:100%;">${u.name.replace(/</g,'&lt;')}</span>
                             <span style="font-size:1.1rem;font-weight:700;color:${scoreColor};">${score}</span>
+                            ${summaryHtml}
                         `;
                         list.appendChild(card);
                     });

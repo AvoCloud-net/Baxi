@@ -19,5 +19,6 @@ class Twitch:
     client_id: str = "YOUR-TWITCH-CLIENT-ID"
     client_secret: str = "YOUR-TWITCH-CLIENT-SECRET"
 
+
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED

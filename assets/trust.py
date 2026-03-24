@@ -5,11 +5,14 @@ Intelligently differentiates between offense severity with tiered scoring and re
 """
 
 import asyncio
+import aiohttp
 import datetime
+import json
 import os
 from typing import Optional
 
 import assets.data as datasys
+from assets.share import admin_log as _admin_log
 from reds_simple_logger import Logger
 
 logger = Logger()
@@ -63,6 +66,22 @@ AGE_MAX_PENALTY     = 40    # maximum penalty for brand-new accounts (day 0 → 
 
 # ── Tiers that trigger staff channel notifications ─────────────────────────────
 NOTIFY_TIERS = {"critical", "severe"}
+
+# ── Prism LLM Summary (OpenWebUI) ──────────────────────────────────────────────
+_PRISM_LLM_SEMAPHORE    = asyncio.Semaphore(5)   # max 5 concurrent LLM requests
+_PRISM_LLM_MODEL        = "prism_useranalyst_baxi:latest"
+_PRISM_LLM_TIMEOUT      = 30.0                   # seconds
+_PRISM_SUMMARY_MAX_AGE  = 6                      # hours before summary is considered stale
+_PRISM_SUMMARY_BATCH    = 20                     # max summaries generated per TrustScoreTask run
+
+# ── Risk signal labels (for display) ───────────────────────────────────────────
+RISK_SIGNAL_LABELS: dict[str, str] = {
+    "new_account_1d":  "Account created less than 24 hours ago",
+    "new_account_7d":  "Account less than 7 days old",
+    "new_account_30d": "Account less than 30 days old",
+    "velocity_burst":  "3+ violations within 24 hours",
+    "multi_server":    "Violations on 2+ different servers",
+}
 
 # ── Display helpers ────────────────────────────────────────────────────────────
 SEVERITY_LABELS: dict[str, str] = {
@@ -126,6 +145,56 @@ def _worst_tier(events: list) -> str:
     return worst
 
 
+def _try_parse_dt(ts_str: str) -> datetime.datetime:
+    """Parse an ISO timestamp; return datetime.min on failure (safely skipped in comparisons)."""
+    try:
+        return datetime.datetime.fromisoformat(ts_str)
+    except Exception:
+        return datetime.datetime.min
+
+
+def _compute_risk_signals(account_age_days: int, events: list) -> list[str]:
+    """
+    Derive active risk signals from account age and event history.
+    Signals:
+      new_account_1d  — account < 1 day old
+      new_account_7d  — account < 7 days old
+      new_account_30d — account < 30 days old
+      velocity_burst  — 3+ violations in last 24 hours
+      multi_server    — violations on 2+ different guild IDs
+    """
+    signals: list[str] = []
+
+    # Account age signals
+    if account_age_days < 1:
+        signals.append("new_account_1d")
+    elif account_age_days < 7:
+        signals.append("new_account_7d")
+    elif account_age_days < 30:
+        signals.append("new_account_30d")
+
+    if not events:
+        return signals
+
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+    # Velocity signal: 3+ events in the last 24 hours
+    v_24h = sum(
+        1 for e in events
+        if "timestamp" in e
+        and (now - _try_parse_dt(e["timestamp"])).total_seconds() <= 86400
+    )
+    if v_24h >= 3:
+        signals.append("velocity_burst")
+
+    # Multi-server signal: events on 2+ different guilds
+    guilds = {e.get("guild_id") for e in events if e.get("guild_id")}
+    if len(guilds) >= 2:
+        signals.append("multi_server")
+
+    return signals
+
+
 # ── Score calculation ──────────────────────────────────────────────────────────
 
 def calculate_score(events: list, account_age_days: int) -> int:
@@ -165,6 +234,24 @@ def calculate_score(events: list, account_age_days: int) -> int:
                 score += (clean_days // rec_days) * rec_pts
         except Exception:
             pass
+
+    # Velocity penalty: burst of violations incurs extra penalty on top of base weights
+    if events:
+        v_24h = 0
+        v_7d  = 0
+        for e in events:
+            if "timestamp" not in e:
+                continue
+            dt   = _try_parse_dt(e["timestamp"])
+            diff = now - dt
+            if diff.total_seconds() <= 86400:
+                v_24h += 1
+            if diff.days <= 7:
+                v_7d += 1
+        if v_24h >= 3:
+            score -= (v_24h - 2) * 5   # −5 per violation beyond 2 in 24 h
+        elif v_7d >= 5:
+            score -= (v_7d - 4) * 3    # −3 per violation beyond 4 in 7 days
 
     return max(0, min(100, score))
 
@@ -266,17 +353,21 @@ def ensure_profile(user_id: int, user_name: str, account_age_days: int = 365):
         return
     now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     account_created_at = (now - datetime.timedelta(days=account_age_days)).isoformat()
-    initial_score = calculate_score([], account_age_days)
+    initial_score  = calculate_score([], account_age_days)
+    risk_signals   = _compute_risk_signals(account_age_days, [])
     data[uid] = {
-        "name":               user_name,
-        "id":                 uid,
-        "score":              initial_score,
-        "auto_flagged":       False,
-        "events":             [],
-        "first_seen":         now.isoformat(),
-        "last_seen":          now.isoformat(),
-        "account_age_days":   account_age_days,
-        "account_created_at": account_created_at,
+        "name":                  user_name,
+        "id":                    uid,
+        "score":                 initial_score,
+        "auto_flagged":          False,
+        "events":                [],
+        "first_seen":            now.isoformat(),
+        "last_seen":             now.isoformat(),
+        "account_age_days":      account_age_days,
+        "account_created_at":    account_created_at,
+        "risk_signals":          risk_signals,
+        "llm_summary":           None,
+        "llm_summary_updated":   None,
     }
     _save(data)
     logger.debug.info(f"[Prism] Profile created for {user_name} ({uid}) — initial score {initial_score}")
@@ -342,6 +433,9 @@ def record_event(
     score              = calculate_score(data[uid]["events"], account_age_days)
     data[uid]["score"] = score
 
+    # Update risk signals after the new event
+    data[uid]["risk_signals"] = _compute_risk_signals(account_age_days, data[uid]["events"])
+
     try:
         _save(data)
         logger.success(f"[Prism] Saved — {user_name} ({uid}) event={event_type} score={score}")
@@ -365,6 +459,9 @@ def record_event(
             reason=reason,
             auto_flagged=now_flagged,
         )
+
+    # Schedule LLM summary update (score always < 100 after any event)
+    _schedule_summary_update(uid)
 
     logger.info(f"[Prism] {user_name} ({uid}) event={event_type} severity={severity} score={score}")
     return score
@@ -398,8 +495,11 @@ def clear_events(user_id: int):
     data = _load()
     uid  = str(user_id)
     if uid in data:
-        data[uid]["events"] = []
-        data[uid]["score"]  = 100
+        data[uid]["events"]              = []
+        data[uid]["score"]               = 100
+        data[uid]["risk_signals"]        = []
+        data[uid]["llm_summary"]         = None
+        data[uid]["llm_summary_updated"] = None
         _save(data)
         logger.info(f"[Prism] Events cleared via admin dash for {uid}")
 
@@ -433,6 +533,13 @@ def recalculate_all():
             if new_score != old_score:
                 profile["score"] = new_score
                 changed = True
+
+            # Refresh risk signals on every recalculation
+            new_signals = _compute_risk_signals(current_age, profile.get("events", []))
+            if new_signals != profile.get("risk_signals"):
+                profile["risk_signals"] = new_signals
+                changed = True
+
             _auto_flag_check(uid, profile.get("name", uid), new_score, data)
         except Exception as e:
             logger.error(f"[Prism] Error recalculating {uid}: {e}")
@@ -582,3 +689,151 @@ async def _resolve_notification_channel(guild):
             return channel
 
     return None
+
+
+# ── Prism LLM Summary ──────────────────────────────────────────────────────────
+
+async def _generate_llm_summary(uid: str, profile: dict) -> str | None:
+    """
+    Call OpenWebUI to generate a 2–3 sentence plain-text risk summary for the user.
+    Returns the summary string, or None on failure/timeout.
+    Throttled by _PRISM_LLM_SEMAPHORE (max 5 concurrent requests).
+    """
+    import config.config as config
+    import config.auth as auth
+
+    events = profile.get("events", [])
+    event_list = [
+        {
+            "type":      EVENT_LABELS.get(e.get("type", ""), e.get("type", "unknown")),
+            "severity":  SEVERITY_TIERS.get(e.get("type", ""), "low"),
+            "reason":    e.get("reason", ""),
+            "timestamp": e.get("timestamp", ""),
+            "guild_id":  e.get("guild_id", ""),
+        }
+        for e in events[-10:]
+    ]
+
+    payload_data = {
+        "user":             profile.get("name", "unknown"),
+        "score":            profile.get("score", 100),
+        "account_age_days": profile.get("account_age_days", 0),
+        "auto_flagged":     profile.get("auto_flagged", False),
+        "event_count":      len(events),
+        "events":           event_list,
+        "worst_tier":       _worst_tier(events) if events else "none",
+        "risk_signals":     profile.get("risk_signals", []),
+    }
+
+    payload = {
+        "model":                _PRISM_LLM_MODEL,
+        "messages":             [{"role": "user", "content": json.dumps(payload_data, ensure_ascii=False)}],
+        "temperature":          0.3,
+        "max_tokens":           160,
+        "max_completion_tokens": 160,
+    }
+    headers = {
+        "Content-Type":  "application/json",
+        "Authorization": f"Bearer {auth.Chatfilter.ai_key}",
+    }
+
+    user_label = f"{profile.get('name', uid)} ({uid})"
+    _admin_log("info", f"Generating summary for {user_label} …", source="PrismLLM")
+    try:
+        async with asyncio.timeout(_PRISM_LLM_TIMEOUT):
+            async with _PRISM_LLM_SEMAPHORE:
+                timeout = aiohttp.ClientTimeout(total=_PRISM_LLM_TIMEOUT)
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.post(
+                        config.Chatfilter.ai_url, json=payload, headers=headers
+                    ) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            content = data["choices"][0]["message"]["content"].strip()
+                            if content:
+                                _admin_log("success", f"Summary ready for {user_label}", source="PrismLLM")
+                                return content
+                            return None
+                        error_body = await resp.text()
+                        logger.error(f"[Prism LLM] HTTP {resp.status} for user {uid} — {error_body[:300]}")
+                        _admin_log("error", f"Summary failed for {user_label} — HTTP {resp.status}: {error_body[:200]}", source="PrismLLM")
+                        return None
+    except asyncio.TimeoutError:
+        logger.warn(f"[Prism LLM] Timeout generating summary for {uid}")
+        _admin_log("warning", f"Summary timed out for {user_label}", source="PrismLLM")
+        return None
+    except Exception as e:
+        logger.error(f"[Prism LLM] Error generating summary for {uid}: {e}")
+        _admin_log("error", f"Summary error for {user_label}: {e}", source="PrismLLM")
+        return None
+
+
+async def _update_user_summary(uid: str) -> None:
+    """Generate an LLM summary for the given user and persist it to trust.json."""
+    data = _load()
+    if uid not in data:
+        return
+    profile = data[uid]
+
+    summary = await _generate_llm_summary(uid, profile)
+    if not summary:
+        return
+
+    # Reload to avoid overwriting concurrent changes
+    data = _load()
+    if uid not in data:
+        return
+    data[uid]["llm_summary"]         = summary
+    data[uid]["llm_summary_updated"] = datetime.datetime.now(
+        datetime.timezone.utc
+    ).replace(tzinfo=None).isoformat()
+    _save(data)
+    logger.debug.success(f"[Prism LLM] Summary updated for {uid}")
+
+
+def _schedule_summary_update(uid: str) -> None:
+    """Schedule an async LLM summary update from sync context (same pattern as _schedule_notification)."""
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_update_user_summary(uid))
+    except RuntimeError:
+        pass  # no running loop — will be picked up by TrustScoreTask
+
+
+async def update_pending_summaries() -> None:
+    """
+    Generate LLM summaries for users with score < 100 that have no summary or a stale one.
+    Called by TrustScoreTask after recalculate_all(). Processes at most _PRISM_SUMMARY_BATCH
+    users per run, prioritising those with no summary at all.
+    """
+    data = _load()
+    now  = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+    needs_update: list[str] = []
+    for uid, profile in data.items():
+        if profile.get("score", 100) >= 100:
+            continue
+
+        summary_updated = profile.get("llm_summary_updated")
+        if not summary_updated:
+            needs_update.append(uid)
+            continue
+
+        try:
+            updated_dt = datetime.datetime.fromisoformat(summary_updated)
+            age_h      = (now - updated_dt).total_seconds() / 3600
+            if age_h >= _PRISM_SUMMARY_MAX_AGE:
+                needs_update.append(uid)
+        except Exception:
+            needs_update.append(uid)
+
+    # Prioritise users with no summary, then cap to batch size
+    no_summary  = [u for u in needs_update if not data[u].get("llm_summary")]
+    has_summary = [u for u in needs_update if data[u].get("llm_summary")]
+    batch       = (no_summary + has_summary)[:_PRISM_SUMMARY_BATCH]
+
+    if not batch:
+        return
+
+    logger.info(f"[Prism LLM] Scheduling {len(batch)} summary updates")
+    await asyncio.gather(*[_update_user_summary(uid) for uid in batch])

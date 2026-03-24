@@ -43,7 +43,15 @@ class Twitch:
     api_url = "https://api.twitch.tv/helix"
     token_url = "https://id.twitch.tv/oauth2/token"
     max_checks_per_minute = 20
-    check_interval_seconds = 60
+    check_interval_seconds = 120
+
+
+class YouTube:
+    check_interval_seconds = 300
+
+
+class TikTok:
+    check_interval_seconds = 300
 
 
 class Globalchat:

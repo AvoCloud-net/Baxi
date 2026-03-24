@@ -8,7 +8,7 @@ import discord
 import aiohttp
 import config.auth as auth
 from typing import Optional
-from assets.livestream import twitch_api
+from assets.livestream import twitch_api, youtube_api, tiktok_api
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -1090,11 +1090,27 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             action = livestream.get("action", "save")
 
             if action == "add":
-                login = str(livestream.get("login", "")).strip().lower()
+                platform = str(livestream.get("platform", "twitch")).strip().lower()
+                if platform not in ("twitch", "youtube", "tiktok"):
+                    return quart.jsonify({"success": False, "message": "Invalid platform. Choose twitch, youtube, or tiktok."}), 400
+
+                login = str(livestream.get("login", "")).strip()
                 if not login:
-                    return quart.jsonify({"success": False, "message": "Twitch username is required."}), 400
-                if not re.fullmatch(r"[a-z0-9_]{2,25}", login):
-                    return quart.jsonify({"success": False, "message": "Invalid Twitch username format."}), 400
+                    return quart.jsonify({"success": False, "message": "Username / channel ID is required."}), 400
+
+                # Platform-specific input validation
+                if platform == "twitch":
+                    login = login.lower()
+                    if not re.fullmatch(r"[a-z0-9_]{2,25}", login):
+                        return quart.jsonify({"success": False, "message": "Invalid Twitch username format."}), 400
+                elif platform == "youtube":
+                    # Accept @handle, handle, or UCxxx channel ID
+                    if not re.fullmatch(r"[@a-zA-Z0-9_.\-]{2,64}", login):
+                        return quart.jsonify({"success": False, "message": "Invalid YouTube channel handle or ID."}), 400
+                elif platform == "tiktok":
+                    login = login.lstrip("@").lower()
+                    if not re.fullmatch(r"[a-z0-9_.]{2,24}", login):
+                        return quart.jsonify({"success": False, "message": "Invalid TikTok username format."}), 400
 
                 ls_config = dict(load_data(int(guild_id), "livestream"))
                 streamers = ls_config.get("streamers", [])
@@ -1102,16 +1118,43 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if len(streamers) >= 10:
                     return quart.jsonify({"success": False, "message": "Maximum of 10 streamers reached."}), 400
 
-                if any(s.get("login", "").lower() == login for s in streamers):
-                    return quart.jsonify({"success": False, "message": f"'{login}' is already being tracked."}), 400
+                # Validate user exists on the platform and get profile info
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
+                    if platform == "twitch":
+                        users = await twitch_api.get_users(session, [login])
+                        if login not in users:
+                            return quart.jsonify({"success": False, "message": f"Twitch user '{login}' not found."}), 404
+                        profile = users[login]
+                        display_name = profile["display_name"]
+                        profile_image_url = profile.get("profile_image_url", "")
+                        offline_image_url = profile.get("offline_image_url", "")
+                        resolved_login = login  # Twitch login stays as-is
 
-                # Validate that the Twitch user exists
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-                    users = await twitch_api.get_users(session, [login])
-                if login not in users:
-                    return quart.jsonify({"success": False, "message": f"Twitch user '{login}' not found."}), 404
+                    elif platform == "youtube":
+                        channel_info = await youtube_api.get_channel(session, login)
+                        if not channel_info:
+                            return quart.jsonify({"success": False, "message": f"YouTube channel '{login}' not found. Try using the channel ID (UCxxx) or @handle."}), 404
+                        resolved_login = channel_info["channel_id"]  # store channel ID
+                        display_name = channel_info["display_name"]
+                        profile_image_url = channel_info.get("profile_image_url", "")
+                        offline_image_url = ""
 
-                display_name = users[login]["display_name"]
+                    else:  # tiktok
+                        user_info = await tiktok_api.get_user_info(session, login)
+                        if not user_info:
+                            return quart.jsonify({"success": False, "message": f"TikTok user '{login}' not found or TikTok API unavailable."}), 404
+                        resolved_login = login
+                        display_name = user_info.get("display_name", login)
+                        profile_image_url = user_info.get("profile_image_url", "")
+                        offline_image_url = ""
+
+                # Prevent duplicate tracking (same platform + login)
+                if any(
+                    s.get("login", "").lower() == resolved_login.lower()
+                    and s.get("platform", "twitch") == platform
+                    for s in streamers
+                ):
+                    return quart.jsonify({"success": False, "message": f"'{display_name}' is already being tracked on {platform}."}), 400
 
                 # Create a text channel for this streamer
                 category_id = ls_config.get("category_id", "")
@@ -1126,7 +1169,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 lang_file = datasys.load_lang_file(int(guild_id))
                 ls_lang = lang_file.get("systems", {}).get("livestream", {})
-                channel_name = ls_lang.get("channel_name_offline", "\U0001f534\u2502{name}").format(
+                channel_name = ls_lang.get("channel_name_offline", "\u26ab\u2502{name}").format(
                     name=display_name.lower()
                 )
 
@@ -1134,55 +1177,66 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     new_channel = await guild.create_text_channel(
                         name=channel_name,
                         category=category,
-                        reason=f"Baxi Livestream: tracking {display_name}",
+                        reason=f"Baxi Livestream: tracking {display_name} ({platform})",
                     )
                 except discord.Forbidden:
                     return quart.jsonify({"success": False, "message": "Bot does not have permission to create channels."}), 403
 
                 # Build initial offline embed
-                profile = users[login]
+                if platform == "twitch":
+                    profile_url = f"https://twitch.tv/{resolved_login}"
+                elif platform == "youtube":
+                    profile_url = f"https://www.youtube.com/channel/{resolved_login}"
+                else:
+                    profile_url = f"https://www.tiktok.com/@{resolved_login}"
+
                 offline_embed = discord.Embed(
                     title=ls_lang.get("embed_offline_title", "{name} is offline").format(name=display_name),
                     description=ls_lang.get("embed_offline_description", "{name} is not streaming right now. Check back later!").format(name=display_name),
-                    url=f"https://twitch.tv/{login}",
+                    url=profile_url,
                     color=discord.Color.red(),
                 )
-                if profile.get("offline_image_url"):
-                    offline_embed.set_image(url=profile["offline_image_url"])
-                if profile.get("profile_image_url"):
-                    offline_embed.set_thumbnail(url=profile["profile_image_url"])
+                if offline_image_url:
+                    offline_embed.set_image(url=offline_image_url)
+                if profile_image_url:
+                    offline_embed.set_thumbnail(url=profile_image_url)
                 offline_embed.set_footer(text=ls_lang.get("embed_footer", "Baxi Livestream - avocloud.net"))
 
                 msg = await new_channel.send(embed=offline_embed)
 
                 streamer_entry = {
-                    "login": login,
+                    "platform": platform,
+                    "login": resolved_login,
                     "display_name": display_name,
                     "channel_id": str(new_channel.id),
                     "message_id": str(msg.id),
-                    "profile_image_url": profile.get("profile_image_url", ""),
+                    "profile_image_url": profile_image_url,
                 }
                 streamers.append(streamer_entry)
                 ls_config["streamers"] = streamers
                 save_data(int(guild_id), "livestream", ls_config)
 
             elif action == "remove":
-                login = str(livestream.get("login", "")).strip().lower()
+                login = str(livestream.get("login", "")).strip()
+                platform = str(livestream.get("platform", "twitch")).strip().lower()
                 if not login:
-                    return quart.jsonify({"success": False, "message": "Twitch username is required."}), 400
+                    return quart.jsonify({"success": False, "message": "Login is required."}), 400
 
                 ls_config = dict(load_data(int(guild_id), "livestream"))
                 streamers = ls_config.get("streamers", [])
                 found = None
                 for s in streamers:
-                    if s.get("login", "").lower() == login:
+                    if (
+                        s.get("login", "").lower() == login.lower()
+                        and s.get("platform", "twitch") == platform
+                    ):
                         found = s
                         break
 
                 if not found:
-                    return quart.jsonify({"success": False, "message": f"'{login}' is not being tracked."}), 404
+                    return quart.jsonify({"success": False, "message": f"'{login}' is not being tracked on {platform}."}), 404
 
-                # Delete the channel
+                # Delete the Discord channel
                 channel_id = found.get("channel_id")
                 if channel_id:
                     try:
@@ -1191,7 +1245,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                         pass
 
-                streamers = [s for s in streamers if s.get("login", "").lower() != login]
+                streamers = [
+                    s for s in streamers
+                    if not (s.get("login", "").lower() == login.lower() and s.get("platform", "twitch") == platform)
+                ]
                 ls_config["streamers"] = streamers
                 save_data(int(guild_id), "livestream", ls_config)
 
@@ -1450,9 +1507,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not any(str(e.get("guild_id")) == str(guild_id) for e in events):
                 continue
             result.append({
-                "uid": uid,
-                "name": profile.get("name", uid),
-                "score": profile.get("score", 100),
+                "uid":         uid,
+                "name":        profile.get("name", uid),
+                "score":       profile.get("score", 100),
+                "llm_summary": profile.get("llm_summary") or "",
             })
         result.sort(key=lambda u: u["score"])
         return quart.jsonify({"success": True, "users": result[:200]})
@@ -1955,6 +2013,20 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             share.admin_log("info", f"Prism events cleared for {user_id_str} by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": "Events cleared."})
 
+        elif action == "refresh_prism_summary":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            import assets.trust as sentinel
+            profile = sentinel.get_profile(int(user_id_str))
+            if not profile:
+                return quart.jsonify({"success": False, "message": "No Prism profile found for this user."}), 404
+            import asyncio as _asyncio
+            loop = _asyncio.get_event_loop()
+            loop.create_task(sentinel._update_user_summary(user_id_str))
+            share.admin_log("info", f"Prism summary re-analysis requested for {user_id_str} by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": "Re-analysis started. Refresh the profile in a few seconds."})
+
         elif action == "leave_server":
             guild_id_str = str(data.get("guild_id", "")).strip()
             if not guild_id_str.isdigit():
@@ -2128,16 +2200,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({
                 "success": True,
                 "profile": {
-                    "uid":               user_id_str,
-                    "name":              profile.get("name", user_id_str),
-                    "score":             profile.get("score", 100),
-                    "auto_flagged":      profile.get("auto_flagged", False),
-                    "event_count":       len(profile.get("events", [])),
-                    "first_seen":        profile.get("first_seen", ""),
-                    "last_seen":         profile.get("last_seen", ""),
-                    "account_age_days":  age_days_current,
-                    "account_created_at": created_at,
-                    "events":            events_detail,
+                    "uid":                  user_id_str,
+                    "name":                 profile.get("name", user_id_str),
+                    "score":                profile.get("score", 100),
+                    "auto_flagged":         profile.get("auto_flagged", False),
+                    "event_count":          len(profile.get("events", [])),
+                    "first_seen":           profile.get("first_seen", ""),
+                    "last_seen":            profile.get("last_seen", ""),
+                    "account_age_days":     age_days_current,
+                    "account_created_at":   created_at,
+                    "events":               events_detail,
+                    "llm_summary":          profile.get("llm_summary") or "",
+                    "llm_summary_updated":  profile.get("llm_summary_updated") or "",
+                    "risk_signals":         profile.get("risk_signals") or [],
                 },
             })
 

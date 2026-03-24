@@ -649,6 +649,23 @@
                 <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Last seen</div><div id="pm-last" style="font-size:.85rem; margin-top:.1rem;"></div></div>
                 <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Total events</div><div id="pm-evt-count" style="font-size:.85rem; margin-top:.1rem;"></div></div>
             </div>
+            <!-- AI Summary -->
+            <div style="margin-bottom:1rem;">
+                <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem;">
+                    <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; flex:1;">AI Risk Summary</div>
+                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:#a78bfa;" title="Request a new AI summary for this user">↻ Re-analyze</button>
+                </div>
+                <div id="pm-summary-wrap" style="display:none;">
+                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(147,51,234,.5); border-radius:4px; color:inherit; opacity:.85;"></div>
+                    <div id="pm-summary-ts" style="font-size:.65rem; opacity:.3; margin-top:.3rem;"></div>
+                </div>
+                <div id="pm-summary-empty" style="font-size:.78rem; opacity:.35; font-style:italic;">No summary generated yet.</div>
+            </div>
+            <!-- Risk Signals -->
+            <div id="pm-signals-wrap" style="display:none; margin-bottom:1rem;">
+                <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem;">Risk Signals</div>
+                <div id="pm-signals" style="display:flex; flex-wrap:wrap; gap:.35rem;"></div>
+            </div>
             <!-- Events table -->
             <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Event History</div>
             <div id="pm-events-wrap">
@@ -950,6 +967,7 @@ function filterPrism() {
                     : `<button onclick="quickFlag('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Flag</button>`
                 }
                 <button onclick="quickClearEvents('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#facc15;" title="Delete all Prism events">Clear events</button>
+                <button onclick="quickReanalyze('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#a78bfa;" title="Request new AI risk summary">↻ Re-analyze</button>
                 <button onclick="viewPrismProfile('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#a78bfa;">View</button>
             </td>
         </tr>`;
@@ -981,6 +999,25 @@ async function quickClearEvents(uid, name) {
     const r = await doAction({ action:'clear_prism_events', user_id:uid });
     alert(r.ok ? 'Events cleared.' : 'Error: ' + r.message);
     if (r.ok) await pollData();
+}
+
+async function quickReanalyze(uid) {
+    const r = await doAction({ action:'refresh_prism_summary', user_id:uid });
+    alert(r.ok ? r.message : 'Error: ' + r.message);
+}
+
+async function reanalyzeCurrentUser() {
+    if (!_currentPrismUid) return;
+    const btn = document.getElementById('pm-reanalyze-btn');
+    const origText = btn.textContent;
+    btn.textContent = '…';
+    btn.disabled = true;
+    const r = await doAction({ action:'refresh_prism_summary', user_id:_currentPrismUid });
+    btn.textContent = origText;
+    btn.disabled = false;
+    if (!r.ok) { alert('Error: ' + r.message); return; }
+    // Reload the profile to show the updated summary after a short delay
+    setTimeout(() => viewPrismProfile(_currentPrismUid), 3000);
 }
 
 // ── Flagged Users ─────────────────────────────────────────────
@@ -1141,7 +1178,10 @@ function fmtTs(iso) {
     catch { return iso.slice(0,16).replace('T',' '); }
 }
 
+let _currentPrismUid = null;
+
 async function viewPrismProfile(uid) {
+    _currentPrismUid = uid;
     const r = await doAction({ action: 'get_prism_profile', user_id: uid });
     if (!r.ok) { alert('Error: ' + r.message); return; }
     const p = r.data.profile;
@@ -1161,6 +1201,39 @@ async function viewPrismProfile(uid) {
     document.getElementById('pm-first').textContent    = fmtTs(p.first_seen);
     document.getElementById('pm-last').textContent     = fmtTs(p.last_seen);
     document.getElementById('pm-evt-count').textContent = p.event_count;
+
+    // AI summary
+    const summaryWrap  = document.getElementById('pm-summary-wrap');
+    const summaryEmpty = document.getElementById('pm-summary-empty');
+    if (p.llm_summary) {
+        document.getElementById('pm-summary').textContent = p.llm_summary;
+        document.getElementById('pm-summary-ts').textContent = p.llm_summary_updated
+            ? 'Last updated: ' + fmtTs(p.llm_summary_updated) : '';
+        summaryWrap.style.display  = '';
+        summaryEmpty.style.display = 'none';
+    } else {
+        summaryWrap.style.display  = 'none';
+        summaryEmpty.style.display = '';
+    }
+
+    // Risk signals
+    const signalsWrap = document.getElementById('pm-signals-wrap');
+    const signalsEl   = document.getElementById('pm-signals');
+    const SIGNAL_LABELS = {
+        new_account_1d:  'New account (<24 h)',
+        new_account_7d:  'New account (<7 d)',
+        new_account_30d: 'New account (<30 d)',
+        velocity_burst:  'Velocity burst (3+ / 24 h)',
+        multi_server:    'Multi-server violations',
+    };
+    if (p.risk_signals && p.risk_signals.length) {
+        signalsEl.innerHTML = p.risk_signals.map(s =>
+            `<span style="font-size:.7rem; padding:.2rem .5rem; border-radius:3px; background:rgba(245,158,11,.15); color:#f59e0b; border:1px solid rgba(245,158,11,.25);">${SIGNAL_LABELS[s] || s}</span>`
+        ).join('');
+        signalsWrap.style.display = '';
+    } else {
+        signalsWrap.style.display = 'none';
+    }
 
     const tbody = document.getElementById('pm-events-body');
     if (!p.events.length) {

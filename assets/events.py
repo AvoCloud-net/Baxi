@@ -146,8 +146,9 @@ def events(bot: commands.AutoShardedBot, web):
             logger.working("Starting Livestream task...")
             share.livestream_task = LivestreamTask(bot)
             share.livestream_task.check_streams.start()
+            share.livestream_task.check_yt_tt_streams.start()
             share.task_instances["Livestream"] = share.livestream_task
-            logger.debug.success("Livestream check task started.")
+            logger.debug.success("Livestream check task started (Twitch + YouTube/TikTok).")
 
             logger.working("Starting StatsChannels task...")
             stats_channels_task = StatsChannelsTask(bot)

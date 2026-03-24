@@ -74,6 +74,10 @@ def base_commands(bot: commands.AutoShardedBot):
             event_cnt   = explanation["event_count"]
             account_age = explanation["account_age_days"]
 
+            # LLM summary — pull directly from profile
+            profile     = sentinel.get_profile(interaction.user.id)
+            llm_summary = profile.get("llm_summary") if profile else None
+
             trend_icon = {"falling": "↓", "rising": "↑", "stable": "→"}.get(trend, "→")
             if score >= 75:
                 score_color = config.Discord.success_color
@@ -87,6 +91,13 @@ def base_commands(bot: commands.AutoShardedBot):
                 description=t["score_line"].format(score=score, trend=trend_icon, count=event_cnt),
                 color=score_color,
             )
+
+            if llm_summary:
+                embed.add_field(
+                    name="Risk Summary",
+                    value=f"*{llm_summary}*",
+                    inline=False,
+                )
 
             if impacts:
                 impact_lines = []

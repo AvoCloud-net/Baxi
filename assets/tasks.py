@@ -8,7 +8,7 @@ from discord.ext import tasks, commands
 
 from reds_simple_logger import Logger
 from assets.share import globalchat_message_data, phishing_url_list, set_task_status, admin_log
-from assets.livestream import twitch_api
+from assets.livestream import twitch_api, youtube_api, tiktok_api
 import assets.data as datasys
 import assets.trust as sentinel
 import config.config as config
@@ -91,40 +91,42 @@ class UpdateStatsTask:
 
 
 class LivestreamTask:
-    """Background task that polls Twitch for streamer status and updates Discord channels/embeds.
+    """Background task that polls Twitch, YouTube, and TikTok for streamer status.
 
-    Rate limiting: processes max 20 streamer checks per minute across all guilds.
-    Uses a round-robin queue so all guilds get fair polling.
+    Twitch: batched API calls, max 20 checks/minute, polled every 60 seconds.
+    YouTube/TikTok: individual checks every 5 minutes (quota-friendly).
+
+    Internal key format for _was_live: "{platform}:{login}" (e.g. "twitch:pokimane").
+    Existing entries without a platform field default to "twitch".
     """
 
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
-        # Track which streamers were live last check: {guild_id: {login: True/False}}
+        # Track live state: {guild_id: {"platform:login": True/False}}
         self._was_live: dict[int, dict[str, bool]] = {}
-        # Queue of (guild_id, streamer_entry) pairs to check
+        # Round-robin queue for Twitch (fast path, 60s)
         self._check_queue: deque[tuple[int, dict]] = deque()
-        # Cache user profile data: {login: {display_name, profile_image_url, offline_image_url}}
+        # Profile/channel cache keyed by "platform:login"
         self._user_cache: dict[str, dict] = {}
+
+    # ------------------------------------------------------------------ Twitch
 
     @tasks.loop(seconds=config.Twitch.check_interval_seconds)
     async def check_streams(self):
         try:
             set_task_status("Livestream", "running", "Checking Twitch streams...", extra=f"Queue: {len(self._check_queue)} pending")
-            await self._do_check()
-            set_task_status("Livestream", "ok", f"Stream check complete", extra=f"Queue: {len(self._check_queue)} remaining")
+            await self._do_twitch_check()
+            set_task_status("Livestream", "ok", "Twitch check complete", extra=f"Queue: {len(self._check_queue)} remaining")
         except Exception as e:
             logger.error(f"[Livestream] Error in check_streams: {e}")
             set_task_status("Livestream", "error", f"Error: {e}")
 
-    async def _do_check(self):
-        # Rebuild queue if empty
+    async def _do_twitch_check(self):
         if not self._check_queue:
-            self._rebuild_queue()
-
+            self._rebuild_twitch_queue()
         if not self._check_queue:
             return
 
-        # Take up to max_checks_per_minute items from queue
         batch: list[tuple[int, dict]] = []
         logins_in_batch: list[str] = []
         seen_logins: set[str] = set()
@@ -141,96 +143,140 @@ class LivestreamTask:
         if not logins_in_batch:
             return
 
-        async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=15)
-        ) as session:
-            # Fetch stream status for all unique logins in batch
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
             live_data = await twitch_api.get_streams(session, logins_in_batch)
 
-            # Fetch profile data for any logins we haven't cached yet
-            uncached = [l for l in logins_in_batch if l not in self._user_cache]
+            uncached = [l for l in logins_in_batch if f"twitch:{l}" not in self._user_cache]
             if uncached:
                 user_data = await twitch_api.get_users(session, uncached)
-                self._user_cache.update(user_data)
+                for login_key, profile in user_data.items():
+                    self._user_cache[f"twitch:{login_key}"] = profile
 
-        # Process each item in the batch
         for guild_id, streamer in batch:
             login = streamer["login"].lower()
+            cache_key = f"twitch:{login}"
             is_live = login in live_data
-
-            if guild_id not in self._was_live:
-                self._was_live[guild_id] = {}
-
-            first_check = login not in self._was_live[guild_id]
-            was_live = self._was_live[guild_id].get(login, False)
-            guild = self.bot.get_guild(guild_id)
-            guild_name = guild.name if guild else str(guild_id)
-            profile = self._user_cache.get(login, {})
-            display = profile.get("display_name", streamer.get("login", login))
             stream_info = live_data.get(login)
+            await self._process_streamer_result(guild_id, streamer, "twitch", cache_key, is_live, stream_info)
 
-            if first_check or is_live != was_live:
-                # Status changed (or first check — sync channel name/embed regardless)
-                self._was_live[guild_id][login] = is_live
-                await self._update_channel(
-                    guild_id,
-                    streamer,
-                    is_live,
-                    stream_info,
-                    ping=is_live and not first_check,
-                )
-                if not first_check:
-                    if is_live:
-                        game = stream_info.get("game_name", "") if stream_info else ""
-                        viewers = stream_info.get("viewer_count", 0) if stream_info else 0
-                        admin_log("success",
-                            f"{display} went LIVE · {viewers} viewers"
-                            + (f" · {game}" if game else "")
-                            + f" @ {guild_name}",
-                            source="Livestream")
-                    else:
-                        admin_log("info", f"{display} went offline @ {guild_name}", source="Livestream")
-                else:
-                    status_str = "live" if is_live else "offline"
-                    admin_log("info", f"First check: {display} is {status_str} @ {guild_name}", source="Livestream")
-            elif is_live and was_live:
-                # Still live - update embed with current viewer count etc.
-                await self._update_embed_content(
-                    guild_id,
-                    streamer,
-                    stream_info,
-                )
-                viewers = stream_info.get("viewer_count", 0) if stream_info else 0
-                game = stream_info.get("game_name", "") if stream_info else ""
-                admin_log("info",
-                    f"Still live: {display} · {viewers} viewers"
-                    + (f" · {game}" if game else "")
-                    + f" @ {guild_name}",
-                    source="Livestream")
-
-    def _rebuild_queue(self):
-        """Rebuild the round-robin queue from all guilds with livestream enabled."""
+    def _rebuild_twitch_queue(self):
+        """Rebuild the round-robin Twitch queue from all enabled guilds."""
         self._check_queue.clear()
-
         for guild in self.bot.guilds:
             ls_config = dict(datasys.load_data(guild.id, "livestream"))
             if not ls_config.get("enabled", False):
                 continue
-
-            streamers = ls_config.get("streamers", [])
-            for streamer in streamers:
-                if streamer.get("login"):
+            for streamer in ls_config.get("streamers", []):
+                platform = streamer.get("platform", "twitch")
+                if platform == "twitch" and streamer.get("login"):
                     self._check_queue.append((guild.id, streamer))
 
-        logger.info(
-            f"[Livestream] Queue rebuilt: {len(self._check_queue)} streamer checks queued"
-        )
-        admin_log("info", f"Queue rebuilt: {len(self._check_queue)} streamer checks queued", source="Livestream")
+        logger.info(f"[Livestream] Twitch queue rebuilt: {len(self._check_queue)} checks queued")
+        admin_log("info", f"Twitch queue rebuilt: {len(self._check_queue)} checks queued", source="Livestream")
+
+    # --------------------------------------------------- YouTube + TikTok (5 min)
+
+    @tasks.loop(seconds=config.YouTube.check_interval_seconds)
+    async def check_yt_tt_streams(self):
+        try:
+            set_task_status("LivestreamYT", "running", "Checking YouTube/TikTok streams...")
+            await self._do_yt_tt_check()
+            set_task_status("LivestreamYT", "ok", "YouTube/TikTok check complete")
+        except Exception as e:
+            logger.error(f"[Livestream] Error in check_yt_tt_streams: {e}")
+            set_task_status("LivestreamYT", "error", f"Error: {e}")
+
+    async def _do_yt_tt_check(self):
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+            for guild in self.bot.guilds:
+                ls_config = dict(datasys.load_data(guild.id, "livestream"))
+                if not ls_config.get("enabled", False):
+                    continue
+                for streamer in ls_config.get("streamers", []):
+                    platform = streamer.get("platform", "twitch")
+                    if platform not in ("youtube", "tiktok"):
+                        continue
+                    if not streamer.get("login"):
+                        continue
+
+                    login = streamer["login"]
+                    cache_key = f"{platform}:{login}"
+
+                    # Populate profile cache if missing
+                    if cache_key not in self._user_cache:
+                        if platform == "youtube":
+                            info = await youtube_api.get_channel(session, login)
+                        else:
+                            info = await tiktok_api.get_user_info(session, login)
+                        if info:
+                            self._user_cache[cache_key] = info
+
+                    # Check live status
+                    if platform == "youtube":
+                        stream_info = await youtube_api.get_live_stream(session, login)
+                    else:
+                        stream_info = await tiktok_api.get_live_stream(session, login)
+
+                    is_live = stream_info is not None
+                    await self._process_streamer_result(guild.id, streamer, platform, cache_key, is_live, stream_info)
+
+    # --------------------------------------------------------------- Shared logic
+
+    async def _process_streamer_result(
+        self,
+        guild_id: int,
+        streamer: dict,
+        platform: str,
+        cache_key: str,
+        is_live: bool,
+        stream_info: dict | None,
+    ):
+        """Shared post-check logic: detect state changes, update channel/embed, log."""
+        if guild_id not in self._was_live:
+            self._was_live[guild_id] = {}
+
+        first_check = cache_key not in self._was_live[guild_id]
+        was_live = self._was_live[guild_id].get(cache_key, False)
+        guild = self.bot.get_guild(guild_id)
+        guild_name = guild.name if guild else str(guild_id)
+        profile = self._user_cache.get(cache_key, {})
+        display = profile.get("display_name", streamer.get("login", cache_key))
+
+        if first_check or is_live != was_live:
+            self._was_live[guild_id][cache_key] = is_live
+            await self._update_channel(
+                guild_id, streamer, platform, is_live, stream_info,
+                ping=is_live and not first_check,
+            )
+            if not first_check:
+                if is_live:
+                    viewers = stream_info.get("viewer_count", 0) if stream_info else 0
+                    game = stream_info.get("game_name", "") if stream_info else ""
+                    admin_log("success",
+                        f"[{platform}] {display} went LIVE · {viewers} viewers"
+                        + (f" · {game}" if game else "")
+                        + f" @ {guild_name}",
+                        source="Livestream")
+                else:
+                    admin_log("info", f"[{platform}] {display} went offline @ {guild_name}", source="Livestream")
+            else:
+                status_str = "live" if is_live else "offline"
+                admin_log("info", f"[{platform}] First check: {display} is {status_str} @ {guild_name}", source="Livestream")
+        elif is_live and was_live:
+            await self._update_embed_content(guild_id, streamer, platform, stream_info)
+            viewers = stream_info.get("viewer_count", 0) if stream_info else 0
+            game = stream_info.get("game_name", "") if stream_info else ""
+            admin_log("info",
+                f"[{platform}] Still live: {display} · {viewers} viewers"
+                + (f" · {game}" if game else "")
+                + f" @ {guild_name}",
+                source="Livestream")
 
     async def _update_channel(
         self,
         guild_id: int,
         streamer: dict,
+        platform: str,
         is_live: bool,
         stream_data: dict | None,
         ping: bool = True,
@@ -240,27 +286,23 @@ class LivestreamTask:
         if not guild:
             return
 
-        login = streamer["login"].lower()
+        login = streamer["login"]
+        cache_key = f"{platform}:{login.lower()}"
         channel_id = streamer.get("channel_id")
         message_id = streamer.get("message_id")
         lang = datasys.load_lang_file(guild_id)
         ls_lang = lang.get("systems", {}).get("livestream", {})
-        profile = self._user_cache.get(login, {})
-        display_name = profile.get("display_name", streamer["login"])
+        profile = self._user_cache.get(cache_key, {})
+        display_name = profile.get("display_name", streamer.get("display_name", login))
 
         channel = guild.get_channel(int(channel_id)) if channel_id else None
         if not isinstance(channel, discord.TextChannel):
             return
 
-        # Update channel name: red dot when live, black dot when offline
         if is_live:
-            new_name = ls_lang.get("channel_name_online", "\U0001f534\u2502{name}").format(
-                name=display_name.lower()
-            )
+            new_name = ls_lang.get("channel_name_online", "\U0001f534\u2502{name}").format(name=display_name.lower())
         else:
-            new_name = ls_lang.get("channel_name_offline", "\u26ab\u2502{name}").format(
-                name=display_name.lower()
-            )
+            new_name = ls_lang.get("channel_name_offline", "\u26ab\u2502{name}").format(name=display_name.lower())
 
         try:
             if channel.name != new_name:
@@ -268,12 +310,8 @@ class LivestreamTask:
         except discord.Forbidden:
             logger.error(f"[Livestream] Cannot edit channel name in guild {guild_id}")
 
-        # Build embed
-        embed = self._build_embed(ls_lang, display_name, is_live, stream_data, profile)
+        embed = self._build_embed(ls_lang, display_name, platform, is_live, stream_data, profile)
 
-        # Send a temporary ping message when going live (deleted after short delay).
-        # Discord only sends push notifications for new messages, not edits.
-        # We wait 2s before deleting so Discord has time to dispatch the notification.
         if is_live and ping:
             ls_config = dict(datasys.load_data(guild_id, "livestream"))
             ping_role_id = ls_config.get("ping_role", "")
@@ -289,7 +327,6 @@ class LivestreamTask:
                 except (discord.Forbidden, discord.HTTPException):
                     pass
 
-        # Always edit the one permanent embed message (or create it if it doesn't exist yet)
         try:
             if message_id:
                 try:
@@ -299,9 +336,8 @@ class LivestreamTask:
                 except (discord.NotFound, discord.HTTPException):
                     pass
 
-            # No existing message yet — send it and save the ID
             msg = await channel.send(content=None, embed=embed)
-            self._save_message_id(guild_id, login, msg.id)
+            self._save_message_id(guild_id, login, platform, msg.id)
         except discord.Forbidden:
             logger.error(f"[Livestream] Cannot send message in guild {guild_id}")
 
@@ -309,26 +345,28 @@ class LivestreamTask:
         self,
         guild_id: int,
         streamer: dict,
+        platform: str,
         stream_data: dict,
     ):
-        """Update embed content for a streamer that is still live (viewer count, etc.)."""
+        """Update embed content for a streamer that is still live."""
         guild = self.bot.get_guild(guild_id)
         if not guild:
             return
 
-        login = streamer["login"].lower()
+        login = streamer["login"]
+        cache_key = f"{platform}:{login.lower()}"
         channel_id = streamer.get("channel_id")
         message_id = streamer.get("message_id")
         lang = datasys.load_lang_file(guild_id)
         ls_lang = lang.get("systems", {}).get("livestream", {})
-        profile = self._user_cache.get(login, {})
-        display_name = profile.get("display_name", streamer["login"])
+        profile = self._user_cache.get(cache_key, {})
+        display_name = profile.get("display_name", streamer.get("display_name", login))
 
         channel = guild.get_channel(int(channel_id)) if channel_id else None
         if not isinstance(channel, discord.TextChannel) or not message_id:
             return
 
-        embed = self._build_embed(ls_lang, display_name, True, stream_data, profile)
+        embed = self._build_embed(ls_lang, display_name, platform, True, stream_data, profile)
 
         try:
             msg = await channel.fetch_message(int(message_id))
@@ -340,18 +378,19 @@ class LivestreamTask:
         self,
         ls_lang: dict,
         display_name: str,
+        platform: str,
         is_live: bool,
         stream_data: dict | None,
         profile: dict,
     ) -> discord.Embed:
-        """Build the Discord embed for a streamer."""
+        """Build the Discord embed for a streamer (platform-aware URLs)."""
+        profile_url = self._profile_url(display_name, platform, stream_data)
+
         if is_live and stream_data:
             embed = discord.Embed(
-                title=ls_lang.get("embed_online_title", "{name} is now LIVE!").format(
-                    name=display_name
-                ),
+                title=ls_lang.get("embed_online_title", "{name} is now LIVE!").format(name=display_name),
                 description=stream_data.get("title", ""),
-                url=f"https://twitch.tv/{display_name.lower()}",
+                url=profile_url,
                 color=discord.Color.green(),
             )
 
@@ -360,16 +399,8 @@ class LivestreamTask:
             started = stream_data.get("started_at", "")
 
             if game:
-                embed.add_field(
-                    name=ls_lang.get("embed_online_game", "Game"),
-                    value=game,
-                    inline=True,
-                )
-            embed.add_field(
-                name=ls_lang.get("embed_online_viewers", "Viewers"),
-                value=str(viewers),
-                inline=True,
-            )
+                embed.add_field(name=ls_lang.get("embed_online_game", "Game"), value=game, inline=True)
+            embed.add_field(name=ls_lang.get("embed_online_viewers", "Viewers"), value=str(viewers), inline=True)
             if started:
                 embed.add_field(
                     name=ls_lang.get("embed_online_started", "Started"),
@@ -379,24 +410,18 @@ class LivestreamTask:
 
             thumbnail_url = stream_data.get("thumbnail_url", "")
             if thumbnail_url:
-                # Add cache buster to always show current thumbnail
-                embed.set_image(
-                    url=f"{thumbnail_url}?t={int(asyncio.get_event_loop().time())}"
-                )
+                embed.set_image(url=f"{thumbnail_url}?t={int(asyncio.get_event_loop().time())}")
 
             if profile.get("profile_image_url"):
                 embed.set_thumbnail(url=profile["profile_image_url"])
 
         else:
             embed = discord.Embed(
-                title=ls_lang.get("embed_offline_title", "{name} is offline").format(
-                    name=display_name
-                ),
+                title=ls_lang.get("embed_offline_title", "{name} is offline").format(name=display_name),
                 description=ls_lang.get(
-                    "embed_offline_description",
-                    "{name} is not streaming right now. Check back later!",
+                    "embed_offline_description", "{name} is not streaming right now. Check back later!"
                 ).format(name=display_name),
-                url=f"https://twitch.tv/{display_name.lower()}",
+                url=profile_url,
                 color=discord.Color.red(),
             )
 
@@ -407,13 +432,26 @@ class LivestreamTask:
             if profile.get("profile_image_url"):
                 embed.set_thumbnail(url=profile["profile_image_url"])
 
-        embed.set_footer(
-            text=ls_lang.get("embed_footer", "Baxi Livestream - avocloud.net")
-        )
+        embed.set_footer(text=ls_lang.get("embed_footer", "Baxi Livestream - avocloud.net"))
         return embed
 
+    @staticmethod
+    def _profile_url(display_name: str, platform: str, stream_data: dict | None) -> str:
+        """Return the platform-appropriate profile/stream URL."""
+        name = display_name.lower()
+        if platform == "youtube":
+            # Link to live video if available, otherwise to channel
+            video_id = (stream_data or {}).get("video_id", "")
+            if video_id:
+                return f"https://www.youtube.com/watch?v={video_id}"
+            return f"https://www.youtube.com/@{name}"
+        elif platform == "tiktok":
+            return f"https://www.tiktok.com/@{name}/live"
+        else:  # twitch (default)
+            return f"https://twitch.tv/{name}"
+
     async def on_embed_deleted(self, message: discord.Message):
-        """Called when any message is deleted. If it was a livestream embed, resend it immediately."""
+        """Resend the livestream embed if it was accidentally deleted."""
         if message.guild is None:
             return
 
@@ -423,37 +461,39 @@ class LivestreamTask:
             return
 
         for streamer in ls_config.get("streamers", []):
-            if str(streamer.get("message_id", "")) == str(message.id):
-                # This was the livestream embed — clear the saved ID and resend
-                login = streamer["login"].lower()
-                streamer["message_id"] = ""
-                ls_config["streamers"] = ls_config["streamers"]
-                datasys.save_data(guild_id, "livestream", ls_config)
+            if str(streamer.get("message_id", "")) != str(message.id):
+                continue
 
-                is_live = self._was_live.get(guild_id, {}).get(login, False)
-                # Fetch fresh stream data if live
-                stream_data = None
-                if is_live:
-                    import aiohttp
-                    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
-                        live_data = await twitch_api.get_streams(session, [login])
-                        stream_data = live_data.get(login)
+            platform = streamer.get("platform", "twitch")
+            login = streamer["login"]
+            cache_key = f"{platform}:{login.lower()}"
+            streamer["message_id"] = ""
+            datasys.save_data(guild_id, "livestream", ls_config)
 
-                await self._update_channel(
-                    guild_id,
-                    streamer,
-                    is_live,
-                    stream_data,
-                    ping=False,
-                )
-                break
+            is_live = self._was_live.get(guild_id, {}).get(cache_key, False)
+            stream_data = None
+            if is_live:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
+                    if platform == "youtube":
+                        stream_data = await youtube_api.get_live_stream(session, login)
+                    elif platform == "tiktok":
+                        stream_data = await tiktok_api.get_live_stream(session, login)
+                    else:
+                        live_data = await twitch_api.get_streams(session, [login.lower()])
+                        stream_data = live_data.get(login.lower())
 
-    def _save_message_id(self, guild_id: int, login: str, message_id: int):
+            await self._update_channel(guild_id, streamer, platform, is_live, stream_data, ping=False)
+            break
+
+    def _save_message_id(self, guild_id: int, login: str, platform: str, message_id: int):
         """Save the message ID back to the guild config so we can edit it later."""
         ls_config = dict(datasys.load_data(guild_id, "livestream"))
         streamers = ls_config.get("streamers", [])
         for streamer in streamers:
-            if streamer.get("login", "").lower() == login.lower():
+            if (
+                streamer.get("login", "").lower() == login.lower()
+                and streamer.get("platform", "twitch") == platform
+            ):
                 streamer["message_id"] = str(message_id)
                 break
         ls_config["streamers"] = streamers
@@ -683,6 +723,12 @@ class TrustScoreTask:
         except Exception as e:
             logger.error(f"[Prism] Error in recalculate_scores: {e}")
             set_task_status("TrustScore", "error", f"Error: {e}")
+
+        # Update stale/missing LLM summaries for users with score < 100
+        try:
+            await sentinel.update_pending_summaries()
+        except Exception as e:
+            logger.error(f"[Prism LLM] Error in update_pending_summaries: {e}")
 
 
 class PhishingListTask:
