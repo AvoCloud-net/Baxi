@@ -217,6 +217,13 @@
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} \u2014 **{name}** streamt jetzt **{game}** live!"
             },
+            "button_roles": {
+                "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
+                "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
+                "not_found": "Rolle nicht gefunden — sie wurde möglicherweise gelöscht.",
+                "no_permission": "Ich habe keine Berechtigung, diese Rolle zu verwalten.",
+                "server_only": "Dies kann nur innerhalb eines Servers verwendet werden."
+            },
             "stats_channels": {
                 "title": "SYS // STATS"
             }
@@ -460,6 +467,13 @@
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} \u2014 **{name}** is now live playing **{game}**!"
+            },
+            "button_roles": {
+                "applied": "The **{role}** role has been applied to your profile.",
+                "removed": "The **{role}** role has been removed from your profile.",
+                "not_found": "Role not found — it may have been deleted.",
+                "no_permission": "I don't have permission to manage that role.",
+                "server_only": "This can only be used inside a server."
             },
             "stats_channels": {
                 "title": "SYS // STATS"

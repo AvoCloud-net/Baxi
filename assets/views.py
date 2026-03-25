@@ -25,29 +25,40 @@ class Verify_Captcha_Modal(ui.Modal):
         )
         self.add_item(self.code_input)
 
-    async def callback(self, interaction: Interaction):
-        lang = datasys.load_lang_file(self.guild.id)
-        member = await self.guild.fetch_member(int(self.user.id))
-        if member is None:
+    async def on_submit(self, interaction: Interaction):
+        try:
+            lang = datasys.load_lang_file(self.guild.id)
+            member = await self.guild.fetch_member(int(self.user.id))
+        except Exception:
             await interaction.response.send_message(
-                "Du bist kein Mitglied dieses Servers.", ephemeral=True
+                "An error occurred. Please try again.", ephemeral=True
             )
             return
 
         if self.code_input.value == self.captcha:
+            try:
+                await member.add_roles(self.role, reason="Baxi Verify")
+            except discord.Forbidden:
+                await interaction.response.send_message(
+                    "Verification failed: the bot lacks permission to assign that role. Please contact an administrator.",
+                    ephemeral=True,
+                )
+                return
+            except discord.HTTPException as e:
+                await interaction.response.send_message(
+                    f"Verification failed: {e}", ephemeral=True
+                )
+                return
             embed = discord.Embed(
                 title=lang["systems"]["verify"]["title"],
                 description=lang["systems"]["verify"]["description_success"],
                 color=discord.Color.green(),
             )
-            await member.add_roles(self.role, reason="Verified")
             await interaction.response.send_message(embed=embed, ephemeral=True)
         else:
             embed = discord.Embed(
                 title=lang["systems"]["verify"]["title"],
-                description=lang["systems"]["verify"]["password"][
-                    "description_wrong_password"
-                ],
+                description=lang["systems"]["verify"]["captcha"]["description_wrong_code"],
                 color=discord.Color.red(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -68,29 +79,42 @@ class Verify_Password_Modal(ui.Modal):
         self.captcha: str = captcha
 
         self.code_input = ui.TextInput(
-            placeholder=self.captcha,
+            placeholder="Enter the server password",
             min_length=1,
-            max_length=int(len(captcha)) + 1,
-            label="Captcha Password",
+            max_length=max(int(len(captcha)) + 1, 2),
+            label="Password",
         )
         self.add_item(self.code_input)
 
-    async def callback(self, interaction: Interaction):
-        lang = datasys.load_lang_file(self.guild.id)
-        member = await self.guild.fetch_member(int(self.user.id))
-        if member is None:
+    async def on_submit(self, interaction: Interaction):
+        try:
+            lang = datasys.load_lang_file(self.guild.id)
+            member = await self.guild.fetch_member(int(self.user.id))
+        except Exception:
             await interaction.response.send_message(
-                "Du bist kein Mitglied dieses Servers.", ephemeral=True
+                "An error occurred. Please try again.", ephemeral=True
             )
             return
 
         if self.code_input.value == self.captcha:
+            try:
+                await member.add_roles(self.role, reason="Baxi Verify")
+            except discord.Forbidden:
+                await interaction.response.send_message(
+                    "Verification failed: the bot lacks permission to assign that role. Please contact an administrator.",
+                    ephemeral=True,
+                )
+                return
+            except discord.HTTPException as e:
+                await interaction.response.send_message(
+                    f"Verification failed: {e}", ephemeral=True
+                )
+                return
             embed = discord.Embed(
                 title=lang["systems"]["verify"]["title"],
                 description=lang["systems"]["verify"]["description_success"],
                 color=discord.Color.green(),
             )
-            await member.add_roles(self.role, reason="Verified")
             await interaction.response.send_message(embed=embed, ephemeral=True)
         else:
             embed = discord.Embed(

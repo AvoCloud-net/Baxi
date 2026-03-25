@@ -43,9 +43,12 @@ class PersistentViewBot(commands.AutoShardedBot):
         )
 
     async def setup_hook(self) -> None:
-        from assets.buttons import TicketView, TicketAdminButtons
+        from assets.buttons import TicketView, TicketAdminButtons, VerifyView
+        from assets.message.reactionroles import RoleButton
         self.add_view(TicketView())
         self.add_view(TicketAdminButtons())
+        self.add_view(VerifyView())
+        self.add_dynamic_items(RoleButton)
 
 
 bot = PersistentViewBot()

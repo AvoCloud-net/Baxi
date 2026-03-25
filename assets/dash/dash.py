@@ -445,6 +445,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             roles = await guild.fetch_roles()
 
             roles_list = {str(role.id): role.name for role in roles}
+            roles_positions = {str(role.id): role.position for role in roles}
 
             catrgorys_list = {
                 str(cat.id): cat.name
@@ -455,6 +456,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             assert bot.user is not None, "bot user unknown"
 
             guild_bot_user = await guild.fetch_member(bot.user.id)
+            bot_top_role_pos: int = guild_bot_user.top_role.position
             bot_nick: str = (
                 guild_bot_user.nick
                 if guild_bot_user.nick is not None
@@ -494,6 +496,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 voice_channels=voice_channels,
                 categorys=catrgorys_list,
                 roles=roles_list,
+                roles_positions=roles_positions,
+                bot_top_role_pos=bot_top_role_pos,
                 nick=bot_nick,
                 stats=stats,
                 greeting=get_time_based_greeting(user.name),
@@ -1472,6 +1476,264 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log: list = cast(
                 list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
             )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "verify":
+            data: dict = await quart.request.get_json()
+            verify = data.get("verify")
+
+            if not isinstance(verify, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'verify' must be an object."}), 400
+
+            if not isinstance(verify.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            verify_option = verify.get("verify_option", 0)
+            if verify_option not in (0, 1, 2):
+                return quart.jsonify({"success": False, "message": "'verify_option' must be 0, 1 or 2."}), 400
+
+            rid_raw = str(verify.get("rid", "")).strip()
+            if rid_raw and not re.fullmatch(r"\d{17,19}", rid_raw):
+                return quart.jsonify({"success": False, "message": "Invalid role ID format."}), 400
+
+            channel_raw = str(verify.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID format."}), 400
+
+            color = str(verify.get("color", "#9333ea"))[:7]
+            if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+                color = "#9333ea"
+
+            current: dict = dict(load_data(int(guild_id), "verify"))
+            current.update({
+                "enabled": verify["enabled"],
+                "rid": rid_raw,
+                "verify_option": verify_option,
+                "password": str(verify.get("password", ""))[:100],
+                "channel": channel_raw,
+                "title": str(verify.get("title", "Verification"))[:100],
+                "description": str(verify.get("description", "Click the button below to verify."))[:500],
+                "color": color,
+            })
+
+            # Post / repost verification panel if requested
+            if verify.get("post_panel") and channel_raw and current["enabled"]:
+                try:
+                    from assets.buttons import VerifyView
+                    ch = await guild.fetch_channel(int(channel_raw))
+                    if not isinstance(ch, discord.TextChannel):
+                        return quart.jsonify({"success": False, "message": "Selected channel is not a text channel."}), 400
+                    try:
+                        embed_color = discord.Color.from_str(color)
+                    except Exception:
+                        embed_color = discord.Color.from_rgb(147, 51, 234)
+                    embed = discord.Embed(
+                        title=current["title"],
+                        description=current["description"],
+                        color=embed_color,
+                    )
+                    embed.set_footer(text="Baxi · Verification")
+                    panel_msg = await ch.send(embed=embed, view=VerifyView())
+                    current["panel_message_id"] = str(panel_msg.id)
+                except discord.Forbidden:
+                    return quart.jsonify({"success": False, "message": "Bot does not have permission to send messages in that channel."}), 403
+                except Exception as e:
+                    return quart.jsonify({"success": False, "message": f"Could not post panel: {e}"}), 500
+
+            save_data(int(guild_id), "verify", current)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "verify",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "auto_slowmode":
+            data: dict = await quart.request.get_json()
+            asm = data.get("auto_slowmode")
+
+            if not isinstance(asm, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'auto_slowmode' must be an object."}), 400
+
+            if not isinstance(asm.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            try:
+                settings = {
+                    "enabled": asm["enabled"],
+                    "threshold": max(2, min(50, int(asm.get("threshold", 10)))),
+                    "interval": max(2, min(60, int(asm.get("interval", 10)))),
+                    "slowmode_delay": max(1, min(21600, int(asm.get("slowmode_delay", 5)))),
+                    "duration": max(10, min(3600, int(asm.get("duration", 120)))),
+                }
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "All numeric fields must be integers."}), 400
+
+            save_data(int(guild_id), "auto_slowmode", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "auto_slowmode",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "reaction_roles":
+            data: dict = await quart.request.get_json()
+            rr = data.get("reaction_roles")
+
+            if not isinstance(rr, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'reaction_roles' must be an object."}), 400
+
+            action = rr.get("action")
+            rr_config: dict = dict(load_data(int(guild_id), "reaction_roles"))
+            panels: list = rr_config.get("panels", [])
+
+            if action == "add_panel":
+                channel_id_raw = str(rr.get("channel_id", "")).strip()
+                if not re.fullmatch(r"\d{17,19}", channel_id_raw):
+                    return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+
+                title = str(rr.get("title", "Reaction Roles"))[:100]
+                description = str(rr.get("description", "React to get a role!"))[:500]
+                color = str(rr.get("color", "#9333ea"))[:7]
+                if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+                    color = "#9333ea"
+
+                try:
+                    ch = await guild.fetch_channel(int(channel_id_raw))
+                    if not isinstance(ch, discord.TextChannel):
+                        return quart.jsonify({"success": False, "message": "Selected channel is not a text channel."}), 400
+                except discord.NotFound:
+                    return quart.jsonify({"success": False, "message": "Channel not found."}), 404
+                except discord.Forbidden:
+                    return quart.jsonify({"success": False, "message": "Bot cannot access that channel."}), 403
+
+                panel_data = {
+                    "channel_id": channel_id_raw,
+                    "message_id": "",
+                    "title": title,
+                    "description": description,
+                    "color": color,
+                    "entries": [],
+                }
+
+                from assets.message.reactionroles import build_panel_embed, build_panel_view
+                embed = build_panel_embed(panel_data)
+                try:
+                    msg = await ch.send(embed=embed, view=build_panel_view(panel_data))
+                    panel_data["message_id"] = str(msg.id)
+                except discord.Forbidden:
+                    return quart.jsonify({"success": False, "message": "Bot cannot send messages in that channel."}), 403
+
+                panels.append(panel_data)
+                rr_config["panels"] = panels
+                save_data(int(guild_id), "reaction_roles", rr_config)
+
+            elif action == "remove_panel":
+                message_id = str(rr.get("message_id", "")).strip()
+                panel_to_remove = None
+                for p in panels:
+                    if str(p.get("message_id", "")) == message_id:
+                        panel_to_remove = p
+                        break
+                if panel_to_remove is None:
+                    return quart.jsonify({"success": False, "message": "Panel not found."}), 404
+
+                # Try to delete the Discord message
+                try:
+                    ch = await guild.fetch_channel(int(panel_to_remove["channel_id"]))
+                    msg = await ch.fetch_message(int(message_id))  # type: ignore
+                    await msg.delete()
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                    pass
+
+                panels = [p for p in panels if str(p.get("message_id", "")) != message_id]
+                rr_config["panels"] = panels
+                save_data(int(guild_id), "reaction_roles", rr_config)
+
+            elif action == "add_entry":
+                message_id = str(rr.get("message_id", "")).strip()
+                emoji = str(rr.get("emoji", "")).strip()
+                role_id_raw = str(rr.get("role_id", "")).strip()
+                label = str(rr.get("label", ""))[:50]
+
+                if not re.fullmatch(r"\d{17,19}", role_id_raw):
+                    return quart.jsonify({"success": False, "message": "Invalid role ID."}), 400
+                if not emoji and not label:
+                    return quart.jsonify({"success": False, "message": "Provide at least an emoji or a label."}), 400
+
+                panel = next((p for p in panels if str(p.get("message_id", "")) == message_id), None)
+                if panel is None:
+                    return quart.jsonify({"success": False, "message": "Panel not found."}), 404
+
+                # Check duplicate role in same panel
+                if any(str(e.get("role_id")) == role_id_raw for e in panel.get("entries", [])):
+                    return quart.jsonify({"success": False, "message": "This role already has a button in this panel."}), 400
+
+                panel.setdefault("entries", []).append({
+                    "emoji": emoji,
+                    "role_id": role_id_raw,
+                    "label": label,
+                })
+
+                # Update the Discord message with new embed + buttons
+                from assets.message.reactionroles import build_panel_embed, build_panel_view
+                try:
+                    ch = await guild.fetch_channel(int(panel["channel_id"]))
+                    msg = await ch.fetch_message(int(message_id))  # type: ignore
+                    await msg.edit(embed=build_panel_embed(panel), view=build_panel_view(panel))
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
+                    return quart.jsonify({"success": False, "message": f"Could not update panel: {e}"}), 500
+
+                rr_config["panels"] = panels
+                save_data(int(guild_id), "reaction_roles", rr_config)
+
+            elif action == "remove_entry":
+                message_id = str(rr.get("message_id", "")).strip()
+                emoji = str(rr.get("emoji", "")).strip()
+
+                panel = next((p for p in panels if str(p.get("message_id", "")) == message_id), None)
+                if panel is None:
+                    return quart.jsonify({"success": False, "message": "Panel not found."}), 404
+
+                panel["entries"] = [e for e in panel.get("entries", []) if e.get("emoji") != emoji]
+
+                from assets.message.reactionroles import build_panel_embed, build_panel_view
+                try:
+                    ch = await guild.fetch_channel(int(panel["channel_id"]))
+                    msg = await ch.fetch_message(int(message_id))  # type: ignore
+                    await msg.edit(embed=build_panel_embed(panel), view=build_panel_view(panel))
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                    pass
+
+                rr_config["panels"] = panels
+                save_data(int(guild_id), "reaction_roles", rr_config)
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "reaction_roles",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 

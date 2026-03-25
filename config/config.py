@@ -137,6 +137,27 @@ class datasys:
         "name_template": "{user}'s Channel"
     },
     "prism_enabled": True,
-    "notification_channel": ""
+    "notification_channel": "",
+    "verify": {
+        "enabled": False,
+        "rid": 0,
+        "verify_option": 0,
+        "password": "",
+        "channel": "",
+        "panel_message_id": "",
+        "title": "Verification",
+        "description": "Click the button below to verify yourself and gain access to the server.",
+        "color": "#9333ea"
+    },
+    "reaction_roles": {
+        "panels": []
+    },
+    "auto_slowmode": {
+        "enabled": False,
+        "threshold": 10,
+        "interval": 10,
+        "slowmode_delay": 5,
+        "duration": 120
+    }
 }
 

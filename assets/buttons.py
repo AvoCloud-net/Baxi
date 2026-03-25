@@ -504,7 +504,7 @@ class VerifyView(ui.View):
 
         if verify_data.get("enabled", False):
             role: Optional[discord.Role] = interaction.guild.get_role(
-                verify_data.get("rid", 0)
+                int(verify_data.get("rid", 0))
             )
             if role is None:
                 await interaction.response.send_message(

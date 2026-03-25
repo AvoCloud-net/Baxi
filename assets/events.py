@@ -18,6 +18,8 @@ import assets.message.welcomer as welcomer
 from assets.buttons import TicketView
 import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
+import assets.message.reactionroles as reactionroles
+import assets.message.auto_slowmode as auto_slowmode
 import assets.trust as sentinel
 import config.config as config
 import discord
@@ -296,6 +298,33 @@ def events(bot: commands.AutoShardedBot, web):
         if share.livestream_task is not None:
             await share.livestream_task.on_embed_deleted(message) # type: ignore
 
+        # Resend verify panel embed if deleted
+        verify_config = dict(datasys.load_data(message.guild.id, "verify"))
+        if (
+            verify_config.get("enabled", False)
+            and str(message.id) == str(verify_config.get("panel_message_id", ""))
+        ):
+            try:
+                from assets.buttons import VerifyView
+                channel = message.guild.get_channel(int(verify_config["channel"]))
+                if isinstance(channel, discord.TextChannel):
+                    color_str = verify_config.get("color", "#9333ea")
+                    try:
+                        color = discord.Color.from_str(color_str)
+                    except Exception:
+                        color = discord.Color.from_rgb(147, 51, 234)
+                    embed = discord.Embed(
+                        title=verify_config.get("title", "Verification"),
+                        description=verify_config.get("description", "Click the button below to verify."),
+                        color=color,
+                    )
+                    embed.set_footer(text="Baxi · Verification")
+                    panel_msg = await channel.send(embed=embed, view=VerifyView())
+                    verify_config["panel_message_id"] = str(panel_msg.id)
+                    datasys.save_data(message.guild.id, "verify", verify_config)
+            except (discord.Forbidden, discord.HTTPException, Exception):
+                pass
+
         # Resend ticket panel embed if deleted
         ticket_config = dict(datasys.load_data(message.guild.id, "ticket"))
         if (
@@ -401,6 +430,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             sentinel.ensure_profile(message.author.id, message.author.name, _account_age)
         except Exception:
             pass
+
+        # Auto-Slowmode check (passive, non-blocking)
+        asyncio.create_task(auto_slowmode.check(message))
 
         # Anti-Spam check (before other processing)
         is_spam = await antispam_instance.check(message, bot)

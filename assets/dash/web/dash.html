@@ -201,6 +201,18 @@
                 <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
                 Anti-Spam
             </a>
+            <a href="#auto-slowmode" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Auto-Slowmode
+            </a>
+            <a href="#verify" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                Verification
+            </a>
+            <a href="#reaction-roles" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                Reaction Roles
+            </a>
             <a href="#warn-config" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/><path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/></svg>
                 Warnings
@@ -886,6 +898,267 @@
                                 </svg>
                             </button>
                         </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Auto-Slowmode Config -->
+            <section class="pb-16 dash-section" id="auto-slowmode">
+                <div class="section-label">AUTO-SLOWMODE</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            Auto-Slowmode
+                        </h2>
+                        <p class="text-muted">Automatically apply slowmode when a channel is flooded with messages.</p>
+                    </header>
+                    <section>
+                        <form id="auto-slowmode-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="asm-enabled">
+                                    <input type="checkbox" id="asm-enabled" name="asm-enabled" value="true">
+                                    Enable Auto-Slowmode
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="asm-threshold">Message threshold:</label>
+                                <input type="number" id="asm-threshold" min="2" max="50" value="10" class="w-full">
+                                <p class="text-muted text-xs">How many messages in the interval trigger slowmode.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="asm-interval">Interval (seconds):</label>
+                                <input type="number" id="asm-interval" min="2" max="60" value="10" class="w-full">
+                                <p class="text-muted text-xs">Time window (in seconds) to count messages.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="asm-slowmode-delay">Slowmode delay (seconds):</label>
+                                <input type="number" id="asm-slowmode-delay" min="1" max="21600" value="5" class="w-full">
+                                <p class="text-muted text-xs">How many seconds between allowed messages. Max 21600 (6h).</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="asm-duration">Slowmode duration (seconds):</label>
+                                <input type="number" id="asm-duration" min="10" max="3600" value="120" class="w-full">
+                                <p class="text-muted text-xs">How long the slowmode stays active before being lifted automatically.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Verification Config -->
+            <section class="pb-16 dash-section" id="verify">
+                <div class="section-label">VERIFICATION</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                                <path d="m9 12 2 2 4-4"/>
+                            </svg>
+                            Verification
+                        </h2>
+                        <p class="text-muted">Let new members verify themselves to gain access to your server.</p>
+                    </header>
+                    <section>
+                        <form id="verify-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="verify-enabled">
+                                    <input type="checkbox" id="verify-enabled" name="verify-enabled" value="true">
+                                    Enable Verification
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-role">Role to assign after verification:</label>
+                                <select id="verify-role" class="select w-full" onchange="checkRolePosition(this.value, 'verify-role-warning')">
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div id="verify-role-warning" class="channel-perm-feedback error hidden">Baxi cannot assign this role — it is equal to or higher than the bot's own role in the hierarchy. Move the Baxi role above it in Server Settings → Roles.</div>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-option">Verification method:</label>
+                                <select id="verify-option" class="select w-full" onchange="document.getElementById('verify-password-section').classList.toggle('hidden', this.value !== '2')">
+                                    <option value="0">Button click (instant)</option>
+                                    <option value="1">CAPTCHA (random 5-char code)</option>
+                                    <option value="2">Custom password</option>
+                                </select>
+                            </div>
+
+                            <div id="verify-password-section" class="hidden grid gap-2 pl-4 border-l-2 border-muted">
+                                <label for="verify-password">Custom password:</label>
+                                <input type="text" id="verify-password" placeholder="Enter your secret password" maxlength="100" class="w-full">
+                                <p class="text-muted text-xs">Users must type this exact password to verify. Keep it simple but not obvious.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-channel">Channel to post the verification panel:</label>
+                                <select id="verify-channel" class="select w-full">
+                                    <option value="">-- Please select --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-title">Panel title:</label>
+                                <input type="text" id="verify-title" placeholder="Verification" maxlength="100" class="w-full">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-description">Panel description:</label>
+                                <textarea id="verify-description" placeholder="Click the button below to verify yourself." maxlength="500"
+                                    class="w-full min-h-[80px]"></textarea>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="verify-color">Embed color:</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="verify-color" value="#9333ea" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('verify-color-hex').value=this.value">
+                                    <input type="text" id="verify-color-hex" value="#9333ea" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('verify-color').value=this.value">
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 flex-wrap">
+                                <button type="submit" class="btn-primary submit-btn flex-1">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                                <button type="button" id="verify-post-btn" class="btn-outline flex-1" onclick="postVerifyPanel()">
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                        <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                                    </svg>
+                                    Save &amp; Post Panel
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Reaction Roles -->
+            <section class="pb-16 dash-section" id="reaction-roles">
+                <div class="section-label">REACTION ROLES</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                            </svg>
+                            Reaction Roles
+                        </h2>
+                        <p class="text-muted">Let members assign themselves roles by clicking buttons — fully automated.</p>
+                    </header>
+                    <section>
+                        <!-- How it works -->
+                        <div style="background:color-mix(in srgb,var(--color-primary,#9333ea) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#9333ea) 25%,transparent);border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;">
+                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#9333ea);">How it works — 2 steps</p>
+                            <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
+                                <li class="text-sm flex gap-3 items-start">
+                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
+                                    <span><strong>Create a panel</strong>: choose a channel, give it a title and description. Baxi posts an embed message with buttons there.</span>
+                                </li>
+                                <li class="text-sm flex gap-3 items-start">
+                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">2</span>
+                                    <span><strong>Add buttons</strong>: pick a role (and optionally an emoji and label) for each button. Members click a button to get the role, and click again to remove it.</span>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- Step 1: Create new panel -->
+                        <div class="card mb-6">
+                            <header>
+                                <h3 class="text-base font-semibold flex items-center gap-2">
+                                    <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">1</span>
+                                    Create a new panel
+                                </h3>
+                                <p class="text-muted text-sm">Each panel is a separate embed message. You can have multiple panels in different channels.</p>
+                            </header>
+                            <section>
+                                <form id="rr-add-panel-form" class="form grid gap-4">
+                                    <div class="grid gap-2">
+                                        <label for="rr-channel">Channel to post the panel in:</label>
+                                        <select id="rr-channel" class="select w-full">
+                                            <option value="">-- Please select --</option>
+                                            {% for id, name in channels.items() %}
+                                            <option value="{{ id }}">#{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <label for="rr-title">Panel title:</label>
+                                        <input type="text" id="rr-title" placeholder="Reaction Roles" maxlength="100" class="w-full">
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <label for="rr-description">Panel description:</label>
+                                        <textarea id="rr-description" placeholder="Click a button below to assign yourself a role." maxlength="500" class="w-full min-h-[60px]"></textarea>
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <label for="rr-color">Embed color:</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="color" id="rr-color" value="#9333ea" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('rr-color-hex').value=this.value">
+                                            <input type="text" id="rr-color-hex" value="#9333ea" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('rr-color').value=this.value">
+                                        </div>
+                                    </div>
+                                    <button type="submit" id="rr-add-panel-btn" class="btn-primary w-full">
+                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Create Panel &amp; Post in Discord
+                                    </button>
+                                </form>
+                            </section>
+                        </div>
+
+                        <!-- Step 2: Existing panels / add entries -->
+                        <div>
+                            <h3 class="text-base font-semibold flex items-center gap-2 mb-3">
+                                <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
+                                Your panels — add emoji → role entries
+                            </h3>
+                            <div id="rr-panels-list">
+                                <p id="rr-panels-empty" class="text-muted text-sm {% if data.reaction_roles and data.reaction_roles.panels %}hidden{% endif %}">
+                                    No panels yet. Create one above first, then come back here to add emoji-role entries.
+                                </p>
+                            </div>
+                        </div>
                     </section>
                 </div>
             </section>
@@ -1648,6 +1921,8 @@
     <script>
         const data = {{ data | tojson }};
         const nick = {{ nick | tojson }};
+        const rolePositions = {{ roles_positions | tojson }};
+        const botTopRolePos = {{ bot_top_role_pos }};
 
         const parseWords = input => input.split(',').map(w => w.trim()).filter(w => w.length > 0);
 
@@ -1827,6 +2102,34 @@
 
             // Custom Commands
             renderCustomCommands();
+
+            // Auto-Slowmode
+            if (data.auto_slowmode) {
+                document.getElementById('asm-enabled').checked = data.auto_slowmode.enabled === true;
+                document.getElementById('asm-threshold').value = data.auto_slowmode.threshold ?? 10;
+                document.getElementById('asm-interval').value = data.auto_slowmode.interval ?? 10;
+                document.getElementById('asm-slowmode-delay').value = data.auto_slowmode.slowmode_delay ?? 5;
+                document.getElementById('asm-duration').value = data.auto_slowmode.duration ?? 120;
+            }
+
+            // Verification
+            if (data.verify) {
+                document.getElementById('verify-enabled').checked = data.verify.enabled === true;
+                document.getElementById('verify-role').value = (data.verify.rid && data.verify.rid !== '0') ? data.verify.rid : '';
+                document.getElementById('verify-option').value = String(data.verify.verify_option ?? 0);
+                document.getElementById('verify-password').value = data.verify.password || '';
+                document.getElementById('verify-channel').value = data.verify.channel || '';
+                document.getElementById('verify-title').value = data.verify.title || 'Verification';
+                document.getElementById('verify-description').value = data.verify.description || '';
+                if (data.verify.color) {
+                    document.getElementById('verify-color').value = data.verify.color;
+                    document.getElementById('verify-color-hex').value = data.verify.color;
+                }
+                document.getElementById('verify-password-section').classList.toggle('hidden', String(data.verify.verify_option ?? 0) !== '2');
+            }
+
+            // Reaction Roles
+            renderReactionRolePanels();
 
             runInitialPermissionChecks();
         }
@@ -2440,6 +2743,265 @@
             };
         };
 
+        // ── Auto-Slowmode ──────────────────────────────────────────────────────
+        document.getElementById('auto-slowmode-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('asm-enabled').checked;
+            const threshold = parseInt(document.getElementById('asm-threshold').value, 10);
+            const interval = parseInt(document.getElementById('asm-interval').value, 10);
+            const slowmode_delay = parseInt(document.getElementById('asm-slowmode-delay').value, 10);
+            const duration = parseInt(document.getElementById('asm-duration').value, 10);
+            const payload = { auto_slowmode: { enabled, threshold, interval, slowmode_delay, duration } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=auto_slowmode&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        // ── Verification ───────────────────────────────────────────────────────
+        function _sendVerifyForm(postPanel) {
+            const enabled = document.getElementById('verify-enabled').checked;
+            const rid = document.getElementById('verify-role').value;
+            const verify_option = parseInt(document.getElementById('verify-option').value, 10);
+            const password = document.getElementById('verify-password').value;
+            const channel = document.getElementById('verify-channel').value;
+            const title = document.getElementById('verify-title').value;
+            const description = document.getElementById('verify-description').value;
+            const color = document.getElementById('verify-color-hex').value || document.getElementById('verify-color').value;
+            const payload = { verify: { enabled, rid, verify_option, password, channel, title, description, color, post_panel: postPanel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=verify&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        document.getElementById('verify-form').onsubmit = function (event) {
+            event.preventDefault();
+            _sendVerifyForm(false);
+        };
+
+        function postVerifyPanel() {
+            _sendVerifyForm(true);
+        }
+
+        // ── Reaction Roles ─────────────────────────────────────────────────────
+        function renderReactionRolePanels() {
+            const list = document.getElementById('rr-panels-list');
+            const empty = document.getElementById('rr-panels-empty');
+            const panels = (data.reaction_roles && data.reaction_roles.panels) || [];
+
+            list.querySelectorAll('.rr-panel-card').forEach(el => el.remove());
+
+            if (panels.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            panels.forEach(panel => {
+                const card = document.createElement('div');
+                card.className = 'card rr-panel-card mt-4';
+                const entriesHtml = (panel.entries || []).map(e =>
+                    `<div class="flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
+                        <span class="text-sm">${e.emoji} <span class="text-muted">${e.label || ''}</span></span>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;"
+                            onclick="removeRREntry('${panel.message_id}', '${e.emoji.replace(/'/g,"\\'")}')">Remove</button>
+                    </div>`
+                ).join('');
+
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-semibold">${panel.title || 'Panel'}</h3>
+                            <p class="text-muted text-xs">${panel.description || ''}</p>
+                        </div>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
+                            onclick="removeRRPanel('${panel.message_id}')">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                            Delete panel
+                        </button>
+                    </header>
+                    <section>
+                        <div class="mb-4">${entriesHtml || '<p class="text-muted text-xs">No entries yet.</p>'}</div>
+                        <div style="border-top:1px solid var(--border);padding-top:1rem;">
+                            <p class="text-sm font-medium mb-1">Add button</p>
+                            <p class="text-xs text-muted mb-3">Each button toggles a role. Emoji and label are both optional, but at least one must be set.</p>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex gap-2">
+                                    <div style="flex:0 0 auto;">
+                                        <label class="form-label" style="white-space:nowrap;">Emoji <span class="text-muted">(optional)</span></label>
+                                        <input type="text" placeholder="e.g. 🎮" class="input rr-emoji-input w-full" data-msgid="${panel.message_id}">
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label class="form-label">Role</label>
+                                        <select class="select rr-role-select w-full" data-msgid="${panel.message_id}"
+                                            onchange="checkRolePosition(this.value, 'rr-role-warning-${panel.message_id}')">
+                                            <option value="">-- Select a role --</option>
+                                            {% for id, name in roles.items() %}
+                                            <option value="{{ id }}">{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div id="rr-role-warning-${panel.message_id}" class="channel-perm-feedback error hidden" style="font-size:0.75rem;margin-top:4px;">Baxi cannot assign this role — it is too high in the hierarchy.</div>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label class="form-label" style="white-space:nowrap;">Button label <span class="text-muted">(optional)</span></label>
+                                        <input type="text" placeholder="e.g. Gaming" class="input rr-label-input w-full" data-msgid="${panel.message_id}">
+                                    </div>
+                                    <div style="flex:0 0 auto;display:flex;flex-direction:column;">
+                                        <label class="form-label" style="visibility:hidden;">x</label>
+                                        <button type="button" class="btn-primary" style="white-space:nowrap;" onclick="addRREntry(this, '${panel.message_id}')">
+                                            <span class="btn-text">Add</span>
+                                            <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
+                                                stroke="currentColor" fill="none" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                style="animation:loader-spin 0.9s linear infinite;">
+                                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        document.getElementById('rr-add-panel-form').onsubmit = function (event) {
+            event.preventDefault();
+            const channel_id = document.getElementById('rr-channel').value;
+            const title = document.getElementById('rr-title').value.trim() || 'Role Selection';
+            const description = document.getElementById('rr-description').value.trim() || 'Click a button below to toggle a role.';
+            const color = document.getElementById('rr-color-hex').value || document.getElementById('rr-color').value;
+            if (!channel_id) { showSaveToast(false, 'Please select a channel.'); return; }
+            const btn = document.getElementById('rr-add-panel-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            const payload = { reaction_roles: { action: 'add_panel', channel_id, title, description, color } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create Panel';
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) location.reload();
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        function removeRRPanel(messageId) {
+            if (!confirm('Delete this reaction role panel? The Discord message will be deleted too.')) return;
+            const payload = { reaction_roles: { action: 'remove_panel', message_id: messageId } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (data.reaction_roles) data.reaction_roles.panels = (data.reaction_roles.panels || []).filter(p => p.message_id !== messageId);
+                            renderReactionRolePanels();
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        function addRREntry(btn, messageId) {
+            const emojiInput = document.querySelector(`.rr-emoji-input[data-msgid="${messageId}"]`);
+            const roleSelect = document.querySelector(`.rr-role-select[data-msgid="${messageId}"]`);
+            const labelInput = document.querySelector(`.rr-label-input[data-msgid="${messageId}"]`);
+            const emoji = emojiInput ? emojiInput.value.trim() : '';
+            const role_id = roleSelect ? roleSelect.value : '';
+            const label = labelInput ? labelInput.value.trim() : '';
+            if (!role_id) { showSaveToast(false, 'Please select a role.'); return; }
+            if (!emoji && !label) { showSaveToast(false, 'Please enter at least an emoji or a label.'); return; }
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            const payload = { reaction_roles: { action: 'add_entry', message_id: messageId, emoji, role_id, label } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) location.reload();
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        function removeRREntry(messageId, emoji) {
+            const payload = { reaction_roles: { action: 'remove_entry', message_id: messageId, emoji: emoji } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (data.reaction_roles) {
+                                const p = (data.reaction_roles.panels || []).find(p => p.message_id === messageId);
+                                if (p) p.entries = (p.entries || []).filter(e => e.emoji !== emoji);
+                            }
+                            renderReactionRolePanels();
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
         window.onload = createDynamicFields;
     </script>
 
@@ -2517,6 +3079,18 @@
             };
         }
 
+        function checkRolePosition(roleId, warningElementId) {
+            const el = document.getElementById(warningElementId);
+            if (!el) return;
+            if (!roleId) { el.classList.add('hidden'); return; }
+            const pos = rolePositions[roleId];
+            if (pos !== undefined && pos >= botTopRolePos) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
         function runInitialPermissionChecks() {
             const gc = document.getElementById('globalchat-channel')?.value;
             const tc = document.getElementById('ticket-channel')?.value;
@@ -2530,6 +3104,8 @@
             if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
             if (wc) checkChannelPermissions('welcomer', wc, 'feedback-welcomer-channel');
             if (wlc) checkChannelPermissions('welcomer', wlc, 'feedback-welcomer-leave-channel');
+            const vr = document.getElementById('verify-role')?.value;
+            if (vr) checkRolePosition(vr, 'verify-role-warning');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
