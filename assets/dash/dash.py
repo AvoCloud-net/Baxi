@@ -1763,17 +1763,63 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         import assets.trust as sentinel
         prism_profiles: dict = sentinel.get_all_profiles()
+        users_list: dict = dict(load_data(1001, "users"))
+
+        seen_uids: set = set()
         result = []
+
         for uid, profile in prism_profiles.items():
             events = profile.get("events", [])
             if not any(str(e.get("guild_id")) == str(guild_id) for e in events):
                 continue
+            seen_uids.add(uid)
+            user_entry = users_list.get(uid, {})
+            manual_flag = user_entry.get("flagged", False) and not user_entry.get("auto_flagged", True)
             result.append({
-                "uid":         uid,
-                "name":        profile.get("name", uid),
-                "score":       profile.get("score", 100),
-                "llm_summary": profile.get("llm_summary") or "",
+                "uid":           uid,
+                "name":          profile.get("name", uid),
+                "score":         profile.get("score", 100),
+                "llm_summary":   profile.get("llm_summary") or "",
+                "manual_flag":   manual_flag,
+                "manual_reason": user_entry.get("reason", "") if manual_flag else "",
             })
+
+        # Fetch all guild members once: build avatar map and member id set
+        guild_member_ids: set = set()
+        member_avatars: dict = {}
+        try:
+            async for member in guild.fetch_members(limit=None):
+                mid = str(member.id)
+                guild_member_ids.add(mid)
+                member_avatars[mid] = str(member.display_avatar.url)
+        except Exception:
+            pass
+
+        # Patch avatar_url into already-built result entries
+        for entry in result:
+            entry["avatar_url"] = member_avatars.get(entry["uid"], "")
+
+        # Include manually flagged users that have no Prism events for this guild
+        for uid, entry in users_list.items():
+            if uid in seen_uids:
+                continue
+            if not entry.get("flagged", False):
+                continue
+            if entry.get("auto_flagged", False):
+                continue
+            if uid not in guild_member_ids:
+                continue
+            profile = prism_profiles.get(uid, {})
+            result.append({
+                "uid":           uid,
+                "name":          entry.get("name", uid),
+                "score":         profile.get("score", 100),
+                "llm_summary":   profile.get("llm_summary") or "",
+                "manual_flag":   True,
+                "manual_reason": entry.get("reason", ""),
+                "avatar_url":    member_avatars.get(uid, ""),
+            })
+
         result.sort(key=lambda u: u["score"])
         return quart.jsonify({"success": True, "users": result[:200]})
 

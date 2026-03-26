@@ -258,7 +258,8 @@ h2 {
   top: 56px;           /* just below the site-nav */
   z-index: 500;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 0;
   background: rgba(10, 11, 11, 0.92);
   backdrop-filter: blur(10px);
@@ -270,6 +271,7 @@ h2 {
   padding-left: 1rem;
   padding-right: 1rem;
   margin-bottom: 2.5rem;
+  scrollbar-width: none;
 }
 
 html:not(.dark) .dash-nav {
@@ -653,6 +655,19 @@ fieldset {
     background: rgba(147, 51, 234, 0.1);
   }
 
+  /* Nav group labels: section dividers inside the mobile overlay */
+  .dash-nav-group-label {
+    padding: 0.9rem 1rem 0.2rem;
+    border-left: none;
+    margin-left: 0;
+    border-top: 1px solid rgba(128, 128, 128, 0.12);
+    margin-top: 0.4rem;
+    width: 100%;
+    font-size: 0.6rem;
+    flex-direction: row;
+    align-items: center;
+  }
+
   /* Push main content below the toggle pill */
   main {
     padding-top: 3.5rem;
@@ -722,6 +737,59 @@ fieldset {
   }
 }
 
+/* ── Dashboard nav group labels ─────────────────────────────── */
+
+.dash-nav-group-label {
+  display: inline-flex;
+  align-items: flex-end;
+  padding: 0.5rem 0.5rem 0.3rem 0.75rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(.38 0 0);
+  white-space: nowrap;
+  border-left: 1px solid rgba(128, 128, 128, 0.2);
+  margin-left: 0.2rem;
+  line-height: 1;
+  align-self: stretch;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* ── Dashboard category headers in main content ─────────────── */
+
+.dash-category-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: oklch(.45 0 0);
+  padding: 2rem 0 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.1);
+  margin-top: 0.5rem;
+}
+
+.dash-category-header::before {
+  content: '';
+  display: inline-block;
+  width: 2rem;
+  height: 2px;
+  background: linear-gradient(90deg, #9333ea, #ec4899);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.dash-category-header:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
 /* ── Avocloud logo animation ────────────────────────────────── */
 
 .avo-logo {
@@ -777,4 +845,151 @@ fieldset {
 .avo-path {
   stroke-dasharray: none;
   stroke-dashoffset: 0;
+}
+
+/* ── Desktop sidebar (≥ 900px) ───────────────────────────────── */
+
+@media (min-width: 900px) {
+
+  /* Sidebar: fixed left panel */
+  .dash-nav {
+    position: fixed;
+    left: 0;
+    top: 56px;
+    bottom: 0;
+    width: 220px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    margin: 0;
+    padding: 0.5rem 0 195px; /* bottom padding leaves room for button group */
+    border-right: 1px solid rgba(128, 128, 128, 0.1);
+    border-top: none;
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  html:not(.dark) .dash-nav {
+    border-right-color: rgba(0, 0, 0, 0.07);
+  }
+
+  /* Nav items: left-border indicator instead of bottom-border */
+  .dash-nav-item {
+    width: 100%;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+    padding: 0.55rem 1rem;
+    font-size: 0.82rem;
+    border-radius: 0;
+    white-space: nowrap;
+  }
+
+  .dash-nav-item svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .dash-nav-item:hover {
+    color: #9333ea;
+    background: rgba(147, 51, 234, 0.07);
+  }
+
+  .dash-nav-item.active {
+    border-left-color: #9333ea;
+    border-bottom-color: transparent;
+    background: rgba(147, 51, 234, 0.08);
+    color: #9333ea;
+  }
+
+  /* Group labels: horizontal dividers in sidebar */
+  .dash-nav-group-label {
+    flex-direction: row;
+    align-items: center;
+    border-left: none;
+    margin-left: 0;
+    align-self: auto;
+    padding: 1rem 1rem 0.3rem;
+    width: 100%;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
+    margin-top: 0.35rem;
+    font-size: 0.58rem;
+    justify-content: flex-start;
+  }
+
+  /* Button group: pinned at the bottom of the sidebar */
+  .local-button-group {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 220px;
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
+    border-right: 1px solid rgba(128, 128, 128, 0.1);
+    background: rgba(10, 11, 11, 0.92);
+    backdrop-filter: blur(10px);
+    padding: 0.35rem 0;
+    gap: 0;
+    box-shadow: none;
+    transform: none;
+  }
+
+  html:not(.dark) .local-button-group {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: none;
+  }
+
+  .local-button-group hr {
+    display: block;
+    margin: 0.2rem 0.75rem;
+  }
+
+  /* Restore full-width buttons with text + icon */
+  .local-button-group button {
+    width: 100%;
+    height: auto;
+    padding: 0.55rem 1rem;
+    border-radius: 0;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    flex: none;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    overflow: visible;
+    border: none;
+    background: transparent;
+    min-width: 0;
+  }
+
+  .local-button-group button:hover {
+    background: rgba(147, 51, 234, 0.07);
+    color: #9333ea;
+  }
+
+  .local-button-group button svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .local-button-group button img {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+  }
+
+  /* Shift page content right so mx-auto centers within the remaining space */
+  body {
+    padding-left: 220px;
+  }
+
+  /* Hamburger toggle stays hidden on desktop */
+  .dash-nav-toggle {
+    display: none;
+  }
 }

@@ -165,7 +165,7 @@
         </button>
     </div>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div id="dash-content-wrapper" class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
             <h1 class="text-3xl font-bold mb-1">{{greeting}}</h1>
             <p class="text-muted">{{ guild.name }}</p>
@@ -173,50 +173,66 @@
 
         <!-- Quick-jump nav -->
         <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
-            <a href="#stats" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                Stats
-            </a>
             <a href="#config-general" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 General
             </a>
-            <a href="#prism" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                PRISM
+
+            <span class="dash-nav-group-label">Overview</span>
+            <a href="#stats" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Stats
+            </a>
+            <a href="#auditlog" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Audit Log
+            </a>
+
+            <span class="dash-nav-group-label">Moderation</span>
+            <a href="#antispam" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                Anti-Spam
             </a>
             <a href="#config-chatfilter" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
                 Chatfilter
             </a>
-            <a href="#globalchat" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
-                Global Chat
+            <a href="#warn-config" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/><path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/></svg>
+                Warnings
             </a>
-            <a href="#ticket" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-                Tickets
-            </a>
-            <a href="#antispam" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                Anti-Spam
-            </a>
-            <a href="#auto-slowmode" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Auto-Slowmode
+            <a href="#prism" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                PRISM
             </a>
             <a href="#verify" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
                 Verification
             </a>
+            <a href="#auto-slowmode" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Auto-Slowmode
+            </a>
+
+            <span class="dash-nav-group-label">Community</span>
+            <a href="#globalchat" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+                Global Chat
+            </a>
+            <a href="#temp-voice" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+                Temp Voice
+            </a>
             <a href="#reaction-roles" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 Reaction Roles
             </a>
-            <a href="#warn-config" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/><path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/></svg>
-                Warnings
+            <a href="#ticket" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                Tickets
             </a>
+
+            <span class="dash-nav-group-label">Automation</span>
             <a href="#welcomer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Welcomer
@@ -237,14 +253,7 @@
                 <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 Custom Commands
             </a>
-            <a href="#temp-voice" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
-                Temp Voice
-            </a>
-            <a href="#auditlog" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                Audit Log
-            </a>
+
             <a href="https://baxi.avocloud.net/docs/" target="_blank" rel="noopener noreferrer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
                 Docs
@@ -1919,6 +1928,43 @@
     </div>
 
     <script>
+        // ── Section reorder + category headers ───────────────────────
+        (function () {
+            var main = document.querySelector('main');
+            if (!main) return;
+            var order = [
+                'config-general',
+                '__Overview',
+                'stats', 'auditlog',
+                '__Moderation',
+                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
+                '__Community',
+                'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
+                '__Automation',
+                'welcomer', 'auto-roles', 'livestream', 'stats-channels', 'customcmds'
+            ];
+            // Collect and detach all sections (non-destructive — we re-insert them)
+            var sectionMap = {};
+            main.querySelectorAll('.dash-section').forEach(function (s) {
+                sectionMap[s.id] = s;
+                s.parentNode.removeChild(s);
+            });
+            // Build fragment in desired order and prepend to main
+            // (footer links + site-footer remain as last children of main)
+            var fragment = document.createDocumentFragment();
+            order.forEach(function (id) {
+                if (id.startsWith('__')) {
+                    var el = document.createElement('div');
+                    el.className = 'dash-category-header';
+                    el.textContent = id.slice(2);
+                    fragment.appendChild(el);
+                } else if (sectionMap[id]) {
+                    fragment.appendChild(sectionMap[id]);
+                }
+            });
+            main.insertBefore(fragment, main.firstChild);
+        })();
+
         const data = {{ data | tojson }};
         const nick = {{ nick | tojson }};
         const rolePositions = {{ roles_positions | tojson }};
@@ -2404,21 +2450,94 @@
                     }
                     const list = document.getElementById('prism-scores-list');
                     list.innerHTML = '';
+                    // shared popover element
+                    let prismPopover = document.getElementById('prism-popover');
+                    if (!prismPopover) {
+                        prismPopover = document.createElement('div');
+                        prismPopover.id = 'prism-popover';
+                        prismPopover.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);';
+                        prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#1a1d24;border:1px solid #2a2d35;border-radius:18px;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
+                            <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                            <div id="prism-popover-content"></div>
+                        </div>`;
+                        document.body.appendChild(prismPopover);
+                        prismPopover.addEventListener('click', e => { if (e.target === prismPopover) prismPopover.style.display = 'none'; });
+                        document.getElementById('prism-popover-close').addEventListener('click', () => { prismPopover.style.display = 'none'; });
+                    }
+
                     resp.users.forEach(u => {
-                        const score = u.score;
-                        const scoreColor = score >= 70 ? 'var(--color-success,#22c55e)' : score >= 40 ? 'var(--color-warning,#f59e0b)' : 'var(--color-destructive,#ef4444)';
-                        const avatarUrl = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
+                        const score      = u.score;
+                        const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
+                        const scoreBg    = score >= 70 ? 'rgba(34,197,94,.12)' : score >= 40 ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)';
+                        const scoreBord  = score >= 70 ? 'rgba(34,197,94,.3)'  : score >= 40 ? 'rgba(245,158,11,.3)'  : 'rgba(239,68,68,.3)';
+                        const scoreLabel = score >= 70 ? 'Low Risk' : score >= 40 ? 'Medium Risk' : 'High Risk';
+                        const dotColor   = u.manual_flag ? '#f59e0b' : scoreColor;
+
+                        const fallback = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
+                        const avatarUrl = u.avatar_url || fallback;
+
                         const card = document.createElement('div');
-                        card.style.cssText = 'background:var(--bg-secondary,#1e2128);border:1px solid var(--border,#333);border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;';
-                        const summaryHtml = u.llm_summary
-                            ? `<span style="font-size:0.7rem;opacity:0.6;line-height:1.4;text-align:left;width:100%;margin-top:2px;">${u.llm_summary.replace(/</g,'&lt;')}</span>`
-                            : '';
+                        card.style.cssText = 'background:#1a1d24;border:1px solid #2a2d35;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
+                        card.onmouseenter = () => { card.style.borderColor = scoreBord; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; };
+                        card.onmouseleave = () => { card.style.borderColor = '#2a2d35'; card.style.transform = ''; card.style.boxShadow = ''; };
+
                         card.innerHTML = `
-                            <img src="${avatarUrl}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-                            <span style="font-size:0.8rem;font-weight:500;word-break:break-word;max-width:100%;">${u.name.replace(/</g,'&lt;')}</span>
-                            <span style="font-size:1.1rem;font-weight:700;color:${scoreColor};">${score}</span>
-                            ${summaryHtml}
+                            <div style="position:relative;margin-bottom:10px;">
+                                <img src="${avatarUrl}" alt=""
+                                    style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};"
+                                    onerror="this.src='${fallback}'">
+                                <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #1a1d24;display:block;"></span>
+                            </div>
+                            <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:#f0f0f0 !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
+                            <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
+                                <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${score}</span>
+                                <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
+                            </div>
+                            ${u.manual_flag ? `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f59e0b !important;margin-top:6px;">Manual Flag</span>` : ''}
+                            <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.67rem;color:#999 !important;margin-top:9px;">
+                                Details
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                            </span>
                         `;
+
+                        card.addEventListener('click', () => {
+                            const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
+                            const manualSection = u.manual_flag ? `
+                                <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);">
+                                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                        <span style="font-size:0.68rem;font-weight:700;color:#f59e0b !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
+                                    </div>
+                                    <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:#fff !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
+                                    <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(245,158,11,.08);border-radius:6px;font-style:italic;">${manualReason || 'No reason provided.'}</p>
+                                </div>` : '';
+
+                            const summarySection = u.llm_summary ? `
+                                <div style="margin-top:14px;padding-top:14px;border-top:1px solid #333;">
+                                    <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa !important;">AI Analysis</span>
+                                    <p style="font-size:0.78rem;color:#ddd !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
+                                </div>` : '';
+
+                            document.getElementById('prism-popover-content').innerHTML = `
+                                <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
+                                    <img src="${avatarUrl}" alt="" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};" onerror="this.src='${fallback}'">
+                                    <div>
+                                        <div style="font-size:0.92rem;font-weight:700;color:#fff !important;">${u.name.replace(/</g,'&lt;')}</div>
+                                        <div style="font-size:0.68rem;color:#aaa !important;margin-top:3px;">ID: ${u.uid}</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:${scoreBg};border:1px solid ${scoreBord};">
+                                    <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
+                                    <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
+                                </div>
+                                ${manualSection}
+                                ${summarySection}
+                            `;
+                            prismPopover.style.display = 'flex';
+                        });
+
                         list.appendChild(card);
                     });
                     list.classList.remove('hidden');
