@@ -49,7 +49,16 @@
                     "perfect_value": "Dein Score ist perfekt!",
                     "what_is_prism_title": "Was ist Prism?",
                     "what_is_prism_value": "Prism ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. [Mehr erfahren](https://baxi.avocloud.net/docs/user-guide/prism)",
-                    "footer": "Baxi Prism · avocloud.net  |  Diese Nachricht ist nur für dich sichtbar."
+                    "footer": "Baxi Prism · avocloud.net  |  Diese Nachricht ist nur für dich sichtbar.",
+                    "opted_out_title": "Prism Opt-Out",
+                    "opted_out_value": "Du hast dich von Prism abgemeldet. Es wird kein Vertrauens-Score mehr über dich geführt.\n\nModeration (Chatfilter, Anti-Spam usw.) ist weiterhin aktiv.\nServer-Administratoren können sehen, dass du Opt-Out gewählt hast.",
+                    "opted_out_hint": "Nutze `/prism_optout`, um dich wieder anzumelden."
+                },
+                "prism_optout": {
+                    "title": "Prism // Opt-Out",
+                    "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv — nur Prism führt keinen Score mehr über dich.",
+                    "opted_in": "Du hast dich wieder bei Prism angemeldet. Dein Vertrauens-Score wird ab sofort wieder geführt.",
+                    "footer": "Baxi Prism · avocloud.net"
                 }
             },
             "admin": {
@@ -300,7 +309,16 @@
                     "perfect_value": "Your score is perfect!",
                     "what_is_prism_title": "What is Prism?",
                     "what_is_prism_value": "Prism is Baxi's network-wide trust scoring system. [Learn more](https://baxi.avocloud.net/docs/user-guide/prism)",
-                    "footer": "Baxi Prism · avocloud.net  |  This message is only visible to you."
+                    "footer": "Baxi Prism · avocloud.net  |  This message is only visible to you.",
+                    "opted_out_title": "Prism Opt-Out",
+                    "opted_out_value": "You have opted out of Prism. No trust score is being tracked for you.\n\nModeration (chat filter, anti-spam, etc.) remains active.\nServer administrators can see that you have opted out.",
+                    "opted_out_hint": "Use `/prism_optout` to opt back in."
+                },
+                "prism_optout": {
+                    "title": "Prism // Opt-Out",
+                    "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active — only Prism will no longer track a score for you.",
+                    "opted_in": "You have opted back in to Prism. Your trust score will now be tracked again.",
+                    "footer": "Baxi Prism · avocloud.net"
                 }
             },
             "admin": {

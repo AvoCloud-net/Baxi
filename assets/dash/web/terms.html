@@ -386,6 +386,44 @@
                                     </div>
                                     <p>We are not liable for any damages arising from the use of Baxi. The availability of Baxi is not guaranteed on a continuous basis — periods of unavailability may occur. We reserve the right to exclude users or entire Discord servers from Baxi's systems at any time if they violate these rules.</p>
                                 </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.6</span>
+                                        Prism Trust System
+                                    </div>
+                                    <p>Prism is Baxi's network-wide trust scoring system. It automatically assigns each user a score between 0 and 100 based on moderation events across all servers running Baxi. By using any server with Baxi, you acknowledge that:</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li>Your moderation history (warnings, kicks, bans, filter violations) contributes to a trust score that is shared across all Baxi servers.</li>
+                                        <li>Users with a trust score of 30 or below are automatically flagged and blocked from Global Chat.</li>
+                                        <li>Server administrators can view flagged users via the <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">/scan_users</code> command.</li>
+                                        <li>Prism only tracks behaviour resulting in moderation actions — normal messages are never scored or stored.</li>
+                                    </ul>
+                                    <div class="legal-highlight" style="margin-top: 0.75rem;">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                                        Moderation tool, not profiling
+                                    </div>
+                                    <p>Prism is strictly a moderation tool. It does not profile users, track activity patterns, monitor message content, or build social graphs. The only data Prism records are moderation actions (e.g. warnings, kicks, bans) and the resulting trust score. No behavioural surveillance or identity profiling takes place.</p>
+                                    <p style="margin-top: 0.75rem;">Trust scores recover over time through clean behaviour. You can opt out of Prism at any time by running <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command — running it once opts you out and deletes your profile, running it again opts you back in. You may also request a copy or deletion of your Prism data by contacting us.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.7</span>
+                                        Global Chat
+                                    </div>
+                                    <p>Global Chat is a cross-server chatroom connecting all participating Baxi servers. The following rules apply:</p>
+                                    <ul class="legal-list cross" style="margin-top: 0.75rem;">
+                                        <li><strong>Content Policy:</strong> All messages in Global Chat are filtered by Baxi's AI-powered chat filter at all times. Content that violates any server's moderation rules may result in removal and penalties to your Prism trust score.</li>
+                                        <li><strong>Shared Space:</strong> Messages sent in Global Chat are visible to all connected servers. Do not share personal information, NSFW content, or any material that violates Discord's Terms of Service.</li>
+                                        <li><strong>Access Restrictions:</strong> Users with a Prism trust score of 30 or below are automatically blocked from participating in Global Chat.</li>
+                                    </ul>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.8</span>
+                                        AI-Powered Features
+                                    </div>
+                                    <p>Baxi uses AI models (including our self-hosted Llama Guard instance) for content moderation and chat filtering. While we strive for accuracy, automated systems may occasionally produce false positives or miss certain content. Server administrators are responsible for reviewing moderation actions and adjusting filter settings as needed. AI-based decisions do not replace human judgement — they are tools to assist moderation.</p>
+                                </div>
                             </div>
                         </section>
                     </div>

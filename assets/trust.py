@@ -396,6 +396,11 @@ def record_event(
     except Exception as _opt_err:
         logger.warn(f"[Prism] Could not read prism_enabled for guild {guild_id}: {_opt_err}")
 
+    # User-level opt-out check
+    if is_opted_out(user_id):
+        logger.info(f"[Prism] Skipped — user {user_id} has opted out")
+        return -1
+
     data = _load()
     uid  = str(user_id)
     now  = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
@@ -488,6 +493,25 @@ def clear_flag(user_id: int):
         data[uid]["auto_flagged"] = False
         _save(data)
         logger.info(f"[Prism] Manual deflag via admin dash for {uid}")
+
+
+def set_opt_out(user_id: int, opted_out: bool):
+    """Set the Prism opt-out status for a user."""
+    data = _load()
+    uid  = str(user_id)
+    if uid in data:
+        data[uid]["opted_out"] = opted_out
+        _save(data)
+        logger.info(f"[Prism] Opt-out {'enabled' if opted_out else 'disabled'} for {uid}")
+
+
+def is_opted_out(user_id: int) -> bool:
+    """Check if a user has opted out of Prism scoring."""
+    data = _load()
+    uid  = str(user_id)
+    if uid in data:
+        return data[uid].get("opted_out", False)
+    return False
 
 
 def clear_events(user_id: int):

@@ -66,6 +66,26 @@ def base_commands(bot: commands.AutoShardedBot):
             account_age = (datetime.datetime.now(timezone.utc) - interaction.user.created_at).days
             sentinel.ensure_profile(interaction.user.id, interaction.user.name, account_age)
 
+            # Check user opt-out
+            if sentinel.is_opted_out(interaction.user.id):
+                embed = discord.Embed(
+                    title=f"{config.Icons.info} {t['title']}",
+                    color=config.Discord.color,
+                )
+                embed.add_field(
+                    name=t["opted_out_title"],
+                    value=t["opted_out_value"],
+                    inline=False,
+                )
+                embed.add_field(
+                    name=t["what_is_prism_title"],
+                    value=t["what_is_prism_value"],
+                    inline=False,
+                )
+                embed.set_footer(text=t["footer"])
+                await interaction.edit_original_response(embed=embed)
+                return
+
             explanation = sentinel.get_score_explanation(interaction.user.id)
             score       = explanation["score"]
             trend       = explanation["trend"]
@@ -158,6 +178,48 @@ def base_commands(bot: commands.AutoShardedBot):
                 embed=discord.Embed(
                     title="ERROR",
                     description="Could not load your trust profile. Please try again later.",
+                    color=config.Discord.danger_color,
+                )
+            )
+
+    @bot.tree.command(
+        name="prism_optout",
+        description="Opt out of (or back into) Prism trust scoring.",
+    )
+    async def prism_optout_cmd(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            guild_id = interaction.guild.id if interaction.guild else 1001
+            lang     = datasys.load_lang_file(guild_id)
+            t        = lang["commands"]["user"]["prism_optout"]
+
+            account_age = (datetime.datetime.now(timezone.utc) - interaction.user.created_at).days
+            sentinel.ensure_profile(interaction.user.id, interaction.user.name, account_age)
+
+            currently_out = sentinel.is_opted_out(interaction.user.id)
+            sentinel.set_opt_out(interaction.user.id, not currently_out)
+
+            if not currently_out:
+                description = t["opted_out"]
+                color = config.Discord.warn_color
+            else:
+                description = t["opted_in"]
+                color = config.Discord.success_color
+
+            embed = discord.Embed(
+                title=f"{config.Icons.info} {t['title']}",
+                description=description,
+                color=color,
+            )
+            embed.set_footer(text=t["footer"])
+            await interaction.edit_original_response(embed=embed)
+
+        except Exception as e:
+            logger.error(f"[prism_optout] {e}")
+            await interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="ERROR",
+                    description="Could not update your opt-out preference. Please try again later.",
                     color=config.Discord.danger_color,
                 )
             )

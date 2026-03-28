@@ -533,6 +533,20 @@
                                 <p class="text-muted text-sm">Members of this server sorted by trust score (lowest first).</p>
                             </header>
                             <section>
+                                <div id="prism-filter-bar" class="hidden" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+                                    <button type="button" class="prism-filter-btn active" data-filter="all"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:#2a2d35;color:#ccc;cursor:pointer;transition:all .2s;">All</button>
+                                    <button type="button" class="prism-filter-btn" data-filter="opted_out"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Opt-Out</button>
+                                    <button type="button" class="prism-filter-btn" data-filter="flagged"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Flagged</button>
+                                    <button type="button" class="prism-filter-btn" data-filter="high_risk"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">High Risk</button>
+                                    <button type="button" class="prism-filter-btn" data-filter="medium_risk"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Medium Risk</button>
+                                    <button type="button" class="prism-filter-btn" data-filter="low_risk"
+                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Low Risk</button>
+                                </div>
                                 <div id="prism-scores-loading" class="text-muted text-sm">Loading...</div>
                                 <div id="prism-scores-empty" class="text-muted text-sm hidden">No users with a low trust score on this server yet.</div>
                                 <div id="prism-scores-list" class="hidden" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;"></div>
@@ -2439,6 +2453,160 @@
             };
         };
 
+        let _prismUsers = [];
+        let _prismFilter = 'all';
+
+        function _prismMatchesFilter(u, filter) {
+            if (filter === 'all') return true;
+            if (filter === 'opted_out') return !!u.opted_out;
+            if (filter === 'flagged') return !!u.manual_flag;
+            if (filter === 'high_risk') return u.score < 40;
+            if (filter === 'medium_risk') return u.score >= 40 && u.score < 70;
+            if (filter === 'low_risk') return u.score >= 70;
+            return true;
+        }
+
+        function renderPrismCards(users) {
+            const list = document.getElementById('prism-scores-list');
+            list.innerHTML = '';
+
+            // shared popover element
+            let prismPopover = document.getElementById('prism-popover');
+            if (!prismPopover) {
+                prismPopover = document.createElement('div');
+                prismPopover.id = 'prism-popover';
+                prismPopover.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);';
+                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#1a1d24;border:1px solid #2a2d35;border-radius:18px;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
+                    <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <div id="prism-popover-content"></div>
+                </div>`;
+                document.body.appendChild(prismPopover);
+                prismPopover.addEventListener('click', e => { if (e.target === prismPopover) prismPopover.style.display = 'none'; });
+                document.getElementById('prism-popover-close').addEventListener('click', () => { prismPopover.style.display = 'none'; });
+            }
+
+            const filtered = users.filter(u => _prismMatchesFilter(u, _prismFilter));
+            const empty = document.getElementById('prism-scores-empty');
+            if (filtered.length === 0) {
+                empty.classList.remove('hidden');
+                empty.textContent = _prismFilter === 'all'
+                    ? 'No users with a low trust score on this server yet.'
+                    : 'No users match this filter.';
+                list.style.display = 'none';
+                return;
+            }
+            empty.classList.add('hidden');
+
+            filtered.forEach(u => {
+                const score      = u.score;
+                const isOptedOut = !!u.opted_out;
+                const scoreColor = isOptedOut ? '#6b7280' : (score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444');
+                const scoreBg    = isOptedOut ? 'rgba(107,114,128,.12)' : (score >= 70 ? 'rgba(34,197,94,.12)' : score >= 40 ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)');
+                const scoreBord  = isOptedOut ? 'rgba(107,114,128,.3)' : (score >= 70 ? 'rgba(34,197,94,.3)'  : score >= 40 ? 'rgba(245,158,11,.3)'  : 'rgba(239,68,68,.3)');
+                const scoreLabel = isOptedOut ? 'Opted Out' : (score >= 70 ? 'Low Risk' : score >= 40 ? 'Medium Risk' : 'High Risk');
+                const dotColor   = isOptedOut ? '#6b7280' : (u.manual_flag ? '#f59e0b' : scoreColor);
+
+                const fallback = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
+                const avatarUrl = u.avatar_url || fallback;
+
+                const card = document.createElement('div');
+                card.style.cssText = 'background:#1a1d24;border:1px solid #2a2d35;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
+                card.onmouseenter = () => { card.style.borderColor = scoreBord; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; };
+                card.onmouseleave = () => { card.style.borderColor = '#2a2d35'; card.style.transform = ''; card.style.boxShadow = ''; };
+
+                let badges = '';
+                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280 !important;margin-top:6px;">Opt-Out</span>`;
+                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f59e0b !important;margin-top:6px;">Manual Flag</span>`;
+
+                card.innerHTML = `
+                    <div style="position:relative;margin-bottom:10px;">
+                        <img src="${avatarUrl}" alt=""
+                            style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};${isOptedOut ? 'opacity:0.5;filter:grayscale(60%);' : ''}"
+                            onerror="this.src='${fallback}'">
+                        <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #1a1d24;display:block;"></span>
+                    </div>
+                    <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#f0f0f0'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
+                    <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
+                        <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '—' : score}</span>
+                        <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
+                    </div>
+                    ${badges}
+                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.67rem;color:#999 !important;margin-top:9px;">
+                        Details
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </span>
+                `;
+
+                card.addEventListener('click', () => {
+                    const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
+                    const manualSection = u.manual_flag ? `
+                        <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:#f59e0b !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
+                            </div>
+                            <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:#fff !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
+                            <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(245,158,11,.08);border-radius:6px;font-style:italic;">${manualReason || 'No reason provided.'}</p>
+                        </div>` : '';
+
+                    const optOutSection = isOptedOut ? `
+                        <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.28);">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:#6b7280 !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
+                            </div>
+                            <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has opted out of Prism trust scoring. No score is being tracked. Moderation systems (chat filter, anti-spam, etc.) remain active.</p>
+                        </div>` : '';
+
+                    const summarySection = u.llm_summary ? `
+                        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #333;">
+                            <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa !important;">AI Analysis</span>
+                            <p style="font-size:0.78rem;color:#ddd !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
+                        </div>` : '';
+
+                    document.getElementById('prism-popover-content').innerHTML = `
+                        <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
+                            <img src="${avatarUrl}" alt="" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};${isOptedOut ? 'opacity:0.5;filter:grayscale(60%);' : ''}" onerror="this.src='${fallback}'">
+                            <div>
+                                <div style="font-size:0.92rem;font-weight:700;color:#fff !important;">${u.name.replace(/</g,'&lt;')}</div>
+                                <div style="font-size:0.68rem;color:#aaa !important;margin-top:3px;">ID: ${u.uid}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:${scoreBg};border:1px solid ${scoreBord};">
+                            <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
+                            <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '—' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
+                        </div>
+                        ${optOutSection}
+                        ${manualSection}
+                        ${summarySection}
+                    `;
+                    prismPopover.style.display = 'flex';
+                });
+
+                list.appendChild(card);
+            });
+            list.classList.remove('hidden');
+            list.style.display = 'grid';
+        }
+
+        // Filter button handling
+        document.querySelectorAll('.prism-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                _prismFilter = btn.dataset.filter;
+                document.querySelectorAll('.prism-filter-btn').forEach(b => {
+                    b.style.background = 'transparent';
+                    b.style.color = '#888';
+                    b.classList.remove('active');
+                });
+                btn.style.background = '#2a2d35';
+                btn.style.color = '#ccc';
+                btn.classList.add('active');
+                renderPrismCards(_prismUsers);
+            });
+        });
+
         function loadPrismScores() {
             fetch('/api/dash/prism-scores/?dash_login={{ data.dash_login }}')
                 .then(r => r.json())
@@ -2448,100 +2616,11 @@
                         document.getElementById('prism-scores-empty').classList.remove('hidden');
                         return;
                     }
-                    const list = document.getElementById('prism-scores-list');
-                    list.innerHTML = '';
-                    // shared popover element
-                    let prismPopover = document.getElementById('prism-popover');
-                    if (!prismPopover) {
-                        prismPopover = document.createElement('div');
-                        prismPopover.id = 'prism-popover';
-                        prismPopover.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);';
-                        prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#1a1d24;border:1px solid #2a2d35;border-radius:18px;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
-                            <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                            <div id="prism-popover-content"></div>
-                        </div>`;
-                        document.body.appendChild(prismPopover);
-                        prismPopover.addEventListener('click', e => { if (e.target === prismPopover) prismPopover.style.display = 'none'; });
-                        document.getElementById('prism-popover-close').addEventListener('click', () => { prismPopover.style.display = 'none'; });
-                    }
-
-                    resp.users.forEach(u => {
-                        const score      = u.score;
-                        const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
-                        const scoreBg    = score >= 70 ? 'rgba(34,197,94,.12)' : score >= 40 ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)';
-                        const scoreBord  = score >= 70 ? 'rgba(34,197,94,.3)'  : score >= 40 ? 'rgba(245,158,11,.3)'  : 'rgba(239,68,68,.3)';
-                        const scoreLabel = score >= 70 ? 'Low Risk' : score >= 40 ? 'Medium Risk' : 'High Risk';
-                        const dotColor   = u.manual_flag ? '#f59e0b' : scoreColor;
-
-                        const fallback = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
-                        const avatarUrl = u.avatar_url || fallback;
-
-                        const card = document.createElement('div');
-                        card.style.cssText = 'background:#1a1d24;border:1px solid #2a2d35;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
-                        card.onmouseenter = () => { card.style.borderColor = scoreBord; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; };
-                        card.onmouseleave = () => { card.style.borderColor = '#2a2d35'; card.style.transform = ''; card.style.boxShadow = ''; };
-
-                        card.innerHTML = `
-                            <div style="position:relative;margin-bottom:10px;">
-                                <img src="${avatarUrl}" alt=""
-                                    style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};"
-                                    onerror="this.src='${fallback}'">
-                                <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #1a1d24;display:block;"></span>
-                            </div>
-                            <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:#f0f0f0 !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
-                            <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
-                                <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${score}</span>
-                                <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
-                            </div>
-                            ${u.manual_flag ? `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f59e0b !important;margin-top:6px;">Manual Flag</span>` : ''}
-                            <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.67rem;color:#999 !important;margin-top:9px;">
-                                Details
-                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                            </span>
-                        `;
-
-                        card.addEventListener('click', () => {
-                            const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
-                            const manualSection = u.manual_flag ? `
-                                <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);">
-                                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                        <span style="font-size:0.68rem;font-weight:700;color:#f59e0b !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
-                                    </div>
-                                    <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:#fff !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
-                                    <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(245,158,11,.08);border-radius:6px;font-style:italic;">${manualReason || 'No reason provided.'}</p>
-                                </div>` : '';
-
-                            const summarySection = u.llm_summary ? `
-                                <div style="margin-top:14px;padding-top:14px;border-top:1px solid #333;">
-                                    <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa !important;">AI Analysis</span>
-                                    <p style="font-size:0.78rem;color:#ddd !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
-                                </div>` : '';
-
-                            document.getElementById('prism-popover-content').innerHTML = `
-                                <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
-                                    <img src="${avatarUrl}" alt="" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};" onerror="this.src='${fallback}'">
-                                    <div>
-                                        <div style="font-size:0.92rem;font-weight:700;color:#fff !important;">${u.name.replace(/</g,'&lt;')}</div>
-                                        <div style="font-size:0.68rem;color:#aaa !important;margin-top:3px;">ID: ${u.uid}</div>
-                                    </div>
-                                </div>
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:${scoreBg};border:1px solid ${scoreBord};">
-                                    <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
-                                    <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
-                                </div>
-                                ${manualSection}
-                                ${summarySection}
-                            `;
-                            prismPopover.style.display = 'flex';
-                        });
-
-                        list.appendChild(card);
-                    });
-                    list.classList.remove('hidden');
-                    list.style.display = 'grid';
+                    _prismUsers = resp.users;
+                    const filterBar = document.getElementById('prism-filter-bar');
+                    filterBar.classList.remove('hidden');
+                    filterBar.style.display = 'flex';
+                    renderPrismCards(_prismUsers);
                 })
                 .catch(() => {
                     document.getElementById('prism-scores-loading').textContent = 'Failed to load scores.';

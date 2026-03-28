@@ -358,6 +358,8 @@
                                         <li>Guild IDs</li>
                                         <li>Message IDs and content (in specific contexts)</li>
                                         <li>Attached files (in specific contexts)</li>
+                                        <li>Trust scores and moderation event history (Prism)</li>
+                                        <li>Ticket transcripts (if ticket system is enabled)</li>
                                     </ul>
                                 </div>
                                 <div class="legal-item">
@@ -392,7 +394,55 @@
                                         <li>Global chat message data (message and reply tracking)</li>
                                         <li>Ticket transcripts</li>
                                     </ul>
+                                    <p style="margin-top: 0.75rem;">Prism trust profiles are retained for as long as the user interacts with servers using Baxi. Profiles can be deleted upon request by contacting us.</p>
                                     <p style="margin-top: 0.75rem;">Deletion is performed automatically by an internal garbage collector that runs daily. Server configuration data (e.g. bot settings, enabled features) is retained for as long as Baxi remains in the respective server and is deleted upon request.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.6</span>
+                                        Prism Trust System
+                                    </div>
+                                    <p>Prism is Baxi's network-wide user trust scoring system. It assigns each user a score between 0 and 100 based on moderation events (e.g. warnings, kicks, bans, filter violations). Prism profiles are created automatically when a user first interacts with Baxi. The following data is stored per user:</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li>User ID</li>
+                                        <li>Trust score (0–100)</li>
+                                        <li>Moderation event history (event type, severity, timestamp, guild ID)</li>
+                                        <li>Risk signals (account age, velocity bursts, multi-server violations)</li>
+                                    </ul>
+                                    <div class="legal-highlight" style="margin-top: 0.75rem;">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                                        Not a profiling tool
+                                    </div>
+                                    <p>Prism is strictly a moderation tool — not a profiling or surveillance system. It exclusively records moderation actions taken by server staff or automated filters (e.g. a warning, kick, or ban). It does <strong>not</strong> monitor, analyse, or store:</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li>Message content, attachments, or communication patterns</li>
+                                        <li>User relationships, friend lists, or social graphs</li>
+                                        <li>Activity patterns such as online times, channel visits, or voice usage</li>
+                                        <li>Personal identity information beyond a Discord User ID</li>
+                                    </ul>
+                                    <p style="margin-top: 0.75rem;">A Prism profile contains only the numeric trust score and a log of past moderation events — nothing else. There is no behavioural tracking, no content scanning, and no activity profiling of any kind. Trust scores are shared across all servers using Baxi, meaning a moderation event on one server affects the user's score network-wide. Users scoring 30 or below are automatically flagged, which blocks Global Chat access.</p>
+                                    <p style="margin-top: 0.75rem;">You can opt out of Prism at any time by running <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command — running it once opts you out and deletes your Prism profile, running it again opts you back in. While opted out, no trust score is maintained and no moderation events are recorded by Prism for your account.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.7</span>
+                                        Ticket System
+                                    </div>
+                                    <p>If the ticket system is enabled on a server, Baxi stores ticket transcripts containing the ticket title, messages exchanged, participant User IDs, and timestamps. Transcripts are accessible to server staff and are automatically deleted after <strong>30 days</strong> in accordance with our retention policy.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.8</span>
+                                        Verification System
+                                    </div>
+                                    <p>If verification is enabled, Baxi processes the User ID and verification method (button click, CAPTCHA response, or password input) to grant server access. No verification data is stored beyond the event itself — once a user is verified, only the fact that verification succeeded is retained.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.9</span>
+                                        Anti-Spam
+                                    </div>
+                                    <p>Baxi's anti-spam system analyses message frequency, mention counts, and repeated content in real time to detect spam. This processing happens entirely in memory — no message content is stored by the anti-spam system. If a spam event triggers a moderation action (e.g. mute or warn), only the moderation log entry is retained.</p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-highlight">
@@ -436,6 +486,13 @@
                                         Self-Hosted AI (e.g. Chat Filter)
                                     </div>
                                     <p>Certain features may use our self-hosted AI model running on our own infrastructure. No data is transmitted to any third-party AI provider or external service. As with SafeText, no data is retained after a request completes — content is processed in memory and discarded immediately. Which backend is used depends on the configuration set by the respective server administrator in their guild settings.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">5.4</span>
+                                        Streaming Platforms (Live Tracking)
+                                    </div>
+                                    <p>If live tracking is enabled, Baxi queries the public APIs of <strong>Twitch</strong> (operated by Twitch Interactive, Inc.), <strong>YouTube</strong> (operated by Google LLC), and/or <strong>TikTok</strong> (operated by ByteDance Ltd.) to detect when a configured streamer goes live. Only publicly available stream metadata (stream title, preview image, viewer count) is retrieved. No user data from your Discord server is sent to these platforms.</p>
                                 </div>
                                 <div class="legal-item">
                                     <p>We do not integrate any advertising networks, analytics platforms, or other third-party data processors beyond those listed above.</p>
