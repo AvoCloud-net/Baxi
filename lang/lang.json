@@ -59,6 +59,19 @@
                     "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv — nur Prism führt keinen Score mehr über dich.",
                     "opted_in": "Du hast dich wieder bei Prism angemeldet. Dein Vertrauens-Score wird ab sofort wieder geführt.",
                     "footer": "Baxi Prism · avocloud.net"
+                },
+                "prism_profile_created_dm": {
+                    "title": "Dein PRISM-Profil wurde erstellt",
+                    "description": "Ein Moderationsereignis auf einem Server, den du mit Baxi teilst, hat die Erstellung eines **PRISM**-Profils für deinen Account ausgelöst. Diese Nachricht dient dazu, dich darüber zu informieren.",
+                    "what_is_title": "Was ist PRISM?",
+                    "what_is_value": "PRISM ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. Es berechnet einen Score von 0 bis 100 anhand deiner Moderationshistorie. Moderatoren können diesen Score als einen von mehreren Hinweisen nutzen, um fairere und konsistentere Entscheidungen zu treffen – besonders wenn du einem neuen Server beitrittst.",
+                    "why_title": "Wozu ist das gut?",
+                    "why_value": "Moderationskontext geht oft verloren, wenn jemand einem neuen Server beitritt. PRISM hilft Moderatoren, wiederholten Schaden durch regelwidrige Nutzer zu verhindern – und gibt regelkonformen Nutzern eine positive Bilanz, die sie mitnehmen können. Scores erholen sich automatisch mit der Zeit, solange keine neuen Verstöße auftreten. Ein einzelner Vorfall bestimmt dich also nicht dauerhaft.",
+                    "privacy_title": "Deine Privatsphäre",
+                    "privacy_value": "PRISM speichert ausschließlich das Minimum: Art des Moderationsereignisses, Zeitstempel und der Server, auf dem es stattfand. Kein Nachrichteninhalt, keine persönlichen Daten – nur direkt moderationsrelevante Informationen.",
+                    "actions_title": "Was kannst du tun?",
+                    "actions_value": "• `/my_trust` — Deinen aktuellen Score und vergangene Ereignisse anzeigen\n• `/prism-optout` — PRISM-Tracking jederzeit deaktivieren\n• [Dokumentation](https://baxi.avocloud.net/docs/user-guide/prism) — Alle Details zur Funktionsweise von PRISM",
+                    "footer": "Baxi PRISM · avocloud.net"
                 }
             },
             "admin": {
@@ -319,6 +332,19 @@
                     "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active — only Prism will no longer track a score for you.",
                     "opted_in": "You have opted back in to Prism. Your trust score will now be tracked again.",
                     "footer": "Baxi Prism · avocloud.net"
+                },
+                "prism_profile_created_dm": {
+                    "title": "Your PRISM Profile Has Been Created",
+                    "description": "A moderation event on a server you share with Baxi has triggered the creation of a **PRISM** profile for your account. This message is to keep you informed.",
+                    "what_is_title": "What is PRISM?",
+                    "what_is_value": "PRISM is Baxi's cross-server trust-scoring system. It calculates a score from 0 to 100 based on your moderation history. Moderators can use this score as one signal among many to make fairer, more consistent decisions — especially when you join a new server.",
+                    "why_title": "Why does this exist?",
+                    "why_value": "Moderation context is often lost when someone joins a new server. PRISM helps moderators avoid repeat harm from bad actors, while giving well-behaved users a positive track record that follows them. Scores recover automatically over time as long as no new violations occur — one-off incidents don't define you permanently.",
+                    "privacy_title": "Your privacy",
+                    "privacy_value": "PRISM stores only the minimum necessary: the type of moderation event, its timestamp, and the server it occurred on. No message content, no personal information — only data directly related to moderation actions.",
+                    "actions_title": "What can you do?",
+                    "actions_value": "• `/my_trust` — View your current score and recent events\n• `/prism-optout` — Opt out of PRISM tracking at any time\n• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) — Full details on how PRISM works",
+                    "footer": "Baxi PRISM · avocloud.net"
                 }
             },
             "admin": {
