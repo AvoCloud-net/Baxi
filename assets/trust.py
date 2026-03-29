@@ -533,6 +533,18 @@ def clear_events(user_id: int):
         logger.info(f"[Prism] Events cleared via admin dash for {uid}")
 
 
+def delete_profile(user_id: int) -> bool:
+    """Completely remove a user's Prism profile. Returns True if it existed."""
+    data = _load()
+    uid  = str(user_id)
+    if uid in data:
+        del data[uid]
+        _save(data)
+        logger.info(f"[Prism] Profile fully deleted via admin dash for {uid}")
+        return True
+    return False
+
+
 def recalculate_all():
     """Recalculate scores for every tracked user. Called by TrustScoreTask."""
     data    = _load()
