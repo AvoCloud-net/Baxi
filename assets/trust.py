@@ -710,20 +710,49 @@ async def _send_user_dm(bot, user_id: int, user_name: str):
         embed = discord.Embed(
             title=f"{config.Icons.info} Your PRISM Profile Has Been Created",
             description=(
-                "A moderation event on one of the servers you share with Baxi has triggered "
-                "the creation of a **PRISM** profile for your account.\n\n"
-                "**What is PRISM?**\n"
-                "PRISM is Baxi's automated trust-scoring system. It tracks moderation events "
-                "across servers and calculates a trust score (0–100) to help moderators make "
-                "informed decisions. Your score starts at 100 and is adjusted based on "
-                "moderation history.\n\n"
-                "**What can you do?**\n"
-                "• `/my_trust` — View your current trust score and recent events\n"
-                "• `/prism-optout` — Opt out of PRISM tracking at any time\n\n"
-                "**Learn more:**\n"
-                "https://baxi.avocloud.net/docs/user-guide/prism"
+                "A moderation event on a server you share with Baxi has triggered the creation "
+                "of a **PRISM** profile for your account. This message is to keep you informed."
             ),
             color=config.Discord.info_color,
+        )
+        embed.add_field(
+            name="What is PRISM?",
+            value=(
+                "PRISM is Baxi's cross-server trust-scoring system. It assigns every tracked user "
+                "a score from 0 to 100 based on their moderation history. Moderators can use this "
+                "score as one signal among many to make fairer, more consistent decisions — "
+                "especially for users who are new to a server."
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Why does this exist?",
+            value=(
+                "Moderation context is often lost when a user joins a new server. PRISM helps "
+                "moderators avoid repeat harm from bad actors while also giving well-behaved users "
+                "a positive track record that follows them. Scores recover over time as long as "
+                "no new violations occur, so one-off incidents don't define you permanently."
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Your privacy",
+            value=(
+                "PRISM stores only the minimum data necessary: a list of moderation event types, "
+                "their timestamps, and the server they occurred on. No message content, "
+                "no personal information, and no data beyond what directly relates to moderation "
+                "actions is ever saved."
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="What can you do?",
+            value=(
+                "• `/my_trust` — View your current score and recent events\n"
+                "• `/prism-optout` — Opt out of PRISM tracking at any time\n"
+                "• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) — Full details on how PRISM works"
+            ),
+            inline=False,
         )
         embed.set_footer(text="Baxi PRISM · avocloud.net")
 
