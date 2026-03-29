@@ -408,7 +408,8 @@ def record_event(
     now_dt = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     account_created_at = (now_dt - datetime.timedelta(days=account_age_days)).isoformat()
 
-    if uid not in data:
+    is_new_profile = uid not in data
+    if is_new_profile:
         data[uid] = {
             "name":               user_name,
             "id":                 uid,
@@ -467,6 +468,10 @@ def record_event(
 
     # Schedule LLM summary update (score always < 100 after any event)
     _schedule_summary_update(uid)
+
+    # Notify the user via DM when their profile is first created (first violation)
+    if is_new_profile:
+        _schedule_user_dm(user_id, user_name)
 
     logger.info(f"[Prism] {user_name} ({uid}) event={event_type} severity={severity} score={score}")
     return score
@@ -677,6 +682,55 @@ async def _send_staff_notification(
         logger.info(f"[Prism] Staff notification sent in {guild.name} for {user_name}")
     except Exception as e:
         logger.error(f"[Prism] Staff notification failed: {e}")
+
+
+def _schedule_user_dm(user_id: int, user_name: str):
+    """Schedule a DM to notify the user that a Prism profile was created for them."""
+    import assets.share as share
+    bot = share.bot
+    if bot is None:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_send_user_dm(bot, user_id, user_name))
+    except RuntimeError:
+        pass  # no running loop — skip DM
+
+
+async def _send_user_dm(bot, user_id: int, user_name: str):
+    """Send a DM to a user explaining that a Prism profile was created for them."""
+    import discord
+    import config.config as config
+
+    try:
+        user = await bot.fetch_user(user_id)
+        if user is None:
+            return
+
+        embed = discord.Embed(
+            title=f"{config.Icons.info} Your PRISM Profile Has Been Created",
+            description=(
+                "A moderation event on one of the servers you share with Baxi has triggered "
+                "the creation of a **PRISM** profile for your account.\n\n"
+                "**What is PRISM?**\n"
+                "PRISM is Baxi's automated trust-scoring system. It tracks moderation events "
+                "across servers and calculates a trust score (0–100) to help moderators make "
+                "informed decisions. Your score starts at 100 and is adjusted based on "
+                "moderation history.\n\n"
+                "**What can you do?**\n"
+                "• `/my_trust` — View your current trust score and recent events\n"
+                "• `/prism-optout` — Opt out of PRISM tracking at any time\n\n"
+                "**Learn more:**\n"
+                "https://baxi.avocloud.net/docs/user-guide/prism"
+            ),
+            color=config.Discord.info_color,
+        )
+        embed.set_footer(text="Baxi PRISM · avocloud.net")
+
+        await user.send(embed=embed)
+        logger.info(f"[Prism] DM sent to {user_name} ({user_id}) on profile creation")
+    except Exception as e:
+        logger.warn(f"[Prism] Could not send DM to {user_name} ({user_id}): {e}")
 
 
 async def _resolve_notification_channel(guild):
