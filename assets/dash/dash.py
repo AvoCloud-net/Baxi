@@ -2587,6 +2587,350 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             share.admin_log("info", f"Notification sent to {sent}/{len(target_guilds)} ({scope}) by {user.name}: \"{title}\"", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Sent to {sent} server(s). Failed: {failed}."})
 
+        elif action == "search_user":
+            query = str(data.get("query", "")).strip()
+            if not query:
+                return quart.jsonify({"success": False, "message": "Query is empty."}), 400
+
+            import assets.trust as sentinel
+
+            uid_str = None
+            found_name = None
+
+            if query.isdigit():
+                uid_str = query
+                profile = sentinel.get_profile(int(uid_str))
+                if profile:
+                    found_name = profile.get("name", uid_str)
+                else:
+                    users_list_tmp: dict = dict(datasys.load_data(1001, "users"))
+                    if uid_str in users_list_tmp:
+                        found_name = users_list_tmp[uid_str].get("name", uid_str)
+                    else:
+                        try:
+                            fetched = await bot.fetch_user(int(uid_str))
+                            found_name = fetched.name
+                        except Exception:
+                            found_name = uid_str
+            else:
+                query_lower = query.lower()
+                prism_profiles = sentinel.get_all_profiles()
+                for puid, pprofile in prism_profiles.items():
+                    if query_lower in pprofile.get("name", "").lower():
+                        uid_str = puid
+                        found_name = pprofile.get("name", puid)
+                        break
+                if not uid_str:
+                    users_list_tmp: dict = dict(datasys.load_data(1001, "users"))
+                    for puid, udata in users_list_tmp.items():
+                        if query_lower in udata.get("name", "").lower():
+                            uid_str = puid
+                            found_name = udata.get("name", puid)
+                            break
+
+            if not uid_str:
+                return quart.jsonify({"success": True, "found": False})
+
+            result: dict = {"success": True, "found": True, "uid": uid_str, "name": found_name or uid_str}
+
+            # Prism profile
+            profile = sentinel.get_profile(int(uid_str))
+            if profile:
+                result["prism"] = {
+                    "score": profile.get("score", 100),
+                    "event_count": len(profile.get("events", [])),
+                    "first_seen": profile.get("first_seen", ""),
+                    "last_seen": profile.get("last_seen", ""),
+                    "auto_flagged": profile.get("auto_flagged", False),
+                    "opted_out": profile.get("opted_out", False),
+                }
+
+            # Flagged entry
+            users_list2: dict = dict(datasys.load_data(1001, "users"))
+            if uid_str in users_list2:
+                entry = users_list2[uid_str]
+                result["flagged_entry"] = {
+                    "reason": entry.get("reason", ""),
+                    "entry_date": entry.get("entry_date", ""),
+                    "auto_flagged": entry.get("auto_flagged", False),
+                    "flagged": entry.get("flagged", False),
+                }
+
+            # Chatfilter violations (global log)
+            cf_log: dict = dict(datasys.load_data(1001, "chatfilter_log"))
+            violations = [v for v in cf_log.values() if str(v.get("uid", "")) == uid_str]
+            violations.sort(key=lambda v: v.get("timestamp", ""), reverse=True)
+            result["chatfilter_violations"] = violations[:50]
+
+            # Guild warnings
+            guild_warnings = []
+            _data_dir = "data"
+            try:
+                _guild_dirs = [
+                    d for d in os.listdir(_data_dir)
+                    if os.path.isdir(os.path.join(_data_dir, d)) and d.isdigit() and d != "1001"
+                ]
+            except FileNotFoundError:
+                _guild_dirs = []
+
+            for _gid in _guild_dirs:
+                _conf_path = os.path.join(_data_dir, _gid, "conf.json")
+                if not os.path.exists(_conf_path):
+                    continue
+                try:
+                    with open(_conf_path, "r", encoding="utf-8") as _f:
+                        _conf = json.load(_f)
+                    _warns = _conf.get("warnings", {}).get(uid_str, [])
+                    if _warns:
+                        guild_warnings.append({
+                            "guild_id": _gid,
+                            "guild_name": _conf.get("guild_name", _gid),
+                            "count": len(_warns),
+                        })
+                except Exception:
+                    pass
+            result["guild_warnings"] = guild_warnings
+
+            # Temp actions
+            temp_actions_found = []
+            for _gid in _guild_dirs:
+                _ta_path = os.path.join(_data_dir, _gid, "temp_actions.json")
+                if not os.path.exists(_ta_path):
+                    continue
+                try:
+                    with open(_ta_path, "r", encoding="utf-8") as _f:
+                        _ta = json.load(_f)
+                    for _atype in ["bans", "timeouts"]:
+                        for _entry in _ta.get(_atype, []):
+                            if str(_entry.get("user_id", "")) == uid_str:
+                                temp_actions_found.append({
+                                    "type": _atype[:-1],
+                                    "guild_id": _gid,
+                                    "guild_name": _entry.get("guild_name", _gid),
+                                    "expires_at": _entry.get("expires_at", ""),
+                                    "reason": _entry.get("reason", ""),
+                                })
+                except Exception:
+                    pass
+            result["temp_actions"] = temp_actions_found
+
+            share.admin_log("info", f"User search for '{query}' by {user.name} → found uid={uid_str}", source="AdminDash")
+            return quart.jsonify(result)
+
+        elif action == "delete_user_data":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+
+            import assets.trust as sentinel
+            import datetime as _dt
+
+            deleted_items: list[str] = []
+            user_name_del = user_id_str
+
+            # 1. Prism profile
+            profile = sentinel.get_profile(int(user_id_str))
+            if profile:
+                user_name_del = profile.get("name", user_id_str)
+                sentinel.delete_profile(int(user_id_str))
+                deleted_items.append("Prism profile")
+
+            # 2. Flagged users entry
+            users_list_del: dict = dict(datasys.load_data(1001, "users"))
+            if user_id_str in users_list_del:
+                user_name_del = users_list_del[user_id_str].get("name", user_name_del)
+                del users_list_del[user_id_str]
+                datasys.save_data(1001, "users", users_list_del)
+                deleted_items.append("flagged user entry")
+
+            # 3. Global chatfilter log
+            cf_log_del: dict = dict(datasys.load_data(1001, "chatfilter_log"))
+            orig_len = len(cf_log_del)
+            cf_log_del = {k: v for k, v in cf_log_del.items() if str(v.get("uid", "")) != user_id_str}
+            if len(cf_log_del) < orig_len:
+                datasys.save_data(1001, "chatfilter_log", cf_log_del)
+                deleted_items.append(f"{orig_len - len(cf_log_del)} chatfilter log entries")
+
+            # 4. Guild warnings + per-guild chatfilter logs
+            _data_dir2 = "data"
+            try:
+                _guild_dirs2 = [
+                    d for d in os.listdir(_data_dir2)
+                    if os.path.isdir(os.path.join(_data_dir2, d)) and d.isdigit() and d != "1001"
+                ]
+            except FileNotFoundError:
+                _guild_dirs2 = []
+
+            warn_guilds = 0
+            for _gid2 in _guild_dirs2:
+                _cp = os.path.join(_data_dir2, _gid2, "conf.json")
+                if not os.path.exists(_cp):
+                    continue
+                try:
+                    with open(_cp, "r", encoding="utf-8") as _f2:
+                        _conf2 = json.load(_f2)
+                    _mod = False
+                    if user_id_str in _conf2.get("warnings", {}):
+                        del _conf2["warnings"][user_id_str]
+                        _mod = True
+                    if _mod:
+                        with open(_cp, "w", encoding="utf-8") as _f2:
+                            json.dump(_conf2, _f2, indent=2, ensure_ascii=False)
+                        warn_guilds += 1
+                except Exception:
+                    pass
+            if warn_guilds:
+                deleted_items.append(f"warnings in {warn_guilds} guild(s)")
+
+            # 5. Temp actions
+            ta_guilds = 0
+            for _gid2 in _guild_dirs2:
+                _tp = os.path.join(_data_dir2, _gid2, "temp_actions.json")
+                if not os.path.exists(_tp):
+                    continue
+                try:
+                    with open(_tp, "r", encoding="utf-8") as _f3:
+                        _ta2 = json.load(_f3)
+                    _mod2 = False
+                    for _at in ["bans", "timeouts"]:
+                        _orig = _ta2.get(_at, [])
+                        _filt = [e for e in _orig if str(e.get("user_id", "")) != user_id_str]
+                        if len(_filt) < len(_orig):
+                            _ta2[_at] = _filt
+                            _mod2 = True
+                    if _mod2:
+                        with open(_tp, "w", encoding="utf-8") as _f3:
+                            json.dump(_ta2, _f3, indent=2, ensure_ascii=False)
+                        ta_guilds += 1
+                except Exception:
+                    pass
+            if ta_guilds:
+                deleted_items.append(f"temp actions in {ta_guilds} guild(s)")
+
+            # 6. Send DM to user
+            dm_sent = False
+            try:
+                target_del = await bot.fetch_user(int(user_id_str))
+                _ts_del = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
+                embed_del = discord.Embed(
+                    title="Deine Daten wurden gelöscht",
+                    description=(
+                        "Alle in Baxi über dich gespeicherten Daten wurden von einem Administrator gelöscht.\n\n"
+                        f"**Gelöscht:** {', '.join(deleted_items) if deleted_items else 'Keine Daten gefunden'}\n"
+                        f"**Gelöscht am:** {_ts_del}\n\n"
+                        "Falls du glaubst, dass dies ein Fehler war, wende dich bitte an das Baxi-Support-Team."
+                    ),
+                    color=config.Discord.color,
+                )
+                embed_del.set_author(name="Baxi Datenverwaltung")
+                embed_del.set_footer(text="Avocloud.net · Baxi")
+                await target_del.send(embed=embed_del)
+                dm_sent = True
+            except Exception:
+                pass
+
+            share.admin_log(
+                "warning",
+                f"All data deleted for {user_name_del} ({user_id_str}) by {user.name}. "
+                f"Items: {', '.join(deleted_items) or 'none'}. DM sent: {dm_sent}",
+                source="AdminDash",
+            )
+
+            summary = f"Gelöscht: {', '.join(deleted_items) if deleted_items else 'keine Daten gefunden'}."
+            summary += " DM gesendet." if dm_sent else " DM konnte nicht gesendet werden (DMs möglicherweise deaktiviert)."
+            return quart.jsonify({"success": True, "message": summary})
+
+        elif action == "send_user_data":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+
+            import assets.trust as sentinel
+            import datetime as _dt
+
+            try:
+                target_rep = await bot.fetch_user(int(user_id_str))
+            except discord.NotFound:
+                return quart.jsonify({"success": False, "message": "User not found on Discord."}), 404
+            except Exception as _e:
+                return quart.jsonify({"success": False, "message": f"Could not fetch user: {_e}"}), 500
+
+            _ts_rep = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
+
+            profile_rep = sentinel.get_profile(int(user_id_str))
+            users_list_rep: dict = dict(datasys.load_data(1001, "users"))
+            flagged_rep = users_list_rep.get(user_id_str)
+            cf_log_rep: dict = dict(datasys.load_data(1001, "chatfilter_log"))
+            violations_rep = [v for v in cf_log_rep.values() if str(v.get("uid", "")) == user_id_str]
+
+            _data_dir3 = "data"
+            try:
+                _guild_dirs3 = [
+                    d for d in os.listdir(_data_dir3)
+                    if os.path.isdir(os.path.join(_data_dir3, d)) and d.isdigit() and d != "1001"
+                ]
+            except FileNotFoundError:
+                _guild_dirs3 = []
+
+            total_warnings_rep = 0
+            for _gid3 in _guild_dirs3:
+                _cp3 = os.path.join(_data_dir3, _gid3, "conf.json")
+                if not os.path.exists(_cp3):
+                    continue
+                try:
+                    with open(_cp3, "r", encoding="utf-8") as _f4:
+                        _conf3 = json.load(_f4)
+                    total_warnings_rep += len(_conf3.get("warnings", {}).get(user_id_str, []))
+                except Exception:
+                    pass
+
+            lines_rep = []
+            if profile_rep:
+                lines_rep.append(f"**Prism Score:** {profile_rep.get('score', 100)}/100")
+                lines_rep.append(f"**Prism Events:** {len(profile_rep.get('events', []))}")
+                lines_rep.append(f"**Auto-flagged:** {'Ja' if profile_rep.get('auto_flagged') else 'Nein'}")
+                if profile_rep.get("first_seen"):
+                    lines_rep.append(f"**Erstmals von Baxi gesehen:** {profile_rep['first_seen'][:10]}")
+                if profile_rep.get("last_seen"):
+                    lines_rep.append(f"**Zuletzt von Baxi gesehen:** {profile_rep['last_seen'][:10]}")
+                if profile_rep.get("opted_out"):
+                    lines_rep.append("**Prism Opt-out:** Ja")
+            if flagged_rep and flagged_rep.get("flagged"):
+                lines_rep.append(f"**Global gemeldet:** Ja (Grund: {flagged_rep.get('reason', '—')})")
+            if violations_rep:
+                lines_rep.append(f"**Chatfilter-Verstöße:** {len(violations_rep)}")
+            if total_warnings_rep:
+                lines_rep.append(f"**Verwarnungen (gesamt über alle Server):** {total_warnings_rep}")
+
+            if not lines_rep:
+                lines_rep.append("Keine Daten über dich im Baxi-System gespeichert.")
+
+            embed_rep = discord.Embed(
+                title="Deine bei Baxi gespeicherten Daten",
+                description=(
+                    "Folgende Daten sind über dich im Baxi-Bot-System gespeichert. "
+                    "Diese Informationen werden für Moderations- und Trust-Scoring-Zwecke verwendet.\n\n"
+                    + "\n".join(lines_rep)
+                ),
+                color=config.Discord.color,
+            )
+            embed_rep.set_author(name="Baxi Datenbericht")
+            embed_rep.set_footer(text=f"Angefordert am {_ts_rep} · Avocloud.net · Baxi")
+
+            try:
+                await target_rep.send(embed=embed_rep)
+            except discord.Forbidden:
+                return quart.jsonify({"success": False, "message": "DM konnte nicht gesendet werden — User hat DMs deaktiviert."}), 400
+            except Exception as _e2:
+                return quart.jsonify({"success": False, "message": f"Fehler beim Senden der DM: {_e2}"}), 500
+
+            share.admin_log(
+                "info",
+                f"Datenbericht an {target_rep.name} ({user_id_str}) gesendet von {user.name}",
+                source="AdminDash",
+            )
+            return quart.jsonify({"success": True, "message": f"Datenbericht via DM an {target_rep.name} gesendet."})
+
         return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
 
     app.config["BOT_READY"] = True
