@@ -424,13 +424,6 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     stats["prossesed_messages"] = int(stats.get("prossesed_messages", 0)) + 1
     datasys.save_data(1001, "stats", stats)
     try:
-        # Prism: ensure profile exists for every user who sends a message
-        try:
-            _account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-            sentinel.ensure_profile(message.author.id, message.author.name, _account_age)
-        except Exception:
-            pass
-
         # Auto-Slowmode check (passive, non-blocking)
         asyncio.create_task(auto_slowmode.check(message))
 

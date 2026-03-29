@@ -408,7 +408,8 @@ def record_event(
     now_dt = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     account_created_at = (now_dt - datetime.timedelta(days=account_age_days)).isoformat()
 
-    if uid not in data:
+    is_new_profile = uid not in data
+    if is_new_profile:
         data[uid] = {
             "name":               user_name,
             "id":                 uid,
@@ -467,6 +468,10 @@ def record_event(
 
     # Schedule LLM summary update (score always < 100 after any event)
     _schedule_summary_update(uid)
+
+    # Notify the user via DM when their profile is first created (first violation)
+    if is_new_profile:
+        _schedule_user_dm(user_id, user_name, guild_id)
 
     logger.info(f"[Prism] {user_name} ({uid}) event={event_type} severity={severity} score={score}")
     return score
@@ -677,6 +682,50 @@ async def _send_staff_notification(
         logger.info(f"[Prism] Staff notification sent in {guild.name} for {user_name}")
     except Exception as e:
         logger.error(f"[Prism] Staff notification failed: {e}")
+
+
+def _schedule_user_dm(user_id: int, user_name: str, guild_id: int):
+    """Schedule a DM to notify the user that a Prism profile was created for them."""
+    import assets.share as share
+    bot = share.bot
+    if bot is None:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_send_user_dm(bot, user_id, user_name, guild_id))
+    except RuntimeError:
+        pass  # no running loop — skip DM
+
+
+async def _send_user_dm(bot, user_id: int, user_name: str, guild_id: int):
+    """Send a DM to a user explaining that a Prism profile was created for them."""
+    import discord
+    import config.config as config
+    import assets.data as _datasys
+
+    try:
+        user = await bot.fetch_user(user_id)
+        if user is None:
+            return
+
+        lang = _datasys.load_lang_file(guild_id)
+        t = lang.get("commands", {}).get("user", {}).get("prism_profile_created_dm", {})
+
+        embed = discord.Embed(
+            title=f"{config.Icons.info} {t.get('title', 'Your PRISM Profile Has Been Created')}",
+            description=t.get("description", ""),
+            color=config.Discord.info_color,
+        )
+        embed.add_field(name=t.get("what_is_title", ""), value=t.get("what_is_value", ""), inline=False)
+        embed.add_field(name=t.get("why_title", ""),     value=t.get("why_value", ""),     inline=False)
+        embed.add_field(name=t.get("privacy_title", ""), value=t.get("privacy_value", ""), inline=False)
+        embed.add_field(name=t.get("actions_title", ""), value=t.get("actions_value", ""), inline=False)
+        embed.set_footer(text=t.get("footer", "Baxi PRISM · avocloud.net"))
+
+        await user.send(embed=embed)
+        logger.info(f"[Prism] DM sent to {user_name} ({user_id}) on profile creation")
+    except Exception as e:
+        logger.warn(f"[Prism] Could not send DM to {user_name} ({user_id}): {e}")
 
 
 async def _resolve_notification_channel(guild):
