@@ -506,12 +506,12 @@
         <div class="section-badge">User Search &amp; Data Management</div>
         <div class="card">
             <header>
-                <h2 style="font-size:1rem; font-weight:600;">User durchsuchen</h2>
-                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Suche nach Name oder Discord User-ID in allen Systemen: Prism, Flags, Chatfilter, Verwarnungen, Temp-Actions.</p>
+                <h2 style="font-size:1rem; font-weight:600;">Search User</h2>
+                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Search by name or Discord User ID across all systems: Prism, flags, chatfilter logs, warnings, temp actions, tickets, and global bans.</p>
             </header>
             <section>
                 <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
-                    <input id="user-search-query" type="text" placeholder="Username oder User-ID…" style="flex:1;" onkeydown="if(event.key==='Enter') searchUser()">
+                    <input id="user-search-query" type="text" placeholder="Username or User ID…" style="flex:1;" onkeydown="if(event.key==='Enter') searchUser()">
                     <button onclick="searchUser()" class="btn-primary">Suchen</button>
                 </div>
                 <div id="user-search-result" class="action-result"></div>
@@ -1132,19 +1132,19 @@ let _currentSearchName = null;
 
 async function searchUser() {
     const query = document.getElementById('user-search-query').value.trim();
-    if (!query) { setResult('user-search-result', 'Bitte Username oder User-ID eingeben.', false); return; }
+    if (!query) { setResult('user-search-result', 'Please enter a username or user ID.', false); return; }
 
     const wrap = document.getElementById('user-search-wrap');
     wrap.style.display = 'none';
     const resultEl = document.getElementById('user-search-result');
     resultEl.className = 'action-result ok';
-    resultEl.textContent = 'Suche läuft…';
+    resultEl.textContent = 'Searching…';
 
     const r = await doAction({ action: 'search_user', query });
     if (!r.ok) { setResult('user-search-result', r.message, false); return; }
 
     if (!r.data.found) {
-        setResult('user-search-result', 'Keine Daten für diesen User gefunden.', false);
+        setResult('user-search-result', 'No data found for this user.', false);
         return;
     }
 
@@ -1157,93 +1157,150 @@ async function searchUser() {
     const sections = document.getElementById('user-search-sections');
     sections.innerHTML = '';
 
-    // Prism profile block
+    // ── Prism profile ──────────────────────────────────────────
     if (r.data.prism) {
         const p = r.data.prism;
+        const evRows = (p.events||[]).slice(0,30).map((ev,i) => `<tr>
+            <td style="opacity:.35;">${(p.events.length - i)}</td>
+            <td style="font-weight:600; font-size:.75rem;">${escHtml(ev.type||'—')}</td>
+            <td style="opacity:.6; font-size:.73rem;">${escHtml(ev.severity||'—')}</td>
+            <td style="opacity:.65; max-width:220px; word-break:break-word; font-size:.73rem;">${escHtml(ev.reason||'—')}</td>
+            <td style="opacity:.4; font-size:.7rem;">${escHtml(ev.guild_id||'—')}</td>
+            <td style="opacity:.45; white-space:nowrap; font-size:.7rem;">${escHtml((ev.timestamp||'—').slice(0,16))}</td>
+        </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Prism Profil</div>
-            <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
+        <div style="border:1px solid rgba(99,102,241,.25); border-radius:8px; padding:.75rem 1rem;">
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Prism Trust Profile</div>
+            <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center; margin-bottom:.6rem;">
                 <span>Score: ${scoreBadge(p.score)}</span>
                 <span style="opacity:.6;">Events: <b>${p.event_count}</b></span>
-                ${p.first_seen ? `<span style="opacity:.5; font-size:.75rem;">Erstmals: ${escHtml(p.first_seen.slice(0,10))}</span>` : ''}
-                ${p.last_seen  ? `<span style="opacity:.5; font-size:.75rem;">Zuletzt: ${escHtml(p.last_seen.slice(0,10))}</span>`  : ''}
+                ${p.first_seen ? `<span style="opacity:.5; font-size:.75rem;">First seen: ${escHtml(p.first_seen.slice(0,10))}</span>` : ''}
+                ${p.last_seen  ? `<span style="opacity:.5; font-size:.75rem;">Last seen: ${escHtml(p.last_seen.slice(0,10))}</span>`  : ''}
                 ${p.auto_flagged ? '<span class="badge badge-auto">Auto-flagged</span>' : ''}
                 ${p.opted_out   ? '<span class="badge badge-idle">Opted out</span>'    : ''}
             </div>
+            ${p.llm_summary ? `<div style="font-size:.78rem; opacity:.8; padding:.5rem .6rem; background:rgba(99,102,241,.08); border-left:2px solid rgba(99,102,241,.4); border-radius:3px; margin-bottom:.6rem; line-height:1.6;">${escHtml(p.llm_summary)}</div>` : ''}
+            ${p.risk_signals && p.risk_signals.length ? `<div style="margin-bottom:.6rem; display:flex; flex-wrap:wrap; gap:.3rem;">${p.risk_signals.map(s=>`<span style="font-size:.7rem; padding:.15rem .45rem; border-radius:3px; background:rgba(245,158,11,.15); color:#f59e0b;">${escHtml(s)}</span>`).join('')}</div>` : ''}
+            ${evRows ? `<div style="overflow-x:auto; margin-top:.3rem;"><table class="admin-table" style="font-size:.75rem;">
+                <thead><tr><th>#</th><th>Type</th><th>Severity</th><th>Reason</th><th>Server ID</th><th>Date</th></tr></thead>
+                <tbody>${evRows}${p.events&&p.events.length>30?`<tr><td colspan="6" style="opacity:.4; font-style:italic;">…and ${p.events.length-30} more events</td></tr>`:''}</tbody>
+            </table></div>` : ''}
         </div>`);
     }
 
-    // Flagged entry block
-    if (r.data.flagged_entry) {
-        const f = r.data.flagged_entry;
+    // ── Flagged + global bans ──────────────────────────────────
+    if (r.data.flagged_entry || r.data.ba_ban || r.data.gc_ban) {
+        let _ban_html = '';
+        if (r.data.flagged_entry) {
+            const f = r.data.flagged_entry;
+            _ban_html += `<div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center; margin-bottom:.4rem;">
+                ${f.auto_flagged ? '<span class="badge badge-auto">Auto-flagged</span>' : '<span class="badge badge-flagged">Manually flagged</span>'}
+                <span style="opacity:.7;">Reason: <span style="color:#fb923c;">${escHtml(f.reason||'—')}</span></span>
+                <span style="opacity:.5; font-size:.75rem;">Date: ${escHtml(f.entry_date||'—')}</span>
+            </div>`;
+        }
+        if (r.data.ba_ban) _ban_html += `<div class="badge badge-error" style="margin-bottom:.3rem;">Baxi AutoMod Ban active</div>`;
+        if (r.data.gc_ban) _ban_html += `<div class="badge badge-error" style="margin-bottom:.3rem; margin-left:.3rem;">Global Chat Ban active</div>`;
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(239,68,68,.25); border-radius:8px; padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Flagged-User-Eintrag</div>
-            <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
-                <span style="opacity:.7;">Grund: <span style="color:#fb923c;">${escHtml(f.reason||'—')}</span></span>
-                <span style="opacity:.5; font-size:.75rem;">Datum: ${escHtml(f.entry_date||'—')}</span>
-                ${f.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manuell</span>'}
-            </div>
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Flags &amp; Bans</div>
+            ${_ban_html}
         </div>`);
     }
 
-    // Chatfilter violations block
+    // ── Chatfilter violations ──────────────────────────────────
     if (r.data.chatfilter_violations && r.data.chatfilter_violations.length) {
         const viol = r.data.chatfilter_violations;
-        const rows = viol.slice(0, 20).map(v => `<tr>
+        const rows = viol.slice(0,30).map(v => `<tr>
             <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(v.timestamp||'—')}</td>
             <td>${escHtml(v.system||'—')}</td>
             <td style="opacity:.55; font-size:.73rem;">${escHtml(v.sname||'—')}</td>
-            <td><span class="badge badge-flagged" style="font-size:.68rem;">${escHtml(v.reason||'—')}</span></td>
-            <td style="max-width:200px; word-break:break-word; opacity:.7; font-size:.75rem;">${escHtml((v.message||'').slice(0,70))}${(v.message||'').length > 70 ? '…' : ''}</td>
+            <td style="opacity:.5; font-size:.72rem;">#${escHtml(v.cname||'—')}</td>
+            <td><span class="badge badge-flagged" style="font-size:.68rem;">${escHtml(v.reason||v.word||'—')}</span></td>
+            <td style="max-width:240px; word-break:break-word; opacity:.7; font-size:.75rem;">${escHtml((v.message||'—').slice(0,100))}${(v.message||'').length>100?'…':''}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Chatfilter-Verstöße (${viol.length})</div>
+        <div style="border:1px solid rgba(239,68,68,.15); border-radius:8px; padding:.75rem 1rem;">
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Chatfilter Violations (${viol.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
-                    <thead><tr><th>Zeit</th><th>System</th><th>Server</th><th>Grund</th><th>Nachricht</th></tr></thead>
-                    <tbody>${rows}${viol.length > 20 ? `<tr><td colspan="5" style="opacity:.4; font-style:italic; padding:.4rem;">…und ${viol.length-20} weitere</td></tr>` : ''}</tbody>
+                    <thead><tr><th>Time</th><th>System</th><th>Server</th><th>Channel</th><th>Reason</th><th>Message</th></tr></thead>
+                    <tbody>${rows}${viol.length>30?`<tr><td colspan="6" style="opacity:.4; font-style:italic;">…and ${viol.length-30} more</td></tr>`:''}</tbody>
                 </table>
             </div>
         </div>`);
     }
 
-    // Guild warnings block
+    // ── Guild warnings ─────────────────────────────────────────
     if (r.data.guild_warnings && r.data.guild_warnings.length) {
         const gw = r.data.guild_warnings;
+        const wRows = gw.map(g => {
+            const warnLines = (g.warnings||[]).map((w,i) => {
+                if (typeof w === 'object') {
+                    return `<div style="padding:.2rem 0; font-size:.75rem;">#${i+1} — ${escHtml(w.reason||JSON.stringify(w))}${w.moderator?` <span style="opacity:.45;">by ${escHtml(w.moderator)}</span>`:''}${w.timestamp?` <span style="opacity:.35;">${escHtml(String(w.timestamp).slice(0,10))}</span>`:''}</div>`;
+                }
+                return `<div style="font-size:.75rem;">#${i+1} — ${escHtml(String(w))}</div>`;
+            }).join('');
+            return `<details style="border:1px solid rgba(255,255,255,.06); border-radius:6px; padding:.4rem .6rem; margin-bottom:.3rem;">
+                <summary style="cursor:pointer; font-size:.8rem; font-weight:600;">${escHtml(g.guild_name||g.guild_id)} <span style="opacity:.4; font-size:.72rem;">${g.guild_id}</span> — <span class="badge badge-auto">${g.count} warning${g.count!==1?'s':''}</span></summary>
+                <div style="margin-top:.4rem;">${warnLines}</div>
+            </details>`;
+        }).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Verwarnungen in Servern (${gw.length} Server)</div>
-            <div style="display:flex; flex-direction:column; gap:.3rem;">
-                ${gw.map(g => `<div style="display:flex; align-items:center; gap:.5rem; font-size:.8rem; padding:.3rem .5rem; background:rgba(255,255,255,.03); border-radius:4px;">
-                    <span style="font-weight:600;">${escHtml(g.guild_name||g.guild_id)}</span>
-                    <span style="opacity:.4; font-size:.7rem;">${g.guild_id}</span>
-                    <span class="badge badge-auto">${g.count} Verwarnung${g.count!==1?'en':''}</span>
-                </div>`).join('')}
-            </div>
+        <div style="border:1px solid rgba(251,191,36,.2); border-radius:8px; padding:.75rem 1rem;">
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Warnings across Servers (${gw.length} server${gw.length!==1?'s':''})</div>
+            ${wRows}
         </div>`);
     }
 
-    // Temp actions block
+    // ── Temp actions ───────────────────────────────────────────
     if (r.data.temp_actions && r.data.temp_actions.length) {
         const ta = r.data.temp_actions;
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(251,146,60,.25); border-radius:8px; padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Aktive Temp-Actions (${ta.length})</div>
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Active Temp Actions (${ta.length})</div>
             <div style="display:flex; flex-direction:column; gap:.3rem;">
-                ${ta.map(t => `<div style="display:flex; align-items:center; gap:.5rem; font-size:.8rem; padding:.3rem .5rem; background:rgba(251,146,60,.06); border-radius:4px;">
+                ${ta.map(t => `<div style="font-size:.8rem; padding:.3rem .5rem; background:rgba(251,146,60,.06); border-radius:4px;">
                     <span class="badge badge-auto">${escHtml(t.type)}</span>
-                    <span style="opacity:.7;">${escHtml(t.guild_name||t.guild_id)}</span>
-                    <span style="opacity:.45; font-size:.72rem;">Läuft ab: ${escHtml(t.expires_at||'—')}</span>
+                    <span style="opacity:.8; margin-left:.4rem; font-weight:600;">${escHtml(t.guild_name||t.guild_id)}</span>
+                    ${t.reason?`<span style="opacity:.6; margin-left:.4rem;">Reason: ${escHtml(t.reason)}</span>`:''}
+                    ${t.expires_at?`<span style="opacity:.4; margin-left:.4rem; font-size:.72rem;">Expires: ${escHtml(t.expires_at.slice(0,16))}</span>`:''}
+                    ${t.moderator_name?`<span style="opacity:.4; margin-left:.4rem; font-size:.72rem;">By: ${escHtml(t.moderator_name)}</span>`:''}
                 </div>`).join('')}
             </div>
         </div>`);
     }
 
+    // ── Open tickets ───────────────────────────────────────────
+    if (r.data.open_tickets && r.data.open_tickets.length) {
+        const ot = r.data.open_tickets;
+        sections.insertAdjacentHTML('beforeend', `
+        <div style="border:1px solid rgba(34,211,238,.2); border-radius:8px; padding:.75rem 1rem;">
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Open Tickets (${ot.length})</div>
+            ${ot.map(t => `<div style="font-size:.8rem; padding:.4rem .5rem; background:rgba(34,211,238,.05); border-radius:4px; margin-bottom:.3rem;">
+                <div style="font-weight:600;">${escHtml(t.title||'Untitled')}</div>
+                <div style="opacity:.5; font-size:.72rem;">Server ID: ${t.guild_id} · Channel: ${t.channel_id} · ${t.message_count} message${t.message_count!==1?'s':''}</div>
+                ${t.message?`<div style="opacity:.65; margin-top:.2rem; font-size:.75rem;">${escHtml(t.message.slice(0,120))}${t.message.length>120?'…':''}</div>`:''}
+            </div>`).join('')}
+        </div>`);
+    }
+
+    // ── Ticket transcripts ─────────────────────────────────────
+    if (r.data.ticket_transcripts && r.data.ticket_transcripts.length) {
+        const tt = r.data.ticket_transcripts;
+        sections.insertAdjacentHTML('beforeend', `
+        <div style="border:1px solid rgba(34,211,238,.15); border-radius:8px; padding:.75rem 1rem;">
+            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Closed Ticket Transcripts (${tt.length})</div>
+            ${tt.map(t => `<div style="font-size:.8rem; padding:.4rem .5rem; background:rgba(34,211,238,.04); border-radius:4px; margin-bottom:.3rem;">
+                <div style="font-weight:600;">${escHtml(t.title||'Untitled')}</div>
+                <div style="opacity:.5; font-size:.72rem;">ID: ${escHtml(t.id)} · Server: ${t.guild} · ${t.message_count} message${t.message_count!==1?'s':''}</div>
+                ${t.closed_by?`<div style="opacity:.4; font-size:.7rem;">Closed by ${escHtml(t.closed_by)}${t.closed_on?' on '+escHtml(String(t.closed_on).slice(0,10)):''}</div>`:''}
+            </div>`).join('')}
+        </div>`);
+    }
+
     if (!sections.children.length) {
-        sections.innerHTML = '<div style="opacity:.4; font-size:.82rem; padding:.5rem;">Keine detaillierten Daten für diesen User gefunden.</div>';
+        sections.innerHTML = '<div style="opacity:.4; font-size:.82rem; padding:.5rem;">No detailed data found for this user.</div>';
     }
 
     wrap.style.display = 'block';
@@ -1252,9 +1309,10 @@ async function searchUser() {
 async function deleteUserData() {
     if (!_currentSearchUid) return;
     const confirmed = confirm(
-        `Alle Daten von "${_currentSearchName}" (${_currentSearchUid}) löschen?\n\n` +
-        `• Prism-Profil\n• Flagged-User-Eintrag\n• Chatfilter-Logs\n• Verwarnungen\n• Temp-Actions\n\n` +
-        `Eine DM wird an den User gesendet. Dies kann nicht rückgängig gemacht werden!`
+        `Delete ALL data for "${_currentSearchName}" (${_currentSearchUid})?\n\n` +
+        `• Prism profile\n• Flagged user entry\n• Chatfilter logs (global + per-server)\n` +
+        `• Warnings\n• Temp actions\n• Open tickets\n• Global bans (ba_ban / gc_ban)\n\n` +
+        `A DM will be sent to the user. This cannot be undone!`
     );
     if (!confirmed) return;
 
@@ -1272,9 +1330,9 @@ async function deleteUserData() {
 
 async function sendUserData() {
     if (!_currentSearchUid) return;
-    if (!confirm(`Alle gespeicherten Daten von "${_currentSearchName}" (${_currentSearchUid}) per Discord-DM an den User senden?`)) return;
+    if (!confirm(`Send all stored data for "${_currentSearchName}" (${_currentSearchUid}) to them via Discord DM?`)) return;
     const r = await doAction({ action: 'send_user_data', user_id: _currentSearchUid });
-    alert(r.ok ? '✓ ' + r.message : 'Fehler: ' + r.message);
+    alert(r.ok ? '✓ ' + r.message : 'Error: ' + r.message);
 }
 
 // ── Admin Actions ─────────────────────────────────────────────
