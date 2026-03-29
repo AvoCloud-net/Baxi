@@ -2636,13 +2636,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             # Prism profile
             profile = sentinel.get_profile(int(uid_str))
             if profile:
+                _prism_events = profile.get("events", [])
                 result["prism"] = {
                     "score": profile.get("score", 100),
-                    "event_count": len(profile.get("events", [])),
+                    "event_count": len(_prism_events),
                     "first_seen": profile.get("first_seen", ""),
                     "last_seen": profile.get("last_seen", ""),
+                    "account_created_at": profile.get("account_created_at", ""),
                     "auto_flagged": profile.get("auto_flagged", False),
                     "opted_out": profile.get("opted_out", False),
+                    "risk_signals": profile.get("risk_signals", []),
+                    "events": _prism_events[-30:],
                 }
 
             # Flagged entry
@@ -2686,6 +2690,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                             "guild_id": _gid,
                             "guild_name": _conf.get("guild_name", _gid),
                             "count": len(_warns),
+                            "entries": _warns,
                         })
                 except Exception:
                     pass
@@ -2713,6 +2718,77 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 except Exception:
                     pass
             result["temp_actions"] = temp_actions_found
+
+            # GC ban / BA ban (global)
+            _global_conf_path = os.path.join("data", "1001", "conf.json")
+            result["gc_ban"] = None
+            result["ba_ban"] = None
+            try:
+                with open(_global_conf_path, "r", encoding="utf-8") as _gcf:
+                    _global_conf = json.load(_gcf)
+                _gc_ban_map = _global_conf.get("gc_ban", {})
+                _ba_ban_map = _global_conf.get("ba_ban", {})
+                if uid_str in _gc_ban_map:
+                    result["gc_ban"] = _gc_ban_map[uid_str]
+                if uid_str in _ba_ban_map:
+                    result["ba_ban"] = _ba_ban_map[uid_str]
+            except Exception:
+                pass
+
+            # Open tickets per guild
+            open_tickets_found = []
+            for _gid in _guild_dirs:
+                _tk_path = os.path.join(_data_dir, _gid, "tickets.json")
+                if not os.path.exists(_tk_path):
+                    continue
+                try:
+                    with open(_tk_path, "r", encoding="utf-8") as _tf:
+                        _open_tks = json.load(_tf)
+                    _gname_tk = None
+                    for _cid, _td in _open_tks.items():
+                        if str(_td.get("user", "")) == uid_str:
+                            if _gname_tk is None:
+                                try:
+                                    with open(os.path.join(_data_dir, _gid, "conf.json"), encoding="utf-8") as _fcf:
+                                        _gname_tk = json.load(_fcf).get("guild_name", _gid)
+                                except Exception:
+                                    _gname_tk = _gid
+                            open_tickets_found.append({
+                                "guild_id": _gid,
+                                "guild_name": _gname_tk,
+                                "channel_id": _cid,
+                                "title": _td.get("title", ""),
+                                "message": _td.get("message", ""),
+                                "status": _td.get("status", "open"),
+                                "created_at": _td.get("created_at", ""),
+                            })
+                except Exception:
+                    pass
+            result["open_tickets"] = open_tickets_found
+
+            # Closed transcripts (match by username in messages)
+            transcripts_found = []
+            if found_name:
+                _name_lower = found_name.lower()
+                try:
+                    _transcripts: dict = dict(datasys.load_data(1001, "transcripts"))
+                    for _tid, _tr in _transcripts.items():
+                        _tr_msgs = _tr.get("transcript", [])
+                        for _trm in _tr_msgs:
+                            if _trm.get("user", "").lower() == _name_lower:
+                                transcripts_found.append({
+                                    "id": _tid,
+                                    "guild_id": _tr.get("guild", ""),
+                                    "title": _tr.get("title", ""),
+                                    "initial_message": _tr.get("msg", ""),
+                                    "closed_by": _tr.get("closed_by", ""),
+                                    "closed_on": _tr.get("closed_on", ""),
+                                    "message_count": len(_tr_msgs),
+                                })
+                                break
+                except Exception:
+                    pass
+            result["transcripts"] = transcripts_found
 
             share.admin_log("info", f"User search for '{query}' by {user.name} → found uid={uid_str}", source="AdminDash")
             return quart.jsonify(result)
@@ -2813,16 +2889,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 target_del = await bot.fetch_user(int(user_id_str))
                 _ts_del = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
                 embed_del = discord.Embed(
-                    title="Deine Daten wurden gelöscht",
+                    title="Your Data has been deleted",
                     description=(
-                        "Alle in Baxi über dich gespeicherten Daten wurden von einem Administrator gelöscht.\n\n"
-                        f"**Gelöscht:** {', '.join(deleted_items) if deleted_items else 'Keine Daten gefunden'}\n"
-                        f"**Gelöscht am:** {_ts_del}\n\n"
-                        "Falls du glaubst, dass dies ein Fehler war, wende dich bitte an das Baxi-Support-Team."
+                        "All data stored about you in Baxi has been deleted by an administrator.\n\n"
+                        f"**Deleted:** {', '.join(deleted_items) if deleted_items else 'No data found'}\n"
+                        f"**Deleted on:** {_ts_del}\n\n"
+                        "If you believe this was done in error, please contact the Baxi support team."
                     ),
                     color=config.Discord.color,
                 )
-                embed_del.set_author(name="Baxi Datenverwaltung")
+                embed_del.set_author(name="Baxi Data Management")
                 embed_del.set_footer(text="Avocloud.net · Baxi")
                 await target_del.send(embed=embed_del)
                 dm_sent = True
@@ -2861,7 +2937,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             users_list_rep: dict = dict(datasys.load_data(1001, "users"))
             flagged_rep = users_list_rep.get(user_id_str)
             cf_log_rep: dict = dict(datasys.load_data(1001, "chatfilter_log"))
-            violations_rep = [v for v in cf_log_rep.values() if str(v.get("uid", "")) == user_id_str]
+            violations_rep = sorted(
+                [v for v in cf_log_rep.values() if str(v.get("uid", "")) == user_id_str],
+                key=lambda v: v.get("timestamp", ""), reverse=True
+            )
 
             _data_dir3 = "data"
             try:
@@ -2872,7 +2951,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             except FileNotFoundError:
                 _guild_dirs3 = []
 
-            total_warnings_rep = 0
+            all_warnings_rep: list[dict] = []
             for _gid3 in _guild_dirs3:
                 _cp3 = os.path.join(_data_dir3, _gid3, "conf.json")
                 if not os.path.exists(_cp3):
@@ -2880,56 +2959,160 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 try:
                     with open(_cp3, "r", encoding="utf-8") as _f4:
                         _conf3 = json.load(_f4)
-                    total_warnings_rep += len(_conf3.get("warnings", {}).get(user_id_str, []))
+                    _gw = _conf3.get("warnings", {}).get(user_id_str, [])
+                    _gname3 = _conf3.get("guild_name", _gid3)
+                    for _w in _gw:
+                        all_warnings_rep.append({**_w, "guild_name": _gname3, "guild_id": _gid3})
                 except Exception:
                     pass
 
-            lines_rep = []
+            temp_actions_rep: list[dict] = []
+            for _gid3 in _guild_dirs3:
+                _tp3 = os.path.join(_data_dir3, _gid3, "temp_actions.json")
+                if not os.path.exists(_tp3):
+                    continue
+                try:
+                    with open(_tp3, "r", encoding="utf-8") as _f5:
+                        _ta3 = json.load(_f5)
+                    for _at3 in ["bans", "timeouts"]:
+                        for _te3 in _ta3.get(_at3, []):
+                            if str(_te3.get("user_id", "")) == user_id_str:
+                                temp_actions_rep.append({
+                                    "type": _at3[:-1],
+                                    "guild_name": _te3.get("guild_name", _gid3),
+                                    "expires_at": _te3.get("expires_at", ""),
+                                    "reason": _te3.get("reason", ""),
+                                })
+                except Exception:
+                    pass
+
+            embeds_to_send: list[discord.Embed] = []
+
+            # ── Embed 1: Overview ─────────────────────────────────────────
+            overview_lines = [
+                "The following data is stored about you in the Baxi bot system.",
+                "This information is used for moderation and trust-scoring purposes.\n",
+            ]
             if profile_rep:
-                lines_rep.append(f"**Prism Score:** {profile_rep.get('score', 100)}/100")
-                lines_rep.append(f"**Prism Events:** {len(profile_rep.get('events', []))}")
-                lines_rep.append(f"**Auto-flagged:** {'Ja' if profile_rep.get('auto_flagged') else 'Nein'}")
+                _score = profile_rep.get("score", 100)
+                _flag_txt = " ⚠️ Auto-flagged" if profile_rep.get("auto_flagged") else ""
+                overview_lines.append(f"**Prism Trust Score:** {_score}/100{_flag_txt}")
+                overview_lines.append(f"**Prism Events recorded:** {len(profile_rep.get('events', []))}")
                 if profile_rep.get("first_seen"):
-                    lines_rep.append(f"**Erstmals von Baxi gesehen:** {profile_rep['first_seen'][:10]}")
+                    overview_lines.append(f"**First seen by Baxi:** {profile_rep['first_seen'][:10]}")
                 if profile_rep.get("last_seen"):
-                    lines_rep.append(f"**Zuletzt von Baxi gesehen:** {profile_rep['last_seen'][:10]}")
+                    overview_lines.append(f"**Last seen by Baxi:** {profile_rep['last_seen'][:10]}")
+                if profile_rep.get("account_created_at"):
+                    overview_lines.append(f"**Account created:** {profile_rep['account_created_at'][:10]}")
                 if profile_rep.get("opted_out"):
-                    lines_rep.append("**Prism Opt-out:** Ja")
+                    overview_lines.append("**Prism tracking:** Opted out")
+                _rsig = profile_rep.get("risk_signals", [])
+                if _rsig:
+                    overview_lines.append(f"**Active risk signals:** {', '.join(_rsig)}")
             if flagged_rep and flagged_rep.get("flagged"):
-                lines_rep.append(f"**Global gemeldet:** Ja (Grund: {flagged_rep.get('reason', '—')})")
-            if violations_rep:
-                lines_rep.append(f"**Chatfilter-Verstöße:** {len(violations_rep)}")
-            if total_warnings_rep:
-                lines_rep.append(f"**Verwarnungen (gesamt über alle Server):** {total_warnings_rep}")
+                overview_lines.append(f"**Global flag:** Yes — Reason: {flagged_rep.get('reason', '—')}")
+                if flagged_rep.get("entry_date"):
+                    overview_lines.append(f"**Flagged on:** {flagged_rep['entry_date']}")
+            overview_lines.append(f"\n**Chatfilter violations:** {len(violations_rep)}")
+            overview_lines.append(f"**Warnings across all servers:** {len(all_warnings_rep)}")
+            overview_lines.append(f"**Active temp actions:** {len(temp_actions_rep)}")
 
-            if not lines_rep:
-                lines_rep.append("Keine Daten über dich im Baxi-System gespeichert.")
-
-            embed_rep = discord.Embed(
-                title="Deine bei Baxi gespeicherten Daten",
-                description=(
-                    "Folgende Daten sind über dich im Baxi-Bot-System gespeichert. "
-                    "Diese Informationen werden für Moderations- und Trust-Scoring-Zwecke verwendet.\n\n"
-                    + "\n".join(lines_rep)
-                ),
+            embed_overview = discord.Embed(
+                title="Your Data stored in Baxi",
+                description="\n".join(overview_lines),
                 color=config.Discord.color,
             )
-            embed_rep.set_author(name="Baxi Datenbericht")
-            embed_rep.set_footer(text=f"Angefordert am {_ts_rep} · Avocloud.net · Baxi")
+            embed_overview.set_author(name="Baxi Data Report")
+            embed_overview.set_footer(text=f"Requested on {_ts_rep} · Avocloud.net · Baxi")
+            embeds_to_send.append(embed_overview)
+
+            # ── Embed 2: Prism events ────────────────────────────────────
+            if profile_rep and profile_rep.get("events"):
+                _evs = profile_rep["events"][-20:]
+                ev_lines = []
+                for _ev in reversed(_evs):
+                    _ev_ts = str(_ev.get("timestamp", ""))[:16].replace("T", " ")
+                    _ev_type = _ev.get("type", "unknown")
+                    _ev_reason = _ev.get("reason", "—")
+                    _ev_guild = _ev.get("guild_id", "")
+                    ev_lines.append(f"`{_ev_ts}` **{_ev_type}** — {_ev_reason} *(server {_ev_guild})*")
+                embed_events = discord.Embed(
+                    title="Prism Events (last 20)",
+                    description="\n".join(ev_lines) or "No events recorded.",
+                    color=0x9333ea,
+                )
+                embeds_to_send.append(embed_events)
+
+            # ── Embed 3: Chatfilter violations ───────────────────────────
+            if violations_rep:
+                cf_lines = []
+                for _viol in violations_rep[:15]:
+                    _vts = _viol.get("timestamp", "—")
+                    _vsname = _viol.get("sname", "—")
+                    _vreason = _viol.get("reason", "—")
+                    _vmsg = (_viol.get("message", "") or "")[:80]
+                    cf_lines.append(f"`{_vts}` **{_vsname}** — *{_vreason}*\n> {_vmsg}")
+                if len(violations_rep) > 15:
+                    cf_lines.append(f"*… and {len(violations_rep) - 15} more violations*")
+                embed_cf = discord.Embed(
+                    title=f"Chatfilter Violations ({len(violations_rep)})",
+                    description="\n\n".join(cf_lines),
+                    color=0xc084fc,
+                )
+                embeds_to_send.append(embed_cf)
+
+            # ── Embed 4: Warnings ────────────────────────────────────────
+            if all_warnings_rep:
+                warn_lines = []
+                for _warn in all_warnings_rep[:20]:
+                    _wdate = _warn.get("date", "—")
+                    _wreason = _warn.get("reason", "—")
+                    _wmod = _warn.get("mod", "—")
+                    _wguild = _warn.get("guild_name", "—")
+                    warn_lines.append(f"`{_wdate}` **{_wguild}** — {_wreason} *(by {_wmod})*")
+                if len(all_warnings_rep) > 20:
+                    warn_lines.append(f"*… and {len(all_warnings_rep) - 20} more warnings*")
+                embed_warns = discord.Embed(
+                    title=f"Warnings ({len(all_warnings_rep)} total)",
+                    description="\n".join(warn_lines),
+                    color=0xfb923c,
+                )
+                embeds_to_send.append(embed_warns)
+
+            # ── Embed 5: Temp actions ────────────────────────────────────
+            if temp_actions_rep:
+                ta_lines = []
+                for _ta_r in temp_actions_rep:
+                    _ta_type = _ta_r.get("type", "—").upper()
+                    _ta_guild = _ta_r.get("guild_name", "—")
+                    _ta_exp = _ta_r.get("expires_at", "—")
+                    _ta_reason = _ta_r.get("reason", "—")
+                    ta_lines.append(f"**{_ta_type}** in {_ta_guild}\nExpires: `{_ta_exp}` — {_ta_reason}")
+                embed_ta = discord.Embed(
+                    title=f"Active Temp Actions ({len(temp_actions_rep)})",
+                    description="\n\n".join(ta_lines),
+                    color=0xf87171,
+                )
+                embeds_to_send.append(embed_ta)
+
+            if len(embeds_to_send) == 1:
+                embed_overview.description += "\n\n*No detailed records found beyond this summary.*"
 
             try:
-                await target_rep.send(embed=embed_rep)
+                # Discord allows max 10 embeds per message; send in batches of 10
+                for _i in range(0, len(embeds_to_send), 10):
+                    await target_rep.send(embeds=embeds_to_send[_i:_i + 10])
             except discord.Forbidden:
-                return quart.jsonify({"success": False, "message": "DM konnte nicht gesendet werden — User hat DMs deaktiviert."}), 400
+                return quart.jsonify({"success": False, "message": "Could not send DM — user has DMs disabled."}), 400
             except Exception as _e2:
-                return quart.jsonify({"success": False, "message": f"Fehler beim Senden der DM: {_e2}"}), 500
+                return quart.jsonify({"success": False, "message": f"Error sending DM: {_e2}"}), 500
 
             share.admin_log(
                 "info",
-                f"Datenbericht an {target_rep.name} ({user_id_str}) gesendet von {user.name}",
+                f"Data report sent to {target_rep.name} ({user_id_str}) by {user.name}",
                 source="AdminDash",
             )
-            return quart.jsonify({"success": True, "message": f"Datenbericht via DM an {target_rep.name} gesendet."})
+            return quart.jsonify({"success": True, "message": f"Data report sent via DM to {target_rep.name}."})
 
         return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
 
