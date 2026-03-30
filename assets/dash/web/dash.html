@@ -215,6 +215,10 @@
             </a>
 
             <span class="dash-nav-group-label">Community</span>
+            <a href="#minigames" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M6 11H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2"/><path d="M18 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M6 11V7a6 6 0 0 1 12 0v4"/><path d="M10 11v5"/><path d="M14 11v5"/><path d="M8 16h8"/></svg>
+                Minigames
+            </a>
             <a href="#globalchat" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
                 Global Chat
@@ -1791,6 +1795,150 @@
                 </div>
             </section>
 
+            <!-- Minigames -->
+            <section class="pb-16 dash-section" id="minigames">
+                <div class="section-label">MINIGAMES</div>
+
+                <!-- Counting Game -->
+                <div class="card mb-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+                            Counting Game
+                        </h2>
+                        <p class="text-muted">Let your community count up together as high as possible. Sending the wrong number resets the counter!</p>
+                    </header>
+                    <section>
+                        <form id="counting-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="counting-enabled">
+                                    <input type="checkbox" id="counting-enabled">
+                                    Enable Counting Game
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="counting-channel">Channel:</label>
+                                <select id="counting-channel" class="select w-full">
+                                    <option value="">— Select a channel —</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">The channel where the counting game takes place.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="counting-no-double">
+                                    <input type="checkbox" id="counting-no-double">
+                                    Prevent the same person from counting twice in a row
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="counting-react-correct">
+                                    <input type="checkbox" id="counting-react-correct">
+                                    ✅ React on correct number
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="counting-react-wrong">
+                                    <input type="checkbox" id="counting-react-wrong">
+                                    ❌ React on wrong number / rule violation
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#18181b);border-radius:8px;border:1px solid var(--border,#27272a);">
+                                <p class="text-muted text-xs" style="margin:0;">
+                                    <strong>Current count:</strong> <span id="counting-current-display">—</span> &nbsp;|&nbsp;
+                                    <strong>High score:</strong> <span id="counting-highscore-display">—</span>
+                                </p>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" class="btn-primary submit-btn flex-1">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                                <button type="button" id="counting-reset-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                    <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                    Reset count
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- Flag Quiz -->
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+                            Flag Quiz
+                        </h2>
+                        <p class="text-muted">The bot posts a flag — whoever types the correct country first earns a point. The next round starts automatically!</p>
+                    </header>
+                    <section>
+                        <form id="flagquiz-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="flagquiz-enabled">
+                                    <input type="checkbox" id="flagquiz-enabled">
+                                    Enable Flag Quiz
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="flagquiz-channel">Channel:</label>
+                                <select id="flagquiz-channel" class="select w-full">
+                                    <option value="">— Select a channel —</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Questions are posted and answers are accepted in this channel.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="flagquiz-hint-attempts">Hint after (wrong attempts):</label>
+                                <input type="number" id="flagquiz-hint-attempts" min="0" max="20" value="3" class="w-full">
+                                <p class="text-muted text-xs">After how many wrong attempts a hint appears (first letter + length). Set to 0 to disable hints.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="flagquiz-next-delay">Delay between rounds (seconds):</label>
+                                <input type="number" id="flagquiz-next-delay" min="1" max="60" value="3" class="w-full">
+                                <p class="text-muted text-xs">How long to wait before posting the next flag after a correct answer.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="flagquiz-points">
+                                    <input type="checkbox" id="flagquiz-points">
+                                    Track points (leaderboard)
+                                </label>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" class="btn-primary submit-btn flex-1">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                                <button type="button" id="flagquiz-reset-scores-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                    <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    Reset scores
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Audit Log -->
             <section class="pb-16 dash-section" id="auditlog">
                 <div class="section-label">AUDIT LOG</div>
@@ -1953,7 +2101,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
+                'minigames', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'stats-channels', 'customcmds'
             ];
@@ -2170,6 +2318,26 @@
                 document.getElementById('asm-interval').value = data.auto_slowmode.interval ?? 10;
                 document.getElementById('asm-slowmode-delay').value = data.auto_slowmode.slowmode_delay ?? 5;
                 document.getElementById('asm-duration').value = data.auto_slowmode.duration ?? 120;
+            }
+
+            // Counting Game
+            if (data.counting) {
+                document.getElementById('counting-enabled').checked = data.counting.enabled === true;
+                document.getElementById('counting-channel').value = (data.counting.channel && String(data.counting.channel) !== '0') ? String(data.counting.channel) : '';
+                document.getElementById('counting-no-double').checked = data.counting.no_double_count !== false;
+                document.getElementById('counting-react-correct').checked = data.counting.react_correct !== false;
+                document.getElementById('counting-react-wrong').checked = data.counting.react_wrong !== false;
+                document.getElementById('counting-current-display').textContent = data.counting.current_count ?? 0;
+                document.getElementById('counting-highscore-display').textContent = data.counting.high_score ?? 0;
+            }
+
+            // Flag Quiz
+            if (data.flag_quiz) {
+                document.getElementById('flagquiz-enabled').checked = data.flag_quiz.enabled === true;
+                document.getElementById('flagquiz-channel').value = (data.flag_quiz.channel && String(data.flag_quiz.channel) !== '0') ? String(data.flag_quiz.channel) : '';
+                document.getElementById('flagquiz-hint-attempts').value = data.flag_quiz.hint_after_attempts ?? 3;
+                document.getElementById('flagquiz-next-delay').value = data.flag_quiz.next_delay ?? 3;
+                document.getElementById('flagquiz-points').checked = data.flag_quiz.points_enabled !== false;
             }
 
             // Verification
@@ -2962,6 +3130,79 @@
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
                     }
+                }
+            };
+        };
+
+        // ── Counting Game ──────────────────────────────────────────────────────
+        document.getElementById('counting-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('counting-enabled').checked;
+            const channel = document.getElementById('counting-channel').value;
+            const no_double_count = document.getElementById('counting-no-double').checked;
+            const react_correct = document.getElementById('counting-react-correct').checked;
+            const react_wrong = document.getElementById('counting-react-wrong').checked;
+            const payload = { counting: { enabled, channel, no_double_count, react_correct, react_wrong } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=counting&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('counting-reset-btn').onclick = function () {
+            if (!confirm('Reset the count to 0?')) return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=counting_reset&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({}));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        showSaveToast(r.success, r.message);
+                        if (r.success) document.getElementById('counting-current-display').textContent = '0';
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── Flag Quiz ──────────────────────────────────────────────────────────
+        document.getElementById('flagquiz-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('flagquiz-enabled').checked;
+            const channel = document.getElementById('flagquiz-channel').value;
+            const hint_after_attempts = parseInt(document.getElementById('flagquiz-hint-attempts').value, 10);
+            const next_delay = parseInt(document.getElementById('flagquiz-next-delay').value, 10);
+            const points_enabled = document.getElementById('flagquiz-points').checked;
+            const payload = { flag_quiz: { enabled, channel, hint_after_attempts, next_delay, points_enabled } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=flag_quiz&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('flagquiz-reset-scores-btn').onclick = function () {
+            if (!confirm('Reset all scores? This cannot be undone.')) return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=flag_quiz_reset_scores&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({}));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
                 }
             };
         };

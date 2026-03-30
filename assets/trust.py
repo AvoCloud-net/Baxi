@@ -57,7 +57,11 @@ RECOVERY_BY_TIER: dict[str, tuple[int, int]] = {
 # ── Thresholds ─────────────────────────────────────────────────────────────────
 AUTO_FLAG_THRESHOLD   = 30   # score ≤ this → auto-flag
 AUTO_UNFLAG_THRESHOLD = 50   # score ≥ this → auto-unflag (only if auto-flagged)
+NEAR_FLAG_THRESHOLD   = 45   # score ≤ this → "approaching flag" warning notification
 EVENT_DECAY_DAYS      = 90   # events older than this count at half weight
+
+# ── Global Prism notification channel ──────────────────────────────────────────
+PRISM_GLOBAL_CHANNEL_ID = 1303089032640725065   # receives all flag + near-flag alerts
 
 # ── Account age ramp ───────────────────────────────────────────────────────────
 # New accounts start at (100 - AGE_MAX_PENALTY) and linearly reach 100 at AGE_FULL_TRUST_DAYS.
@@ -79,7 +83,7 @@ RISK_SIGNAL_LABELS: dict[str, str] = {
     "new_account_1d":  "Account created less than 24 hours ago",
     "new_account_7d":  "Account less than 7 days old",
     "new_account_30d": "Account less than 30 days old",
-    "velocity_burst":  "3+ violations within 24 hours",
+    "velocity_burst":  "5+ violations within 24 hours",
     "multi_server":    "Violations on 2+ different servers",
 }
 
@@ -178,13 +182,13 @@ def _compute_risk_signals(account_age_days: int, events: list) -> list[str]:
 
     now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
-    # Velocity signal: 3+ events in the last 24 hours
+    # Velocity signal: 5+ events in the last 24 hours
     v_24h = sum(
         1 for e in events
         if "timestamp" in e
         and (now - _try_parse_dt(e["timestamp"])).total_seconds() <= 86400
     )
-    if v_24h >= 3:
+    if v_24h >= 5:
         signals.append("velocity_burst")
 
     # Multi-server signal: events on 2+ different guilds
@@ -248,10 +252,10 @@ def calculate_score(events: list, account_age_days: int) -> int:
                 v_24h += 1
             if diff.days <= 7:
                 v_7d += 1
-        if v_24h >= 3:
-            score -= (v_24h - 2) * 5   # −5 per violation beyond 2 in 24 h
-        elif v_7d >= 5:
-            score -= (v_7d - 4) * 3    # −3 per violation beyond 4 in 7 days
+        if v_24h >= 5:
+            score -= (v_24h - 4) * 5   # −5 per violation beyond 4 in 24 h
+        elif v_7d >= 7:
+            score -= (v_7d - 6) * 3    # −3 per violation beyond 6 in 7 days
 
     return max(0, min(100, score))
 
@@ -429,6 +433,8 @@ def record_event(
         if not data[uid].get("account_created_at"):
             data[uid]["account_created_at"] = account_created_at
 
+    prev_score = data[uid].get("score", 100)
+
     data[uid]["events"].append({
         "type":      event_type,
         "reason":    reason,
@@ -453,9 +459,10 @@ def record_event(
     _auto_flag_check(uid, user_name, score, data)
     now_flagged = data[uid].get("auto_flagged", False)
 
-    # Notify staff: newly auto-flagged OR critical/severe event
-    severity = get_event_severity(event_type)
-    if (not was_flagged and now_flagged) or severity in NOTIFY_TIERS:
+    # Notify staff: newly auto-flagged, critical/severe event, or score just crossed near-flag threshold
+    severity    = get_event_severity(event_type)
+    near_flag   = score <= NEAR_FLAG_THRESHOLD and prev_score > NEAR_FLAG_THRESHOLD
+    if (not was_flagged and now_flagged) or severity in NOTIFY_TIERS or near_flag:
         _schedule_notification(
             guild_id=guild_id,
             user_id=user_id,
@@ -464,6 +471,7 @@ def record_event(
             score=score,
             reason=reason,
             auto_flagged=now_flagged,
+            near_flag=near_flag and not now_flagged,
         )
 
     # Schedule LLM summary update (score always < 100 after any event)
@@ -504,10 +512,14 @@ def set_opt_out(user_id: int, opted_out: bool):
     """Set the Prism opt-out status for a user."""
     data = _load()
     uid  = str(user_id)
-    if uid in data:
+    if uid not in data:
+        if not opted_out:
+            return
+        data[uid] = {"id": uid, "score": 100, "events": [], "opted_out": True}
+    else:
         data[uid]["opted_out"] = opted_out
-        _save(data)
-        logger.info(f"[Prism] Opt-out {'enabled' if opted_out else 'disabled'} for {uid}")
+    _save(data)
+    logger.info(f"[Prism] Opt-out {'enabled' if opted_out else 'disabled'} for {uid}")
 
 
 def is_opted_out(user_id: int) -> bool:
@@ -517,6 +529,24 @@ def is_opted_out(user_id: int) -> bool:
     if uid in data:
         return data[uid].get("opted_out", False)
     return False
+
+
+def delete_event(user_id: int, event_timestamp: str) -> bool:
+    """Delete a single event by its exact timestamp. Returns True if found and removed."""
+    data = _load()
+    uid  = str(user_id)
+    if uid not in data:
+        return False
+    events = data[uid].get("events", [])
+    new_events = [e for e in events if e.get("timestamp") != event_timestamp]
+    if len(new_events) == len(events):
+        return False  # nothing matched
+    data[uid]["events"] = new_events
+    data[uid]["score"]  = calculate_score(new_events, data[uid].get("account_age_days", 365))
+    data[uid]["risk_signals"] = _compute_risk_signals(data[uid].get("account_age_days", 365), new_events)
+    _save(data)
+    logger.info(f"[Prism] Single event deleted for {uid} (ts={event_timestamp}), new score={data[uid]['score']}")
+    return True
 
 
 def clear_events(user_id: int):
@@ -635,6 +665,7 @@ def _schedule_notification(
     score:       int,
     reason:      str,
     auto_flagged: bool,
+    near_flag:   bool = False,
 ):
     """Schedule an async staff notification using the running event loop."""
     import assets.share as share
@@ -644,7 +675,7 @@ def _schedule_notification(
     try:
         loop = asyncio.get_running_loop()
         loop.create_task(
-            _send_staff_notification(bot, guild_id, user_id, user_name, event_type, score, reason, auto_flagged)
+            _send_staff_notification(bot, guild_id, user_id, user_name, event_type, score, reason, auto_flagged, near_flag)
         )
     except RuntimeError:
         pass  # no running loop — skip notification
@@ -659,24 +690,23 @@ async def _send_staff_notification(
     score:       int,
     reason:      str,
     auto_flagged: bool,
+    near_flag:   bool = False,
 ):
-    """Send a Prism alert embed to the guild's configured or auto-detected staff channel."""
+    """Send a Prism alert embed to the guild's staff channel and the global Prism channel."""
     import discord
     import config.config as config
 
     try:
-        guild = bot.get_guild(guild_id)
-        if guild is None:
-            return
-
-        channel = await _resolve_notification_channel(guild)
-        if channel is None:
-            return
-
         severity = get_event_severity(event_type)
-        color    = config.Discord.danger_color if severity == "critical" else config.Discord.warn_color
+        color    = config.Discord.danger_color if (auto_flagged or severity == "critical") else config.Discord.warn_color
 
-        flag_note = " · **Auto-Flagged**" if auto_flagged else ""
+        if auto_flagged:
+            flag_note = " · **Auto-Flagged**"
+        elif near_flag:
+            flag_note = " · **Approaching Flag**"
+        else:
+            flag_note = ""
+
         embed = discord.Embed(
             title=f"{config.Icons.alert} Prism Alert{flag_note}",
             description=(
@@ -690,8 +720,27 @@ async def _send_staff_notification(
             color=color,
         )
         embed.set_footer(text="Baxi Prism · avocloud.net")
-        await channel.send(embed=embed)
-        logger.info(f"[Prism] Staff notification sent in {guild.name} for {user_name}")
+
+        # Send to guild's staff channel
+        guild = bot.get_guild(guild_id)
+        if guild is not None:
+            guild_channel = await _resolve_notification_channel(guild)
+            if guild_channel is not None:
+                try:
+                    await guild_channel.send(embed=embed)
+                    logger.info(f"[Prism] Staff notification sent in {guild.name} for {user_name}")
+                except Exception as _gc_err:
+                    logger.error(f"[Prism] Guild channel notification failed: {_gc_err}")
+
+        # Always send to global Prism channel
+        global_channel = bot.get_channel(PRISM_GLOBAL_CHANNEL_ID)
+        if global_channel is not None and isinstance(global_channel, discord.TextChannel):
+            try:
+                await global_channel.send(embed=embed)
+                logger.info(f"[Prism] Global channel notification sent for {user_name}")
+            except Exception as _gl_err:
+                logger.error(f"[Prism] Global channel notification failed: {_gl_err}")
+
     except Exception as e:
         logger.error(f"[Prism] Staff notification failed: {e}")
 

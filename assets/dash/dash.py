@@ -1590,6 +1590,147 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "counting":
+            data: dict = await quart.request.get_json()
+            counting = data.get("counting")
+
+            if not isinstance(counting, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'counting' must be an object."}), 400
+
+            if not isinstance(counting.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(counting.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+
+            existing: dict = dict(load_data(int(guild_id), "counting"))
+            settings = {
+                "enabled": counting["enabled"],
+                "channel": channel_raw if channel_raw else "",
+                "no_double_count": bool(counting.get("no_double_count", True)),
+                "react_correct": bool(counting.get("react_correct", True)),
+                "react_wrong": bool(counting.get("react_wrong", True)),
+                # preserve runtime state
+                "current_count": existing.get("current_count", 0),
+                "high_score": existing.get("high_score", 0),
+                "last_user_id": existing.get("last_user_id", 0),
+            }
+
+            save_data(int(guild_id), "counting", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "counting",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Counting Game settings saved!"})
+
+        elif system == "counting_reset":
+            existing: dict = dict(load_data(int(guild_id), "counting"))
+            existing["current_count"] = 0
+            existing["last_user_id"] = 0
+            save_data(int(guild_id), "counting", existing)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "counting_reset",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Count was reset to 0."})
+
+        elif system == "flag_quiz":
+            data: dict = await quart.request.get_json()
+            fq = data.get("flag_quiz")
+
+            if not isinstance(fq, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'flag_quiz' must be an object."}), 400
+
+            if not isinstance(fq.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(fq.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+
+            existing: dict = dict(load_data(int(guild_id), "flag_quiz"))
+
+            try:
+                hint_after_attempts = max(0, min(20, int(fq.get("hint_after_attempts", 3))))
+                next_delay = max(1, min(60, int(fq.get("next_delay", 3))))
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "hint_after_attempts and next_delay must be integers."}), 400
+
+            settings = {
+                "enabled": fq["enabled"],
+                "channel": channel_raw if channel_raw else "",
+                "hint_after_attempts": hint_after_attempts,
+                "next_delay": next_delay,
+                "points_enabled": bool(fq.get("points_enabled", True)),
+                # preserve scores
+                "scores": existing.get("scores", {}),
+            }
+
+            save_data(int(guild_id), "flag_quiz", settings)
+
+            # Auto-start: if enabled and no question is currently active, post first round
+            if settings["enabled"] and settings["channel"]:
+                import assets.games.quiz as quiz_game
+                gid_int = int(guild_id)
+                if gid_int not in quiz_game._active:
+                    guild_obj = bot.get_guild(gid_int)
+                    if guild_obj:
+                        ch = guild_obj.get_channel(int(settings["channel"]))
+                        if isinstance(ch, discord.TextChannel):
+                            asyncio.create_task(quiz_game.start_round(gid_int, ch, bot))
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "flag_quiz",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Flag Quiz settings saved!"})
+
+        elif system == "flag_quiz_reset_scores":
+            existing: dict = dict(load_data(int(guild_id), "flag_quiz"))
+            existing["scores"] = {}
+            save_data(int(guild_id), "flag_quiz", existing)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "flag_quiz_reset_scores",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "All scores have been reset."})
+
         elif system == "reaction_roles":
             data: dict = await quart.request.get_json()
             rr = data.get("reaction_roles")
@@ -2146,6 +2287,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "first_seen": profile.get("first_seen", ""),
                 "last_seen": profile.get("last_seen", ""),
                 "account_age_days": profile.get("account_age_days", 0),
+                "opted_out": profile.get("opted_out", False),
             })
         prism_users.sort(key=lambda u: u["score"])
 
@@ -2344,6 +2486,20 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             sentinel.clear_events(int(user_id_str))
             share.admin_log("info", f"Prism events cleared for {user_id_str} by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": "Events cleared."})
+
+        elif action == "delete_prism_event":
+            user_id_str = str(data.get("user_id", "")).strip()
+            event_ts    = str(data.get("event_timestamp", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            if not event_ts:
+                return quart.jsonify({"success": False, "message": "Missing event_timestamp."}), 400
+            import assets.trust as sentinel
+            removed = sentinel.delete_event(int(user_id_str), event_ts)
+            if not removed:
+                return quart.jsonify({"success": False, "message": "Event not found."}), 404
+            share.admin_log("info", f"Prism single event deleted for {user_id_str} (ts={event_ts}) by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": "Event deleted."})
 
         elif action == "refresh_prism_summary":
             user_id_str = str(data.get("user_id", "")).strip()
@@ -2986,6 +3142,66 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 except Exception:
                     pass
 
+            # GC ban / BA ban
+            gc_ban_rep = None
+            ba_ban_rep = None
+            try:
+                _global_conf_path3 = os.path.join("data", "1001", "conf.json")
+                with open(_global_conf_path3, "r", encoding="utf-8") as _gcf3:
+                    _global_conf3 = json.load(_gcf3)
+                if user_id_str in _global_conf3.get("gc_ban", {}):
+                    gc_ban_rep = _global_conf3["gc_ban"][user_id_str]
+                if user_id_str in _global_conf3.get("ba_ban", {}):
+                    ba_ban_rep = _global_conf3["ba_ban"][user_id_str]
+            except Exception:
+                pass
+
+            # Open tickets
+            open_tickets_rep2: list[dict] = []
+            for _gid3 in _guild_dirs3:
+                _tk_path3 = os.path.join(_data_dir3, _gid3, "tickets.json")
+                if not os.path.exists(_tk_path3):
+                    continue
+                try:
+                    with open(_tk_path3, "r", encoding="utf-8") as _tf3:
+                        _open_tks3 = json.load(_tf3)
+                    _gname_tk3 = None
+                    for _cid3, _td3 in _open_tks3.items():
+                        if str(_td3.get("user", "")) == user_id_str:
+                            if _gname_tk3 is None:
+                                try:
+                                    with open(os.path.join(_data_dir3, _gid3, "conf.json"), encoding="utf-8") as _fcf3:
+                                        _gname_tk3 = json.load(_fcf3).get("guild_name", _gid3)
+                                except Exception:
+                                    _gname_tk3 = _gid3
+                            open_tickets_rep2.append({
+                                "guild_name": _gname_tk3,
+                                "title": _td3.get("title", ""),
+                                "status": _td3.get("status", "open"),
+                                "created_at": _td3.get("created_at", ""),
+                            })
+                except Exception:
+                    pass
+
+            # Closed transcripts
+            transcripts_rep2: list[dict] = []
+            _tname_lower = target_rep.name.lower()
+            try:
+                _transcripts3: dict = dict(datasys.load_data(1001, "transcripts"))
+                for _tid3, _tr3 in _transcripts3.items():
+                    _tr3_msgs = _tr3.get("transcript", [])
+                    for _trm3 in _tr3_msgs:
+                        if _trm3.get("user", "").lower() == _tname_lower:
+                            transcripts_rep2.append({
+                                "title": _tr3.get("title", ""),
+                                "guild_id": _tr3.get("guild", ""),
+                                "closed_on": _tr3.get("closed_on", ""),
+                                "message_count": len(_tr3_msgs),
+                            })
+                            break
+            except Exception:
+                pass
+
             embeds_to_send: list[discord.Embed] = []
 
             # ── Embed 1: Overview ─────────────────────────────────────────
@@ -3013,9 +3229,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 overview_lines.append(f"**Global flag:** Yes — Reason: {flagged_rep.get('reason', '—')}")
                 if flagged_rep.get("entry_date"):
                     overview_lines.append(f"**Flagged on:** {flagged_rep['entry_date']}")
+            if gc_ban_rep is not None:
+                overview_lines.append("**Global Chat Ban:** Yes")
+            if ba_ban_rep is not None:
+                overview_lines.append("**Bot-Wide Ban:** Yes")
             overview_lines.append(f"\n**Chatfilter violations:** {len(violations_rep)}")
             overview_lines.append(f"**Warnings across all servers:** {len(all_warnings_rep)}")
             overview_lines.append(f"**Active temp actions:** {len(temp_actions_rep)}")
+            overview_lines.append(f"**Open tickets:** {len(open_tickets_rep2)}")
+            overview_lines.append(f"**Closed ticket transcripts:** {len(transcripts_rep2)}")
 
             embed_overview = discord.Embed(
                 title="Your Data stored in Baxi",
@@ -3094,6 +3316,59 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     color=0xf87171,
                 )
                 embeds_to_send.append(embed_ta)
+
+            # ── Embed 6: GC Ban ──────────────────────────────────────────
+            if gc_ban_rep is not None:
+                _gc_desc = json.dumps(gc_ban_rep, indent=2) if isinstance(gc_ban_rep, dict) else str(gc_ban_rep)
+                embed_gc = discord.Embed(
+                    title="Global Chat Ban",
+                    description=f"You are banned from Baxi's Global Chat.\n```json\n{_gc_desc[:1800]}\n```",
+                    color=0xef4444,
+                )
+                embeds_to_send.append(embed_gc)
+
+            # ── Embed 7: BA Ban ──────────────────────────────────────────
+            if ba_ban_rep is not None:
+                _ba_desc = json.dumps(ba_ban_rep, indent=2) if isinstance(ba_ban_rep, dict) else str(ba_ban_rep)
+                embed_ba = discord.Embed(
+                    title="Bot-Wide Ban",
+                    description=f"You have a bot-wide ban entry.\n```json\n{_ba_desc[:1800]}\n```",
+                    color=0xef4444,
+                )
+                embeds_to_send.append(embed_ba)
+
+            # ── Embed 8: Open Tickets ────────────────────────────────────
+            if open_tickets_rep2:
+                tk_lines = []
+                for _tk_r in open_tickets_rep2:
+                    _tk_guild = _tk_r.get("guild_name", "—")
+                    _tk_title = _tk_r.get("title", "—")
+                    _tk_status = _tk_r.get("status", "open")
+                    tk_lines.append(f"**{_tk_guild}** — {_tk_title} *(Status: {_tk_status})*")
+                embed_tickets = discord.Embed(
+                    title=f"Open Tickets ({len(open_tickets_rep2)})",
+                    description="\n".join(tk_lines),
+                    color=0x60a5fa,
+                )
+                embeds_to_send.append(embed_tickets)
+
+            # ── Embed 9: Transcripts ─────────────────────────────────────
+            if transcripts_rep2:
+                tr2_lines = []
+                for _tr2 in transcripts_rep2[:15]:
+                    _tr2_title = _tr2.get("title", "—")
+                    _tr2_guild = _tr2.get("guild_id", "—")
+                    _tr2_closed = str(_tr2.get("closed_on", "—"))[:10]
+                    _tr2_count = _tr2.get("message_count", 0)
+                    tr2_lines.append(f"**{_tr2_title}** (Server: {_tr2_guild}) — Closed: {_tr2_closed} — {_tr2_count} msgs")
+                if len(transcripts_rep2) > 15:
+                    tr2_lines.append(f"*… and {len(transcripts_rep2) - 15} more*")
+                embed_transcripts = discord.Embed(
+                    title=f"Closed Ticket Transcripts ({len(transcripts_rep2)})",
+                    description="\n".join(tr2_lines),
+                    color=0x34d399,
+                )
+                embeds_to_send.append(embed_transcripts)
 
             if len(embeds_to_send) == 1:
                 embed_overview.description += "\n\n*No detailed records found beyond this summary.*"

@@ -6,6 +6,18 @@ from zoneinfo import ZoneInfo
 
 _VIENNA = ZoneInfo("Europe/Vienna")
 
+# Maps raw AI/chatfilter reason codes to human-readable labels (for Prism event reasons)
+_PRISM_REASON_LABELS: dict[str, str] = {
+    "phishing":  "Phishing / Scam Link",
+    "custom":    "Custom Badword",
+    "internal":  "Badword",
+    "1":         "NSFW / Explicit Content",
+    "2":         "Insults / Toxicity",
+    "3":         "Hate Speech / Discrimination",
+    "4":         "Doxxing / Personal Data",
+    "5":         "Suicide / Self-Harm",
+}
+
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
@@ -20,6 +32,8 @@ import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
 import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
+import assets.games.counting as counting_game
+import assets.games.quiz as quiz_game
 import assets.trust as sentinel
 import config.config as config
 import discord
@@ -451,6 +465,12 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if handled:
             return
 
+        # Minigames (dedicated channels – skip further pipeline if matched)
+        if await counting_game.check_counting(message, bot):
+            return
+        if await quiz_game.check_answer(message, bot):
+            return
+
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
         guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))
         guild_id: int = message.guild.id if message.guild is not None else 0
@@ -587,6 +607,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         event_type = "chatfilter_phishing"
                     elif _pr == "3":
                         event_type = "chatfilter_hate"
+                    elif _pr == "2":
+                        event_type = "chatfilter_mild"
                     else:
                         event_type = "chatfilter_violation"
                     sentinel.record_event(
@@ -594,7 +616,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         user_name=message.author.name,
                         event_type=event_type,
                         guild_id=message.guild.id,
-                        reason=f"[Silent] {prism_req.get('reason', 'unknown')}",
+                        reason=f"[Silent] {_PRISM_REASON_LABELS.get(_pr, _pr)}",
                         account_age_days=account_age,
                     )
                     logger.info(
@@ -734,6 +756,8 @@ async def del_chatfilter(
             event_type = "chatfilter_phishing"
         elif reason == "3":
             event_type = "chatfilter_hate"
+        elif reason == "2":
+            event_type = "chatfilter_mild"
         else:
             event_type = "chatfilter_violation"
         sentinel.record_event(

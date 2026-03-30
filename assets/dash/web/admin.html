@@ -376,6 +376,7 @@
                         <option value="all">All users</option>
                         <option value="flagged">Flagged</option>
                         <option value="clean">Clean</option>
+                        <option value="opted_out">Opted Out</option>
                     </select>
                     <input id="prism-search" type="text" placeholder="Search name or ID…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:170px;" oninput="filterPrism()">
                 </div>
@@ -713,7 +714,7 @@
             <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Event History</div>
             <div id="pm-events-wrap">
                 <table class="prism-event-table">
-                    <thead><tr><th>#</th><th>Type</th><th>Severity</th><th>Impact</th><th>Reason</th><th>Guild ID</th><th>Date</th></tr></thead>
+                    <thead><tr><th>#</th><th>Type</th><th>Severity</th><th>Impact</th><th>Reason</th><th>Guild ID</th><th>Date</th><th></th></tr></thead>
                     <tbody id="pm-events-body"></tbody>
                 </table>
             </div>
@@ -976,7 +977,8 @@ function filterPrism() {
     const search = document.getElementById('prism-search').value.toLowerCase();
     let users = allPrismUsers;
     if (filter === 'flagged') users = users.filter(u => u.auto_flagged || u.manually_flagged);
-    if (filter === 'clean') users = users.filter(u => !u.auto_flagged && !u.manually_flagged);
+    if (filter === 'clean') users = users.filter(u => !u.auto_flagged && !u.manually_flagged && !u.opted_out);
+    if (filter === 'opted_out') users = users.filter(u => u.opted_out);
     if (search) users = users.filter(u => u.name.toLowerCase().includes(search) || u.uid.includes(search));
 
     const body = document.getElementById('prism-body');
@@ -985,6 +987,7 @@ function filterPrism() {
         let statusBadge;
         if (u.auto_flagged) statusBadge = '<span class="badge badge-auto">Auto-flagged</span>';
         else if (u.manually_flagged) statusBadge = `<span class="badge badge-flagged">Manual</span>`;
+        else if (u.opted_out) statusBadge = '<span class="badge badge-idle">Opted Out</span>';
         else statusBadge = '<span class="badge badge-clean">Clean</span>';
 
         const lastEvent = u.events && u.events.length ? u.events[u.events.length-1] : null;
@@ -1537,6 +1540,7 @@ async function viewPrismProfile(uid) {
             const sevCls   = SEV_CLASS[ev.severity] || '';
             const decayed  = ev.decayed ? '<span class="decayed-note"> (½ decay)</span>' : '';
             const weight   = ev.weight >= 0 ? `<span style="color:#4ade80;">+${ev.weight}</span>` : `<span style="color:#f87171;">${ev.weight}</span>`;
+            const tsEsc    = escHtml(ev.timestamp || '');
             return `<tr>
                 <td style="opacity:.35;">${p.event_count - i}</td>
                 <td style="font-weight:600;">${escHtml(ev.label)}</td>
@@ -1545,6 +1549,7 @@ async function viewPrismProfile(uid) {
                 <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '—')}</td>
                 <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '—'}</td>
                 <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
+                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:#f87171; padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
             </tr>`;
         }).join('');
     }
@@ -1555,6 +1560,14 @@ async function viewPrismProfile(uid) {
 function closePrismModal(e) {
     if (e && e.target !== document.getElementById('prism-modal-backdrop')) return;
     document.getElementById('prism-modal-backdrop').classList.remove('open');
+}
+
+async function deletePrismEvent(eventTimestamp) {
+    if (!_currentPrismUid) return;
+    if (!confirm('Diese Violation löschen?')) return;
+    const r = await doAction({ action: 'delete_prism_event', user_id: _currentPrismUid, event_timestamp: eventTimestamp });
+    if (!r.ok) { alert('Fehler: ' + r.message); return; }
+    await viewPrismProfile(_currentPrismUid);
 }
 
 document.addEventListener('keydown', e => {

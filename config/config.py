@@ -9,7 +9,7 @@ class Discord:
     warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b — Amber
     success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e — Green
     info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 — Blue
-    version = "6.8.5"
+    version = "7.0.0"
 
 
 class Web:
@@ -158,6 +158,24 @@ class datasys:
         "interval": 10,
         "slowmode_delay": 5,
         "duration": 120
-    }
+    },
+    "counting": {
+        "enabled": False,
+        "channel": "",
+        "current_count": 0,
+        "high_score": 0,
+        "last_user_id": 0,
+        "no_double_count": True,
+        "react_correct": True,
+        "react_wrong": True,
+    },
+    "flag_quiz": {
+        "enabled": False,
+        "channel": "",
+        "hint_after_attempts": 3,
+        "next_delay": 3,
+        "points_enabled": True,
+        "scores": {},
+    },
 }
 
