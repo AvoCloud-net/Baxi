@@ -34,6 +34,7 @@ import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
 import assets.games.counting as counting_game
 import assets.games.quiz as quiz_game
+import assets.suggestions as suggestions_sys
 import assets.trust as sentinel
 import config.config as config
 import discord
@@ -196,6 +197,10 @@ def events(bot: commands.AutoShardedBot, web):
             gc_task.collect.start()
             share.task_instances["GarbageCollector"] = gc_task
             logger.debug.success("Garbage collector task started.")
+
+            logger.working("Resuming active Flag Quiz sessions...")
+            await quiz_game.resume_all(bot)
+            logger.debug.success("Flag Quiz sessions resumed.")
 
         except Exception as e:
             await bot.change_presence(
@@ -469,6 +474,10 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if await counting_game.check_counting(message, bot):
             return
         if await quiz_game.check_answer(message, bot):
+            return
+
+        # Suggestions (dedicated channels – skip further pipeline if matched)
+        if await suggestions_sys.check_suggestion(message, bot):
             return
 
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))

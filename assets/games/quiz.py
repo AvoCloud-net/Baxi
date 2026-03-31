@@ -156,13 +156,15 @@ async def start_round(
 
     flag_emoji, country, accepted = random.choice(FLAGS)
 
-    _active[guild_id] = {
+    state = {
         "flag": flag_emoji,
         "answer": country,
         "accepted": accepted,
         "hint_sent": False,
         "wrong_attempts": 0,
     }
+    _active[guild_id] = state
+    datasys.save_data(guild_id, "flag_quiz_active", state)
 
     embed = discord.Embed(
         title=t["title"],
@@ -232,6 +234,7 @@ async def check_answer(
     if user_answer in [a.lower() for a in q["accepted"]]:
         # Correct answer
         del _active[message.guild.id]
+        datasys.save_data(message.guild.id, "flag_quiz_active", {})
 
         lang = datasys.load_lang_file(message.guild.id)
         t: dict = lang["games"]["flag_quiz"]
@@ -266,7 +269,12 @@ async def check_answer(
                 _next_round(message.guild.id, channel, bot, next_delay)
             )
     else:
-        # Wrong answer — increment attempt counter, send hint if threshold reached
+        # Wrong answer — react and increment attempt counter, send hint if threshold reached
+        try:
+            await message.add_reaction("❌")
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
         hint_after = int(data.get("hint_after_attempts", 3))
         if hint_after > 0 and not q.get("hint_sent"):
             q["wrong_attempts"] = q.get("wrong_attempts", 0) + 1
@@ -288,6 +296,39 @@ async def _next_round(
     data: dict = dict(datasys.load_data(guild_id, "flag_quiz"))
     if data.get("enabled", False) and guild_id not in _active:
         await start_round(guild_id, channel, bot)
+
+
+async def resume_all(bot: commands.AutoShardedBot) -> None:
+    """Called once on bot ready — restores the saved active question or starts a new one."""
+    for guild in bot.guilds:
+        try:
+            data: dict = dict(datasys.load_data(guild.id, "flag_quiz"))
+            if not data.get("enabled", False):
+                continue
+            channel_raw = str(data.get("channel", "") or "")
+            if not channel_raw or not channel_raw.isdigit():
+                continue
+            if guild.id in _active:
+                continue
+
+            # Try to restore the question that was active before the restart
+            saved: dict = dict(datasys.load_data(guild.id, "flag_quiz_active"))
+            if saved.get("flag") and saved.get("answer") and saved.get("accepted"):
+                _active[guild.id] = {
+                    "flag": saved["flag"],
+                    "answer": saved["answer"],
+                    "accepted": saved["accepted"],
+                    "hint_sent": bool(saved.get("hint_sent", False)),
+                    "wrong_attempts": int(saved.get("wrong_attempts", 0)),
+                }
+                logger.debug.info(f"[FlagQuiz] Restored active question for guild {guild.id}: {saved['answer']}")
+            else:
+                # No saved state — start a fresh round
+                ch = guild.get_channel(int(channel_raw))
+                if isinstance(ch, discord.TextChannel):
+                    await start_round(guild.id, ch, bot)
+        except Exception as e:
+            logger.error(f"[FlagQuiz] resume_all failed for guild {guild.id}: {e}")
 
 
 def get_leaderboard(

@@ -1731,6 +1731,56 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "All scores have been reset."})
 
+        elif system == "suggestions":
+            data: dict = await quart.request.get_json()
+            sugg = data.get("suggestions")
+
+            if not isinstance(sugg, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            if not isinstance(sugg.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            # Validate and clean channel list
+            raw_channels = sugg.get("channels", [])
+            if not isinstance(raw_channels, list):
+                return quart.jsonify({"success": False, "message": "'channels' must be a list."}), 400
+            channels: list[str] = [
+                str(c) for c in raw_channels
+                if re.fullmatch(r"\d{17,19}", str(c))
+            ]
+
+            staff_role_raw = str(sugg.get("staff_role", "") or "").strip()
+            if staff_role_raw and not re.fullmatch(r"\d{17,19}", staff_role_raw):
+                return quart.jsonify({"success": False, "message": "Invalid staff role ID."}), 400
+
+            log_ch_raw = str(sugg.get("log_channel", "") or "").strip()
+            if log_ch_raw and not re.fullmatch(r"\d{17,19}", log_ch_raw):
+                return quart.jsonify({"success": False, "message": "Invalid log channel ID."}), 400
+
+            settings = {
+                "enabled": sugg["enabled"],
+                "votes_enabled": bool(sugg.get("votes_enabled", True)),
+                "channels": channels,
+                "staff_role": staff_role_raw,
+                "log_channel": log_ch_raw,
+            }
+            save_data(int(guild_id), "suggestions", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "suggestions",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Suggestion settings saved!"})
+
         elif system == "reaction_roles":
             data: dict = await quart.request.get_json()
             rr = data.get("reaction_roles")

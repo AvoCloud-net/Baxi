@@ -248,6 +248,29 @@
             },
             "stats_channels": {
                 "title": "SYS // STATS"
+            },
+            "suggestions": {
+                "embed_title": "💡 Vorschlag",
+                "footer": "Baxi · Vorschläge",
+                "no_text": "*— kein Text —*",
+                "no_permission": "❌ Nur Server-Staff kann Vorschläge annehmen oder ablehnen.",
+                "already_decided": "Dieser Vorschlag wurde bereits entschieden.",
+                "status_field": "Status",
+                "status_accepted": "✅ Angenommen von {user}",
+                "status_accepted_reason": "✅ Angenommen von {user}\n> {reason}",
+                "status_declined": "❌ Abgelehnt von {user}",
+                "status_declined_reason": "❌ Abgelehnt von {user}\n> {reason}",
+                "log_accepted": "✅ Vorschlag **angenommen** von {reviewer}\n[Zur Nachricht]({link})",
+                "log_accepted_reason": "✅ Vorschlag **angenommen** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
+                "log_declined": "❌ Vorschlag **abgelehnt** von {reviewer}\n[Zur Nachricht]({link})",
+                "log_declined_reason": "❌ Vorschlag **abgelehnt** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
+                "voting_disabled": "❌ Abstimmungen sind auf diesem Server deaktiviert.",
+                "btn_accept": "✅  Annehmen",
+                "btn_decline": "❌  Ablehnen",
+                "modal_accept_title": "Vorschlag annehmen",
+                "modal_decline_title": "Vorschlag ablehnen",
+                "modal_reason_label": "Begründung (optional)",
+                "modal_reason_placeholder": "Begründung eingeben..."
             }
         },
         "events": {
@@ -264,7 +287,7 @@
             "counting": {
                 "title": "GAME // COUNTING",
                 "wrong_number": "❌ **{user}** hat die Kette gebrochen! Gesendet: **{sent}**, erwartet: **{expected}**.\nDer Zähler wurde von **{count}** auf **0** zurückgesetzt.",
-                "double_count": "❌ **{user}** kann nicht zweimal hintereinander zählen!\nDer Zähler wurde von **{count}** auf **0** zurückgesetzt.",
+                "double_count": "❌ **{user}** kann nicht zweimal hintereinander zählen! Der Zähler bleibt bei **{count}**.",
                 "footer": "Baxi · Counting Game",
                 "score_title": "🔢 Counting Game",
                 "score_not_enabled": "❌ Das Counting Game ist auf diesem Server nicht aktiviert.",
@@ -539,6 +562,29 @@
             },
             "stats_channels": {
                 "title": "SYS // STATS"
+            },
+            "suggestions": {
+                "embed_title": "💡 Suggestion",
+                "footer": "Baxi · Suggestions",
+                "no_text": "*— no text —*",
+                "no_permission": "❌ Only server staff can accept or decline suggestions.",
+                "already_decided": "This suggestion has already been decided.",
+                "status_field": "Status",
+                "status_accepted": "✅ Accepted by {user}",
+                "status_accepted_reason": "✅ Accepted by {user}\n> {reason}",
+                "status_declined": "❌ Declined by {user}",
+                "status_declined_reason": "❌ Declined by {user}\n> {reason}",
+                "log_accepted": "✅ Suggestion **accepted** by {reviewer}\n[Jump to message]({link})",
+                "log_accepted_reason": "✅ Suggestion **accepted** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
+                "log_declined": "❌ Suggestion **declined** by {reviewer}\n[Jump to message]({link})",
+                "log_declined_reason": "❌ Suggestion **declined** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
+                "voting_disabled": "❌ Voting is disabled on this server.",
+                "btn_accept": "✅  Accept",
+                "btn_decline": "❌  Decline",
+                "modal_accept_title": "Accept Suggestion",
+                "modal_decline_title": "Decline Suggestion",
+                "modal_reason_label": "Reason (optional)",
+                "modal_reason_placeholder": "Enter a reason..."
             }
         },
         "events": {
@@ -555,7 +601,7 @@
             "counting": {
                 "title": "GAME // COUNTING",
                 "wrong_number": "❌ **{user}** broke the chain! Sent: **{sent}**, expected: **{expected}**.\nThe count was reset from **{count}** back to **0**.",
-                "double_count": "❌ **{user}** cannot count twice in a row!\nThe count was reset from **{count}** back to **0**.",
+                "double_count": "❌ **{user}** cannot count twice in a row! The count stays at **{count}**.",
                 "footer": "Baxi · Counting Game",
                 "score_title": "🔢 Counting Game",
                 "score_not_enabled": "❌ The Counting Game is not enabled on this server.",

@@ -14,6 +14,7 @@
     <meta property="og:color" content="#DC143C">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>@media (min-width: 900px) { body { padding-left: 0 !important; } }</style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
@@ -149,7 +150,7 @@
         </button>
     </div>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
             <h1 class="text-3xl font-bold">{{greeting}}</h1>
         </div>

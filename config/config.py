@@ -177,5 +177,14 @@ class datasys:
         "points_enabled": True,
         "scores": {},
     },
+    "flag_quiz_active": {},
+    "suggestions": {
+        "enabled": False,
+        "channels": [],
+        "staff_role": "",
+        "log_channel": "",
+        "votes_enabled": True,
+    },
+    "suggestion_votes": {},
 }
 

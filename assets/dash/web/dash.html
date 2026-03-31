@@ -219,6 +219,10 @@
                 <svg viewBox="0 0 24 24"><path d="M6 11H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2"/><path d="M18 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M6 11V7a6 6 0 0 1 12 0v4"/><path d="M10 11v5"/><path d="M14 11v5"/><path d="M8 16h8"/></svg>
                 Minigames
             </a>
+            <a href="#suggestions" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v2"/><path d="M12 13h.01"/></svg>
+                Suggestions
+            </a>
             <a href="#globalchat" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
                 Global Chat
@@ -695,6 +699,89 @@
                         </section>
                     </div>
 
+            </section>
+
+            <!-- Suggestions -->
+            <section class="pb-16 dash-section" id="suggestions">
+                <div class="section-label">SUGGESTIONS</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v2"/><path d="M12 13h.01"/></svg>
+                            Suggestions
+                        </h2>
+                        <p class="text-muted">Users post suggestions in designated channels — Baxi wraps them in an embed with Accept / Decline buttons for staff.</p>
+                    </header>
+                    <section>
+                        <form id="suggestions-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label for="suggestions-enabled">
+                                    <input type="checkbox" id="suggestions-enabled">
+                                    Enable Suggestions
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="suggestions-votes-enabled">
+                                    <input type="checkbox" id="suggestions-votes-enabled">
+                                    Allow members to upvote / downvote suggestions
+                                </label>
+                                <p class="text-muted text-xs" style="margin-top:4px;">Shows 👍 / 👎 buttons on every suggestion. Each member can vote once (click again to remove).</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="suggestions-staff-role">Staff role (can accept / decline):</label>
+                                <select id="suggestions-staff-role" class="select w-full">
+                                    <option value="">— Anyone with Manage Server —</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Members with this role can click Accept / Decline. Falls back to Manage Server permission if not set.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="suggestions-log-channel">Log channel (optional):</label>
+                                <select id="suggestions-log-channel" class="select w-full">
+                                    <option value="">— No log channel —</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Accepted / declined decisions will be logged to this channel.</p>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Suggestion channels <span class="text-muted font-normal" id="suggestions-ch-count">(0)</span></label>
+                                <div id="suggestions-channels-list" class="flex flex-wrap gap-2"></div>
+                                <p id="suggestions-channels-empty" class="text-muted text-xs">No suggestion channels added yet.</p>
+                                <div class="flex gap-2 mt-1">
+                                    <select id="suggestions-add-channel" class="select flex-1">
+                                        <option value="">— Select a channel to add —</option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn-secondary" onclick="suggestionsAddChannel()" style="flex-shrink:0;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <p class="text-muted text-xs">Users post their suggestion as a plain message in these channels. The original message is deleted and replaced by Baxi's embed.</p>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" class="btn-primary flex-1 flex items-center justify-center gap-2">
+                                    <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                    <span>Save</span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
             </section>
 
             <!-- Global Chat -->
@@ -2101,7 +2188,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
+                'minigames', 'suggestions', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'stats-channels', 'customcmds'
             ];
@@ -2338,6 +2425,16 @@
                 document.getElementById('flagquiz-hint-attempts').value = data.flag_quiz.hint_after_attempts ?? 3;
                 document.getElementById('flagquiz-next-delay').value = data.flag_quiz.next_delay ?? 3;
                 document.getElementById('flagquiz-points').checked = data.flag_quiz.points_enabled !== false;
+            }
+
+            // Suggestions
+            if (data.suggestions) {
+                document.getElementById('suggestions-enabled').checked = data.suggestions.enabled === true;
+                document.getElementById('suggestions-votes-enabled').checked = data.suggestions.votes_enabled !== false;
+                document.getElementById('suggestions-staff-role').value = data.suggestions.staff_role || '';
+                document.getElementById('suggestions-log-channel').value = data.suggestions.log_channel || '';
+                _suggestionChannels = Array.isArray(data.suggestions.channels) ? data.suggestions.channels.map(String) : [];
+                renderSuggestionChannels();
             }
 
             // Verification
@@ -3199,6 +3296,67 @@
             xhr.open('POST', '/api/dash/save/?system=flag_quiz_reset_scores&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify({}));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── Suggestions ────────────────────────────────────────────────────────
+        let _suggestionChannels = [];
+
+        function renderSuggestionChannels() {
+            const list = document.getElementById('suggestions-channels-list');
+            const empty = document.getElementById('suggestions-channels-empty');
+            const count = document.getElementById('suggestions-ch-count');
+            list.innerHTML = '';
+            count.textContent = `(${_suggestionChannels.length})`;
+            if (_suggestionChannels.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            // Build channel id→name lookup from the select options
+            const sel = document.getElementById('suggestions-add-channel');
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            _suggestionChannels.forEach(cid => {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                tag.innerHTML = `<span>#${nameMap[cid] || cid}</span><button type="button" onclick="suggestionsRemoveChannel('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+                list.appendChild(tag);
+            });
+        }
+
+        function suggestionsAddChannel() {
+            const sel = document.getElementById('suggestions-add-channel');
+            const val = sel.value;
+            if (!val) return;
+            if (_suggestionChannels.includes(val)) { sel.value = ''; return; }
+            _suggestionChannels.push(val);
+            sel.value = '';
+            renderSuggestionChannels();
+        }
+
+        function suggestionsRemoveChannel(cid) {
+            _suggestionChannels = _suggestionChannels.filter(c => c !== cid);
+            renderSuggestionChannels();
+        }
+
+        document.getElementById('suggestions-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('suggestions-enabled').checked;
+            const votes_enabled = document.getElementById('suggestions-votes-enabled').checked;
+            const staff_role = document.getElementById('suggestions-staff-role').value;
+            const log_channel = document.getElementById('suggestions-log-channel').value;
+            const channels = [..._suggestionChannels];
+            const payload = { suggestions: { enabled, votes_enabled, staff_role, log_channel, channels } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=suggestions&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }

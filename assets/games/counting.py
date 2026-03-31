@@ -47,7 +47,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
     expected = current_count + 1
 
     # No-double-count rule: same user cannot count twice in a row
-    # → reject silently (reaction only), do NOT reset the counter
+    # → reject with reaction + embed, do NOT reset the counter
     if data.get("no_double_count", True):
         last_user_id = int(data.get("last_user_id", 0))
         if last_user_id != 0 and last_user_id == message.author.id:
@@ -56,6 +56,15 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
                     await message.add_reaction("❌")
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+            embed = discord.Embed(
+                description=str(t["double_count"]).format(
+                    user=message.author.display_name,
+                    count=current_count,
+                ),
+                color=cfg.Discord.danger_color,
+            )
+            embed.set_footer(text=t["footer"])
+            await message.channel.send(embed=embed)
             return True
 
     if user_number == expected:
