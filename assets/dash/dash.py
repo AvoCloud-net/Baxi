@@ -1788,6 +1788,44 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Suggestion settings saved!"})
 
+        elif system == "sticky_messages":
+            data: dict = await quart.request.get_json()
+            raw = data.get("sticky_messages")
+
+            if not isinstance(raw, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            # Validate each entry: channel_id must be a snowflake, message must be a non-empty string ≤2000 chars
+            cleaned: dict = {}
+            for cid, entry in raw.items():
+                if not re.fullmatch(r"\d{17,19}", str(cid)):
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                msg = str(entry.get("message", "")).strip()
+                if not msg or len(msg) > 2000:
+                    continue
+                cleaned[str(cid)] = {
+                    "message": msg,
+                    "last_message_id": entry.get("last_message_id"),
+                }
+
+            save_data(int(guild_id), "sticky_messages", cleaned)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "sticky_messages",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Sticky messages saved!"})
+
         elif system == "reaction_roles":
             data: dict = await quart.request.get_json()
             rr = data.get("reaction_roles")

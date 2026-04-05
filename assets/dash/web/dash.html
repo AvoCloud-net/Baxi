@@ -229,6 +229,10 @@
                 <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v2"/><path d="M12 13h.01"/></svg>
                 Suggestions
             </a>
+            <a href="#sticky-messages" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="5 5 2 12 5 19"/><polyline points="19 5 22 12 19 19"/></svg>
+                Sticky Messages
+            </a>
             <a href="#globalchat" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
                 Global Chat
@@ -780,6 +784,65 @@
 
                             <div class="flex gap-3">
                                 <button type="submit" id="suggestions-save-btn" class="btn-primary flex-1 flex items-center justify-center gap-2">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Sticky Messages -->
+            <section class="pb-16 dash-section" id="sticky-messages">
+                <div class="section-label">STICKY MESSAGES</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="5 5 2 12 5 19"/><polyline points="19 5 22 12 19 19"/></svg>
+                            Sticky Messages
+                        </h2>
+                        <p class="text-muted">A sticky message is re-posted at the bottom of a channel whenever a new message is sent, keeping it always visible.</p>
+                    </header>
+                    <section>
+                        <form class="form grid gap-6 settings-form">
+
+                            <!-- Existing sticky messages list -->
+                            <div>
+                                <label class="font-medium text-sm">Active sticky messages <span class="text-muted font-normal" id="sticky-count">(0)</span></label>
+                                <div id="sticky-list" class="grid gap-2 mt-2"></div>
+                                <p id="sticky-empty" class="text-muted text-xs mt-2">No sticky messages configured yet.</p>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <!-- Add new sticky message -->
+                            <div class="grid gap-4">
+                                <label class="font-medium text-sm">Add sticky message</label>
+                                <div class="grid gap-2">
+                                    <label for="sticky-add-channel">Channel:</label>
+                                    <select id="sticky-add-channel" class="select w-full">
+                                        <option value="">— Select a channel —</option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">#{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="sticky-add-message">Message:</label>
+                                    <textarea id="sticky-add-message" class="w-full min-h-[80px]" maxlength="2000" placeholder="Enter the sticky message text…"></textarea>
+                                </div>
+                                <button type="button" class="btn-secondary flex items-center gap-2" style="align-self:start;" onclick="stickyAdd()">
+                                    <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Add Sticky Message
+                                </button>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="button" id="sticky-save-btn" class="btn-primary flex-1 flex items-center justify-center gap-2" onclick="stickySave()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2196,7 +2259,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'suggestions', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
+                'minigames', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'stats-channels', 'customcmds'
             ];
@@ -2444,6 +2507,10 @@
                 _suggestionChannels = Array.isArray(data.suggestions.channels) ? data.suggestions.channels.map(String) : [];
                 renderSuggestionChannels();
             }
+
+            // Sticky Messages
+            _stickyMessages = (data.sticky_messages && typeof data.sticky_messages === 'object') ? data.sticky_messages : {};
+            renderStickyMessages();
 
             // Verification
             if (data.verify) {
@@ -3379,6 +3446,121 @@
                 }
             };
         };
+
+        // ── Sticky Messages ────────────────────────────────────────────────────
+        var _stickyMessages = {}; // { channel_id: { message, last_message_id } }
+
+        function renderStickyMessages() {
+            const list = document.getElementById('sticky-list');
+            const empty = document.getElementById('sticky-empty');
+            const count = document.getElementById('sticky-count');
+            list.innerHTML = '';
+            const entries = Object.entries(_stickyMessages);
+            count.textContent = `(${entries.length})`;
+            if (entries.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            const sel = document.getElementById('sticky-add-channel');
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            entries.forEach(([cid, entry]) => {
+                const card = document.createElement('div');
+                card.className = 'card mt-2';
+                const msg = String(entry.message || '');
+                const preview = msg.length > 120 ? msg.slice(0, 120) + '…' : msg;
+                const escapedMsg = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <div style="min-width:0;flex:1;">
+                            <h3 class="text-base font-semibold">#${(nameMap[cid] || cid).replace(/</g,'&lt;')}</h3>
+                            <p class="text-muted text-xs sticky-preview-${cid}" style="white-space:pre-wrap;margin-top:2px;">${preview.replace(/</g,'&lt;')}</p>
+                        </div>
+                        <div class="flex gap-2" style="flex-shrink:0;margin-left:12px;">
+                            <button type="button" class="btn-secondary sticky-edit-btn-${cid}"
+                                onclick="stickyToggleEdit('${cid}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/>
+                                </svg>
+                                Edit
+                            </button>
+                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
+                                onclick="stickyRemove('${cid}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
+                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                </svg>
+                                Remove
+                            </button>
+                        </div>
+                    </header>
+                    <section class="sticky-edit-section-${cid} hidden" style="padding-top:0;">
+                        <textarea class="w-full min-h-[80px] sticky-textarea-${cid}" maxlength="2000">${escapedMsg}</textarea>
+                        <div class="flex gap-2 mt-2">
+                            <button type="button" class="btn-primary" onclick="stickySaveEdit('${cid}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                    <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                                </svg>
+                                Apply
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="stickyToggleEdit('${cid}')">Cancel</button>
+                        </div>
+                    </section>`;
+                list.appendChild(card);
+            });
+        }
+
+        function stickyAdd() {
+            const cid = document.getElementById('sticky-add-channel').value;
+            const msg = document.getElementById('sticky-add-message').value.trim();
+            if (!cid) { showSaveToast(false, 'Please select a channel.'); return; }
+            if (!msg) { showSaveToast(false, 'Please enter a message.'); return; }
+            _stickyMessages[cid] = { message: msg, last_message_id: (_stickyMessages[cid] || {}).last_message_id || null };
+            document.getElementById('sticky-add-channel').value = '';
+            document.getElementById('sticky-add-message').value = '';
+            renderStickyMessages();
+        }
+
+        function stickyRemove(cid) {
+            delete _stickyMessages[cid];
+            renderStickyMessages();
+        }
+
+        function stickyToggleEdit(cid) {
+            const section = document.querySelector(`.sticky-edit-section-${cid}`);
+            if (!section) return;
+            section.classList.toggle('hidden');
+        }
+
+        function stickySaveEdit(cid) {
+            const ta = document.querySelector(`.sticky-textarea-${cid}`);
+            if (!ta) return;
+            const newMsg = ta.value.trim();
+            if (!newMsg) { showSaveToast(false, 'Message cannot be empty.'); return; }
+            _stickyMessages[cid] = { ..._stickyMessages[cid], message: newMsg };
+            renderStickyMessages();
+        }
+
+        function stickySave() {
+            const btn = document.getElementById('sticky-save-btn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            const payload = { sticky_messages: _stickyMessages };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=sticky_messages&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
 
         // ── Verification ───────────────────────────────────────────────────────
         function _sendVerifyForm(postPanel) {

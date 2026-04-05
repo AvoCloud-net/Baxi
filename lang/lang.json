@@ -301,7 +301,7 @@
             },
             "flag_quiz": {
                 "title": "🌍 Flag Quiz",
-                "question": "## {flag}\nWelchem Land gehört diese Flagge?",
+                "question": "Welchem Land gehört diese Flagge?",
                 "question_footer": "Baxi · Flag Quiz  |  Tippe deine Antwort!",
                 "correct": "🎉 **{user}** hat es gewusst!\nDie Antwort war: **{country}** {flag}",
                 "hint": "💡 **Tipp:** `{hint}` ({length} Buchstaben)",
@@ -615,7 +615,7 @@
             },
             "flag_quiz": {
                 "title": "🌍 Flag Quiz",
-                "question": "## {flag}\nWhich country does this flag belong to?",
+                "question": "Which country does this flag belong to?",
                 "question_footer": "Baxi · Flag Quiz  |  Type your answer!",
                 "correct": "🎉 **{user}** got it right!\nThe answer was: **{country}** {flag}",
                 "hint": "💡 **Hint:** `{hint}` ({length} letters)",

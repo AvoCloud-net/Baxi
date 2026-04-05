@@ -64,6 +64,11 @@ logger = Logger()
 
 antispam_instance = AntiSpam()
 
+# Per-channel debounce tasks for sticky messages
+# key: "{guild_id}:{channel_id}", value: pending asyncio.Task
+_sticky_debounce: dict[str, asyncio.Task] = {}
+_STICKY_DEBOUNCE_SECONDS = 4
+
 
 def events(bot: commands.AutoShardedBot, web):
     logger.debug.info("Events loaded.")
@@ -308,6 +313,7 @@ def events(bot: commands.AutoShardedBot, web):
                     return
 
         asyncio.create_task(process_message(message, bot))
+        asyncio.create_task(handle_sticky_message(message, bot))
 
     @bot.event
     async def on_message_delete(message: discord.Message):
@@ -440,6 +446,63 @@ def events(bot: commands.AutoShardedBot, web):
                 admin_log("info", f"Temp voice created: '{new_name}' for {member.name} in {guild.name}", source="TempVoice")
             except (discord.Forbidden, discord.HTTPException) as e:
                 logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
+
+
+async def handle_sticky_message(message: discord.Message, bot: commands.AutoShardedBot):
+    """Debounced re-post of sticky message — waits for a pause in activity before acting."""
+    if message.guild is None or message.author.bot:
+        return
+    channel_id_str = str(message.channel.id)
+    sticky_data: dict = dict(datasys.load_data(message.guild.id, "sticky_messages"))
+    if channel_id_str not in sticky_data:
+        return
+
+    debounce_key = f"{message.guild.id}:{channel_id_str}"
+
+    # Cancel any pending debounce for this channel
+    existing = _sticky_debounce.get(debounce_key)
+    if existing and not existing.done():
+        existing.cancel()
+
+    async def _post_sticky():
+        await asyncio.sleep(_STICKY_DEBOUNCE_SECONDS)
+
+        # Re-read fresh data after the wait
+        data: dict = dict(datasys.load_data(message.guild.id, "sticky_messages"))
+        entry = data.get(channel_id_str)
+        if not entry:
+            return
+
+        channel = message.channel
+        if not isinstance(channel, discord.TextChannel):
+            return
+
+        # Delete previous sticky message
+        last_id = entry.get("last_message_id")
+        if last_id:
+            try:
+                old_msg = await channel.fetch_message(int(last_id))
+                await old_msg.delete()
+            except (discord.NotFound, discord.HTTPException):
+                pass
+
+        # Send new sticky message
+        try:
+            embed = discord.Embed(
+                description=entry["message"],
+                color=config.Discord.color,
+            )
+            embed.set_footer(text="📌 Sticky Message · Baxi")
+            new_msg = await channel.send(embed=embed)
+            entry["last_message_id"] = str(new_msg.id)
+            data[channel_id_str] = entry
+            datasys.save_data(message.guild.id, "sticky_messages", data)
+        except (discord.Forbidden, discord.HTTPException) as e:
+            logger.error(f"[StickyMessage] Failed to send in {channel_id_str}: {e}")
+        finally:
+            _sticky_debounce.pop(debounce_key, None)
+
+    _sticky_debounce[debounce_key] = asyncio.create_task(_post_sticky())
 
 
 async def process_message(message: discord.Message, bot: commands.AutoShardedBot):

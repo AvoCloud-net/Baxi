@@ -8,6 +8,12 @@ from reds_simple_logger import Logger
 
 logger = Logger()
 
+
+def _emoji_to_code(emoji: str) -> str:
+    """Convert a flag emoji (e.g. 🇩🇪) to its ISO 3166-1 alpha-2 country code (e.g. 'de')."""
+    return "".join(chr(ord(c) - 0x1F1E6 + ord("a")) for c in emoji)
+
+
 # (flag_emoji, canonical_name, accepted_answers_lowercase)
 FLAGS: list[tuple[str, str, list[str]]] = [
     # Europe
@@ -166,11 +172,13 @@ async def start_round(
     _active[guild_id] = state
     datasys.save_data(guild_id, "flag_quiz_active", state)
 
+    code = _emoji_to_code(flag_emoji)
     embed = discord.Embed(
         title=t["title"],
-        description=str(t["question"]).format(flag=flag_emoji),
+        description=t["question"],
         color=cfg.Discord.info_color,
     )
+    embed.set_image(url=f"https://flagcdn.com/w320/{code}.png")
     embed.set_footer(text=t["question_footer"])
     await channel.send(embed=embed)
 
