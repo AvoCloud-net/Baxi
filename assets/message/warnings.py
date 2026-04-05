@@ -42,6 +42,20 @@ async def add_warning(
     warnings[user_key].append(warn_entry)
     datasys.save_data(guild_id, "warnings", warnings)
 
+    # Log mod event for BaxiInsights
+    try:
+        datasys.append_mod_event(guild_id, {
+            "type": "warn",
+            "user_id": str(user.id),
+            "user_name": user.name,
+            "mod_id": str(moderator.id) if moderator else "0",
+            "mod_name": moderator.name if moderator else "System",
+            "reason": reason,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+        })
+    except Exception:
+        pass
+
     # Prism: record warning event
     try:
         account_age = (datetime.date.today() - user.created_at.date()).days

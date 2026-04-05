@@ -234,6 +234,10 @@
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Dashboard
     </a>
+    <a href="javascript:void(0)" id="btn-reload-templates" onclick="reloadTemplates()" title="Clear Jinja2 template cache — pick up changed HTML/CSS/JS without restarting the bot">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Reload Templates
+    </a>
     <a href="/logout/" style="color:#f87171; opacity:.6">
         <svg viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
         Logout
@@ -1676,6 +1680,25 @@ loadCfLogs();
 setInterval(pollData, 10000);
 setInterval(pollLogs, 3000);
 setInterval(loadCfLogs, 30000);
+
+// ── Reload templates ─────────────────────────────────────────────────────────
+async function reloadTemplates() {
+    const btn = document.getElementById('btn-reload-templates');
+    if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+    try {
+        const res  = await fetch('/api/admin/reload-templates', { method: 'POST' });
+        const json = await res.json();
+        if (json.success) {
+            alert('Template cache cleared. Reload the page (F5) to see your changes.');
+        } else {
+            alert('Error: ' + (json.message || 'unknown'));
+        }
+    } catch (e) {
+        alert('Request failed: ' + e);
+    } finally {
+        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+    }
+}
 
 // Highlight active nav link on scroll
 const sections = document.querySelectorAll('section[id]');

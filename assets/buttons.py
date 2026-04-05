@@ -67,6 +67,21 @@ class BanConfirmView(ui.View):
                 )
             )
 
+            # Log mod event for BaxiInsights
+            try:
+                assert interaction.guild is not None
+                datasys.append_mod_event(interaction.guild.id, {
+                    "type": "ban",
+                    "user_id": str(self.user.id),
+                    "user_name": self.user.name,
+                    "mod_id": str(interaction.user.id),
+                    "mod_name": interaction.user.name,
+                    "reason": self.reason,
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                })
+            except Exception:
+                pass
+
             # Prism: record ban event
             try:
                 assert interaction.guild is not None
@@ -197,6 +212,21 @@ class KickConfirmView(ui.View):
                     moderator=self.user.name, reason=self.reason
                 )
             )
+
+            # Log mod event for BaxiInsights
+            try:
+                assert interaction.guild is not None
+                datasys.append_mod_event(interaction.guild.id, {
+                    "type": "kick",
+                    "user_id": str(self.user.id),
+                    "user_name": self.user.name,
+                    "mod_id": str(interaction.user.id),
+                    "mod_name": interaction.user.name,
+                    "reason": self.reason,
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                })
+            except Exception:
+                pass
 
             # Prism: record kick event
             try:

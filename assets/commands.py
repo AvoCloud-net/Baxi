@@ -564,6 +564,20 @@ def utility_commands(bot: commands.AutoShardedBot):
                 embed=discord.Embed(description="❌ Missing permissions to timeout this user.", color=config.Discord.danger_color)
             )
 
+        # Log mod event for BaxiInsights
+        try:
+            datasys.append_mod_event(interaction.guild.id, {
+                "type": "mute",
+                "user_id": str(user.id),
+                "user_name": user.name,
+                "mod_id": str(interaction.user.id),
+                "mod_name": interaction.user.name,
+                "reason": reason,
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+            })
+        except Exception:
+            pass
+
         ta = datasys.load_temp_actions(interaction.guild.id)
         ta["timeouts"].append({
             "user_id": user.id,
@@ -718,6 +732,87 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         await interaction.response.send_message(embed=embed)
 
+    # --- BaxiInsights ---
+
+    insights_group = app_commands.Group(
+        name="insights",
+        description="BaxiInsights — server moderation statistics",
+    )
+
+    @insights_group.command(name="stats", description="Show a quick overview of moderation stats (last 30 days).")
+    async def insights_stats(interaction: discord.Interaction):
+        if interaction.guild is None:
+            return await interaction.response.send_message(
+                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color),
+                ephemeral=True,
+            )
+        if not interaction.user.guild_permissions.manage_guild:
+            return await interaction.response.send_message(
+                embed=discord.Embed(description="❌ You need Manage Server permission to use this command.", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+        await interaction.response.defer(ephemeral=True)
+        try:
+            import json as _json
+            import os as _os
+            cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+            guild_id = interaction.guild.id
+
+            # Load mod events
+            mod_path = _os.path.join("data", str(guild_id), "mod_events.json")
+            mod_events = []
+            if _os.path.exists(mod_path):
+                try:
+                    with open(mod_path, "r") as f:
+                        mod_events = _json.load(f)
+                except Exception:
+                    pass
+            recent_mod = [e for e in mod_events if datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
+            warns  = sum(1 for e in recent_mod if e.get("type") == "warn")
+            kicks  = sum(1 for e in recent_mod if e.get("type") == "kick")
+            bans   = sum(1 for e in recent_mod if e.get("type") == "ban")
+            mutes  = sum(1 for e in recent_mod if e.get("type") == "mute")
+
+            # Load filter events
+            filter_path = _os.path.join("data", str(guild_id), "filter_events.json")
+            filter_events = []
+            if _os.path.exists(filter_path):
+                try:
+                    with open(filter_path, "r") as f:
+                        filter_events = _json.load(f)
+                except Exception:
+                    pass
+            recent_filter = [e for e in filter_events if datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
+
+            # Health score
+            member_count = max(interaction.guild.member_count or 1, 1)
+            mod_rate = len(recent_mod) / member_count
+            filter_rate = len(recent_filter) / max(member_count * 30, 1)
+            health = 100 - (mod_rate * 20) - (filter_rate * 15)
+            health = max(0, min(100, round(health)))
+
+            insights_url = f"https://{config.Web.url}/guild/insights/?guild_login={guild_id}"
+            embed = discord.Embed(
+                title=f"📊 BaxiInsights // {interaction.guild.name}",
+                description=f"Moderation overview — last 30 days\n[**View full dashboard →**]({insights_url})",
+                color=config.Discord.color,
+            )
+            embed.add_field(name="⚠️ Warns", value=str(warns), inline=True)
+            embed.add_field(name="👟 Kicks", value=str(kicks), inline=True)
+            embed.add_field(name="🔨 Bans", value=str(bans), inline=True)
+            embed.add_field(name="🔇 Mutes", value=str(mutes), inline=True)
+            embed.add_field(name="🛡️ Filter Hits", value=str(len(recent_filter)), inline=True)
+            color_health = config.Discord.success_color if health >= 70 else (config.Discord.warn_color if health >= 40 else config.Discord.danger_color)
+            embed.add_field(name="❤️ Health Score", value=f"{health}/100", inline=True)
+            embed.set_footer(text="Baxi · avocloud.net")
+            await interaction.edit_original_response(embed=embed)
+        except Exception as e:
+            logger.error(f"[insights stats] {e}")
+            await interaction.edit_original_response(
+                embed=discord.Embed(title="ERROR", description="Could not load insights.", color=config.Discord.danger_color)
+            )
+
+    bot.tree.add_command(insights_group)
 
 
 def bot_admin_commands(bot: commands.AutoShardedBot):

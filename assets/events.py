@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 import datetime
 from zoneinfo import ZoneInfo
 
@@ -367,6 +368,10 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_member_join(member: discord.Member):
         admin_log("info", f"Member joined: {member.name} ({member.id}) → {member.guild.name}", source="MemberJoin")
+        try:
+            datasys.update_activity(member.guild.id, member_join=True)
+        except Exception:
+            pass
         await welcomer.on_member_join(member, bot)
 
         ar_config: dict = dict(datasys.load_data(member.guild.id, "auto_roles"))
@@ -383,6 +388,10 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_member_remove(member: discord.Member):
         admin_log("info", f"Member left: {member.name} ({member.id}) ← {member.guild.name}", source="MemberLeave")
+        try:
+            datasys.update_activity(member.guild.id, member_leave=True)
+        except Exception:
+            pass
         await welcomer.on_member_remove(member, bot)
 
     @bot.event
@@ -442,6 +451,19 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     stats: dict = dict(datasys.load_data(1001, "stats"))
     stats["prossesed_messages"] = int(stats.get("prossesed_messages", 0)) + 1
     datasys.save_data(1001, "stats", stats)
+
+    # BaxiInsights: track activity (counts only, no content)
+    try:
+        datasys.update_activity(
+            message.guild.id,
+            channel_id=str(message.channel.id),
+            channel_name=getattr(message.channel, "name", None),
+            user_id=str(message.author.id),
+            user_name=message.author.name,
+            hour=datetime.datetime.now(_VIENNA).hour,
+        )
+    except Exception:
+        pass
     try:
         # Auto-Slowmode check (passive, non-blocking)
         asyncio.create_task(auto_slowmode.check(message))
@@ -492,11 +514,30 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if chatfilter_data.get("system", "SafeText").lower() == "ai":
             try:
                 ai_history = []
+                chatfilter_logs_cache: dict | None = None
                 async for hist_msg in message.channel.history(limit=8, before=message):
-                    ai_history.append({
-                        "author":  hist_msg.author.name,
-                        "content": hist_msg.clean_content,
-                    })
+                    if (
+                        hist_msg.author.bot
+                        and hist_msg.embeds
+                        and hist_msg.embeds[0].footer.text == "Baxi Security - avocloud.net"
+                    ):
+                        embed_desc = hist_msg.embeds[0].description or ""
+                        restid_match = re.search(r"id_chatfilter=([a-f0-9]+)", embed_desc)
+                        if restid_match:
+                            restid = restid_match.group(1)
+                            if chatfilter_logs_cache is None:
+                                chatfilter_logs_cache = dict(datasys.load_data(1001, "chatfilter_log"))
+                            log_entry = chatfilter_logs_cache.get(restid)
+                            if log_entry:
+                                ai_history.append({
+                                    "author": log_entry["uname"],
+                                    "content": f"[deleted by chatfilter: {log_entry['message']}]",
+                                })
+                    else:
+                        ai_history.append({
+                            "author":  hist_msg.author.name,
+                            "content": hist_msg.clean_content,
+                        })
                 ai_history.reverse()  # oldest first
             except Exception:
                 ai_history = None
@@ -757,6 +798,41 @@ async def del_chatfilter(
         f"{reason_list.get(reason, reason)} | \"{message.content[:80]}{'…' if len(message.content) > 80 else ''}\" | ID: {id}",
         source="Chatfilter"
     )
+
+    # BaxiInsights: log filter event (no message content)
+    try:
+        _severity_map = {
+            "phishing": 5,
+            "1": 4,   # NSFW
+            "2": 3,   # Toxicity
+            "3": 5,   # Hate
+            "4": 4,   # Doxxing
+            "5": 4,   # Self-harm
+            "internal": 1,
+            "custom": 2,
+        }
+        _category_map = {
+            "phishing": "phishing",
+            "1": "nsfw",
+            "2": "toxicity",
+            "3": "hate",
+            "4": "doxxing",
+            "5": "selfharm",
+            "internal": "keyword",
+            "custom": "keyword",
+        }
+        datasys.append_filter_event(message.guild.id, {
+            "system": "AI" if detected_system.lower() == "ai" else "SafeText",
+            "severity": _severity_map.get(str(reason), 2),
+            "category": _category_map.get(str(reason), "keyword"),
+            "user_id": str(message.author.id),
+            "user_name": message.author.name,
+            "channel_id": str(message.channel.id),
+            "channel_name": message.channel.name if hasattr(message.channel, "name") else str(message.channel.id),
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+        })
+    except Exception as _ins_err:
+        logger.error(f"[BaxiInsights] filter event log error: {_ins_err}")
 
     # Prism: record chatfilter violation (map AI category 3 = Hate Speech to chatfilter_hate)
     try:

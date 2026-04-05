@@ -217,6 +217,118 @@ def save_temp_actions(sid: int, data: dict):
     save_json(os.path.join(guild_data_dir, "temp_actions.json"), data)
 
 
+_INSIGHTS_MAX_DAYS = 90
+
+# ── Activity tracking ──────────────────────────────────────────────────────────
+
+def update_activity(
+    guild_id: int,
+    *,
+    channel_id: Optional[str] = None,
+    channel_name: Optional[str] = None,
+    user_id: Optional[str] = None,
+    user_name: Optional[str] = None,
+    hour: Optional[int] = None,
+    member_join: bool = False,
+    member_leave: bool = False,
+):
+    """
+    Increment aggregated activity counters for a guild.
+    Stored in data/{guild_id}/activity.json — no message content, counts only.
+    Automatically prunes data older than 90 days.
+    """
+    guild_data_dir = os.path.join("data", str(guild_id))
+    if not os.path.exists(guild_data_dir):
+        os.makedirs(guild_data_dir)
+    path = os.path.join(guild_data_dir, "activity.json")
+    try:
+        activity = load_json(path) if os.path.exists(path) else {}
+    except Exception:
+        activity = {}
+
+    today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=_INSIGHTS_MAX_DAYS)).strftime("%Y-%m-%d")
+
+    # ── Message tracking ──────────────────────────────────────────────────
+    if channel_id is not None:
+        days = activity.setdefault("msg_by_day", {})
+        # Prune old days
+        for d in list(days):
+            if d < cutoff:
+                del days[d]
+        day = days.setdefault(today, {"total": 0, "by_channel": {}, "by_user": {}, "by_hour": {}})
+        day["total"] = day.get("total", 0) + 1
+        ch = day["by_channel"].setdefault(channel_id, {"name": channel_name or channel_id, "count": 0})
+        ch["count"] += 1
+        if channel_name:
+            ch["name"] = channel_name
+        if user_id:
+            u = day["by_user"].setdefault(user_id, {"name": user_name or user_id, "count": 0})
+            u["count"] += 1
+            if user_name:
+                u["name"] = user_name
+        if hour is not None:
+            h = str(hour)
+            day["by_hour"][h] = day["by_hour"].get(h, 0) + 1
+
+    # ── Member tracking ───────────────────────────────────────────────────
+    if member_join or member_leave:
+        mdays = activity.setdefault("member_by_day", {})
+        for d in list(mdays):
+            if d < cutoff:
+                del mdays[d]
+        mday = mdays.setdefault(today, {"joins": 0, "leaves": 0})
+        if member_join:
+            mday["joins"] = mday.get("joins", 0) + 1
+        if member_leave:
+            mday["leaves"] = mday.get("leaves", 0) + 1
+
+    try:
+        save_json(path, activity)
+    except Exception:
+        pass
+
+
+def _prune_events(events: list) -> list:
+    """Remove events older than _INSIGHTS_MAX_DAYS days."""
+    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=_INSIGHTS_MAX_DAYS)).isoformat()
+    return [e for e in events if e.get("timestamp", "9999") >= cutoff]
+
+
+def append_mod_event(guild_id: int, event: dict):
+    """Append a moderation event to data/{guild_id}/mod_events.json (keeps last 90 days)."""
+    guild_data_dir = os.path.join("data", str(guild_id))
+    if not os.path.exists(guild_data_dir):
+        os.makedirs(guild_data_dir)
+    path = os.path.join(guild_data_dir, "mod_events.json")
+    try:
+        if os.path.exists(path):
+            events = load_json(path)
+        else:
+            events = []
+        events.append(event)
+        save_json(path, _prune_events(events))
+    except Exception:
+        pass
+
+
+def append_filter_event(guild_id: int, event: dict):
+    """Append a chatfilter event to data/{guild_id}/filter_events.json (keeps last 90 days)."""
+    guild_data_dir = os.path.join("data", str(guild_id))
+    if not os.path.exists(guild_data_dir):
+        os.makedirs(guild_data_dir)
+    path = os.path.join(guild_data_dir, "filter_events.json")
+    try:
+        if os.path.exists(path):
+            events = load_json(path)
+        else:
+            events = []
+        events.append(event)
+        save_json(path, _prune_events(events))
+    except Exception:
+        pass
+
+
 def get_guild_data(gid: int) -> Optional[Server_info_return]:
     if bot_instance is None:
         return None

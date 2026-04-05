@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaxiInsights — {{ guild.name }}</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <meta property="og:title" content="BaxiInsights — {{ guild.name }}">
+    <meta property="og:description" content="Server analytics for {{ guild.name }}.">
+    <meta property="og:color" content="#DC143C">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        #page-loader {
+            position: fixed; inset: 0; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
+            background: var(--background, canvas);
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        #page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #page-loader .loader-spinner {
+            width: 2.5rem; height: 2.5rem;
+            border: 3px solid color-mix(in srgb, var(--color-primary, #6F83AA) 20%, transparent);
+            border-top-color: var(--color-primary, #6F83AA);
+            border-radius: 50%; animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .stat-card {
+            background: var(--card, var(--color-card));
+            border: 1px solid var(--border, var(--color-border));
+            border-radius: 0.75rem; padding: 1.25rem 1.5rem;
+            display: flex; flex-direction: column; gap: 0.3rem;
+        }
+        .stat-card .label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.5; }
+        .stat-card .value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+        .stat-card .sub   { font-size: 0.78rem; opacity: 0.45; }
+
+        .chart-card {
+            background: var(--card, var(--color-card));
+            border: 1px solid var(--border, var(--color-border));
+            border-radius: 0.75rem; padding: 1.5rem;
+        }
+        .chart-card h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 1rem; opacity: 0.85; }
+
+        .rank-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.45rem 0; border-bottom: 1px solid var(--border, var(--color-border));
+            font-size: 0.86rem;
+        }
+        .rank-row:last-child { border-bottom: none; }
+        .rank-num { font-size: 0.72rem; font-weight: 700; opacity: 0.35; width: 1.5rem; flex-shrink: 0; }
+        .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--border); border-radius: 9999px; overflow: hidden; }
+        .rank-bar { height: 100%; border-radius: 9999px; background: var(--color-primary, #6F83AA); transition: width 0.4s ease; }
+        .rank-count { font-size: 0.78rem; font-weight: 600; opacity: 0.6; white-space: nowrap; }
+
+        .tag { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; }
+        .tag-warn { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; }
+        .tag-kick { background: color-mix(in srgb, #f97316 15%, transparent); color: #f97316; }
+        .tag-ban  { background: color-mix(in srgb, #ef4444 15%, transparent); color: #ef4444; }
+        .tag-mute { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; }
+
+        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; opacity: 0.9; }
+        .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.9rem; }
+        .grid-2    { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .grid-3    { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+        .section   { margin-bottom: 2.5rem; }
+
+        .time-bar { display: flex; gap: 0.5rem; margin-bottom: 1.75rem; }
+        .time-bar button {
+            padding: 0.32rem 1rem; border-radius: 9999px;
+            border: 1px solid var(--border, var(--color-border));
+            font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+        }
+        .time-bar button.active, .time-bar button:hover {
+            background: var(--color-primary, #6F83AA); color: #fff;
+            border-color: var(--color-primary, #6F83AA);
+        }
+
+        .health-track { height: 6px; border-radius: 9999px; background: var(--border); overflow: hidden; margin-top: 0.4rem; }
+        .health-fill  { height: 100%; border-radius: 9999px; transition: width 0.5s ease; }
+
+        .no-data { opacity: 0.45; font-size: 0.84rem; padding: 0.5rem 0; }
+
+        /* ── Mobile: hide the desktop sidebar entirely ──────────────────── */
+        @media (max-width: 768px) {
+            .local-button-group { display: none !important; }
+            #dash-content-wrapper { padding-bottom: 4.5rem; }
+        }
+
+        /* ── Mobile bottom nav (own element, full control) ───────────────── */
+        #mobile-nav {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            #mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                z-index: 600;
+                background: var(--card, #1a1a24);
+                border-top: 1px solid var(--border, rgba(255,255,255,0.1));
+                padding: 0.45rem 0.5rem env(safe-area-inset-bottom, 0.45rem);
+                gap: 0.3rem;
+                overflow-x: auto;
+                overflow-y: visible;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            #mobile-nav::-webkit-scrollbar { display: none; }
+            #mobile-nav button {
+                flex: 0 0 auto;
+                white-space: nowrap;
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.35rem 0.85rem;
+                border-radius: 9999px;
+                border: 1px solid var(--border, rgba(255,255,255,0.12));
+                background: transparent;
+                cursor: pointer;
+                transition: background 0.12s, color 0.12s, border-color 0.12s;
+            }
+            #mobile-nav button:hover, #mobile-nav button:active {
+                background: var(--color-primary, #6366f1);
+                color: #fff;
+                border-color: var(--color-primary, #6366f1);
+            }
+            #mobile-nav .mnav-sep {
+                flex-shrink: 0;
+                width: 1px;
+                background: var(--border, rgba(255,255,255,0.1));
+                margin: 0.2rem 0.1rem;
+                align-self: stretch;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="page-loader" aria-hidden="true">
+        <div class="loader-spinner"></div>
+        <p style="font-size:0.82rem;opacity:0.4;">Loading analytics…</p>
+    </div>
+    <script>
+        (function(){
+            var l=document.getElementById('page-loader');
+            var bg=getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+            if(bg&&bg!=='rgba(0,0,0,0)'&&bg!=='transparent') l.style.background=bg;
+        })();
+        window.addEventListener('load',function(){
+            var l=document.getElementById('page-loader');
+            if(l){l.classList.add('hidden');setTimeout(function(){l.remove()},400);}
+        });
+    </script>
+
+    <div id="gradientbar"></div>
+
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 100 75" fill="none"><path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12" stroke="currentColor" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" pathLength="200"/></svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap"><span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span></span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><svg id="theme-icon" viewBox="0 0 24 24"></svg></button>
+    </nav>
+
+    <div id="toaster" class="toaster"></div>
+
+    <!-- Sidebar -->
+    <div class="button-group local-button-group" data-orientation="vertical">
+        <button type="button" class="btn-lg-outline p-6">
+            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
+            {{user.name}}
+        </button>
+        <hr role="separator" />
+        <button onclick="location.href='/guild/?guild_login={{ guild_id }}'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Dashboard
+        </button>
+        <hr role="separator" />
+        <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.4;padding:0 0.75rem 0.25rem;">Sections</span>
+        <button onclick="scrollToSection('sec-overview')" class="btn-lg-outline">Overview</button>
+        <button onclick="scrollToSection('sec-messages')" class="btn-lg-outline">Messages</button>
+        <button onclick="scrollToSection('sec-members')" class="btn-lg-outline">Members</button>
+        <button onclick="scrollToSection('sec-moderation')" class="btn-lg-outline">Moderation</button>
+        <button onclick="scrollToSection('sec-prism')" class="btn-lg-outline">PRISM</button>
+        <hr role="separator" />
+        <button onclick="location.href='/logout/'" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+            Log-out
+        </button>
+    </div>
+
+    <!-- Mobile-only bottom nav — completely independent from the desktop sidebar -->
+    <nav id="mobile-nav" aria-label="Mobile navigation">
+        <button onclick="location.href='/guild/?guild_login={{ guild_id }}'">← Dashboard</button>
+        <div class="mnav-sep"></div>
+        <button onclick="scrollToSection('sec-overview')">Overview</button>
+        <button onclick="scrollToSection('sec-messages')">Messages</button>
+        <button onclick="scrollToSection('sec-members')">Members</button>
+        <button onclick="scrollToSection('sec-moderation')">Moderation</button>
+        <button onclick="scrollToSection('sec-prism')">PRISM</button>
+        <div class="mnav-sep"></div>
+        <button onclick="location.href='/logout/'" style="color:#f87171;border-color:rgba(248,113,113,0.3);">Log-out</button>
+    </nav>
+
+    <div id="dash-content-wrapper" class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="page-header">
+            <h1 class="text-3xl font-bold mb-1">📊 BaxiInsights</h1>
+            <p class="text-muted">{{ guild.name }}</p>
+        </div>
+
+        <!-- Time filter -->
+        <div class="time-bar" id="time-bar">
+            <button onclick="setDays(7)"  data-days="7"  class="{% if days==7  %}active{% endif %}">7 days</button>
+            <button onclick="setDays(30)" data-days="30" class="{% if days==30 %}active{% endif %}">30 days</button>
+            <button onclick="setDays(90)" data-days="90" class="{% if days==90 %}active{% endif %}">90 days</button>
+        </div>
+
+        <!-- ══ OVERVIEW ══════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-overview">
+            <p class="section-title">Overview</p>
+            <div class="grid-auto">
+                <div class="stat-card">
+                    <span class="label">Messages</span>
+                    <span class="value" id="st-msgs">{{ data.total_messages }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Members</span>
+                    <span class="value">{{ data.member_count }}</span>
+                    <span class="sub">current</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Joins</span>
+                    <span class="value" style="color:#22c55e" id="st-joins">{{ data.total_joins }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Leaves</span>
+                    <span class="value" style="color:#ef4444" id="st-leaves">{{ data.total_leaves }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Mod Actions</span>
+                    <span class="value" id="st-mod">{{ data.mod_total }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Filter Hits</span>
+                    <span class="value" id="st-filter">{{ data.filter_total }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Health Score</span>
+                    <span class="value" id="st-health">{{ data.health }}<span style="font-size:1rem;opacity:0.5;">/100</span></span>
+                    <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}#22c55e{% elif data.health>=40 %}#f59e0b{% else %}#ef4444{% endif %};"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ MESSAGES ══════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-messages">
+            <p class="section-title">Message Activity</p>
+            <div class="chart-card" style="margin-bottom:1rem;">
+                <h3>Messages per Day</h3>
+                <canvas id="chart-msg-timeline" height="85"></canvas>
+            </div>
+            <div class="grid-2">
+                <div class="chart-card">
+                    <h3>Most Active Channels</h3>
+                    <div id="list-active-channels">
+                        {% if data.top_active_channels %}
+                            {% set max_ch = data.top_active_channels[0].count if data.top_active_channels else 1 %}
+                            {% for c in data.top_active_channels %}
+                            <div class="rank-row">
+                                <span class="rank-num">{{ loop.index }}</span>
+                                <span style="font-weight:600;flex:0 0 auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">#{{ c.name }}</span>
+                                <div class="rank-bar-wrap"><div class="rank-bar" style="width:{{ (c.count / max_ch * 100)|round|int }}%;"></div></div>
+                                <span class="rank-count">{{ c.count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No data yet — starts tracking from now on.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Most Active Users</h3>
+                    <div id="list-active-users">
+                        {% if data.top_active_users %}
+                            {% set max_u = data.top_active_users[0].count if data.top_active_users else 1 %}
+                            {% for u in data.top_active_users %}
+                            <div class="rank-row">
+                                <span class="rank-num">{{ loop.index }}</span>
+                                <span style="font-weight:600;flex:0 0 auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ u.name }}</span>
+                                <div class="rank-bar-wrap"><div class="rank-bar" style="width:{{ (u.count / max_u * 100)|round|int }}%;"></div></div>
+                                <span class="rank-count">{{ u.count }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No data yet — starts tracking from now on.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="chart-card" style="margin-top:1rem;">
+                <h3>Activity by Hour (Europe/Vienna)</h3>
+                <canvas id="chart-hourly" height="70"></canvas>
+            </div>
+        </section>
+
+        <!-- ══ MEMBERS ═══════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-members">
+            <p class="section-title">Member Changes</p>
+            <div class="chart-card">
+                <h3>Joins &amp; Leaves per Day</h3>
+                <canvas id="chart-members" height="80"></canvas>
+            </div>
+        </section>
+
+        <!-- ══ MODERATION ════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-moderation">
+            <p class="section-title">Moderation</p>
+            <div class="grid-auto" style="margin-bottom:1rem;">
+                <div class="stat-card">
+                    <span class="label">Warns</span>
+                    <span class="value" style="color:#f59e0b" id="st-warn">{{ data.mod_counts.warn }}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Kicks</span>
+                    <span class="value" style="color:#f97316" id="st-kick">{{ data.mod_counts.kick }}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Bans</span>
+                    <span class="value" style="color:#ef4444" id="st-ban">{{ data.mod_counts.ban }}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Mutes</span>
+                    <span class="value" style="color:#8b5cf6" id="st-mute">{{ data.mod_counts.mute }}</span>
+                </div>
+            </div>
+            <div class="chart-card" style="margin-bottom:1rem;">
+                <h3>Moderation Timeline</h3>
+                <canvas id="chart-mod-timeline" height="80"></canvas>
+            </div>
+            <div class="grid-3">
+                <div class="chart-card">
+                    <h3>Most Moderated Users</h3>
+                    <div id="list-offenders">
+                        {% if data.top_offenders %}
+                            {% for o in data.top_offenders %}
+                            <div class="rank-row" style="gap:0.4rem;flex-wrap:wrap;">
+                                <span style="font-weight:600;">{{ o.user_name }}</span>
+                                <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-left:auto;">
+                                    {% if o.types.get('warn',0) %}<span class="tag tag-warn">{{ o.types.warn }}w</span>{% endif %}
+                                    {% if o.types.get('kick',0) %}<span class="tag tag-kick">{{ o.types.kick }}k</span>{% endif %}
+                                    {% if o.types.get('ban', 0) %}<span class="tag tag-ban">{{ o.types.ban }}b</span>{% endif %}
+                                    {% if o.types.get('mute',0) %}<span class="tag tag-mute">{{ o.types.mute }}m</span>{% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No mod actions in this period.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Most Filter Hits — Users</h3>
+                    <div id="list-filter-users">
+                        {% if data.top_filter_users %}
+                            {% for u in data.top_filter_users %}
+                            <div class="rank-row">
+                                <span style="font-weight:600;">{{ u.user_name }}</span>
+                                <span class="rank-count">{{ u.count }} hits</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No filter hits in this period.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Most Filter Hits — Channels</h3>
+                    <div id="list-filter-channels">
+                        {% if data.top_filter_channels %}
+                            {% for c in data.top_filter_channels %}
+                            <div class="rank-row">
+                                <span style="font-weight:600;">#{{ c.channel_name }}</span>
+                                <span class="rank-count">{{ c.count }} hits</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No filter channel data yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-top:1rem;">
+                <div class="chart-card">
+                    <h3>Filter — Severity Distribution</h3>
+                    <canvas id="chart-severity" height="160"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Filter — Category Breakdown</h3>
+                    <canvas id="chart-category" height="160"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ PRISM ═════════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-prism">
+            <p class="section-title">PRISM Trust Scores</p>
+            <div class="chart-card">
+                <h3>Score Distribution across {{ data.prism_scores_count }} tracked members (avg: {{ data.avg_prism }})</h3>
+                {% if data.prism_scores_count > 0 %}
+                <canvas id="chart-prism" height="80"></canvas>
+                {% else %}
+                <p class="no-data">No PRISM profiles tracked for this server yet.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <p style="font-size:0.75rem;opacity:0.3;text-align:center;margin-bottom:2rem;">BaxiInsights · avocloud.net · No message content is stored.</p>
+    </div>
+
+    <script>
+        const GUILD_ID = "{{ guild_id }}";
+        let currentDays = {{ days }};
+
+        function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+        function isDark() {
+            return document.documentElement.classList.contains('dark')
+                || document.documentElement.getAttribute('data-theme') === 'dark'
+                || window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        function ctDefaults() {
+            const dark = isDark();
+            return { color: dark?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.55)', grid: dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)' };
+        }
+
+        // ── Shared chart palette ─────────────────────────────────────────────
+        const C = {
+            blue:   '#6366f1', blueA:  'rgba(99,102,241,0.55)',  blueB: 'rgba(99,102,241,0.15)',
+            teal:   '#14b8a6', tealA:  'rgba(20,184,166,0.55)',  tealB: 'rgba(20,184,166,0.13)',
+            green:  '#22c55e', greenA: 'rgba(34,197,94,0.55)',   greenB:'rgba(34,197,94,0.13)',
+            red:    '#ef4444', redA:   'rgba(239,68,68,0.55)',   redB:  'rgba(239,68,68,0.12)',
+            amber:  '#f59e0b', amberA: 'rgba(245,158,11,0.55)',  amberB:'rgba(245,158,11,0.12)',
+            orange: '#f97316', orangeA:'rgba(249,115,22,0.55)',  orangeB:'rgba(249,115,22,0.12)',
+            purple: '#8b5cf6', purpleA:'rgba(139,92,246,0.55)',  purpleB:'rgba(139,92,246,0.12)',
+            lime:   '#84cc16',
+        };
+
+        let charts = {};
+        function destroyCharts() { Object.values(charts).forEach(c => c?.destroy()); charts = {}; }
+
+        function scaleOpts(color, grid) {
+            return { x:{ticks:{color,maxTicksLimit:12},grid:{color:grid}}, y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true} };
+        }
+
+        function buildCharts(d) {
+            destroyCharts();
+            const { color, grid } = ctDefaults();
+            const sc = scaleOpts(color, grid);
+
+            // ── Messages per day ─────────────────────────────────────────────
+            const ctxMT = document.getElementById('chart-msg-timeline');
+            if (ctxMT) charts.msgTimeline = new Chart(ctxMT, {
+                type: 'bar',
+                data: {
+                    labels: d.msg_timeline.map(e => e.date),
+                    datasets: [{ label: 'Messages', data: d.msg_timeline.map(e => e.count),
+                        backgroundColor: C.blueA, borderColor: C.blue, borderWidth: 1.5, borderRadius: 5 }],
+                },
+                options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
+            });
+
+            // ── Hourly ───────────────────────────────────────────────────────
+            const ctxH = document.getElementById('chart-hourly');
+            if (ctxH) {
+                const hours = Array.from({length:24},(_,i)=>i.toString().padStart(2,'0')+':00');
+                // Per-bar colour: ramp from teal (night) → blue (morning) → amber (afternoon) → indigo (evening)
+                const hourColors = hours.map((_,i) => {
+                    if (i < 6)  return 'rgba(20,184,166,0.6)';
+                    if (i < 12) return 'rgba(99,102,241,0.65)';
+                    if (i < 18) return 'rgba(245,158,11,0.65)';
+                    return 'rgba(139,92,246,0.65)';
+                });
+                charts.hourly = new Chart(ctxH, {
+                    type: 'bar',
+                    data: { labels: hours, datasets: [{ label: 'Messages', data: hours.map((_,i)=>d.hourly_dist[String(i)]||0),
+                        backgroundColor: hourColors, borderRadius: 4 }] },
+                    options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
+                });
+            }
+
+            // ── Member joins/leaves ──────────────────────────────────────────
+            const ctxMem = document.getElementById('chart-members');
+            if (ctxMem) charts.members = new Chart(ctxMem, {
+                type: 'line',
+                data: {
+                    labels: d.member_timeline.map(e=>e.date),
+                    datasets: [
+                        { label:'Joins',  data:d.member_timeline.map(e=>e.joins),  borderColor:C.green,  backgroundColor:C.greenB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                        { label:'Leaves', data:d.member_timeline.map(e=>e.leaves), borderColor:C.red,    backgroundColor:C.redB,   tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                    ],
+                },
+                options: { responsive:true, plugins:{legend:{labels:{color,usePointStyle:true}}}, scales: sc },
+            });
+
+            // ── Mod timeline ─────────────────────────────────────────────────
+            const ctxMod = document.getElementById('chart-mod-timeline');
+            if (ctxMod) charts.modTimeline = new Chart(ctxMod, {
+                type: 'line',
+                data: {
+                    labels: d.timeline.map(e=>e.date),
+                    datasets: [
+                        { label:'Warn', data:d.timeline.map(e=>e.warn), borderColor:C.amber,  backgroundColor:C.amberB,  tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                        { label:'Kick', data:d.timeline.map(e=>e.kick), borderColor:C.orange, backgroundColor:C.orangeB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                        { label:'Ban',  data:d.timeline.map(e=>e.ban),  borderColor:C.red,    backgroundColor:C.redB,    tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                        { label:'Mute', data:d.timeline.map(e=>e.mute), borderColor:C.purple, backgroundColor:C.purpleB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
+                    ],
+                },
+                options: { responsive:true, plugins:{legend:{labels:{color,usePointStyle:true}}}, scales: sc },
+            });
+
+            // ── Filter severity ──────────────────────────────────────────────
+            const ctxSev = document.getElementById('chart-severity');
+            if (ctxSev) charts.severity = new Chart(ctxSev, {
+                type: 'bar',
+                data: { labels:['Lvl 1','Lvl 2','Lvl 3','Lvl 4','Lvl 5'],
+                    datasets:[{label:'Hits', data:['1','2','3','4','5'].map(k=>d.severity_dist[k]||0),
+                        backgroundColor:[C.greenA, 'rgba(132,204,22,0.6)', C.amberA, C.orangeA, C.redA],
+                        borderColor:    [C.green,  C.lime,                 C.amber,  C.orange,  C.red],
+                        borderWidth: 1.5, borderRadius: 5 }] },
+                options: { responsive:true, plugins:{legend:{display:false}},
+                    scales:{x:{ticks:{color},grid:{color:grid}},y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true}} },
+            });
+
+            // ── Filter category ──────────────────────────────────────────────
+            const ctxCat = document.getElementById('chart-category');
+            if (ctxCat) {
+                const catColors={phishing:C.red,nsfw:C.orange,toxicity:C.amber,hate:'#dc2626',doxxing:'#7c3aed',selfharm:C.purple,keyword:'#94a3b8'};
+                const catKeys=Object.keys(d.category_counts);
+                if (catKeys.length) {
+                    charts.category = new Chart(ctxCat, {
+                        type:'doughnut',
+                        data:{labels:catKeys,datasets:[{data:catKeys.map(k=>d.category_counts[k]),
+                            backgroundColor:catKeys.map(k=>catColors[k]||C.blue),
+                            borderColor:'transparent', hoverOffset:6}]},
+                        options:{responsive:true,plugins:{legend:{position:'right',labels:{color,font:{size:11},usePointStyle:true,padding:12}}}},
+                    });
+                }
+            }
+
+            // ── PRISM distribution ───────────────────────────────────────────
+            const ctxP = document.getElementById('chart-prism');
+            if (ctxP && d.prism_scores_count > 0) {
+                const pk=['0-20','21-40','41-60','61-80','81-100'];
+                charts.prism = new Chart(ctxP, {
+                    type:'bar',
+                    data:{labels:pk,datasets:[{label:'Members',data:pk.map(k=>d.prism_dist[k]||0),
+                        backgroundColor:[C.redA,'rgba(249,115,22,0.6)',C.amberA,'rgba(132,204,22,0.6)',C.greenA],
+                        borderColor:    [C.red, C.orange,              C.amber,  C.lime,               C.green],
+                        borderWidth:1.5, borderRadius:5}]},
+                    options:{responsive:true,plugins:{legend:{display:false}},
+                        scales:{x:{ticks:{color},grid:{color:grid}},y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true}}},
+                });
+            }
+        }
+
+        function renderRankList(items, labelFn, maxCount) {
+            if (!items?.length) return '<p class="no-data">No data in this period.</p>';
+            const max = maxCount || items[0]?.count || 1;
+            return items.map((it,i) => `
+                <div class="rank-row">
+                    <span class="rank-num">${i+1}</span>
+                    <span style="font-weight:600;flex:0 0 auto;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${labelFn(it)}</span>
+                    <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(it.count/max*100)}%"></div></div>
+                    <span class="rank-count">${it.count}</span>
+                </div>`).join('');
+        }
+
+        function renderOffenders(items) {
+            if (!items?.length) return '<p class="no-data">No mod actions in this period.</p>';
+            return items.map(o => {
+                const tags = [
+                    o.types?.warn ? `<span class="tag tag-warn">${o.types.warn}w</span>` : '',
+                    o.types?.kick ? `<span class="tag tag-kick">${o.types.kick}k</span>` : '',
+                    o.types?.ban  ? `<span class="tag tag-ban">${o.types.ban}b</span>`   : '',
+                    o.types?.mute ? `<span class="tag tag-mute">${o.types.mute}m</span>` : '',
+                ].join('');
+                return `<div class="rank-row" style="gap:0.4rem;flex-wrap:wrap;"><span style="font-weight:600;">${o.user_name}</span><div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-left:auto;">${tags}</div></div>`;
+            }).join('');
+        }
+
+        function updatePage(d) {
+            const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+            set('st-msgs',   d.total_messages);
+            set('st-joins',  d.total_joins);
+            set('st-leaves', d.total_leaves);
+            set('st-mod',    d.mod_total);
+            set('st-filter', d.filter_total);
+            set('st-health', d.health);
+            set('st-warn',   d.mod_counts.warn);
+            set('st-kick',   d.mod_counts.kick);
+            set('st-ban',    d.mod_counts.ban);
+            set('st-mute',   d.mod_counts.mute);
+
+            const bar = document.getElementById('health-fill');
+            if (bar) { bar.style.width=d.health+'%'; bar.style.background=d.health>=70?'#22c55e':d.health>=40?'#f59e0b':'#ef4444'; }
+
+            const maxCh = d.top_active_channels?.[0]?.count || 1;
+            const maxUsr = d.top_active_users?.[0]?.count || 1;
+            const el = id => document.getElementById(id);
+            if (el('list-active-channels')) el('list-active-channels').innerHTML = renderRankList(d.top_active_channels, c=>'#'+c.name, maxCh);
+            if (el('list-active-users'))    el('list-active-users').innerHTML    = renderRankList(d.top_active_users,    u=>u.name, maxUsr);
+            if (el('list-offenders'))       el('list-offenders').innerHTML       = renderOffenders(d.top_offenders);
+            if (el('list-filter-users'))    el('list-filter-users').innerHTML    = renderRankList(d.top_filter_users,   u=>u.user_name);
+            if (el('list-filter-channels')) el('list-filter-channels').innerHTML = renderRankList(d.top_filter_channels,c=>'#'+c.channel_name);
+
+            buildCharts(d);
+        }
+
+        async function setDays(days) {
+            currentDays = days;
+            document.querySelectorAll('#time-bar button').forEach(b => b.classList.toggle('active', +b.dataset.days===days));
+            try {
+                const res  = await fetch(`/api/dash/insights/?guild_login=${GUILD_ID}&days=${days}`);
+                const json = await res.json();
+                if (json.success) updatePage(json);
+            } catch(e) { console.error('BaxiInsights:', e); }
+        }
+
+        // ── Boot ─────────────────────────────────────────────────────────────
+        const D = {
+            total_messages:      {{ data.total_messages }},
+            total_joins:         {{ data.total_joins }},
+            total_leaves:        {{ data.total_leaves }},
+            mod_total:           {{ data.mod_total }},
+            filter_total:        {{ data.filter_total }},
+            health:              {{ data.health }},
+            mod_counts:          {{ data.mod_counts | tojson }},
+            msg_timeline:        {{ data.msg_timeline | tojson }},
+            member_timeline:     {{ data.member_timeline | tojson }},
+            timeline:            {{ data.timeline | tojson }},
+            hourly_dist:         {{ data.hourly_dist | tojson }},
+            severity_dist:       {{ data.severity_dist | tojson }},
+            category_counts:     {{ data.category_counts | tojson }},
+            top_active_channels: {{ data.top_active_channels | tojson }},
+            top_active_users:    {{ data.top_active_users | tojson }},
+            top_offenders:       {{ data.top_offenders | tojson }},
+            top_filter_users:    {{ data.top_filter_users | tojson }},
+            top_filter_channels: {{ data.top_filter_channels | tojson }},
+            prism_scores_count:  {{ data.prism_scores_count }},
+            avg_prism:           {{ data.avg_prism }},
+            prism_dist:          {{ data.prism_dist | tojson }},
+        };
+
+        document.addEventListener('DOMContentLoaded', () => buildCharts(D));
+    </script>
+</body>
+</html>

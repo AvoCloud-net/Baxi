@@ -133,10 +133,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/welcome/")
     async def welcome():
         stats: dict = dict(load_data(1001, "stats"))
+        current_user = None
+        try:
+            if discord_auth.authorized:
+                current_user = await discord_auth.fetch_user()
+        except Exception:
+            pass
         return await render_template(
             "welcome.html",
             stats=stats,
             version=config.Discord.version,
+            current_user=current_user,
         )
 
     @app.route("/privacy/")
@@ -2474,6 +2481,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "total": total_ever,
         })
 
+    @app.route("/api/admin/reload-templates", methods=["POST"])
+    @requires_authorization
+    async def admin_reload_templates():
+        """Clears the Jinja2 template cache so updated HTML/CSS/JS files are served immediately."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+        cache = app.jinja_env.cache
+        if cache is not None:
+            cache.clear()
+        share.admin_log("info", f"Template cache cleared by {user.name}", source="AdminDash")
+        return quart.jsonify({"success": True, "message": "Template cache cleared."})
+
     @app.route("/api/admin/action", methods=["POST"])
     @requires_authorization
     async def admin_action():
@@ -3440,5 +3460,273 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"success": True, "message": f"Data report sent via DM to {target_rep.name}."})
 
         return quart.jsonify({"success": False, "message": f"Unknown action: {action}"}), 400
+
+    # ── BaxiInsights ──────────────────────────────────────────────────────────
+
+    def _load_insights_data(guild_id: str, days: int) -> dict:
+        """Load and aggregate insights data for a guild over the past N days."""
+        import assets.trust as sentinel_mod
+        from datetime import timedelta
+        cutoff = datetime.now() - timedelta(days=days)
+
+        # Mod events
+        mod_path = os.path.join("data", guild_id, "mod_events.json")
+        mod_events = []
+        if os.path.exists(mod_path):
+            try:
+                with open(mod_path, "r", encoding="utf-8") as f:
+                    mod_events = json.load(f)
+            except Exception:
+                pass
+        mod_events = [
+            e for e in mod_events
+            if datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
+        ]
+
+        # Filter events
+        filter_path = os.path.join("data", guild_id, "filter_events.json")
+        filter_events = []
+        if os.path.exists(filter_path):
+            try:
+                with open(filter_path, "r", encoding="utf-8") as f:
+                    filter_events = json.load(f)
+            except Exception:
+                pass
+        filter_events = [
+            e for e in filter_events
+            if datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
+        ]
+
+        # Mod counts
+        mod_counts = {"warn": 0, "kick": 0, "ban": 0, "mute": 0}
+        for e in mod_events:
+            t = e.get("type", "")
+            if t in mod_counts:
+                mod_counts[t] += 1
+
+        # Mod timeline (per day)
+        from collections import defaultdict
+        timeline: dict = defaultdict(lambda: {"warn": 0, "kick": 0, "ban": 0, "mute": 0})
+        for e in mod_events:
+            day = e.get("timestamp", "")[:10]
+            t = e.get("type", "")
+            if t in mod_counts:
+                timeline[day][t] += 1
+        timeline_sorted = [{"date": k, **v} for k, v in sorted(timeline.items())]
+
+        # Filter stats
+        severity_dist = {str(i): 0 for i in range(1, 6)}
+        category_counts: dict = defaultdict(int)
+        for e in filter_events:
+            sev = str(e.get("severity", 1))
+            if sev in severity_dist:
+                severity_dist[sev] += 1
+            cat = e.get("category", "keyword")
+            category_counts[cat] += 1
+
+        # Top offenders (by mod event count)
+        offenders: dict = defaultdict(lambda: {"user_name": "", "count": 0, "types": defaultdict(int)})
+        for e in mod_events:
+            uid = e.get("user_id", "?")
+            offenders[uid]["user_name"] = e.get("user_name", uid)
+            offenders[uid]["count"] += 1
+            offenders[uid]["types"][e.get("type", "?")] += 1
+        top_offenders = sorted(offenders.values(), key=lambda x: x["count"], reverse=True)[:10]
+        for o in top_offenders:
+            o["types"] = dict(o["types"])
+
+        # Top users by filter hits
+        filter_users: dict = defaultdict(lambda: {"user_name": "", "count": 0})
+        for e in filter_events:
+            uid = e.get("user_id", "?")
+            filter_users[uid]["user_name"] = e.get("user_name", uid)
+            filter_users[uid]["count"] += 1
+        top_filter_users = sorted(filter_users.values(), key=lambda x: x["count"], reverse=True)[:10]
+
+        # Top channels by filter hits
+        filter_channels: dict = defaultdict(lambda: {"channel_name": "", "count": 0})
+        for e in filter_events:
+            cid = e.get("channel_id", "?")
+            filter_channels[cid]["channel_name"] = e.get("channel_name", f"#{cid}")
+            filter_channels[cid]["count"] += 1
+        top_filter_channels = sorted(filter_channels.values(), key=lambda x: x["count"], reverse=True)[:10]
+
+        # Activity data (messages, members)
+        activity_path = os.path.join("data", guild_id, "activity.json")
+        activity_raw = {}
+        if os.path.exists(activity_path):
+            try:
+                with open(activity_path, "r", encoding="utf-8") as f:
+                    activity_raw = json.load(f)
+            except Exception:
+                pass
+
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        msg_days = {d: v for d, v in activity_raw.get("msg_by_day", {}).items() if d >= cutoff_date}
+        member_days = {d: v for d, v in activity_raw.get("member_by_day", {}).items() if d >= cutoff_date}
+
+        # Message timeline (total per day)
+        msg_timeline = [{"date": d, "count": v.get("total", 0)} for d, v in sorted(msg_days.items())]
+        total_messages = sum(v.get("total", 0) for v in msg_days.values())
+
+        # Top channels by message count (summed across days)
+        ch_totals: dict = defaultdict(lambda: {"name": "", "count": 0})
+        for day_data in msg_days.values():
+            for cid, cv in day_data.get("by_channel", {}).items():
+                ch_totals[cid]["name"] = cv.get("name", cid)
+                ch_totals[cid]["count"] += cv.get("count", 0)
+        top_active_channels = sorted(ch_totals.values(), key=lambda x: x["count"], reverse=True)[:10]
+
+        # Top users by message count (summed across days)
+        u_totals: dict = defaultdict(lambda: {"name": "", "count": 0})
+        for day_data in msg_days.values():
+            for uid, uv in day_data.get("by_user", {}).items():
+                u_totals[uid]["name"] = uv.get("name", uid)
+                u_totals[uid]["count"] += uv.get("count", 0)
+        top_active_users = sorted(u_totals.values(), key=lambda x: x["count"], reverse=True)[:10]
+
+        # Hourly distribution (summed across days)
+        hourly: dict = {str(h): 0 for h in range(24)}
+        for day_data in msg_days.values():
+            for h, cnt in day_data.get("by_hour", {}).items():
+                hourly[str(h)] = hourly.get(str(h), 0) + cnt
+
+        # Member joins/leaves timeline
+        member_timeline = [
+            {"date": d, "joins": v.get("joins", 0), "leaves": v.get("leaves", 0)}
+            for d, v in sorted(member_days.items())
+        ]
+        total_joins  = sum(v.get("joins",  0) for v in member_days.values())
+        total_leaves = sum(v.get("leaves", 0) for v in member_days.values())
+
+        # PRISM scores for guild members
+        all_trust = sentinel_mod._load()
+        guild = bot.get_guild(int(guild_id))
+        prism_scores = []
+        if guild:
+            member_ids = {str(m.id) for m in guild.members}
+            for uid, profile in all_trust.items():
+                if uid in member_ids and not profile.get("opt_out", False):
+                    prism_scores.append(profile.get("score", 100))
+        avg_prism = round(sum(prism_scores) / len(prism_scores), 1) if prism_scores else 100
+        prism_dist = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
+        for s in prism_scores:
+            if s <= 20:    prism_dist["0-20"] += 1
+            elif s <= 40:  prism_dist["21-40"] += 1
+            elif s <= 60:  prism_dist["41-60"] += 1
+            elif s <= 80:  prism_dist["61-80"] += 1
+            else:          prism_dist["81-100"] += 1
+
+        # Health score
+        member_count = guild.member_count if guild and guild.member_count else 1
+        mod_rate = len(mod_events) / max(member_count, 1)
+        filter_rate = len(filter_events) / max(member_count * days, 1)
+        health = 100 - (mod_rate * 20) - (filter_rate * 15) - max(0, (50 - avg_prism) * 0.8)
+        health = max(0, min(100, round(health)))
+
+        return {
+            # Moderation
+            "mod_counts": mod_counts,
+            "mod_total": len(mod_events),
+            "filter_total": len(filter_events),
+            "timeline": timeline_sorted,
+            "severity_dist": severity_dist,
+            "category_counts": dict(category_counts),
+            "top_offenders": top_offenders,
+            "top_filter_users": top_filter_users,
+            "top_filter_channels": top_filter_channels,
+            # Activity
+            "total_messages": total_messages,
+            "msg_timeline": msg_timeline,
+            "top_active_channels": top_active_channels,
+            "top_active_users": top_active_users,
+            "hourly_dist": hourly,
+            "member_timeline": member_timeline,
+            "total_joins": total_joins,
+            "total_leaves": total_leaves,
+            # PRISM
+            "prism_scores_count": len(prism_scores),
+            "avg_prism": avg_prism,
+            "prism_dist": prism_dist,
+            # Meta
+            "health": health,
+            "days": days,
+            "member_count": member_count,
+        }
+
+    async def _check_guild_auth(guild_id: str):
+        """Returns (user, guild, error_response) — error_response is None on success."""
+        if not guild_id or not guild_id.isdigit():
+            return None, None, (await render_template("error.html", message="Invalid guild ID."), 400)
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            if not guild:
+                return None, None, (await render_template("error.html", message="Guild not found."), 404)
+            try:
+                guild_member = await guild.fetch_member(user.id)
+            except discord.NotFound:
+                return None, None, (await render_template("error.html", message="You are not a member of this guild."), 403)
+            if not guild_member.guild_permissions.manage_guild:
+                return None, None, (await render_template("error.html", message="You do not have the Manage Server permission."), 403)
+            return user, guild, None
+        except discord.NotFound:
+            return None, None, (await render_template("error.html", message="Guild not found."), 404)
+        except discord.Forbidden:
+            return None, None, (await render_template("error.html", message="Bot has no access to this guild."), 403)
+        except Exception as e:
+            return None, None, (await render_template("error.html", message=f"Unexpected error: {e}"), 500)
+
+    @app.route("/guild/insights/")
+    @requires_authorization
+    async def guild_insights():
+        guild_id = quart.request.args.get("guild_login", "")
+        user, guild, err = await _check_guild_auth(guild_id)
+        if err:
+            return err
+        try:
+            days = int(quart.request.args.get("days", 30))
+        except ValueError:
+            days = 30
+        days = days if days in (7, 30, 90) else 30
+        data = _load_insights_data(guild_id, days)
+        return await render_template(
+            "insights.html",
+            data=data,
+            guild=guild,
+            user=user,
+            guild_id=guild_id,
+            days=days,
+            greeting=get_time_based_greeting(user.name),
+        )
+
+    @app.route("/api/dash/insights/")
+    @requires_authorization
+    async def guild_insights_api():
+        guild_id = quart.request.args.get("guild_login", "")
+        try:
+            days = int(quart.request.args.get("days", 30))
+        except ValueError:
+            days = 30
+        days = days if days in (7, 30, 90) else 30
+        if not guild_id or not guild_id.isdigit():
+            return quart.jsonify({"success": False, "message": "Invalid guild ID."}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            try:
+                guild_member = await guild.fetch_member(user.id)
+            except discord.NotFound:
+                return quart.jsonify({"success": False, "message": "Not a guild member."}), 403
+            if not guild_member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "Missing Manage Server permission."}), 403
+        except discord.NotFound:
+            return quart.jsonify({"success": False, "message": "Guild not found."}), 404
+        except discord.Forbidden:
+            return quart.jsonify({"success": False, "message": "Bot has no access."}), 403
+        except Exception as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 500
+        data = _load_insights_data(guild_id, days)
+        return quart.jsonify({"success": True, **data})
 
     app.config["BOT_READY"] = True
