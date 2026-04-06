@@ -20,5 +20,8 @@ class Twitch:
     client_secret: str = "YOUR-TWITCH-CLIENT-SECRET"
 
 
+class TopGG:
+    token: str = "YOUR-TOPGG-TOKEN"
+
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED

@@ -12,6 +12,7 @@ from assets.livestream import twitch_api, youtube_api, tiktok_api
 import assets.data as datasys
 import assets.trust as sentinel
 import config.config as config
+import config.auth as auth
 import copy
 
 logger = Logger()
@@ -87,7 +88,27 @@ class UpdateStatsTask:
         logger.debug.info(
             f"[Stats] Updated stats: Guilds: {guild_count}, Unique Users: {user_count}"
         )
+
+        await self._post_topgg_stats(guild_count)
         set_task_status("UpdateStats", "ok", f"Guilds: {guild_count} · Unique users: {user_count}")
+
+    async def _post_topgg_stats(self, guild_count: int):
+        token = auth.TopGG.token
+        if not token or token == "YOUR-TOPGG-TOKEN":
+            return
+        bot_id = self.bot.user.id
+        url = f"https://top.gg/api/bots/{bot_id}/stats"
+        headers = {"Authorization": token, "Content-Type": "application/json"}
+        payload = {"server_count": guild_count, "shard_count": self.bot.shard_count}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, headers=headers) as resp:
+                    if resp.status == 200:
+                        logger.debug.success(f"[TopGG] Stats posted: {guild_count} guilds")
+                    else:
+                        logger.warning(f"[TopGG] Failed to post stats: HTTP {resp.status}")
+        except Exception as e:
+            logger.error(f"[TopGG] Error posting stats: {e}")
 
 
 class LivestreamTask:
