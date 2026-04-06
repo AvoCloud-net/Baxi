@@ -166,6 +166,7 @@ def events(bot: commands.AutoShardedBot, web):
             update_stats_task.update_stats.start()
             share.task_instances["UpdateStats"] = update_stats_task
             logger.debug.success("Update stats task started.")
+            await update_stats_task._post_topgg_stats(len(bot.guilds))
 
             logger.working("Starting Livestream task...")
             share.livestream_task = LivestreamTask(bot)
