@@ -50,6 +50,10 @@ class YouTube:
     check_interval_seconds = 300
 
 
+class YouTubeVideos:
+    check_interval_seconds = 600
+
+
 class TikTok:
     check_interval_seconds = 300
 
@@ -114,6 +118,12 @@ class datasys:
         "enabled": False,
         "streamers": [],
         "category_id": ""
+    },
+    "youtube_videos": {
+        "enabled": False,
+        "alert_channel": "",
+        "ping_role": "",
+        "channels": []
     },
     "stats_channels": {
         "enabled": False,

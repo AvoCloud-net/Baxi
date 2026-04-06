@@ -239,6 +239,11 @@
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} — **{name}** streamt jetzt **{game}** live!"
             },
+            "youtube_videos": {
+                "embed_description": "**{name}** hat ein neues Video hochgeladen!",
+                "embed_field_published": "Veröffentlicht",
+                "embed_footer": "Baxi YouTube Videos · avocloud.net"
+            },
             "button_roles": {
                 "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
                 "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
@@ -552,6 +557,11 @@
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
                 "ping_message": "{role} — **{name}** is now live playing **{game}**!"
+            },
+            "youtube_videos": {
+                "embed_description": "**{name}** just uploaded a new video!",
+                "embed_field_published": "Published",
+                "embed_footer": "Baxi YouTube Videos · avocloud.net"
             },
             "button_roles": {
                 "applied": "The **{role}** role has been applied to your profile.",

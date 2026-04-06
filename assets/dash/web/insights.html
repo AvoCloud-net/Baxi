@@ -8,6 +8,8 @@
     <meta property="og:title" content="BaxiInsights — {{ guild.name }}">
     <meta property="og:description" content="Server analytics for {{ guild.name }}.">
     <meta property="og:color" content="#DC143C">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
@@ -217,7 +219,10 @@
 
     <div id="dash-content-wrapper" class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
-            <h1 class="text-3xl font-bold mb-1">📊 BaxiInsights</h1>
+            <h1 class="text-3xl font-bold mb-1" style="display:flex;align-items:center;gap:0.5rem;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.85;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                BaxiInsights
+            </h1>
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 

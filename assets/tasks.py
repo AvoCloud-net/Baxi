@@ -791,6 +791,61 @@ class GarbageCollectorTask:
             logger.error(f"[GC] Error during garbage collection: {e}")
             set_task_status("GarbageCollector", "error", f"Error: {e}")
 
+    @staticmethod
+    def _is_old_chatfilter(entry: dict, cutoff: datetime.datetime) -> bool:
+        ts_str = entry.get("timestamp", "")
+        if not ts_str:
+            return False
+        try:
+            dt = datetime.datetime.strptime(ts_str, "%d.%m.%Y - %H:%M")
+            return dt < cutoff
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_old_globalchat(entry: dict, cutoff: datetime.datetime) -> bool:
+        mid = None
+        if entry.get("messages"):
+            mid = entry["messages"][0].get("mid")
+        elif entry.get("replies"):
+            mid = entry["replies"][0].get("mid")
+        if mid is None:
+            return False
+        try:
+            ts_ms = (int(mid) >> 22) + 1420070400000
+            dt = datetime.datetime.fromtimestamp(ts_ms / 1000)
+            return dt < cutoff
+        except (ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def _is_old_transcript(entry: dict, cutoff: datetime.datetime) -> bool:
+        ts_str = entry.get("created_at") or entry.get("timestamp")
+        if not ts_str:
+            return False
+        try:
+            dt = datetime.datetime.fromisoformat(ts_str)
+            if dt.tzinfo is not None:
+                dt = dt.replace(tzinfo=None)
+            return dt < cutoff
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_old_ticket(ticket: dict, cutoff: datetime.datetime) -> bool:
+        transcript = ticket.get("transcript", [])
+        for msg in reversed(transcript):
+            ts_str = msg.get("timestamp")
+            if ts_str:
+                try:
+                    dt = datetime.datetime.fromisoformat(ts_str)
+                    if dt.tzinfo is not None:
+                        dt = dt.replace(tzinfo=None)
+                    return dt < cutoff
+                except ValueError:
+                    continue
+        return False
+
     def _do_collect(self) -> dict:
         cutoff = datetime.datetime.now() - datetime.timedelta(days=self.RETENTION_DAYS)
         removed = {"chatfilter": 0, "globalchat": 0, "tickets": 0, "transcripts": 0}
@@ -857,59 +912,175 @@ class GarbageCollectorTask:
 
         return removed
 
-    @staticmethod
-    def _is_old_chatfilter(entry: dict, cutoff: datetime.datetime) -> bool:
-        ts_str = entry.get("timestamp", "")
-        if not ts_str:
-            return False
-        try:
-            dt = datetime.datetime.strptime(ts_str, "%d.%m.%Y - %H:%M")
-            return dt < cutoff
-        except ValueError:
-            return False
 
-    @staticmethod
-    def _is_old_globalchat(entry: dict, cutoff: datetime.datetime) -> bool:
-        # Extract timestamp from the first Discord snowflake ID found in messages or replies.
-        mid = None
-        if entry.get("messages"):
-            mid = entry["messages"][0].get("mid")
-        elif entry.get("replies"):
-            mid = entry["replies"][0].get("mid")
-        if mid is None:
-            return False
-        try:
-            ts_ms = (int(mid) >> 22) + 1420070400000
-            dt = datetime.datetime.fromtimestamp(ts_ms / 1000)
-            return dt < cutoff
-        except (ValueError, TypeError):
-            return False
+class YouTubeVideoTask:
+    """Background task that polls YouTube channels for new video uploads via RSS.
 
-    @staticmethod
-    def _is_old_ticket(ticket: dict, cutoff: datetime.datetime) -> bool:
-        transcript = ticket.get("transcript", [])
-        # Find the most recent message timestamp in the transcript.
-        for msg in reversed(transcript):
-            ts_str = msg.get("timestamp")
-            if ts_str:
+    Every 10 minutes, for each guild with youtube_videos enabled:
+    - Fetches the latest video from the public RSS feed for each tracked channel
+    - Compares video_id to the stored last_video_id
+    - On first check (last_video_id == ""): stores ID silently without notifying
+    - On new video: sends embed to alert_channel, pings role if configured
+    - Errors for a single channel are logged and skipped; the loop continues
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=config.YouTubeVideos.check_interval_seconds)
+    async def check_videos(self):
+        try:
+            set_task_status("YouTubeVideos", "running", "Checking YouTube channels for new uploads...")
+            await self._do_check()
+            set_task_status("YouTubeVideos", "ok", "YouTube video check complete")
+        except Exception as e:
+            logger.error(f"[YouTubeVideos] Unexpected error: {e}")
+            set_task_status("YouTubeVideos", "error", f"Unexpected error: {e}")
+
+    @check_videos.before_loop
+    async def before_check_videos(self):
+        await self.bot.wait_until_ready()
+        await self._do_check()  # run once immediately on startup
+
+    async def _do_check(self):
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+            for guild in self.bot.guilds:
                 try:
-                    dt = datetime.datetime.fromisoformat(ts_str)
-                    if dt.tzinfo is not None:
-                        dt = dt.replace(tzinfo=None)
-                    return dt < cutoff
-                except ValueError:
+                    await self._check_guild(session, guild)
+                except Exception as e:
+                    logger.error(f"[YouTubeVideos] Error processing guild {guild.id}: {e}")
+
+    async def _check_guild(self, session: aiohttp.ClientSession, guild):
+        yv_config = dict(datasys.load_data(guild.id, "youtube_videos"))
+
+        if not yv_config.get("enabled", False):
+            return
+
+        alert_channel_id = str(yv_config.get("alert_channel", "")).strip()
+        if not alert_channel_id:
+            return
+
+        try:
+            alert_channel = guild.get_channel(int(alert_channel_id))
+        except (ValueError, TypeError):
+            return
+        if not isinstance(alert_channel, discord.TextChannel):
+            return
+
+        ping_role_id = str(yv_config.get("ping_role", "")).strip()
+        channels = yv_config.get("channels", [])
+        changed = False
+
+        lang = datasys.load_lang_file(guild.id)
+        yv_lang = lang.get("systems", {}).get("youtube_videos", {})
+
+        for ch_entry in channels:
+            try:
+                channel_id = ch_entry.get("channel_id", "")
+                if not channel_id:
                     continue
-        return False  # no parseable timestamp → keep
+
+                video = await youtube_api.get_latest_video(session, channel_id)
+                if video is None:
+                    continue
+
+                last_video_id        = ch_entry.get("last_video_id", "")
+                last_video_published = ch_entry.get("last_video_published", "")
+
+                if not last_video_id:
+                    # First run: seed silently without notifying
+                    ch_entry["last_video_id"]        = video["video_id"]
+                    ch_entry["last_video_published"] = video.get("published", "")
+                    changed = True
+                    admin_log(
+                        "info",
+                        f"[YouTubeVideos] Seeded {ch_entry.get('display_name', channel_id)} "
+                        f"@ {guild.name}: {video['video_id']}",
+                        source="YouTubeVideos",
+                    )
+                    continue
+
+                if video["video_id"] == last_video_id:
+                    continue  # No new video
+
+                # Check published timestamp — only notify if video is strictly newer
+                # This prevents re-alerts when a video is deleted and an older one surfaces
+                video_published = video.get("published", "")
+                if video_published and last_video_published:
+                    try:
+                        from datetime import datetime
+                        dt_new  = datetime.fromisoformat(video_published.replace("Z", "+00:00"))
+                        dt_last = datetime.fromisoformat(last_video_published.replace("Z", "+00:00"))
+                        if dt_new <= dt_last:
+                            # RSS surfaced an older video (e.g. newest was deleted) — update silently
+                            ch_entry["last_video_id"]        = video["video_id"]
+                            ch_entry["last_video_published"] = video_published
+                            changed = True
+                            continue
+                    except (ValueError, AttributeError):
+                        pass  # Can't parse timestamps — fall through to notify
+
+                # New video detected — send notification
+                ch_entry["last_video_id"]        = video["video_id"]
+                ch_entry["last_video_published"] = video_published
+                changed = True
+
+                display_name = ch_entry.get("display_name", channel_id)
+                profile_img  = ch_entry.get("profile_image_url", "")
+
+                embed = self._build_embed(video, display_name, profile_img, yv_lang)
+                ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
+
+                try:
+                    await alert_channel.send(content=ping_content, embed=embed)
+                    admin_log(
+                        "success",
+                        f"[YouTubeVideos] New video by {display_name} @ {guild.name}: "
+                        f"\"{video['title']}\" ({video['video_id']})",
+                        source="YouTubeVideos",
+                    )
+                except (discord.Forbidden, discord.HTTPException) as e:
+                    logger.error(
+                        f"[YouTubeVideos] Could not send to {alert_channel_id} "
+                        f"in guild {guild.id}: {e}"
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"[YouTubeVideos] Error checking channel "
+                    f"{ch_entry.get('channel_id')} in guild {guild.id}: {e}"
+                )
+
+        if changed:
+            yv_config["channels"] = channels
+            datasys.save_data(guild.id, "youtube_videos", yv_config)
 
     @staticmethod
-    def _is_old_transcript(entry: dict, cutoff: datetime.datetime) -> bool:
-        ts_str = entry.get("created_at") or entry.get("timestamp")
-        if not ts_str:
-            return False
-        try:
-            dt = datetime.datetime.fromisoformat(ts_str)
-            if dt.tzinfo is not None:
-                dt = dt.replace(tzinfo=None)
-            return dt < cutoff
-        except ValueError:
-            return False
+    def _build_embed(video: dict, display_name: str, profile_image_url: str, yv_lang: dict) -> discord.Embed:
+        description = yv_lang.get("embed_description", "**{name}** just uploaded a new video!").format(name=display_name)
+        embed = discord.Embed(
+            title=video.get("title", "New Video"),
+            url=video.get("url", ""),
+            color=discord.Color.from_rgb(255, 0, 0),
+            description=description,
+        )
+        thumbnail = video.get("thumbnail_url", "")
+        if thumbnail:
+            embed.set_image(url=thumbnail)
+        if profile_image_url:
+            embed.set_thumbnail(url=profile_image_url)
+
+        published = video.get("published", "")
+        if published:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+                field_name = yv_lang.get("embed_field_published", "Published")
+                embed.add_field(name=field_name, value=f"<t:{int(dt.timestamp())}:R>", inline=True)
+            except (ValueError, AttributeError):
+                pass
+
+        footer = yv_lang.get("embed_footer", "Baxi YouTube Videos · avocloud.net")
+        embed.set_footer(text=footer)
+        return embed
+

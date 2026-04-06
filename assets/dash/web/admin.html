@@ -171,6 +171,17 @@
         .admin-table tr:last-child td { border-bottom:none; }
         .admin-table tr:hover td { background:rgba(255,255,255,.03); }
 
+        /* ── Guild Activity tabs ─────────────────────────────────── */
+        .ga-tab {
+            background:none; border:none; cursor:pointer; color:inherit; opacity:.55;
+            font-size:.75rem; padding:.25rem .55rem; border-radius:5px;
+            transition:opacity .15s,background .15s;
+        }
+        .ga-tab:hover { opacity:.85; background:rgba(255,255,255,.06); }
+        .ga-tab.active { opacity:1; background:rgba(147,51,234,.2); }
+        .ga-cnt { font-size:.68rem; font-weight:700; margin-left:.2rem; }
+        .ga-bar-cell { min-width:100px; }
+
         @media (max-width: 768px) {
             .admin-sidebar { display:none; }
             .admin-main { margin-left:0; padding:1rem; }
@@ -219,6 +230,14 @@
     <a href="#section-guilds">
         <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         All Guilds
+    </a>
+    <a href="#section-guild-activity">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Guild Activity
+    </a>
+    <a href="#section-guild-config">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        Guild Config
     </a>
     <div class="nav-sep"></div>
     <a href="#section-user-gdpr">
@@ -502,6 +521,87 @@
                     <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Members</th><th>Actions</th></tr></thead>
                     <tbody id="guild-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
                 </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── GUILD ACTIVITY ────────────────────────────────────────── -->
+    <section id="section-guild-activity" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Guild Activity</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600;">Server Activity Overview</h2>
+                    <p class="text-muted" style="font-size:.78rem;">Based on user messages tracked by BaxiInsights · last 30 days · <span id="ga-updated" style="opacity:.5;">–</span></p>
+                </div>
+                <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
+                    <!-- Status filter tabs -->
+                    <div style="display:flex; gap:.25rem; background:rgba(255,255,255,.05); border-radius:8px; padding:.2rem;">
+                        <button class="ga-tab active" data-filter="all" onclick="gaSetFilter('all')">All <span id="ga-cnt-all" class="ga-cnt">–</span></button>
+                        <button class="ga-tab" data-filter="active" onclick="gaSetFilter('active')">Active <span id="ga-cnt-active" class="ga-cnt" style="color:#4ade80;">–</span></button>
+                        <button class="ga-tab" data-filter="idle" onclick="gaSetFilter('idle')">Idle <span id="ga-cnt-idle" class="ga-cnt" style="color:#fb923c;">–</span></button>
+                        <button class="ga-tab" data-filter="fading" onclick="gaSetFilter('fading')">Fading <span id="ga-cnt-fading" class="ga-cnt" style="color:#f87171;">–</span></button>
+                        <button class="ga-tab" data-filter="dead" onclick="gaSetFilter('dead')">Dead <span id="ga-cnt-dead" class="ga-cnt" style="color:#555;">–</span></button>
+                    </div>
+                    <input id="ga-search" type="text" placeholder="Filter name…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:150px;" oninput="gaRender()">
+                </div>
+            </header>
+            <!-- Summary bar -->
+            <div id="ga-summary-bar" style="display:flex; height:6px; border-radius:3px; overflow:hidden; margin:.75rem 0 1rem; gap:2px;"></div>
+            <section style="overflow-x:auto;">
+                <table class="admin-table" id="ga-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;">#</th>
+                            <th>Server</th>
+                            <th style="cursor:pointer;" onclick="gaSort('member_count')" title="Sort by members">Members <span class="ga-sort-icon" data-col="member_count">↕</span></th>
+                            <th style="cursor:pointer;" onclick="gaSort('msg_7d')" title="Sort by 7d messages">7 days <span class="ga-sort-icon" data-col="msg_7d">↕</span></th>
+                            <th style="cursor:pointer;" onclick="gaSort('msg_30d')" title="Sort by 30d messages">30 days <span class="ga-sort-icon" data-col="msg_30d">↕</span></th>
+                            <th>Activity (30d)</th>
+                            <th style="cursor:pointer;" onclick="gaSort('last_active')" title="Sort by last active">Last Active <span class="ga-sort-icon" data-col="last_active">↕</span></th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ga-body"><tr><td colspan="8" style="opacity:.4;">Loading…</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── GUILD CONFIG VIEWER ──────────────────────────────────── -->
+    <section id="section-guild-config" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Guild Config Viewer</div>
+        <div class="card">
+            <header>
+                <h2 style="font-size:1rem; font-weight:600;">Guild Settings Inspector</h2>
+                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Enter a Guild ID to inspect its full feature configuration.</p>
+            </header>
+            <section>
+                <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
+                    <input id="gc-inspect-id" type="text" placeholder="Guild ID…" style="flex:1; max-width:320px;" onkeydown="if(event.key==='Enter') loadGuildConfig()">
+                    <button onclick="loadGuildConfig()" class="btn-primary">Inspect</button>
+                </div>
+                <div id="gc-inspect-error" class="action-result" style="display:none;"></div>
+                <div id="gc-inspect-wrap" style="display:none;">
+                    <!-- Guild header -->
+                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(147,51,234,.08); border:1px solid rgba(147,51,234,.2); border-radius:8px; margin-bottom:1.25rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:0;">
+                            <div id="gc-guild-name" style="font-size:1rem; font-weight:700;"></div>
+                            <div id="gc-guild-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
+                        </div>
+                        <div id="gc-meta" style="display:flex; gap:1rem; flex-wrap:wrap; font-size:.78rem; opacity:.65;"></div>
+                    </div>
+                    <!-- Feature status chips -->
+                    <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Feature Status</div>
+                    <div id="gc-features" style="display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.5rem;"></div>
+                    <!-- Detailed config sections -->
+                    <div id="gc-details" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:.75rem; margin-bottom:1.25rem;"></div>
+                    <!-- Raw JSON toggle -->
+                    <details style="margin-top:.5rem;">
+                        <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON</summary>
+                        <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:rgba(0,0,0,.3); border-radius:6px; padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
+                    </details>
+                </div>
             </section>
         </div>
     </section>
@@ -951,8 +1051,12 @@ function renderAdoption() {
     const fa = adminData.feature_adoption || {};
     const names = {
         chatfilter:'Chatfilter', ticket:'Ticket System', antispam:'Anti-Spam',
-        welcomer:'Welcomer', livestream:'Livestream', custom_commands:'Custom Commands',
-        globalchat:'Global Chat', stats_channels:'Stats Channels', auto_roles:'Auto Roles',
+        welcomer:'Welcomer', livestream:'Livestream', youtube_videos:'YouTube Alerts',
+        custom_commands:'Custom Commands', globalchat:'Global Chat',
+        stats_channels:'Stats Channels', auto_roles:'Auto Roles',
+        reaction_roles:'Reaction Roles', auto_slowmode:'Auto Slowmode',
+        counting:'Counting', flag_quiz:'Flag Quiz', suggestions:'Suggestions',
+        temp_voice:'Temp Voice', verify:'Verification', sticky_messages:'Sticky Messages',
     };
     const grid = document.getElementById('adoption-grid');
     grid.innerHTML = Object.entries(fa).map(([k, pct]) => `
@@ -1672,14 +1776,398 @@ async function loadCfLogs() {
     }
 }
 
+// ── Guild Activity ────────────────────────────────────────────
+
+let gaData = [];
+let gaFilter = 'all';
+let gaSortCol = 'msg_30d';
+let gaSortAsc = false;
+
+const GA_STATUS = {
+    active:  { label:'Active',  color:'#4ade80', bg:'rgba(34,197,94,.15)'  },
+    idle:    { label:'Idle',    color:'#fb923c', bg:'rgba(251,146,60,.15)' },
+    fading:  { label:'Fading',  color:'#f87171', bg:'rgba(239,68,68,.15)'  },
+    dead:    { label:'Dead',    color:'#555',    bg:'rgba(255,255,255,.06)' },
+};
+
+async function loadGuildActivity() {
+    const r = await fetch('/api/admin/guild_activity');
+    if (!r.ok) return;
+    const d = await r.json();
+    gaData = d.guilds || [];
+
+    // Update counts in tabs
+    const cnts = d.counts || {};
+    document.getElementById('ga-cnt-all').textContent    = gaData.length;
+    document.getElementById('ga-cnt-active').textContent = cnts.active  || 0;
+    document.getElementById('ga-cnt-idle').textContent   = cnts.idle    || 0;
+    document.getElementById('ga-cnt-fading').textContent = cnts.fading  || 0;
+    document.getElementById('ga-cnt-dead').textContent   = cnts.dead    || 0;
+
+    // Summary bar
+    const total = gaData.length || 1;
+    const bar = document.getElementById('ga-summary-bar');
+    bar.innerHTML = ['active','idle','fading','dead'].map(s => {
+        const w = Math.round((cnts[s] || 0) / total * 100);
+        return w ? `<div style="flex:${w};background:${GA_STATUS[s].color};opacity:.7;" title="${GA_STATUS[s].label}: ${cnts[s]||0}"></div>` : '';
+    }).join('');
+
+    document.getElementById('ga-updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+    gaRender();
+}
+
+function gaSetFilter(f) {
+    gaFilter = f;
+    document.querySelectorAll('.ga-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+    gaRender();
+}
+
+function gaSort(col) {
+    if (gaSortCol === col) { gaSortAsc = !gaSortAsc; }
+    else { gaSortCol = col; gaSortAsc = col === 'last_active'; }
+    document.querySelectorAll('.ga-sort-icon').forEach(el => {
+        el.textContent = el.dataset.col === col ? (gaSortAsc ? '↑' : '↓') : '↕';
+    });
+    gaRender();
+}
+
+function gaRender() {
+    const q = (document.getElementById('ga-search').value || '').toLowerCase();
+    let rows = gaData.filter(r => {
+        if (gaFilter !== 'all' && r.status !== gaFilter) return false;
+        if (q && !r.guild_name.toLowerCase().includes(q) && !r.guild_id.includes(q)) return false;
+        return true;
+    });
+
+    rows.sort((a, b) => {
+        const va = a[gaSortCol] ?? '';
+        const vb = b[gaSortCol] ?? '';
+        if (va < vb) return gaSortAsc ? -1 : 1;
+        if (va > vb) return gaSortAsc ? 1 : -1;
+        return 0;
+    });
+
+    const body = document.getElementById('ga-body');
+    if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="8" style="opacity:.4;">No guilds match this filter.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = rows.map((r, i) => {
+        const st = GA_STATUS[r.status] || GA_STATUS.dead;
+        const lastActive = r.last_active
+            ? `<span title="${r.last_active}">${daysSince(r.last_active)}</span>`
+            : '<span style="opacity:.3;">never</span>';
+        const bar = r.pct > 0
+            ? `<div style="height:5px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;min-width:80px;">
+                <div style="height:100%;width:${r.pct}%;background:${st.color};opacity:.8;border-radius:2px;"></div>
+               </div>
+               <span style="font-size:.68rem;opacity:.45;margin-left:.35rem;">${r.pct}%</span>`
+            : `<span style="opacity:.25;font-size:.72rem;">—</span>`;
+        return `<tr>
+            <td style="opacity:.35;">${i+1}</td>
+            <td>
+                <div style="font-weight:500;">${esc(r.guild_name)}</div>
+                <div style="font-size:.68rem;opacity:.35;">${r.guild_id}</div>
+            </td>
+            <td style="font-variant-numeric:tabular-nums;">${fmt(r.member_count)}</td>
+            <td style="font-variant-numeric:tabular-nums;">${fmt(r.msg_7d)}</td>
+            <td style="font-variant-numeric:tabular-nums;">${fmt(r.msg_30d)}</td>
+            <td class="ga-bar-cell"><div style="display:flex;align-items:center;">${bar}</div></td>
+            <td>${lastActive}</td>
+            <td><span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function daysSince(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const days = Math.floor((now - d) / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    return `${days}d ago`;
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Guild Config Inspector ────────────────────────────────────
+
+const GC_FEATURE_NAMES = {
+    chatfilter: 'Chatfilter', antispam: 'Anti-Spam', ticket: 'Ticket',
+    welcomer: 'Welcomer', custom_commands: 'Custom Commands', livestream: 'Livestream',
+    youtube_videos: 'YouTube Alerts', stats_channels: 'Stats Channels',
+    auto_roles: 'Auto Roles', reaction_roles: 'Reaction Roles',
+    auto_slowmode: 'Auto Slowmode', counting: 'Counting', flag_quiz: 'Flag Quiz',
+    suggestions: 'Suggestions', temp_voice: 'Temp Voice', verify: 'Verification',
+    _sticky_messages: 'Sticky Messages',
+};
+
+function gcIsEnabled(key, val) {
+    if (key === 'custom_commands') return val && Object.keys(val).length > 0;
+    if (key === 'reaction_roles') return val && val.panels && val.panels.length > 0;
+    if (key === '_sticky_messages') return val && Object.keys(val).length > 0;
+    if (typeof val === 'object' && val !== null) return val.enabled === true;
+    return false;
+}
+
+function gcFeatureChip(key, val) {
+    const name = GC_FEATURE_NAMES[key] || key;
+    const on = gcIsEnabled(key, val);
+    const color = on ? 'rgba(34,197,94,.15)' : 'rgba(255,255,255,.06)';
+    const tc = on ? '#4ade80' : '#666';
+    const dot = on ? '●' : '○';
+    return `<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:600;background:${color};color:${tc};" title="${on?'Enabled':'Disabled'}">${dot} ${name}</span>`;
+}
+
+function gcDetailCard(title, rows) {
+    if (!rows.length) return '';
+    const rowsHtml = rows.map(([label, value]) =>
+        `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.78rem;">
+            <span style="opacity:.5;flex-shrink:0;">${label}</span>
+            <span style="text-align:right;word-break:break-all;max-width:60%;">${value}</span>
+        </div>`
+    ).join('');
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.75rem 1rem;">
+        <div style="font-size:.72rem;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">${title}</div>
+        ${rowsHtml}
+    </div>`;
+}
+
+function gcBool(v) { return v ? '<span style="color:#4ade80;">Yes</span>' : '<span style="color:#888;">No</span>'; }
+function gcCount(arr) { return Array.isArray(arr) ? arr.length : (arr ? Object.keys(arr).length : 0); }
+
+function renderGuildConfig(r) {
+    const c = r.config;
+    document.getElementById('gc-guild-name').textContent = r.guild_name || r.guild_id;
+    document.getElementById('gc-guild-id').textContent = `ID: ${r.guild_id}`;
+
+    const meta = [];
+    if (c.lang) meta.push(`Lang: <b>${c.lang}</b>`);
+    if (c.owner_name) meta.push(`Owner: <b>${c.owner_name}</b>`);
+    if (c.owner_id) meta.push(`Owner ID: <b>${c.owner_id}</b>`);
+    if (c.terms !== undefined) meta.push(`Terms: ${gcBool(c.terms)}`);
+    document.getElementById('gc-meta').innerHTML = meta.join(' &nbsp;·&nbsp; ');
+
+    // Feature chips
+    const chipKeys = Object.keys(GC_FEATURE_NAMES);
+    document.getElementById('gc-features').innerHTML = chipKeys.map(k => gcFeatureChip(k, c[k])).join('');
+
+    // Detail cards
+    const cards = [];
+
+    // Chatfilter
+    if (c.chatfilter) {
+        const cf = c.chatfilter;
+        const cats = cf.ai_categories || {};
+        const enabledCats = Object.entries(cats).filter(([,v])=>v).map(([k])=>k).join(', ') || '—';
+        cards.push(gcDetailCard('Chatfilter', [
+            ['Enabled', gcBool(cf.enabled)],
+            ['Phishing Filter', gcBool(cf.phishing_filter)],
+            ['AI Categories', enabledCats],
+        ]));
+    }
+
+    // Anti-Spam
+    if (c.antispam) {
+        const as = c.antispam;
+        cards.push(gcDetailCard('Anti-Spam', [
+            ['Enabled', gcBool(as.enabled)],
+            ['Max Messages', as.max_messages ?? '—'],
+            ['Interval (s)', as.interval ?? '—'],
+            ['Max Duplicates', as.max_duplicates ?? '—'],
+            ['Action', as.action || '—'],
+        ]));
+    }
+
+    // Ticket
+    if (c.ticket) {
+        cards.push(gcDetailCard('Ticket System', [
+            ['Enabled', gcBool(c.ticket.enabled)],
+        ]));
+    }
+
+    // Welcomer
+    if (c.welcomer) {
+        const w = c.welcomer;
+        cards.push(gcDetailCard('Welcomer', [
+            ['Enabled', gcBool(w.enabled)],
+            ['Leave Enabled', gcBool(w.leave_enabled)],
+            ['Image Mode', w.image_mode || '—'],
+            ['Message', w.message ? `<span style="opacity:.7;font-style:italic;">${w.message.substring(0,60)}${w.message.length>60?'…':''}</span>` : '—'],
+        ]));
+    }
+
+    // Custom Commands
+    if (c.custom_commands) {
+        const count = Object.keys(c.custom_commands).length;
+        cards.push(gcDetailCard('Custom Commands', [
+            ['Total', count],
+            ['Commands', count ? Object.keys(c.custom_commands).map(k=>`<code>${k}</code>`).join(', ') : '—'],
+        ]));
+    }
+
+    // Livestream
+    if (c.livestream) {
+        const ls = c.livestream;
+        cards.push(gcDetailCard('Livestream', [
+            ['Enabled', gcBool(ls.enabled)],
+            ['Streamers', gcCount(ls.streamers)],
+        ]));
+    }
+
+    // YouTube Videos
+    if (c.youtube_videos) {
+        const yt = c.youtube_videos;
+        cards.push(gcDetailCard('YouTube Alerts', [
+            ['Enabled', gcBool(yt.enabled)],
+            ['Channels', gcCount(yt.channels)],
+        ]));
+    }
+
+    // Stats Channels
+    if (c.stats_channels) {
+        const sc = c.stats_channels;
+        const active = sc.stats ? Object.entries(sc.stats).filter(([,v])=>v.enabled).map(([k])=>k).join(', ') || '—' : '—';
+        cards.push(gcDetailCard('Stats Channels', [
+            ['Enabled', gcBool(sc.enabled)],
+            ['Active Stats', active],
+        ]));
+    }
+
+    // Auto Roles
+    if (c.auto_roles) {
+        cards.push(gcDetailCard('Auto Roles', [
+            ['Enabled', gcBool(c.auto_roles.enabled)],
+            ['Roles', gcCount(c.auto_roles.roles)],
+        ]));
+    }
+
+    // Reaction Roles
+    if (c.reaction_roles) {
+        cards.push(gcDetailCard('Reaction Roles', [
+            ['Panels', gcCount(c.reaction_roles.panels)],
+        ]));
+    }
+
+    // Auto Slowmode
+    if (c.auto_slowmode) {
+        const asm = c.auto_slowmode;
+        cards.push(gcDetailCard('Auto Slowmode', [
+            ['Enabled', gcBool(asm.enabled)],
+            ['Threshold', asm.threshold ?? '—'],
+            ['Slowmode Delay (s)', asm.slowmode_delay ?? '—'],
+            ['Duration (s)', asm.duration ?? '—'],
+        ]));
+    }
+
+    // Counting
+    if (c.counting) {
+        const ct = c.counting;
+        cards.push(gcDetailCard('Counting', [
+            ['Enabled', gcBool(ct.enabled)],
+            ['Current Count', ct.current_count ?? 0],
+            ['High Score', ct.high_score ?? 0],
+            ['No Double Count', gcBool(ct.no_double_count)],
+        ]));
+    }
+
+    // Flag Quiz
+    if (c.flag_quiz) {
+        const fq = c.flag_quiz;
+        const topScores = fq.scores ? Object.entries(fq.scores).sort(([,a],[,b])=>b-a).slice(0,3).map(([id,s])=>`${id}: ${s}`).join(', ') : '—';
+        cards.push(gcDetailCard('Flag Quiz', [
+            ['Enabled', gcBool(fq.enabled)],
+            ['Points Enabled', gcBool(fq.points_enabled)],
+            ['Top Scores', topScores || '—'],
+        ]));
+    }
+
+    // Suggestions
+    if (c.suggestions) {
+        const sg = c.suggestions;
+        cards.push(gcDetailCard('Suggestions', [
+            ['Enabled', gcBool(sg.enabled)],
+            ['Votes Enabled', gcBool(sg.votes_enabled)],
+            ['Channels', gcCount(sg.channels)],
+        ]));
+    }
+
+    // Temp Voice
+    if (c.temp_voice) {
+        const tv = c.temp_voice;
+        cards.push(gcDetailCard('Temp Voice', [
+            ['Enabled', gcBool(tv.enabled)],
+            ['Name Template', tv.name_template || '—'],
+        ]));
+    }
+
+    // Verify
+    if (c.verify) {
+        const v = c.verify;
+        const optionNames = {0:'Button', 1:'CAPTCHA', 2:'Password'};
+        cards.push(gcDetailCard('Verification', [
+            ['Enabled', gcBool(v.enabled)],
+            ['Method', optionNames[v.verify_option] || v.verify_option],
+        ]));
+    }
+
+    // Warn config
+    if (c.warn_config) {
+        const wc = c.warn_config;
+        cards.push(gcDetailCard('Warn Config', [
+            ['Mute at', wc.mute_at ?? '—'],
+            ['Kick at', wc.kick_at ?? '—'],
+            ['Ban at', wc.ban_at ?? '—'],
+            ['Mute Duration (s)', wc.mute_duration ?? '—'],
+        ]));
+    }
+
+    // Sticky Messages
+    if (c._sticky_messages && Object.keys(c._sticky_messages).length) {
+        const entries = Object.entries(c._sticky_messages);
+        cards.push(gcDetailCard('Sticky Messages', [
+            ['Active Channels', entries.length],
+            ['Channel IDs', entries.map(([ch])=>ch).join(', ')],
+        ]));
+    }
+
+    document.getElementById('gc-details').innerHTML = cards.join('');
+    document.getElementById('gc-raw').textContent = JSON.stringify(r.config, null, 2);
+    document.getElementById('gc-inspect-wrap').style.display = '';
+}
+
+async function loadGuildConfig() {
+    const id = document.getElementById('gc-inspect-id').value.trim();
+    const err = document.getElementById('gc-inspect-error');
+    const wrap = document.getElementById('gc-inspect-wrap');
+    err.style.display = 'none';
+    wrap.style.display = 'none';
+    if (!id) return;
+
+    const r = await fetch(`/api/admin/guild_config?guild_id=${encodeURIComponent(id)}`);
+    const data = await r.json();
+    if (!r.ok || data.error) {
+        err.textContent = data.error || 'Unknown error';
+        err.style.display = '';
+        err.className = 'action-result error';
+        return;
+    }
+    renderGuildConfig(data);
+}
+
 // ── Polling setup ─────────────────────────────────────────────
 
 pollData();
 pollLogs();
 loadCfLogs();
+loadGuildActivity();
 setInterval(pollData, 10000);
 setInterval(pollLogs, 3000);
 setInterval(loadCfLogs, 30000);
+setInterval(loadGuildActivity, 60000);
 
 // ── Reload templates ─────────────────────────────────────────────────────────
 async function reloadTemplates() {

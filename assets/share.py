@@ -71,6 +71,12 @@ task_status: dict = {
         "last_run": None,
         "detail": "Removes log entries older than 30 days (daily)",
     },
+    "YouTubeVideos": {
+        "name": "YouTube Video Tracker",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Checks YouTube channels for new video uploads every 10 min",
+    },
 }
 
 

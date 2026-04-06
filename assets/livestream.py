@@ -142,10 +142,9 @@ class YouTubeAPI:
         """Validate a YouTube channel and return basic info, or None if not found."""
         import asyncio, yt_dlp
 
-        url = self._channel_url(handle_or_id) + "/live"
+        base_url = self._channel_url(handle_or_id)
 
-        def _extract():
-            # Fetching /live gives channel metadata even when offline
+        def _extract(url: str):
             opts = {**self._YDL_OPTS, "playlistend": 1}
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
@@ -153,7 +152,11 @@ class YouTubeAPI:
             except Exception:
                 return None
 
-        info = await asyncio.get_event_loop().run_in_executor(None, _extract)
+        # Try /live first (works for channels that have streamed before)
+        info = await asyncio.get_event_loop().run_in_executor(None, _extract, base_url + "/live")
+        # Fallback: plain channel URL (works for channels that have never streamed)
+        if not info:
+            info = await asyncio.get_event_loop().run_in_executor(None, _extract, base_url + "/videos")
         if not info:
             return None
 
@@ -206,6 +209,73 @@ class YouTubeAPI:
             "viewer_count": viewers,
             "started_at": "",
             "thumbnail_url": info.get("thumbnail", ""),
+        }
+
+    async def get_latest_video(
+        self, session: aiohttp.ClientSession, channel_id: str
+    ) -> Optional[dict]:
+        """Fetch the latest uploaded video for a YouTube channel via the public RSS feed.
+
+        Uses the unauthenticated Atom feed — no API key or yt-dlp required.
+        Returns a dict with video metadata or None on failure/empty channel.
+        """
+        import xml.etree.ElementTree as ET
+
+        url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status == 404:
+                    logger.error(f"[YouTubeVideos] RSS 404 for channel {channel_id}")
+                    return None
+                if resp.status != 200:
+                    logger.error(f"[YouTubeVideos] RSS HTTP {resp.status} for channel {channel_id}")
+                    return None
+                xml_text = await resp.text()
+        except Exception as e:
+            logger.error(f"[YouTubeVideos] RSS fetch error for {channel_id}: {e}")
+            return None
+
+        try:
+            root = ET.fromstring(xml_text)
+        except ET.ParseError as e:
+            logger.error(f"[YouTubeVideos] XML parse error for {channel_id}: {e}")
+            return None
+
+        ns = {
+            "atom":  "http://www.w3.org/2005/Atom",
+            "yt":    "http://www.youtube.com/xml/schemas/2015",
+            "media": "http://search.yahoo.com/mrss/",
+        }
+
+        entry = root.find("atom:entry", ns)
+        if entry is None:
+            return None  # Channel has no public videos
+
+        video_id_el  = entry.find("yt:videoId", ns)
+        title_el     = entry.find("atom:title", ns)
+        published_el = entry.find("atom:published", ns)
+        link_el      = entry.find("atom:link", ns)
+
+        video_id  = video_id_el.text  if video_id_el  is not None else ""
+        title     = title_el.text     if title_el     is not None else ""
+        published = published_el.text if published_el is not None else ""
+        video_url = (
+            link_el.get("href", f"https://www.youtube.com/watch?v={video_id}")
+            if link_el is not None
+            else f"https://www.youtube.com/watch?v={video_id}"
+        )
+
+        if not video_id:
+            return None
+
+        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+        return {
+            "video_id":     video_id,
+            "title":        title,
+            "published":    published,
+            "thumbnail_url": thumbnail_url,
+            "url":          video_url,
         }
 
 

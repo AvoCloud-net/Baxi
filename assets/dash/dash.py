@@ -35,10 +35,19 @@ def get_feature_adoption() -> dict:
         "antispam": 0,
         "welcomer": 0,
         "livestream": 0,
+        "youtube_videos": 0,
         "custom_commands": 0,
         "globalchat": 0,
         "stats_channels": 0,
         "auto_roles": 0,
+        "reaction_roles": 0,
+        "auto_slowmode": 0,
+        "counting": 0,
+        "flag_quiz": 0,
+        "suggestions": 0,
+        "temp_voice": 0,
+        "verify": 0,
+        "sticky_messages": 0,
     }
     try:
         guild_dirs = [
@@ -89,6 +98,31 @@ def get_feature_adoption() -> dict:
             counts["stats_channels"] += 1
         if conf.get("auto_roles", {}).get("enabled", False):
             counts["auto_roles"] += 1
+        if conf.get("reaction_roles", {}).get("panels"):
+            counts["reaction_roles"] += 1
+        if conf.get("auto_slowmode", {}).get("enabled", False):
+            counts["auto_slowmode"] += 1
+        if conf.get("counting", {}).get("enabled", False):
+            counts["counting"] += 1
+        if conf.get("flag_quiz", {}).get("enabled", False):
+            counts["flag_quiz"] += 1
+        if conf.get("suggestions", {}).get("enabled", False):
+            counts["suggestions"] += 1
+        if conf.get("temp_voice", {}).get("enabled", False):
+            counts["temp_voice"] += 1
+        if conf.get("verify", {}).get("enabled", False):
+            counts["verify"] += 1
+        if conf.get("youtube_videos", {}).get("enabled", False):
+            counts["youtube_videos"] += 1
+        sticky_path = os.path.join(data_dir, guild_id, "sticky_messages.json")
+        if os.path.exists(sticky_path):
+            try:
+                with open(sticky_path, "r", encoding="utf-8") as sf:
+                    sticky = json.load(sf)
+                if sticky:
+                    counts["sticky_messages"] += 1
+            except Exception:
+                pass
 
     return {k: round(v / total * 100) for k, v in counts.items()}
 
@@ -1295,6 +1329,138 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             )
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "youtube_videos":
+            data: dict = await quart.request.get_json()
+            yv_data = data.get("youtube_videos")
+
+            if not isinstance(yv_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            action = yv_data.get("action", "save")
+
+            if action == "add":
+                login = str(yv_data.get("login", "")).strip()
+                if not login:
+                    return quart.jsonify({"success": False, "message": "Channel handle or ID is required."}), 400
+                if not re.fullmatch(r"[@a-zA-Z0-9_.\-]{2,64}", login):
+                    return quart.jsonify({"success": False, "message": "Invalid YouTube channel handle or ID."}), 400
+
+                yv_config = dict(load_data(int(guild_id), "youtube_videos"))
+                channels = yv_config.get("channels", [])
+
+                if len(channels) >= 10:
+                    return quart.jsonify({"success": False, "message": "Maximum of 10 tracked channels reached."}), 400
+
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+                    channel_info = await youtube_api.get_channel(session, login)
+
+                if not channel_info:
+                    return quart.jsonify({"success": False, "message": f"YouTube channel '{login}' not found. Try using @handle or UCxxx channel ID."}), 404
+
+                resolved_id       = channel_info["channel_id"]
+                display_name      = channel_info["display_name"]
+                handle            = channel_info.get("handle", "")
+                profile_image_url = channel_info.get("profile_image_url", "")
+
+                if any(c.get("channel_id") == resolved_id for c in channels):
+                    return quart.jsonify({"success": False, "message": f"'{display_name}' is already being tracked."}), 400
+
+                channels.append({
+                    "channel_id":        resolved_id,
+                    "display_name":      display_name,
+                    "handle":            handle,
+                    "profile_image_url": profile_image_url,
+                    "last_video_id":     "",
+                })
+                yv_config["channels"] = channels
+                save_data(int(guild_id), "youtube_videos", yv_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                    "sys": "youtube_videos",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({
+                    "success": True,
+                    "message": f"Now tracking '{display_name}'.",
+                    "channel": {
+                        "channel_id":        resolved_id,
+                        "display_name":      display_name,
+                        "handle":            handle,
+                        "profile_image_url": profile_image_url,
+                    },
+                })
+
+            elif action == "remove":
+                channel_id_to_remove = str(yv_data.get("channel_id", "")).strip()
+                if not channel_id_to_remove:
+                    return quart.jsonify({"success": False, "message": "channel_id is required."}), 400
+
+                yv_config = dict(load_data(int(guild_id), "youtube_videos"))
+                channels = yv_config.get("channels", [])
+                before_count = len(channels)
+                channels = [c for c in channels if c.get("channel_id") != channel_id_to_remove]
+
+                if len(channels) == before_count:
+                    return quart.jsonify({"success": False, "message": "Channel not found."}), 404
+
+                yv_config["channels"] = channels
+                save_data(int(guild_id), "youtube_videos", yv_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                    "sys": "youtube_videos",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Channel removed."})
+
+            elif action == "save":
+                if not isinstance(yv_data.get("enabled"), bool):
+                    return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+                alert_channel = str(yv_data.get("alert_channel", "")).strip()
+                if alert_channel and not re.fullmatch(r"\d{17,19}", alert_channel):
+                    return quart.jsonify({"success": False, "message": "Invalid alert channel ID."}), 400
+
+                ping_role = str(yv_data.get("ping_role", "")).strip()
+                if ping_role and not re.fullmatch(r"\d{17,19}", ping_role):
+                    return quart.jsonify({"success": False, "message": "Invalid ping role ID."}), 400
+
+                yv_config = dict(load_data(int(guild_id), "youtube_videos"))
+                yv_config["enabled"]       = yv_data["enabled"]
+                yv_config["alert_channel"] = alert_channel
+                yv_config["ping_role"]     = ping_role
+                save_data(int(guild_id), "youtube_videos", yv_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                    "sys": "youtube_videos",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+
+            return quart.jsonify({"success": True, "message": "Settings saved."})
 
         elif system == "stats_channels":
             data: dict = await quart.request.get_json()
@@ -2519,6 +2685,152 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "total": total_ever,
         })
 
+    @app.route("/api/admin/guild_config")
+    @requires_authorization
+    async def admin_guild_config():
+        """Returns the full conf.json (+ sticky_messages) for a given guild ID."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        guild_id_str = quart.request.args.get("guild_id", "").strip()
+        if not guild_id_str.isdigit():
+            return quart.jsonify({"error": "Invalid guild_id"}), 400
+
+        conf_path = os.path.join("data", guild_id_str, "conf.json")
+        if not os.path.exists(conf_path):
+            return quart.jsonify({"error": "No config found for this guild."}), 404
+
+        try:
+            with open(conf_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+        except Exception as e:
+            return quart.jsonify({"error": f"Failed to read config: {e}"}), 500
+
+        # Add sticky messages count from separate file
+        sticky_path = os.path.join("data", guild_id_str, "sticky_messages.json")
+        conf["_sticky_messages"] = {}
+        if os.path.exists(sticky_path):
+            try:
+                with open(sticky_path, "r", encoding="utf-8") as sf:
+                    conf["_sticky_messages"] = json.load(sf)
+            except Exception:
+                pass
+
+        # Try to get guild name from Discord cache
+        guild_name = conf.get("guild_name", guild_id_str)
+        try:
+            g = bot.get_guild(int(guild_id_str))
+            if g:
+                guild_name = g.name
+        except Exception:
+            pass
+
+        share.admin_log("info", f"Guild config viewed for {guild_id_str} ({guild_name}) by {user.name}", source="AdminDash")
+        return quart.jsonify({"success": True, "guild_name": guild_name, "guild_id": guild_id_str, "config": conf})
+
+    @app.route("/api/admin/guild_activity")
+    @requires_authorization
+    async def admin_guild_activity():
+        """Returns per-guild activity stats based on activity.json files."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        import datetime as _dt
+        today = _dt.datetime.utcnow().date()
+        cutoffs = {
+            "7d":  str(today - _dt.timedelta(days=7)),
+            "14d": str(today - _dt.timedelta(days=14)),
+            "30d": str(today - _dt.timedelta(days=30)),
+        }
+
+        data_dir = "data"
+        try:
+            guild_dirs = [
+                d for d in os.listdir(data_dir)
+                if os.path.isdir(os.path.join(data_dir, d)) and d.isdigit() and d != "1001"
+            ]
+        except FileNotFoundError:
+            return quart.jsonify({"guilds": []})
+
+        results = []
+        for gid in guild_dirs:
+            # Get guild name from Discord cache first, fallback to conf.json
+            guild_name = gid
+            member_count = 0
+            g = bot.get_guild(int(gid))
+            if g:
+                guild_name = g.name
+                member_count = g.member_count or 0
+            else:
+                conf_path = os.path.join(data_dir, gid, "conf.json")
+                if os.path.exists(conf_path):
+                    try:
+                        with open(conf_path, "r", encoding="utf-8") as f:
+                            _c = json.load(f)
+                        guild_name = _c.get("guild_name") or gid
+                    except Exception:
+                        pass
+
+            activity_path = os.path.join(data_dir, gid, "activity.json")
+            msg_7d = msg_14d = msg_30d = 0
+            last_active = None
+
+            if os.path.exists(activity_path):
+                try:
+                    with open(activity_path, "r", encoding="utf-8") as f:
+                        act = json.load(f)
+                    msg_by_day = act.get("msg_by_day", {})
+                    for day, val in msg_by_day.items():
+                        count = val.get("total", 0) if isinstance(val, dict) else 0
+                        if day >= cutoffs["30d"]:
+                            msg_30d += count
+                        if day >= cutoffs["14d"]:
+                            msg_14d += count
+                        if day >= cutoffs["7d"]:
+                            msg_7d += count
+                    # Last active day (any day with messages)
+                    active_days = [d for d, v in msg_by_day.items()
+                                   if (v.get("total", 0) if isinstance(v, dict) else 0) > 0]
+                    if active_days:
+                        last_active = max(active_days)
+                except Exception:
+                    pass
+
+            # Status classification
+            if msg_7d > 0:
+                status = "active"
+            elif msg_14d > 0:
+                status = "idle"
+            elif msg_30d > 0:
+                status = "fading"
+            else:
+                status = "dead"
+
+            results.append({
+                "guild_id": gid,
+                "guild_name": guild_name,
+                "member_count": member_count,
+                "msg_7d": msg_7d,
+                "msg_14d": msg_14d,
+                "msg_30d": msg_30d,
+                "last_active": last_active,
+                "status": status,
+            })
+
+        results.sort(key=lambda x: x["msg_30d"], reverse=True)
+
+        # Compute percentages relative to the most active guild
+        max_30d = max((r["msg_30d"] for r in results), default=1) or 1
+        for r in results:
+            r["pct"] = round(r["msg_30d"] / max_30d * 100)
+
+        counts = {s: sum(1 for r in results if r["status"] == s)
+                  for s in ("active", "idle", "fading", "dead")}
+
+        return quart.jsonify({"guilds": results, "counts": counts})
+
     @app.route("/api/admin/reload-templates", methods=["POST"])
     @requires_authorization
     async def admin_reload_templates():
@@ -2737,6 +3049,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "PhishingList":  "update_phishing_list",
                 "TrustScore":    "recalculate_scores",
                 "GarbageCollector": "collect",
+                "YouTubeVideos":    "check_videos",
             }
             task_key = str(data.get("task_key", "")).strip()
             if task_key not in _TASK_METHODS:

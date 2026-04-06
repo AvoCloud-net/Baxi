@@ -52,6 +52,7 @@ from assets.tasks import (
     PhishingListTask,
     TrustScoreTask,
     GarbageCollectorTask,
+    YouTubeVideoTask,
 )
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -203,6 +204,12 @@ def events(bot: commands.AutoShardedBot, web):
             gc_task.collect.start()
             share.task_instances["GarbageCollector"] = gc_task
             logger.debug.success("Garbage collector task started.")
+
+            logger.working("Starting YouTubeVideos task...")
+            yt_video_task = YouTubeVideoTask(bot)
+            yt_video_task.check_videos.start()
+            share.task_instances["YouTubeVideos"] = yt_video_task
+            logger.debug.success("YouTube video tracking task started.")
 
             logger.working("Resuming active Flag Quiz sessions...")
             await quiz_game.resume_all(bot)
