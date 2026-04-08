@@ -74,6 +74,11 @@ class Chatfilter:
     ) -> Dict[str, Any]:
         chatfilter_data: dict = dict(datasys.load_data(gid, "chatfilter"))
 
+        # ── 0. Channel bypass (whitelist) ────────────────────────────────────
+        bypass = [str(c) for c in chatfilter_data.get("bypass", [])]
+        if bypass and str(cid) in bypass:
+            return _safe_result()
+
         # ── 1. Phishing (local, zero-cost) ──────────────────────────────────
         if chatfilter_data.get("phishing_filter", False):
             phishing_result = self._check_phishing_urls(message)

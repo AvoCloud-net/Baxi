@@ -22,6 +22,9 @@ class Twitch:
 
 class TopGG:
     token: str = "YOUR-TOPGG-TOKEN"
+    webhook_secret: str = "YOUR-TOPGG-WEBHOOK-SECRET"
+    vote_channel_id: int = 0           # Channel on avocloud.net Discord to post vote announcements
+    avocloud_guild_id: int = 0         # avocloud.net Discord server ID
 
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED

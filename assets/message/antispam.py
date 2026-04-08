@@ -27,6 +27,17 @@ class AntiSpam:
         if not antispam_config.get("enabled", False):
             return False
 
+        # Channel whitelist
+        whitelisted_channels = [str(c) for c in antispam_config.get("whitelisted_channels", [])]
+        if whitelisted_channels and str(message.channel.id) in whitelisted_channels:
+            return False
+
+        # Role whitelist
+        if isinstance(message.author, discord.Member):
+            whitelisted_roles = [str(r) for r in antispam_config.get("whitelisted_roles", [])]
+            if whitelisted_roles and any(str(role.id) in whitelisted_roles for role in message.author.roles):
+                return False
+
         guild_id = message.guild.id
         user_id = message.author.id
         now = time.time()

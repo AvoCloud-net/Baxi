@@ -83,7 +83,17 @@ class datasys:
         }
     },
     "ticket": {
-        "enabled": False
+        "enabled": False,
+        "channel": "",
+        "transcript": "",
+        "catid": "",
+        "role": "",
+        "color": "#9333ea",
+        "message": "Click a button below to open a ticket.",
+        "panel_message_id": "",
+        "buttons": [
+            {"id": "support", "label": "Support", "emoji": "🛠️", "style": "primary"}
+        ],
     },
     "audit_log": [],
     "warnings": {},
@@ -98,7 +108,9 @@ class datasys:
         "max_messages": 5,
         "interval": 5,
         "max_duplicates": 3,
-        "action": "mute"
+        "action": "mute",
+        "whitelisted_channels": [],
+        "whitelisted_roles": [],
     },
     "welcomer": {
         "enabled": False,
@@ -193,7 +205,9 @@ class datasys:
         "channels": [],
         "staff_role": "",
         "log_channel": "",
-        "votes_enabled": True,
+        "auto_forward_enabled": False,
+        "auto_forward_channel": "",
+        "auto_forward_threshold": 10,
     },
     "suggestion_votes": {},
 }

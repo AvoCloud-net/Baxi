@@ -52,6 +52,13 @@ def base_commands(bot: commands.AutoShardedBot):
         )
         await interaction.edit_original_response(embed=embed)
 
+    @bot.tree.command(name="dashboard", description="Get the link to the Baxi dashboard")
+    async def dashboard_cmd(interaction: Interaction):
+        await interaction.response.send_message(
+            "## Baxi Dashboard\nConfigure Baxi for your server at: https://baxi.avocloud.net",
+            ephemeral=True,
+        )
+
     @bot.tree.command(
         name="my_trust",
         description="Shows your personal Prism trust score and what has influenced it.",
