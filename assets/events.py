@@ -28,7 +28,7 @@ import assets.data as datasys
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
-from assets.buttons import TicketView
+from assets.buttons import build_ticket_panel_view
 import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
 import assets.message.reactionroles as reactionroles
@@ -373,7 +373,10 @@ def events(bot: commands.AutoShardedBot, web):
                         description=ticket_config.get("message", ""),
                         color=discord.Color.from_str(ticket_config.get("color", "#5865F2")),
                     )
-                    panel_msg = await channel.send(embed=embed, view=TicketView())
+                    panel_msg = await channel.send(
+                        embed=embed,
+                        view=build_ticket_panel_view(ticket_config.get("buttons", [])),
+                    )
                     ticket_config["panel_message_id"] = str(panel_msg.id)
                     datasys.save_data(message.guild.id, "ticket", ticket_config)
             except (discord.Forbidden, discord.HTTPException, Exception):

@@ -249,7 +249,8 @@
                 "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
                 "not_found": "Rolle nicht gefunden — sie wurde möglicherweise gelöscht.",
                 "no_permission": "Ich habe keine Berechtigung, diese Rolle zu verwalten.",
-                "server_only": "Dies kann nur innerhalb eines Servers verwendet werden."
+                "server_only": "Dies kann nur innerhalb eines Servers verwendet werden.",
+                "group_limit_removed": "Die Rolle **{removed}** wurde entfernt und **{added}** hinzugefügt."
             },
             "stats_channels": {
                 "title": "SYS // STATS"
@@ -275,16 +276,18 @@
                 "modal_accept_title": "Vorschlag annehmen",
                 "modal_decline_title": "Vorschlag ablehnen",
                 "modal_reason_label": "Begründung (optional)",
-                "modal_reason_placeholder": "Begründung eingeben..."
+                "modal_reason_placeholder": "Begründung eingeben...",
+                "auto_forward_title": "🔥 Beliebter Vorschlag",
+                "auto_forward_footer": "Baxi · Vorschläge | {votes} Upvotes"
             }
         },
         "events": {
             "on_guild_join": {
                 "title": "SYS // INIT",
-                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, musst du das Baxi Dashboard öffnen.\n\n-# {saved_data}",
+                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, öffne das **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
                 "saved_data": {
-                    "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard beliebige Systeme aktivieren und einstellen.",
-                    "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard ob diese Einstellungen korrekt sind."
+                    "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard (https://baxi.avocloud.net) beliebige Systeme aktivieren und einstellen.",
+                    "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard (https://baxi.avocloud.net) ob diese Einstellungen korrekt sind."
                 }
             }
         },
@@ -298,7 +301,9 @@
                 "score_not_enabled": "❌ Das Counting Game ist auf diesem Server nicht aktiviert.",
                 "score_description": "**Aktueller Zähler:** {current}\n**Highscore:** {high}\n**Channel:** {channel}",
                 "score_no_channel": "*nicht gesetzt*",
-                "reset_done": "🔄 Der Zähler wurde von **{old}** auf **0** zurückgesetzt."
+                "reset_done": "🔄 Der Zähler wurde von **{old}** auf **0** zurückgesetzt.",
+                "new_highscore": "🎉 **Neuer Rekord!** {user} hat den Highscore auf **{count}** gesetzt!",
+                "milestone": "🏆 **Meilenstein erreicht!** Der Zähler hat **{count}** erreicht!"
             },
             "guessing": {
                 "title": "GAME // GUESS",
@@ -568,7 +573,8 @@
                 "removed": "The **{role}** role has been removed from your profile.",
                 "not_found": "Role not found — it may have been deleted.",
                 "no_permission": "I don't have permission to manage that role.",
-                "server_only": "This can only be used inside a server."
+                "server_only": "This can only be used inside a server.",
+                "group_limit_removed": "The **{removed}** role was removed and **{added}** was applied."
             },
             "stats_channels": {
                 "title": "SYS // STATS"
@@ -594,16 +600,18 @@
                 "modal_accept_title": "Accept Suggestion",
                 "modal_decline_title": "Decline Suggestion",
                 "modal_reason_label": "Reason (optional)",
-                "modal_reason_placeholder": "Enter a reason..."
+                "modal_reason_placeholder": "Enter a reason...",
+                "auto_forward_title": "🔥 Popular Suggestion",
+                "auto_forward_footer": "Baxi · Suggestions | {votes} upvotes"
             }
         },
         "events": {
             "on_guild_join": {
                 "title": "SYS // INIT",
-                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo make settings, you need to open the Baxi Dashboard.\n\n-# {saved_data}",
+                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo configure me, open the **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
                 "saved_data": {
-                    "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard.",
-                    "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard to ensure these settings are correct."
+                    "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard at https://baxi.avocloud.net",
+                    "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard at https://baxi.avocloud.net to ensure these settings are correct."
                 }
             }
         },
@@ -617,7 +625,9 @@
                 "score_not_enabled": "❌ The Counting Game is not enabled on this server.",
                 "score_description": "**Current count:** {current}\n**High score:** {high}\n**Channel:** {channel}",
                 "score_no_channel": "*not set*",
-                "reset_done": "🔄 The count was reset from **{old}** to **0**."
+                "reset_done": "🔄 The count was reset from **{old}** to **0**.",
+                "new_highscore": "🎉 **New record!** {user} set the high score to **{count}**!",
+                "milestone": "🏆 **Milestone reached!** The count has hit **{count}**!"
             },
             "guessing": {
                 "title": "GAME // GUESS",

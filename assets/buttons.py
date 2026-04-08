@@ -1,4 +1,5 @@
 import random
+import re
 import string
 import os
 
@@ -6,7 +7,6 @@ import assets.data as datasys
 import assets.trust as sentinel
 import discord
 from assets.views import (
-    Ticket_Creation_Modal,
     Verify_Captcha_Modal,
     Verify_Password_Modal,
 )
@@ -592,67 +592,236 @@ class VerifyView(ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-class TicketView(ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
+_BUTTON_STYLE_MAP: dict[str, discord.ButtonStyle] = {
+    "primary": discord.ButtonStyle.primary,
+    "secondary": discord.ButtonStyle.secondary,
+    "success": discord.ButtonStyle.success,
+    "danger": discord.ButtonStyle.danger,
+}
 
-    @ui.button(
-        emoji="🎫", style=discord.ButtonStyle.primary, custom_id="ticket_user_create"
-    )
-    async def ticket(self, interaction: discord.Interaction, button: ui.Button):
-        try:
-            if interaction.guild is None:
-                lang = datasys.load_lang_file(1001)
-                return await interaction.response.send_message(
-                    embed=discord.Embed(
-                        title="ERROR // SERVER ONLY",
+
+def _slugify_label(label: str, fallback: str = "ticket") -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", (label or "").lower()).strip("-")
+    return s or fallback
+
+
+def build_ticket_panel_view(buttons: list) -> ui.View:
+    """Build a persistent panel view with one button per button definition."""
+    view = ui.View(timeout=None)
+    for b in buttons or []:
+        btn_id = str(b.get("id", "")).strip()
+        if not btn_id:
+            continue
+        label = (b.get("label") or "").strip()
+        emoji_str = (b.get("emoji") or "").strip()
+        style = _BUTTON_STYLE_MAP.get(str(b.get("style", "primary")).lower(), discord.ButtonStyle.primary)
+
+        if not label and not emoji_str:
+            label = "Ticket"
+        elif not label:
+            label = "\u200b"
+
+        emoji: discord.PartialEmoji | None = None
+        if emoji_str:
+            try:
+                emoji = discord.PartialEmoji.from_str(emoji_str)
+            except Exception:
+                emoji = None
+
+        view.add_item(ui.Button(
+            label=label[:80],
+            emoji=emoji,
+            style=style,
+            custom_id=f"ticket_btn:{btn_id}",
+        ))
+    return view
+
+
+class TicketButton(ui.DynamicItem[ui.Button], template=r"ticket_btn:(?P<btn_id>[A-Za-z0-9_\-]+)"):
+    """Persistent dynamic button that opens a ticket for the given button id."""
+
+    def __init__(self, btn_id: str) -> None:
+        super().__init__(
+            ui.Button(
+                custom_id=f"ticket_btn:{btn_id}",
+                style=discord.ButtonStyle.primary,
+            )
+        )
+        self.btn_id = btn_id
+
+    @classmethod
+    async def from_custom_id(
+        cls,
+        interaction: discord.Interaction,
+        item: ui.Button,
+        match: re.Match[str],
+    ) -> "TicketButton":
+        return cls(match["btn_id"])
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await _open_ticket_from_button(interaction, self.btn_id)
+
+
+async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str) -> None:
+    try:
+        if interaction.guild is None:
+            return await interaction.response.send_message("Server only.", ephemeral=True)
+
+        guild = interaction.guild
+        user = interaction.user
+        lang = datasys.load_lang_file(guild.id)
+
+        guild_terms: bool = bool(datasys.load_data(sid=guild.id, sys="terms"))
+        if not guild_terms:
+            embed = discord.Embed(
+                description=str(lang["systems"]["terms"]["description"]).format(
+                    url=f"https://{config.Web.url}"
+                ),
+                color=config.Discord.danger_color,
+            )
+            embed.set_footer(text="Baxi · avocloud.net")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        guild_data: dict = dict(datasys.load_data(guild.id, sys="ticket"))
+        if not guild_data.get("enabled", False):
+            await interaction.response.send_message(
+                "The ticket system is currently disabled.", ephemeral=True
+            )
+            return
+
+        # Find the button definition
+        button_def: Optional[dict] = None
+        for b in guild_data.get("buttons", []):
+            if str(b.get("id", "")) == btn_id:
+                button_def = b
+                break
+        if button_def is None:
+            await interaction.response.send_message(
+                "This ticket button is no longer available.", ephemeral=True
+            )
+            return
+
+        # Check existing open ticket
+        tickets: dict = dict(datasys.load_data(guild.id, "open_tickets"))
+        for tid in list(tickets.keys()):
+            t_data: dict = tickets[str(tid)]
+            if t_data.get("user") == user.id:
+                try:
+                    ch = await guild.fetch_channel(int(tid))
+                    embed = discord.Embed(
+                        title=lang["systems"]["ticket"]["title"],
+                        description=str(
+                            lang["systems"]["ticket"]["description_already_open"]
+                        ).format(channel=ch.mention),
                         color=config.Discord.warn_color,
                     )
-                )
-            lang = datasys.load_lang_file(interaction.guild.id)
-            guild_terms: bool = bool(
-                datasys.load_data(sid=interaction.guild.id, sys="terms")
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+                except (discord.NotFound, discord.Forbidden):
+                    del tickets[tid]
+                    datasys.save_data(guild.id, "open_tickets", tickets)
+
+        # Category
+        cat_id = guild_data.get("catid")
+        if not cat_id:
+            await interaction.response.send_message(
+                "Ticket category is not configured.", ephemeral=True
             )
-            if not guild_terms:
-                embed = discord.Embed(
-                    description=str(lang["systems"]["terms"]["description"]).format(
-                        url=f"https://{config.Web.url}"
-                    ),
-                    color=config.Discord.danger_color,
+            return
+        try:
+            category = await guild.fetch_channel(int(cat_id))
+            if not isinstance(category, discord.CategoryChannel):
+                await interaction.response.send_message(
+                    "Configured ticket category is invalid.", ephemeral=True
                 )
-                embed.set_footer(text="Baxi · avocloud.net")
-                await interaction.response.send_message(embed=embed)
                 return
-            tickets: dict = dict(
-                datasys.load_data(interaction.guild.id, "open_tickets")
+        except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+            await interaction.response.send_message(
+                "Cannot access ticket category.", ephemeral=True
             )
-            for ticket in tickets:
-                print(ticket)
-                ticket_data: dict = tickets[str(ticket)]
-                if ticket_data.get("user") == interaction.user.id:
+            return
 
-                    try:
-                        channel = await interaction.guild.fetch_channel(int(ticket))
-                        embed = discord.Embed(
-                            title=lang["systems"]["ticket"]["title"],
-                            description=str(
-                                lang["systems"]["ticket"]["description_already_open"]
-                            ).format(channel=channel.mention),
-                            color=config.Discord.warn_color,
-                        )
-                        await interaction.response.send_message(
-                            embed=embed, ephemeral=True
-                        )
-                        return
-                    except discord.NotFound:
-                        del tickets[ticket]
-                        datasys.save_data(interaction.guild.id, "open_tickets", tickets)
-
-            await interaction.response.send_modal(
-                Ticket_Creation_Modal(user=interaction.user, guild=interaction.guild)
+        # Staff role
+        role_id = guild_data.get("role")
+        if not role_id:
+            await interaction.response.send_message(
+                "Ticket staff role is not configured.", ephemeral=True
             )
-        except Exception as e:
-            print(f"error in ticket button {e}")
+            return
+        try:
+            role = await guild.fetch_role(int(role_id))
+        except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+            await interaction.response.send_message(
+                "Configured ticket staff role was not found.", ephemeral=True
+            )
+            return
+
+        perms_overwrites = {
+            guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            user: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True,
+                attach_files=True,
+                manage_messages=True,
+                manage_channels=True,
+                manage_permissions=True,
+            ),
+            role: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True,
+                attach_files=True,
+                manage_messages=True,
+            ),
+        }
+
+        slug = _slugify_label(str(button_def.get("label", "")), fallback=btn_id)
+        channel_name = f"{slug}-{user.name}"[:100]
+        channel = await guild.create_text_channel(
+            name=channel_name, category=category, overwrites=perms_overwrites
+        )
+
+        tickets[str(channel.id)] = {
+            "user": user.id,
+            "supporterid": None,
+            "created_at": int(datetime.datetime.now().timestamp()),
+            "status": "open",
+            "title": str(button_def.get("label", "Ticket")),
+            "message": "",
+            "button_id": btn_id,
+            "transcript": [],
+        }
+        datasys.save_data(guild.id, "open_tickets", tickets)
+
+        success_embed = discord.Embed(
+            title=lang["systems"]["ticket"]["title"],
+            description=str(lang["systems"]["ticket"]["description_creation_successfull"]).format(
+                channel=channel.mention
+            ),
+            color=config.Discord.color,
+        )
+        await interaction.response.send_message(embed=success_embed, ephemeral=True)
+
+        ticket_embed = discord.Embed(
+            title=str(button_def.get("label", "Ticket")),
+            description=f"{user.mention} opened a **{button_def.get('label', 'Ticket')}** ticket.",
+            color=config.Discord.color,
+        )
+        await channel.send(
+            content=f"{user.mention} {role.mention}",
+            embed=ticket_embed,
+            view=TicketAdminButtons(),
+        )
+    except Exception as e:
+        print(f"Error in ticket button: {e}")
+        try:
+            await interaction.response.send_message(
+                "An error occurred creating the ticket.", ephemeral=True
+            )
+        except Exception:
+            pass
 
 
 class TicketAdminButtons(ui.View):

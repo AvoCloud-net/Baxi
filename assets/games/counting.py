@@ -7,6 +7,15 @@ from reds_simple_logger import Logger
 logger = Logger()
 
 
+def _is_milestone(n: int) -> bool:
+    """Hardcoded milestones: 10, 50, then every 100 (100, 200, 300, ...)."""
+    if n < 10:
+        return False
+    if n == 10 or n == 50:
+        return True
+    return n >= 100 and n % 100 == 0
+
+
 async def check_counting(message: discord.Message, bot: commands.AutoShardedBot) -> bool:
     """
     Handle the counting game for the given message.
@@ -71,8 +80,12 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
         # Correct number
         data["current_count"] = expected
         data["last_user_id"] = message.author.id
-        if expected > int(data.get("high_score", 0)):
+
+        old_hs = int(data.get("high_score", 0))
+        new_hs = expected > old_hs
+        if new_hs:
             data["high_score"] = expected
+
         datasys.save_data(message.guild.id, "counting", data)
 
         if data.get("react_correct", True):
@@ -80,6 +93,27 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
                 await message.add_reaction("✅")
             except (discord.Forbidden, discord.HTTPException):
                 pass
+
+        # Highscore announcement
+        if new_hs:
+            hs_embed = discord.Embed(
+                description=t["new_highscore"].format(
+                    user=message.author.display_name,
+                    count=expected,
+                ),
+                color=cfg.Discord.success_color,
+            )
+            hs_embed.set_footer(text=t["footer"])
+            await message.channel.send(embed=hs_embed)
+
+        # Milestone announcement (hardcoded: 10, 50, 100, 200, 300, ...)
+        if _is_milestone(expected):
+            ms_embed = discord.Embed(
+                description=t["milestone"].format(count=expected),
+                color=cfg.Discord.warn_color,
+            )
+            ms_embed.set_footer(text=t["footer"])
+            await message.channel.send(embed=ms_embed)
     else:
         # Wrong number → reset
         if data.get("react_wrong", True):

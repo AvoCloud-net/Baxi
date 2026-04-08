@@ -8,6 +8,7 @@ from reds_simple_logger import Logger
 logger = Logger()
 
 
+
 # ── Modal ─────────────────────────────────────────────────────────────────────
 
 class SuggestionDecisionModal(discord.ui.Modal):
@@ -123,6 +124,15 @@ def _check_permission(interaction: discord.Interaction, data: dict) -> bool:
     return False
 
 
+def _get_channel_config(data: dict, channel_id: int) -> dict:
+    """Return the channel config dict for the given channel_id, or a fallback."""
+    for ch in data.get("channels", []):
+        ch_id = ch if isinstance(ch, str) else str(ch.get("id", ""))
+        if ch_id == str(channel_id):
+            return ch if isinstance(ch, dict) else {"id": ch_id, "votes_enabled": True}
+    return {"id": str(channel_id), "votes_enabled": True}
+
+
 # ── Modal trigger ─────────────────────────────────────────────────────────────
 
 async def _open_decision_modal(interaction: discord.Interaction, accepted: bool) -> None:
@@ -186,8 +196,8 @@ async def _process_decision(
     # Disabled view preserving current vote counts
     msg_id = str(msg.id)
     up, down = _get_vote_counts(interaction.guild.id, msg_id)
-    votes_enabled = data.get("votes_enabled", True)
-    if votes_enabled:
+    ch_cfg = _get_channel_config(data, interaction.channel_id or 0)
+    if ch_cfg.get("votes_enabled", True):
         disabled_view = _make_view(len(up), len(down), t, decided=True)
     else:
         disabled_view = _make_staff_only_view(t, decided=True)
@@ -228,7 +238,8 @@ async def _handle_public_vote(interaction: discord.Interaction, upvoted: bool) -
     lang = datasys.load_lang_file(interaction.guild.id)
     t: dict = lang["systems"]["suggestions"]
 
-    if not data.get("votes_enabled", True):
+    ch_cfg = _get_channel_config(data, interaction.channel_id or 0)
+    if not ch_cfg.get("votes_enabled", True):
         await interaction.response.send_message(t["voting_disabled"], ephemeral=True)
         return
 
@@ -262,6 +273,65 @@ async def _handle_public_vote(interaction: discord.Interaction, upvoted: bool) -
     view = _make_view(len(up), len(down), t, decided=False)
     await interaction.response.edit_message(view=view)
 
+    # Auto-forward when upvote threshold is crossed (optional feature)
+    if upvoted:
+        await _maybe_auto_forward(interaction, msg_id, up, t)
+
+
+# ── Auto-forward helper ───────────────────────────────────────────────────────
+
+async def _maybe_auto_forward(
+    interaction: discord.Interaction,
+    msg_id: str,
+    up: list,
+    t: dict,
+) -> None:
+    """Forward a popular suggestion to the configured channel once the threshold is crossed."""
+    if interaction.guild is None or interaction.message is None:
+        return
+
+    data: dict = dict(datasys.load_data(interaction.guild.id, "suggestions"))
+    if not data.get("auto_forward_enabled"):
+        return
+
+    fwd_ch_id = str(data.get("auto_forward_channel", "") or "")
+    if not fwd_ch_id or not fwd_ch_id.isdigit():
+        return
+
+    threshold = max(1, int(data.get("auto_forward_threshold", 10)))
+    if len(up) < threshold:
+        return
+
+    # Check if already forwarded (flag stored in suggestion_votes entry)
+    votes: dict = dict(datasys.load_data(interaction.guild.id, "suggestion_votes"))
+    entry = votes.get(msg_id, {})
+    if entry.get("forwarded"):
+        return
+
+    entry["forwarded"] = True
+    votes[msg_id] = entry
+    datasys.save_data(interaction.guild.id, "suggestion_votes", votes)
+
+    fwd_ch = interaction.guild.get_channel(int(fwd_ch_id))
+    if not isinstance(fwd_ch, discord.TextChannel):
+        return
+
+    if not interaction.message.embeds:
+        return
+
+    fwd_embed = interaction.message.embeds[0].copy()
+    fwd_embed.title = t.get("auto_forward_title", "🔥 Popular Suggestion")
+    fwd_embed.set_footer(
+        text=t.get("auto_forward_footer", "Baxi · Suggestions | {votes} upvotes").format(votes=len(up))
+    )
+    fwd_embed.add_field(name="", value=f"[{t.get('embed_title', 'Suggestion')}]({interaction.message.jump_url})", inline=False)
+
+    try:
+        await fwd_ch.send(embed=fwd_embed)
+        logger.debug.info(f"[Suggestions] Auto-forwarded msg={msg_id} to channel={fwd_ch_id} ({len(up)} upvotes)")
+    except (discord.Forbidden, discord.HTTPException) as e:
+        logger.error(f"[Suggestions] Auto-forward failed: {e}")
+
 
 # ── Incoming message handler ──────────────────────────────────────────────────
 
@@ -273,12 +343,27 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
     if not data.get("enabled", False):
         return False
 
-    channels: list = list(data.get("channels", []))
-    if str(message.channel.id) not in [str(c) for c in channels]:
+    # Support both old format (list of strings) and new format (list of dicts)
+    channels_raw: list = list(data.get("channels", []))
+    channel_config: dict | None = None
+    for ch in channels_raw:
+        ch_id = ch if isinstance(ch, str) else str(ch.get("id", ""))
+        if ch_id == str(message.channel.id):
+            channel_config = (
+                ch if isinstance(ch, dict)
+                else {"id": ch_id, "votes_enabled": True}
+            )
+            break
+
+    if channel_config is None:
         return False
 
     lang = datasys.load_lang_file(message.guild.id)
     t: dict = lang["systems"]["suggestions"]
+
+    votes_enabled: bool = bool(channel_config.get("votes_enabled", True))
+
+    raw_content = message.content or ""
 
     # Save image attachments
     files: list[discord.File] = []
@@ -306,7 +391,7 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
 
     embed = discord.Embed(
         title=t["embed_title"],
-        description=message.content or t["no_text"],
+        description=raw_content or t["no_text"],
         color=cfg.Discord.info_color,
     )
     embed.set_author(
@@ -317,7 +402,6 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
         embed.set_image(url=f"attachment://{first_image_name}")
     embed.set_footer(text=t["footer"])
 
-    votes_enabled = data.get("votes_enabled", True)
     view = _make_view(0, 0, t, decided=False) if votes_enabled else _make_staff_only_view(t)
 
     try:

@@ -34,6 +34,16 @@ class RoleButton(discord.ui.DynamicItem[discord.ui.Button], template=r"rr:(?P<ro
         await _toggle_role(interaction, self.role_id)
 
 
+def _find_panel_for_role(guild_id: int, role_id: str) -> dict | None:
+    """Return the panel containing the given role_id, or None."""
+    rr_data = datasys.load_data(guild_id, "reaction_roles")
+    for panel in rr_data.get("panels", []):
+        for entry in panel.get("entries", []):
+            if str(entry.get("role_id")) == role_id:
+                return panel
+    return None
+
+
 async def _toggle_role(interaction: discord.Interaction, role_id: int) -> None:
     """Toggle a role on the interacting member and reply ephemerally."""
     guild = interaction.guild
@@ -57,8 +67,31 @@ async def _toggle_role(interaction: discord.Interaction, role_id: int) -> None:
             msg = strings["removed"].format(role=role.name)
             logger.debug.info(f"[ButtonRoles] -{role.name} ← {member.name} in {guild.name}")
         else:
+            # Enforce per-panel max_roles limit before adding
+            removed_roles: list[discord.Role] = []
+            panel = _find_panel_for_role(guild.id, str(role_id))
+            if panel:
+                max_roles = int(panel.get("max_roles") or 0)  # 0/empty = unlimited
+                if max_roles > 0:
+                    panel_role_ids = [
+                        int(e["role_id"]) for e in panel.get("entries", [])
+                        if str(e.get("role_id")) != str(role_id)
+                    ]
+                    user_panel_roles = [
+                        r for rid in panel_role_ids
+                        if (r := guild.get_role(rid)) and r in member.roles
+                    ]
+                    excess = len(user_panel_roles) - (max_roles - 1)
+                    if excess > 0:
+                        removed_roles = user_panel_roles[:excess]
+                        await member.remove_roles(*removed_roles, reason="Baxi Button Roles (panel limit)")
+
             await member.add_roles(role, reason="Baxi Button Roles")
-            msg = strings["applied"].format(role=role.name)
+            if removed_roles:
+                removed_names = ", ".join(f"**{r.name}**" for r in removed_roles)
+                msg = strings["group_limit_removed"].format(removed=removed_names, added=role.name)
+            else:
+                msg = strings["applied"].format(role=role.name)
             logger.debug.info(f"[ButtonRoles] +{role.name} → {member.name} in {guild.name}")
 
         await interaction.response.send_message(msg, ephemeral=True)

@@ -171,6 +171,62 @@
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 
+        <!-- Top.gg Vote Banner — avocloud.net styled -->
+        <div style="position:relative; background:rgba(147,51,234,0.06); border:1px solid rgba(147,51,234,0.25); border-radius:10px; backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
+            <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,#9333ea,#ec4899,#eab308,#9333ea); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
+            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
+                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:9px; background:rgba(236,72,153,0.12); border:1px solid rgba(236,72,153,0.3); color:#ec4899;">
+                        <!-- Lucide: heart -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        </svg>
+                    </span>
+                    <div style="min-width:0;">
+                        <div style="font-weight:600; font-size:0.95rem; line-height:1.3; margin-bottom:0.15rem;">Enjoying Baxi? Help us grow.</div>
+                        <div style="font-size:0.825rem; opacity:0.75; line-height:1.4;">A free vote on Top.gg keeps Baxi climbing — and as a thank you, we'll feature {{guild.name}} in the avocloud.net community Discord.</div>
+                    </div>
+                </div>
+                {% if user_on_avocloud %}
+                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(147,51,234,0.5); background:rgba(147,51,234,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(147,51,234,0.22)';this.style.borderColor='rgba(236,72,153,0.7)';" onmouseout="this.style.background='rgba(147,51,234,0.12)';this.style.borderColor='rgba(147,51,234,0.5)';">
+                    <!-- Lucide: thumbs-up -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M7 10v12"/>
+                        <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
+                    </svg>
+                    Vote on Top.gg
+                </a>
+                {% else %}
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; flex-shrink:0;">
+                    <span title="Join the avocloud.net Discord to unlock voting" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px dashed rgba(255,255,255,0.18); background:transparent; color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; opacity:0.45; cursor:not-allowed;">
+                        <!-- Lucide: lock -->
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Vote on Top.gg
+                    </span>
+                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(147,51,234,0.5); background:rgba(147,51,234,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(147,51,234,0.22)';this.style.borderColor='rgba(236,72,153,0.7)';" onmouseout="this.style.background='rgba(147,51,234,0.12)';this.style.borderColor='rgba(147,51,234,0.5)';">
+                        <!-- Lucide: users -->
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        Join avocloud.net
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <style>
+            @keyframes gradient-move {
+                0%, 100% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+            }
+        </style>
+
         <!-- Quick-jump nav -->
         <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
             <a href="#config-general" class="dash-nav-item">
@@ -243,7 +299,7 @@
             </a>
             <a href="#reaction-roles" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                Reaction Roles
+                Button Roles
             </a>
             <a href="#ticket" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
@@ -694,6 +750,27 @@
                                     </p>
                                 </div>
 
+                                <hr class="my-2">
+
+                                <div class="grid gap-2">
+                                    <label class="font-medium text-sm">Channel whitelist <span class="text-muted font-normal" id="cf-bypass-count">(0)</span></label>
+                                    <div id="cf-bypass-list" class="flex flex-wrap gap-2"></div>
+                                    <p id="cf-bypass-empty" class="text-muted text-xs">No channels whitelisted. Chatfilter runs in all channels.</p>
+                                    <div class="flex gap-2 mt-1">
+                                        <select id="cf-bypass-add" class="select flex-1">
+                                            <option value="">— Select a channel to whitelist —</option>
+                                            {% for id, name in channels.items() %}
+                                            <option value="{{ id }}">#{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button" class="btn-secondary" onclick="cfBypassAdd()" style="flex-shrink:0;">
+                                            <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Add
+                                        </button>
+                                    </div>
+                                    <p class="text-muted text-xs">Messages in these channels are never checked by the chatfilter.</p>
+                                </div>
+
                                 <button type="submit" class="btn-primary submit-btn w-full">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
@@ -735,14 +812,6 @@
                                 </label>
                             </div>
 
-                            <div class="form-group">
-                                <label for="suggestions-votes-enabled">
-                                    <input type="checkbox" id="suggestions-votes-enabled">
-                                    Allow members to upvote / downvote suggestions
-                                </label>
-                                <p class="text-muted text-xs" style="margin-top:4px;">Shows 👍 / 👎 buttons on every suggestion. Each member can vote once (click again to remove).</p>
-                            </div>
-
                             <div class="grid gap-2">
                                 <label for="suggestions-staff-role">Staff role (can accept / decline):</label>
                                 <select id="suggestions-staff-role" class="select w-full">
@@ -769,21 +838,59 @@
 
                             <div class="grid gap-2">
                                 <label class="font-medium text-sm">Suggestion channels <span class="text-muted font-normal" id="suggestions-ch-count">(0)</span></label>
-                                <div id="suggestions-channels-list" class="flex flex-wrap gap-2"></div>
+                                <div id="suggestions-channels-list" class="grid gap-2"></div>
                                 <p id="suggestions-channels-empty" class="text-muted text-xs">No suggestion channels added yet.</p>
-                                <div class="flex gap-2 mt-1">
-                                    <select id="suggestions-add-channel" class="select flex-1">
-                                        <option value="">— Select a channel to add —</option>
-                                        {% for id, name in channels.items() %}
-                                        <option value="{{ id }}">{{ name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <button type="button" class="btn-secondary" onclick="suggestionsAddChannel()" style="flex-shrink:0;">
+                                <p class="text-muted text-xs">Each channel has its own vote setting.</p>
+
+                                <!-- Add new channel -->
+                                <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;" class="mt-1">
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Channel</label>
+                                        <select id="suggestions-add-channel" class="select w-full">
+                                            <option value="">— Select —</option>
+                                            {% for id, name in channels.items() %}
+                                            <option value="{{ id }}">#{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="grid gap-1" style="align-items:center;">
+                                        <label class="text-xs text-muted">Votes</label>
+                                        <label style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
+                                            <input type="checkbox" id="suggestions-add-votes" checked>
+                                            <span class="text-sm">👍/👎</span>
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn-secondary" onclick="suggestionsAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
                                 </div>
-                                <p class="text-muted text-xs">Users post their suggestion as a plain message in these channels. The original message is deleted and replaced by Baxi's embed.</p>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="form-group">
+                                <label for="suggestions-auto-forward-enabled">
+                                    <input type="checkbox" id="suggestions-auto-forward-enabled">
+                                    Auto-forward popular suggestions
+                                </label>
+                                <p class="text-muted text-xs" style="margin-top:4px;">When a suggestion reaches the upvote threshold, it is automatically forwarded once to a dedicated channel.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="suggestions-auto-forward-channel">Forward channel:</label>
+                                <select id="suggestions-auto-forward-channel" class="select w-full">
+                                    <option value="">— No forward channel —</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="suggestions-auto-forward-threshold">Upvote threshold:</label>
+                                <input type="number" id="suggestions-auto-forward-threshold" min="1" max="1000" value="10" class="w-full">
+                                <p class="text-muted text-xs">Number of upvotes needed to trigger the auto-forward. Only fires once per suggestion.</p>
                             </div>
 
                             <div class="flex gap-3">
@@ -1000,6 +1107,38 @@
                                     class="w-full min-h-[100px]"></textarea>
                             </div>
 
+                            <!-- Ticket buttons -->
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Ticket buttons <span class="text-muted font-normal" id="ticket-buttons-count">(0)</span></label>
+                                <p class="text-muted text-xs">Define the buttons members can click to open a ticket. Each button creates a ticket named after its label (e.g. "Support", "Apply", "Report").</p>
+                                <div id="ticket-buttons-list" class="grid gap-2"></div>
+                                <p id="ticket-buttons-empty" class="text-muted text-xs">No buttons yet. Add at least one.</p>
+
+                                <div style="display:grid;grid-template-columns:80px 1fr 1fr auto;gap:8px;align-items:end;" class="mt-1">
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Emoji</label>
+                                        <input type="text" id="ticket-btn-add-emoji" placeholder="🛠️" maxlength="50" class="w-full">
+                                    </div>
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Label</label>
+                                        <input type="text" id="ticket-btn-add-label" placeholder="e.g. Support" maxlength="50" class="w-full">
+                                    </div>
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Style</label>
+                                        <select id="ticket-btn-add-style" class="select w-full">
+                                            <option value="primary">Primary (blue)</option>
+                                            <option value="secondary">Secondary (grey)</option>
+                                            <option value="success">Success (green)</option>
+                                            <option value="danger">Danger (red)</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-secondary" onclick="ticketButtonAdd()">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn-primary submit-btn w-full">
                                 <span class="btn-text">
                                     <svg class="lucide" viewBox="0 0 24 24">
@@ -1069,6 +1208,46 @@
                                     <option value="kick">Kick</option>
                                     <option value="ban">Ban</option>
                                 </select>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Whitelisted channels <span class="text-muted font-normal" id="antispam-wl-ch-count">(0)</span></label>
+                                <div id="antispam-wl-channels-list" class="flex flex-wrap gap-2"></div>
+                                <p id="antispam-wl-channels-empty" class="text-muted text-xs">No whitelisted channels.</p>
+                                <div class="flex gap-2 mt-1">
+                                    <select id="antispam-add-wl-channel" class="select flex-1">
+                                        <option value="">— Select a channel —</option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">#{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn-secondary" onclick="antispamAddWlChannel()" style="flex-shrink:0;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <p class="text-muted text-xs">Messages in these channels are never checked for spam.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Whitelisted roles <span class="text-muted font-normal" id="antispam-wl-ro-count">(0)</span></label>
+                                <div id="antispam-wl-roles-list" class="flex flex-wrap gap-2"></div>
+                                <p id="antispam-wl-roles-empty" class="text-muted text-xs">No whitelisted roles.</p>
+                                <div class="flex gap-2 mt-1">
+                                    <select id="antispam-add-wl-role" class="select flex-1">
+                                        <option value="">— Select a role —</option>
+                                        {% for id, name in roles.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn-secondary" onclick="antispamAddWlRole()" style="flex-shrink:0;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <p class="text-muted text-xs">Members with any of these roles are exempt from anti-spam checks.</p>
                             </div>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
@@ -1264,16 +1443,16 @@
                 </div>
             </section>
 
-            <!-- Reaction Roles -->
+            <!-- Button Roles -->
             <section class="pb-16 dash-section" id="reaction-roles">
-                <div class="section-label">REACTION ROLES</div>
+                <div class="section-label">BUTTON ROLES</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                             </svg>
-                            Reaction Roles
+                            Button Roles
                         </h2>
                         <p class="text-muted">Let members assign themselves roles by clicking buttons — fully automated.</p>
                     </header>
@@ -1315,11 +1494,11 @@
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-title">Panel title:</label>
-                                        <input type="text" id="rr-title" placeholder="Reaction Roles" maxlength="100" class="w-full">
+                                        <input type="text" id="rr-title" placeholder="Button Roles" maxlength="100" class="w-full">
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-description">Panel description:</label>
-                                        <textarea id="rr-description" placeholder="Click a button below to assign yourself a role." maxlength="500" class="w-full min-h-[60px]"></textarea>
+                                        <textarea id="rr-description" placeholder="Click a button below to toggle a role." maxlength="500" class="w-full min-h-[60px]"></textarea>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-color">Embed color:</label>
@@ -1327,6 +1506,11 @@
                                             <input type="color" id="rr-color" value="#9333ea" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('rr-color-hex').value=this.value">
                                             <input type="text" id="rr-color-hex" value="#9333ea" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('rr-color').value=this.value">
                                         </div>
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <label for="rr-max-roles">Max roles per member from this panel:</label>
+                                        <input type="number" id="rr-max-roles" min="0" max="25" placeholder="Leave empty for no limit" class="w-full">
+                                        <p class="text-muted text-xs">Leave empty (or 0) for no limit. Set to <strong>1</strong> for exclusive (picking a new role removes the previous one). Editable later.</p>
                                     </div>
                                     <button type="submit" id="rr-add-panel-btn" class="btn-primary w-full">
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2428,6 +2612,8 @@
                     const cb = document.getElementById(`ai-cat-${i}`);
                     if (cb) cb.checked = cats[String(i)] !== false;
                 }
+                _cfBypassChannels = Array.isArray(data.chatfilter.bypass) ? data.chatfilter.bypass.map(String) : [];
+                renderCfBypass();
             }
             // Show/hide AI categories and update pipeline badge based on selected system
             function updateAiCategoriesVisibility() {
@@ -2460,6 +2646,12 @@
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
             document.getElementById("ticket-color").value = data.ticket.color || '';
+            _ticketButtons = Array.isArray(data.ticket.buttons) ? data.ticket.buttons.map(b => ({
+                label: String(b.label || ''),
+                emoji: String(b.emoji || ''),
+                style: ['primary','secondary','success','danger'].includes(b.style) ? b.style : 'primary',
+            })) : [];
+            renderTicketButtons();
 
             // Anti-Spam
             if (data.antispam) {
@@ -2468,6 +2660,10 @@
                 document.getElementById('antispam-interval').value = data.antispam.interval || 5;
                 document.getElementById('antispam-max-duplicates').value = data.antispam.max_duplicates || 3;
                 document.getElementById('antispam-action').value = data.antispam.action || 'mute';
+                _antispamWlChannels = Array.isArray(data.antispam.whitelisted_channels) ? data.antispam.whitelisted_channels.map(String) : [];
+                _antispamWlRoles = Array.isArray(data.antispam.whitelisted_roles) ? data.antispam.whitelisted_roles.map(String) : [];
+                renderAntispamWlChannels();
+                renderAntispamWlRoles();
             }
 
             // Warn Config (auto-escalation)
@@ -2586,11 +2782,20 @@
             // Suggestions
             if (data.suggestions) {
                 document.getElementById('suggestions-enabled').checked = data.suggestions.enabled === true;
-                document.getElementById('suggestions-votes-enabled').checked = data.suggestions.votes_enabled !== false;
                 document.getElementById('suggestions-staff-role').value = data.suggestions.staff_role || '';
                 document.getElementById('suggestions-log-channel').value = data.suggestions.log_channel || '';
-                _suggestionChannels = Array.isArray(data.suggestions.channels) ? data.suggestions.channels.map(String) : [];
+                // Support old string-array format and new object-array format
+                _suggestionChannels = Array.isArray(data.suggestions.channels)
+                    ? data.suggestions.channels.map(ch =>
+                        typeof ch === 'string'
+                            ? { id: ch, votes_enabled: true }
+                            : { id: String(ch.id || ''), votes_enabled: ch.votes_enabled !== false }
+                      )
+                    : [];
                 renderSuggestionChannels();
+                document.getElementById('suggestions-auto-forward-enabled').checked = data.suggestions.auto_forward_enabled === true;
+                document.getElementById('suggestions-auto-forward-channel').value = data.suggestions.auto_forward_channel || '';
+                document.getElementById('suggestions-auto-forward-threshold').value = data.suggestions.auto_forward_threshold ?? 10;
             }
 
             // Sticky Messages
@@ -3177,7 +3382,7 @@
                 const cb = document.getElementById(`ai-cat-${i}`);
                 ai_categories[String(i)] = cb ? cb.checked : true;
             }
-            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [], phishing_filter: phishing, ai_categories } };
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [..._cfBypassChannels], phishing_filter: phishing, ai_categories } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3238,6 +3443,63 @@
             };
         };
 
+        // ── Ticket buttons ─────────────────────────────────────────────────────
+        let _ticketButtons = [];
+
+        const _TICKET_STYLE_LABEL = {
+            primary: 'Primary', secondary: 'Secondary', success: 'Success', danger: 'Danger',
+        };
+        const _TICKET_STYLE_CSS = {
+            primary: 'background:#5865F2;color:#fff;',
+            secondary: 'background:#4f545c;color:#fff;',
+            success: 'background:#22c55e;color:#fff;',
+            danger: 'background:#ef4444;color:#fff;',
+        };
+
+        function renderTicketButtons() {
+            const list = document.getElementById('ticket-buttons-list');
+            const empty = document.getElementById('ticket-buttons-empty');
+            const count = document.getElementById('ticket-buttons-count');
+            list.innerHTML = '';
+            count.textContent = `(${_ticketButtons.length})`;
+            if (_ticketButtons.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            _ticketButtons.forEach((b, idx) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;gap:10px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                const preview = document.createElement('span');
+                preview.style.cssText = `padding:4px 10px;border-radius:5px;font-weight:500;white-space:nowrap;${_TICKET_STYLE_CSS[b.style] || _TICKET_STYLE_CSS.primary}`;
+                preview.textContent = `${b.emoji || ''} ${b.label || ''}`.trim();
+                row.appendChild(preview);
+                const styleLabel = document.createElement('span');
+                styleLabel.className = 'text-muted text-xs';
+                styleLabel.style.cssText = 'flex:1;';
+                styleLabel.textContent = _TICKET_STYLE_LABEL[b.style] || 'Primary';
+                row.appendChild(styleLabel);
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;';
+                removeBtn.title = 'Remove';
+                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                removeBtn.onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
+                row.appendChild(removeBtn);
+                list.appendChild(row);
+            });
+        }
+
+        function ticketButtonAdd() {
+            const emoji = document.getElementById('ticket-btn-add-emoji').value.trim();
+            const label = document.getElementById('ticket-btn-add-label').value.trim();
+            const style = document.getElementById('ticket-btn-add-style').value || 'primary';
+            if (!label && !emoji) { showSaveToast(false, 'Please provide at least a label or emoji.'); return; }
+            if (_ticketButtons.length >= 25) { showSaveToast(false, 'Maximum 25 ticket buttons.'); return; }
+            _ticketButtons.push({ label, emoji, style });
+            document.getElementById('ticket-btn-add-emoji').value = '';
+            document.getElementById('ticket-btn-add-label').value = '';
+            document.getElementById('ticket-btn-add-style').value = 'primary';
+            renderTicketButtons();
+        }
+
         document.getElementById('ticket-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('ticket-enabled').checked;
@@ -3247,7 +3509,11 @@
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
-            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message } };
+            if (enabled && _ticketButtons.length === 0) {
+                showSaveToast(false, 'Please add at least one ticket button.');
+                return;
+            }
+            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, buttons: _ticketButtons } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3271,7 +3537,7 @@
             const interval = parseInt(document.getElementById('antispam-interval').value);
             const max_duplicates = parseInt(document.getElementById('antispam-max-duplicates').value);
             const action = document.getElementById('antispam-action').value;
-            const payload = { antispam: { enabled, max_messages, interval, max_duplicates, action } };
+            const payload = { antispam: { enabled, max_messages, interval, max_duplicates, action, whitelisted_channels: [..._antispamWlChannels], whitelisted_roles: [..._antispamWlRoles] } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=antispam&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3617,7 +3883,76 @@
             };
         };
 
+        // ── ChatFilter bypass ──────────────────────────────────────────────────
+        let _cfBypassChannels = [];
+
+        function renderCfBypass() {
+            const list = document.getElementById('cf-bypass-list');
+            const empty = document.getElementById('cf-bypass-empty');
+            const count = document.getElementById('cf-bypass-count');
+            list.innerHTML = '';
+            count.textContent = `(${_cfBypassChannels.length})`;
+            if (_cfBypassChannels.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            const sel = document.getElementById('cf-bypass-add');
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            _cfBypassChannels.forEach(cid => {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                tag.innerHTML = `<span>${nameMap[cid] || '#' + cid}</span><button type="button" onclick="cfBypassRemove('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+                list.appendChild(tag);
+            });
+        }
+        function cfBypassAdd() {
+            const sel = document.getElementById('cf-bypass-add');
+            const val = sel.value;
+            if (!val || _cfBypassChannels.includes(val)) { sel.value = ''; return; }
+            _cfBypassChannels.push(val); sel.value = ''; renderCfBypass();
+        }
+        function cfBypassRemove(cid) { _cfBypassChannels = _cfBypassChannels.filter(c => c !== cid); renderCfBypass(); }
+
+        // ── AntiSpam whitelists ────────────────────────────────────────────────
+        let _antispamWlChannels = [];
+        let _antispamWlRoles = [];
+
+        function _renderTagList(ids, listId, emptyId, countId, selId, removeFn, prefix) {
+            const list = document.getElementById(listId);
+            const empty = document.getElementById(emptyId);
+            const count = document.getElementById(countId);
+            list.innerHTML = '';
+            count.textContent = `(${ids.length})`;
+            if (ids.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            const sel = document.getElementById(selId);
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            ids.forEach(id => {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                tag.innerHTML = `<span>${prefix}${nameMap[id] || id}</span><button type="button" onclick="${removeFn}('${id}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+                list.appendChild(tag);
+            });
+        }
+        function renderAntispamWlChannels() { _renderTagList(_antispamWlChannels, 'antispam-wl-channels-list', 'antispam-wl-channels-empty', 'antispam-wl-ch-count', 'antispam-add-wl-channel', 'antispamRemoveWlChannel', '#'); }
+        function renderAntispamWlRoles() { _renderTagList(_antispamWlRoles, 'antispam-wl-roles-list', 'antispam-wl-roles-empty', 'antispam-wl-ro-count', 'antispam-add-wl-role', 'antispamRemoveWlRole', '@'); }
+        function antispamAddWlChannel() {
+            const sel = document.getElementById('antispam-add-wl-channel');
+            const val = sel.value;
+            if (!val || _antispamWlChannels.includes(val)) { sel.value = ''; return; }
+            _antispamWlChannels.push(val); sel.value = ''; renderAntispamWlChannels();
+        }
+        function antispamAddWlRole() {
+            const sel = document.getElementById('antispam-add-wl-role');
+            const val = sel.value;
+            if (!val || _antispamWlRoles.includes(val)) { sel.value = ''; return; }
+            _antispamWlRoles.push(val); sel.value = ''; renderAntispamWlRoles();
+        }
+        function antispamRemoveWlChannel(id) { _antispamWlChannels = _antispamWlChannels.filter(c => c !== id); renderAntispamWlChannels(); }
+        function antispamRemoveWlRole(id) { _antispamWlRoles = _antispamWlRoles.filter(r => r !== id); renderAntispamWlRoles(); }
+
         // ── Suggestions ────────────────────────────────────────────────────────
+        // Each entry: { id, votes_enabled }
         let _suggestionChannels = [];
 
         function renderSuggestionChannels() {
@@ -3626,20 +3961,27 @@
             const count = document.getElementById('suggestions-ch-count');
             list.innerHTML = '';
             count.textContent = `(${_suggestionChannels.length})`;
-            if (_suggestionChannels.length === 0) {
-                empty.classList.remove('hidden');
-                return;
-            }
+            if (_suggestionChannels.length === 0) { empty.classList.remove('hidden'); return; }
             empty.classList.add('hidden');
-            // Build channel id→name lookup from the select options
             const sel = document.getElementById('suggestions-add-channel');
             const nameMap = {};
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
-            _suggestionChannels.forEach(cid => {
-                const tag = document.createElement('div');
-                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
-                tag.innerHTML = `<span>#${nameMap[cid] || cid}</span><button type="button" onclick="suggestionsRemoveChannel('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
-                list.appendChild(tag);
+            _suggestionChannels.forEach((ch, idx) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                const chName = nameMap[ch.id] || ('#' + ch.id);
+                const votesLabel = ch.votes_enabled ? '👍/👎 on' : '👍/👎 off';
+                row.innerHTML = `
+                    <span style="font-weight:500;">${chName}</span>
+                    <label style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" ${ch.votes_enabled ? 'checked' : ''}
+                            onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
+                        <span>${votesLabel}</span>
+                    </label>
+                    <button type="button" onclick="suggestionsRemoveChannel('${ch.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>`;
+                list.appendChild(row);
             });
         }
 
@@ -3647,14 +3989,16 @@
             const sel = document.getElementById('suggestions-add-channel');
             const val = sel.value;
             if (!val) return;
-            if (_suggestionChannels.includes(val)) { sel.value = ''; return; }
-            _suggestionChannels.push(val);
+            if (_suggestionChannels.some(c => c.id === val)) { sel.value = ''; return; }
+            const votes_enabled = document.getElementById('suggestions-add-votes').checked;
+            _suggestionChannels.push({ id: val, votes_enabled });
             sel.value = '';
+            document.getElementById('suggestions-add-votes').checked = true;
             renderSuggestionChannels();
         }
 
         function suggestionsRemoveChannel(cid) {
-            _suggestionChannels = _suggestionChannels.filter(c => c !== cid);
+            _suggestionChannels = _suggestionChannels.filter(c => c.id !== cid);
             renderSuggestionChannels();
         }
 
@@ -3665,11 +4009,13 @@
             btn.querySelector('.btn-text')?.classList.add('hidden');
             btn.querySelector('.spinner')?.classList.remove('hidden');
             const enabled = document.getElementById('suggestions-enabled').checked;
-            const votes_enabled = document.getElementById('suggestions-votes-enabled').checked;
             const staff_role = document.getElementById('suggestions-staff-role').value;
             const log_channel = document.getElementById('suggestions-log-channel').value;
-            const channels = [..._suggestionChannels];
-            const payload = { suggestions: { enabled, votes_enabled, staff_role, log_channel, channels } };
+            const channels = _suggestionChannels.map(ch => ({ id: ch.id, votes_enabled: ch.votes_enabled !== false }));
+            const auto_forward_enabled = document.getElementById('suggestions-auto-forward-enabled').checked;
+            const auto_forward_channel = document.getElementById('suggestions-auto-forward-channel').value;
+            const auto_forward_threshold = parseInt(document.getElementById('suggestions-auto-forward-threshold').value) || 10;
+            const payload = { suggestions: { enabled, staff_role, log_channel, channels, auto_forward_enabled, auto_forward_channel, auto_forward_threshold } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=suggestions&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3836,7 +4182,11 @@
             _sendVerifyForm(true);
         }
 
-        // ── Reaction Roles ─────────────────────────────────────────────────────
+        // ── Button Roles ───────────────────────────────────────────────────────
+        function _rrEscape(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
         function renderReactionRolePanels() {
             const list = document.getElementById('rr-panels-list');
             const empty = document.getElementById('rr-panels-empty');
@@ -3853,22 +4203,25 @@
             panels.forEach(panel => {
                 const card = document.createElement('div');
                 card.className = 'card rr-panel-card mt-4';
-                const entriesHtml = (panel.entries || []).map(e =>
-                    `<div class="flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
-                        <span class="text-sm">${e.emoji} <span class="text-muted">${e.label || ''}</span></span>
+                const mid = panel.message_id;
+                const maxRoles = panel.max_roles || 0;
+
+                const entriesHtml = (panel.entries || []).map(e => {
+                    return `<div class="flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
+                        <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
                         <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;"
-                            onclick="removeRREntry('${panel.message_id}', '${e.emoji.replace(/'/g,"\\'")}')">Remove</button>
-                    </div>`
-                ).join('');
+                            onclick="removeRREntry('${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">Remove</button>
+                    </div>`;
+                }).join('');
 
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-base font-semibold">${panel.title || 'Panel'}</h3>
-                            <p class="text-muted text-xs">${panel.description || ''}</p>
+                            <h3 class="text-base font-semibold">${_rrEscape(panel.title) || 'Panel'}</h3>
+                            <p class="text-muted text-xs">Message ID: ${mid}</p>
                         </div>
                         <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
-                            onclick="removeRRPanel('${panel.message_id}')">
+                            onclick="removeRRPanel('${mid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                 <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -3877,43 +4230,81 @@
                         </button>
                     </header>
                     <section>
-                        <div class="mb-4">${entriesHtml || '<p class="text-muted text-xs">No entries yet.</p>'}</div>
+                        <!-- Editable panel settings -->
+                        <div style="background:color-mix(in srgb,var(--color-primary,#9333ea) 5%,transparent);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:1rem;">
+                            <p class="text-sm font-medium mb-3">Panel settings</p>
+                            <div class="grid gap-3">
+                                <div class="grid gap-1">
+                                    <label class="form-label text-xs">Title</label>
+                                    <input type="text" class="input rr-edit-title w-full" data-msgid="${mid}" maxlength="100" value="${_rrEscape(panel.title)}">
+                                </div>
+                                <div class="grid gap-1">
+                                    <label class="form-label text-xs">Description</label>
+                                    <textarea class="input rr-edit-description w-full min-h-[60px]" data-msgid="${mid}" maxlength="500">${_rrEscape(panel.description)}</textarea>
+                                </div>
+                                <div class="flex gap-3 flex-wrap">
+                                    <div class="grid gap-1" style="flex:1;min-width:150px;">
+                                        <label class="form-label text-xs">Color</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="color" class="rr-edit-color h-9 w-12 rounded cursor-pointer" data-msgid="${mid}" value="${_rrEscape(panel.color) || '#9333ea'}"
+                                                oninput="document.querySelector('.rr-edit-color-hex[data-msgid=&quot;${mid}&quot;]').value=this.value">
+                                            <input type="text" class="input rr-edit-color-hex w-28 font-mono" data-msgid="${mid}" maxlength="7" value="${_rrEscape(panel.color) || '#9333ea'}"
+                                                oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) this.parentNode.querySelector('.rr-edit-color').value=this.value">
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-1" style="flex:1;min-width:150px;">
+                                        <label class="form-label text-xs">Max roles (empty = no limit)</label>
+                                        <input type="number" class="input rr-edit-max w-full" data-msgid="${mid}" min="0" max="25" value="${maxRoles || ''}" placeholder="no limit">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-primary" onclick="saveRRPanel(this, '${mid}')">
+                                    <span class="btn-text">Save panel changes</span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        style="animation:loader-spin 0.9s linear infinite;">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <p class="text-sm font-medium mb-2">Buttons</p>
+                        <div class="mb-4">${entriesHtml || '<p class="text-muted text-xs">No buttons yet.</p>'}</div>
                         <div style="border-top:1px solid var(--border);padding-top:1rem;">
                             <p class="text-sm font-medium mb-1">Add button</p>
                             <p class="text-xs text-muted mb-3">Each button toggles a role. Emoji and label are both optional, but at least one must be set.</p>
-                            <div class="flex flex-col gap-3">
-                                <div class="flex gap-2">
-                                    <div style="flex:0 0 auto;">
-                                        <label class="form-label" style="white-space:nowrap;">Emoji <span class="text-muted">(optional)</span></label>
-                                        <input type="text" placeholder="e.g. 🎮" class="input rr-emoji-input w-full" data-msgid="${panel.message_id}">
-                                    </div>
-                                    <div style="flex:1;">
-                                        <label class="form-label">Role</label>
-                                        <select class="select rr-role-select w-full" data-msgid="${panel.message_id}"
-                                            onchange="checkRolePosition(this.value, 'rr-role-warning-${panel.message_id}')">
-                                            <option value="">-- Select a role --</option>
-                                            {% for id, name in roles.items() %}
-                                            <option value="{{ id }}">{{ name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <div id="rr-role-warning-${panel.message_id}" class="channel-perm-feedback error hidden" style="font-size:0.75rem;margin-top:4px;">Baxi cannot assign this role — it is too high in the hierarchy.</div>
-                                    </div>
-                                    <div style="flex:1;">
-                                        <label class="form-label" style="white-space:nowrap;">Button label <span class="text-muted">(optional)</span></label>
-                                        <input type="text" placeholder="e.g. Gaming" class="input rr-label-input w-full" data-msgid="${panel.message_id}">
-                                    </div>
-                                    <div style="flex:0 0 auto;display:flex;flex-direction:column;">
-                                        <label class="form-label" style="visibility:hidden;">x</label>
-                                        <button type="button" class="btn-primary" style="white-space:nowrap;" onclick="addRREntry(this, '${panel.message_id}')">
-                                            <span class="btn-text">Add</span>
-                                            <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
-                                                stroke="currentColor" fill="none" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round"
-                                                style="animation:loader-spin 0.9s linear infinite;">
-                                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                            </svg>
-                                        </button>
-                                    </div>
+                            <div class="flex gap-2 flex-wrap">
+                                <div style="flex:0 0 auto;">
+                                    <label class="form-label" style="white-space:nowrap;">Emoji <span class="text-muted">(opt.)</span></label>
+                                    <input type="text" placeholder="e.g. 🎮" class="input rr-emoji-input" style="width:80px;" data-msgid="${mid}">
+                                </div>
+                                <div style="flex:1;min-width:150px;">
+                                    <label class="form-label">Role</label>
+                                    <select class="select rr-role-select w-full" data-msgid="${mid}"
+                                        onchange="checkRolePosition(this.value, 'rr-role-warning-${mid}')">
+                                        <option value="">-- Select --</option>
+                                        {% for id, name in roles.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div id="rr-role-warning-${mid}" class="channel-perm-feedback error hidden" style="font-size:0.75rem;margin-top:4px;">Baxi cannot assign this role — it is too high in the hierarchy.</div>
+                                </div>
+                                <div style="flex:1;min-width:130px;">
+                                    <label class="form-label" style="white-space:nowrap;">Label <span class="text-muted">(opt.)</span></label>
+                                    <input type="text" placeholder="e.g. Gaming" class="input rr-label-input w-full" data-msgid="${mid}">
+                                </div>
+                                <div style="flex:0 0 auto;display:flex;flex-direction:column;">
+                                    <label class="form-label" style="visibility:hidden;">x</label>
+                                    <button type="button" class="btn-primary" style="white-space:nowrap;" onclick="addRREntry(this, '${mid}')">
+                                        <span class="btn-text">Add</span>
+                                        <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
+                                            stroke="currentColor" fill="none" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="animation:loader-spin 0.9s linear infinite;">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -3926,14 +4317,16 @@
         document.getElementById('rr-add-panel-form').onsubmit = function (event) {
             event.preventDefault();
             const channel_id = document.getElementById('rr-channel').value;
-            const title = document.getElementById('rr-title').value.trim() || 'Role Selection';
+            const title = document.getElementById('rr-title').value.trim() || 'Button Roles';
             const description = document.getElementById('rr-description').value.trim() || 'Click a button below to toggle a role.';
             const color = document.getElementById('rr-color-hex').value || document.getElementById('rr-color').value;
+            const maxRolesRaw = document.getElementById('rr-max-roles').value.trim();
+            const max_roles = maxRolesRaw === '' ? 0 : (parseInt(maxRolesRaw) || 0);
             if (!channel_id) { showSaveToast(false, 'Please select a channel.'); return; }
             const btn = document.getElementById('rr-add-panel-btn');
             btn.disabled = true;
             btn.textContent = 'Creating...';
-            const payload = { reaction_roles: { action: 'add_panel', channel_id, title, description, color } };
+            const payload = { reaction_roles: { action: 'add_panel', channel_id, title, description, color, max_roles } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3954,7 +4347,7 @@
         };
 
         function removeRRPanel(messageId) {
-            if (!confirm('Delete this reaction role panel? The Discord message will be deleted too.')) return;
+            if (!confirm('Delete this button role panel? The Discord message will be deleted too.')) return;
             const payload = { reaction_roles: { action: 'remove_panel', message_id: messageId } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
@@ -3967,6 +4360,45 @@
                         showSaveToast(resp.success, resp.message);
                         if (resp.success) {
                             if (data.reaction_roles) data.reaction_roles.panels = (data.reaction_roles.panels || []).filter(p => p.message_id !== messageId);
+                            renderReactionRolePanels();
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        function saveRRPanel(btn, messageId) {
+            const titleInput = document.querySelector(`.rr-edit-title[data-msgid="${messageId}"]`);
+            const descInput = document.querySelector(`.rr-edit-description[data-msgid="${messageId}"]`);
+            const colorInput = document.querySelector(`.rr-edit-color-hex[data-msgid="${messageId}"]`);
+            const maxInput = document.querySelector(`.rr-edit-max[data-msgid="${messageId}"]`);
+            const title = titleInput ? titleInput.value.trim() : '';
+            const description = descInput ? descInput.value.trim() : '';
+            const color = colorInput ? colorInput.value.trim() : '#9333ea';
+            const maxRaw = maxInput ? maxInput.value.trim() : '';
+            const max_roles = maxRaw === '' ? 0 : (parseInt(maxRaw) || 0);
+            if (!title) { showSaveToast(false, 'Title cannot be empty.'); return; }
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            const payload = { reaction_roles: { action: 'update_panel', message_id: messageId, title, description, color, max_roles } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            const p = (data.reaction_roles.panels || []).find(p => p.message_id === messageId);
+                            if (p) { p.title = title; p.description = description; p.color = color; p.max_roles = max_roles; }
                             renderReactionRolePanels();
                         }
                     } catch (e) {

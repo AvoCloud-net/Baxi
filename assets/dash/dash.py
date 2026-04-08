@@ -18,7 +18,7 @@ import random
 import re
 from typing import cast
 import config.config as config
-from assets.buttons import TicketView
+from assets.buttons import build_ticket_panel_view
 import time
 import json
 import os
@@ -135,6 +135,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     app.secret_key = auth.Web.secret_key
 
     discord_auth = DiscordOAuth2Session(app)
+
+    # Pending-vote map: discord_user_id -> (guild_id, expires_at_unix).
+    # Populated when a user clicks the vote button on the dashboard, then
+    # consumed when the top.gg webhook fires (V1 doesn't pass `query` anymore).
+    pending_votes: dict[int, tuple[int, float]] = {}
+    PENDING_VOTE_TTL = 60 * 60 * 6  # 6 hours
+
+    def _cleanup_pending_votes():
+        now = time.time()
+        stale = [uid for uid, (_g, exp) in pending_votes.items() if exp < now]
+        for uid in stale:
+            pending_votes.pop(uid, None)
 
     @app.route("/login/")
     async def login():
@@ -335,6 +347,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 stats=stats,
                 show_intro=show_intro,
                 is_bot_admin=is_bot_admin_user,
+                bot_id=bot.user.id,
             )
         except Exception as e:
             print(f"Error in index route: {e}")
@@ -528,6 +541,21 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 stats = {"members": "unable to load stats", "open_tickets": "unable to load stats", "unanswered_tickets": "unable to load stats", "version": config.Discord.version}
                 print(f"Unable to load stats: {e}")
             
+            user_on_avocloud = False
+            avocloud_guild_id = auth.TopGG.avocloud_guild_id
+            if avocloud_guild_id:
+                avocloud_guild = bot.get_guild(avocloud_guild_id)
+                if avocloud_guild is not None:
+                    try:
+                        avo_member = avocloud_guild.get_member(user.id)
+                        if avo_member is None:
+                            avo_member = await avocloud_guild.fetch_member(user.id)
+                        user_on_avocloud = avo_member is not None
+                    except discord.NotFound:
+                        user_on_avocloud = False
+                    except Exception:
+                        user_on_avocloud = False
+
             return await render_template(
                 "dash.html",
                 data=guild_conf,
@@ -543,6 +571,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 stats=stats,
                 greeting=get_time_based_greeting(user.name),
                 feature_adoption=get_feature_adoption(),
+                bot_id=bot.user.id,
+                user_on_avocloud=user_on_avocloud,
             )
 
         except discord.NotFound:
@@ -813,87 +843,106 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         elif system == "ticket":
             data: dict = await quart.request.get_json()
             ticket = data.get("ticket")
-            print(ticket)
 
             if not isinstance(ticket, dict):
                 return quart.jsonify({"success": False, "message": "Invalid data format: 'ticket' must be an object."}), 400
-            if ticket["enabled"] is None or not isinstance(ticket["enabled"], bool):
-                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean (true/false) and not null."}), 400
-            if not isinstance(ticket["channel"], str) or not re.fullmatch(
-                r"\d{17,19}", ticket["channel"]
-            ):
-                return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
-
-            if not isinstance(ticket["role"], str) or not re.fullmatch(
-                r"\d{17,19}", ticket["role"]
-            ):
-                return quart.jsonify({"success": False, "message": "Role ID does not match the Discord ID format."}), 400
-
-            if not isinstance(ticket["color"], str) or not bool(
-                re.fullmatch(
-                    r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", ticket["color"]
-                )
-            ):
-                return quart.jsonify({"success": False, "message": "You did not specify the color in a valid HEX format."}), 400
-
-            bot_member_check = await guild.fetch_member(bot.user.id) # type: ignore
-            bot_top_role = bot_member_check.top_role
-            guild_roles_sorted = sorted(guild.roles, key=lambda r: r.position, reverse=True)
-            if bot_top_role.position != guild_roles_sorted[0].position:
-                return quart.jsonify({
-                    "success": False,
-                    "message": f"Bot role \"{bot_top_role.name}\" is not at the top of the role hierarchy. The ticket system requires the bot role to be highest so it can manage channel permissions."
-                }), 403
+            if not isinstance(ticket.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean (true/false)."}), 400
 
             settings: dict = dict(load_data(guild.id, "ticket"))
-
-            channel = await guild.fetch_channel(int(ticket["channel"]))
-            if channel is None:
-                return quart.jsonify({"success": False, "message": "The specified channel is unknown. Was it deleted before saving? Reload the page and try again."}), 400
-            if not isinstance(channel, discord.TextChannel):
-                return quart.jsonify({"success": False, "message": "The specified channel is not a text channel."}), 400
-
-            cat = await guild.fetch_channel(int(ticket["category"]))
-            if cat is None:
-                return quart.jsonify({"success": False, "message": "The specified category is unknown. Was it deleted before saving? Reload the page and try again."}), 400
-            if not isinstance(cat, discord.CategoryChannel):
-                return quart.jsonify({"success": False, "message": "The specified category is not a category."}), 400
-
             settings.setdefault("enabled", False)
             settings.setdefault("channel", "")
             settings.setdefault("transcript", "")
             settings.setdefault("role", "")
             settings.setdefault("catid", "")
-            settings.setdefault("color", "")
+            settings.setdefault("color", "#9333ea")
             settings.setdefault("message", "")
+            settings.setdefault("buttons", [])
+            settings.setdefault("panel_message_id", "")
 
             if ticket["enabled"] is False:
                 settings["enabled"] = False
-                settings["channel"] = ""
-                settings["transcript"] = ""
-                settings["role"] = ""
-                settings["catid"] = ""
-                settings["color"] = ""
-                settings["message"] = ""
+                save_data(guild.id, "ticket", settings)
             else:
+                # Validate required fields
+                if not isinstance(ticket.get("channel"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel"]):
+                    return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
+                if not isinstance(ticket.get("role"), str) or not re.fullmatch(r"\d{17,19}", ticket["role"]):
+                    return quart.jsonify({"success": False, "message": "Role ID does not match the Discord ID format."}), 400
+                if not isinstance(ticket.get("category"), str) or not re.fullmatch(r"\d{17,19}", ticket["category"]):
+                    return quart.jsonify({"success": False, "message": "Category ID does not match the Discord ID format."}), 400
+                if not isinstance(ticket.get("channel_transcript"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel_transcript"]):
+                    return quart.jsonify({"success": False, "message": "Transcript channel ID does not match the Discord ID format."}), 400
+                color_raw = str(ticket.get("color", "#9333ea"))
+                if not re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", color_raw):
+                    return quart.jsonify({"success": False, "message": "Color must be valid HEX."}), 400
+
+                # Validate buttons
+                raw_buttons = ticket.get("buttons", [])
+                if not isinstance(raw_buttons, list) or len(raw_buttons) == 0:
+                    return quart.jsonify({"success": False, "message": "At least one ticket button is required."}), 400
+                if len(raw_buttons) > 25:
+                    return quart.jsonify({"success": False, "message": "Maximum 25 ticket buttons allowed."}), 400
+
+                allowed_styles = {"primary", "secondary", "success", "danger"}
+                cleaned_buttons: list[dict] = []
+                used_ids: set[str] = set()
+                for b in raw_buttons:
+                    if not isinstance(b, dict):
+                        continue
+                    label = str(b.get("label", "")).strip()[:50]
+                    emoji = str(b.get("emoji", "")).strip()[:50]
+                    style = str(b.get("style", "primary")).strip().lower()
+                    if style not in allowed_styles:
+                        style = "primary"
+                    if not label and not emoji:
+                        return quart.jsonify({"success": False, "message": "Each button needs a label or an emoji."}), 400
+                    # Derive stable id from label (slugified). Ensure uniqueness.
+                    base_id = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-") or "ticket"
+                    btn_id = base_id
+                    n = 2
+                    while btn_id in used_ids:
+                        btn_id = f"{base_id}-{n}"
+                        n += 1
+                    used_ids.add(btn_id)
+                    cleaned_buttons.append({"id": btn_id, "label": label, "emoji": emoji, "style": style})
+
+                bot_member_check = await guild.fetch_member(bot.user.id)  # type: ignore
+                bot_top_role = bot_member_check.top_role
+                guild_roles_sorted = sorted(guild.roles, key=lambda r: r.position, reverse=True)
+                if bot_top_role.position != guild_roles_sorted[0].position:
+                    return quart.jsonify({
+                        "success": False,
+                        "message": f"Bot role \"{bot_top_role.name}\" is not at the top of the role hierarchy. The ticket system requires the bot role to be highest so it can manage channel permissions."
+                    }), 403
+
+                channel = await guild.fetch_channel(int(ticket["channel"]))
+                if not isinstance(channel, discord.TextChannel):
+                    return quart.jsonify({"success": False, "message": "The specified channel is not a text channel."}), 400
+
+                cat = await guild.fetch_channel(int(ticket["category"]))
+                if not isinstance(cat, discord.CategoryChannel):
+                    return quart.jsonify({"success": False, "message": "The specified category is not a category."}), 400
+
                 settings["enabled"] = True
                 settings["channel"] = ticket["channel"]
                 settings["transcript"] = ticket["channel_transcript"]
                 settings["role"] = ticket["role"]
                 settings["catid"] = ticket["category"]
-                settings["color"] = ticket["color"]
-                settings["message"] = ticket["message"]
+                settings["color"] = color_raw
+                settings["message"] = str(ticket.get("message", ""))[:4000]
+                settings["buttons"] = cleaned_buttons
 
-            embed = discord.Embed(
-                title=f"{config.Icons.questionmark} SYS // {guild.name} SUPPORT",
-                description=ticket["message"],
-                color=discord.Color.from_str(ticket["color"]),
-            )
+                embed = discord.Embed(
+                    title=f"{config.Icons.questionmark} SYS // {guild.name} SUPPORT",
+                    description=settings["message"],
+                    color=discord.Color.from_str(color_raw),
+                )
 
-            panel_msg = await channel.send(embed=embed, view=TicketView())
-            settings["panel_message_id"] = str(panel_msg.id)
+                panel_msg = await channel.send(embed=embed, view=build_ticket_panel_view(cleaned_buttons))
+                settings["panel_message_id"] = str(panel_msg.id)
 
-            save_data(guild.id, "ticket", settings)
+                save_data(guild.id, "ticket", settings)
 
             user = await discord_auth.fetch_user()
             audit_log_new: dict = {
@@ -919,12 +968,26 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(antispam.get("enabled"), bool):
                 return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
 
+            # Validate optional whitelisted_channels
+            raw_wl_ch = antispam.get("whitelisted_channels", [])
+            if not isinstance(raw_wl_ch, list):
+                return quart.jsonify({"success": False, "message": "'whitelisted_channels' must be a list."}), 400
+            whitelisted_channels = [str(c) for c in raw_wl_ch if re.fullmatch(r"\d{17,19}", str(c))]
+
+            # Validate optional whitelisted_roles
+            raw_wl_ro = antispam.get("whitelisted_roles", [])
+            if not isinstance(raw_wl_ro, list):
+                return quart.jsonify({"success": False, "message": "'whitelisted_roles' must be a list."}), 400
+            whitelisted_roles = [str(r) for r in raw_wl_ro if re.fullmatch(r"\d{17,19}", str(r))]
+
             settings = {
                 "enabled": antispam["enabled"],
                 "max_messages": max(2, min(20, int(antispam.get("max_messages", 5)))),
                 "interval": max(2, min(30, int(antispam.get("interval", 5)))),
                 "max_duplicates": max(2, min(10, int(antispam.get("max_duplicates", 3)))),
                 "action": antispam.get("action", "mute") if antispam.get("action") in ["mute", "warn", "kick", "ban"] else "mute",
+                "whitelisted_channels": whitelisted_channels,
+                "whitelisted_roles": whitelisted_roles,
             }
 
             save_data(int(guild_id), "antispam", settings)
@@ -1914,14 +1977,23 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(sugg.get("enabled"), bool):
                 return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
 
-            # Validate and clean channel list
+            # Validate and clean channel list (new format: list of dicts)
             raw_channels = sugg.get("channels", [])
             if not isinstance(raw_channels, list):
                 return quart.jsonify({"success": False, "message": "'channels' must be a list."}), 400
-            channels: list[str] = [
-                str(c) for c in raw_channels
-                if re.fullmatch(r"\d{17,19}", str(c))
-            ]
+            channels: list[dict] = []
+            for ch in raw_channels:
+                if isinstance(ch, str) and re.fullmatch(r"\d{17,19}", ch):
+                    # Backward-compat: plain string → wrap as dict
+                    channels.append({"id": ch, "votes_enabled": True})
+                elif isinstance(ch, dict):
+                    ch_id = str(ch.get("id", "")).strip()
+                    if not re.fullmatch(r"\d{17,19}", ch_id):
+                        continue
+                    channels.append({
+                        "id": ch_id,
+                        "votes_enabled": bool(ch.get("votes_enabled", True)),
+                    })
 
             staff_role_raw = str(sugg.get("staff_role", "") or "").strip()
             if staff_role_raw and not re.fullmatch(r"\d{17,19}", staff_role_raw):
@@ -1931,12 +2003,24 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if log_ch_raw and not re.fullmatch(r"\d{17,19}", log_ch_raw):
                 return quart.jsonify({"success": False, "message": "Invalid log channel ID."}), 400
 
+            # Validate auto-forward settings
+            auto_forward_enabled = bool(sugg.get("auto_forward_enabled", False))
+            af_ch_raw = str(sugg.get("auto_forward_channel", "") or "").strip()
+            if af_ch_raw and not re.fullmatch(r"\d{17,19}", af_ch_raw):
+                return quart.jsonify({"success": False, "message": "Invalid auto_forward_channel ID."}), 400
+            try:
+                af_threshold = max(1, min(1000, int(sugg.get("auto_forward_threshold", 10))))
+            except (ValueError, TypeError):
+                af_threshold = 10
+
             settings = {
                 "enabled": sugg["enabled"],
-                "votes_enabled": bool(sugg.get("votes_enabled", True)),
                 "channels": channels,
                 "staff_role": staff_role_raw,
                 "log_channel": log_ch_raw,
+                "auto_forward_enabled": auto_forward_enabled,
+                "auto_forward_channel": af_ch_raw,
+                "auto_forward_threshold": af_threshold,
             }
             save_data(int(guild_id), "suggestions", settings)
 
@@ -2008,11 +2092,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if not re.fullmatch(r"\d{17,19}", channel_id_raw):
                     return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
 
-                title = str(rr.get("title", "Reaction Roles"))[:100]
-                description = str(rr.get("description", "React to get a role!"))[:500]
+                title = str(rr.get("title", "Button Roles"))[:100]
+                description = str(rr.get("description", "Click a button to toggle a role."))[:500]
                 color = str(rr.get("color", "#9333ea"))[:7]
                 if not re.match(r'^#[0-9a-fA-F]{6}$', color):
                     color = "#9333ea"
+
+                max_roles_raw = rr.get("max_roles")
+                max_roles = 0
+                if max_roles_raw not in (None, "", 0):
+                    try:
+                        max_roles = max(0, min(25, int(max_roles_raw)))
+                    except (ValueError, TypeError):
+                        max_roles = 0
 
                 try:
                     ch = await guild.fetch_channel(int(channel_id_raw))
@@ -2029,6 +2121,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "title": title,
                     "description": description,
                     "color": color,
+                    "max_roles": max_roles,
                     "entries": [],
                 }
 
@@ -2066,6 +2159,39 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 rr_config["panels"] = panels
                 save_data(int(guild_id), "reaction_roles", rr_config)
 
+            elif action == "update_panel":
+                message_id = str(rr.get("message_id", "")).strip()
+                panel = next((p for p in panels if str(p.get("message_id", "")) == message_id), None)
+                if panel is None:
+                    return quart.jsonify({"success": False, "message": "Panel not found."}), 404
+
+                panel["title"] = str(rr.get("title", panel.get("title", "Button Roles")))[:100]
+                panel["description"] = str(rr.get("description", panel.get("description", "")))[:500]
+                color = str(rr.get("color", panel.get("color", "#9333ea")))[:7]
+                if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+                    color = "#9333ea"
+                panel["color"] = color
+
+                max_roles_raw = rr.get("max_roles")
+                if max_roles_raw in (None, "", 0, "0"):
+                    panel["max_roles"] = 0
+                else:
+                    try:
+                        panel["max_roles"] = max(0, min(25, int(max_roles_raw)))
+                    except (ValueError, TypeError):
+                        panel["max_roles"] = 0
+
+                from assets.message.reactionroles import build_panel_embed, build_panel_view
+                try:
+                    ch = await guild.fetch_channel(int(panel["channel_id"]))
+                    msg = await ch.fetch_message(int(message_id))  # type: ignore
+                    await msg.edit(embed=build_panel_embed(panel), view=build_panel_view(panel))
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
+                    return quart.jsonify({"success": False, "message": f"Could not update panel: {e}"}), 500
+
+                rr_config["panels"] = panels
+                save_data(int(guild_id), "reaction_roles", rr_config)
+
             elif action == "add_entry":
                 message_id = str(rr.get("message_id", "")).strip()
                 emoji = str(rr.get("emoji", "")).strip()
@@ -2085,11 +2211,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if any(str(e.get("role_id")) == role_id_raw for e in panel.get("entries", [])):
                     return quart.jsonify({"success": False, "message": "This role already has a button in this panel."}), 400
 
-                panel.setdefault("entries", []).append({
-                    "emoji": emoji,
-                    "role_id": role_id_raw,
-                    "label": label,
-                })
+                panel.setdefault("entries", []).append({"emoji": emoji, "role_id": role_id_raw, "label": label})
 
                 # Update the Discord message with new embed + buttons
                 from assets.message.reactionroles import build_panel_embed, build_panel_view
@@ -4079,5 +4201,246 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"success": False, "message": str(e)}), 500
         data = _load_insights_data(guild_id, days)
         return quart.jsonify({"success": True, **data})
+
+    @app.route("/vote/<int:guild_id>")
+    @requires_authorization
+    async def vote_redirect(guild_id: int):
+        """
+        Records the (user → guild) mapping for a pending top.gg vote, then
+        redirects to top.gg. The webhook handler reads this map when the
+        vote actually fires, since top.gg V1 webhooks no longer carry the
+        original query string.
+        """
+        try:
+            user = await discord_auth.fetch_user()
+        except Exception:
+            return redirect(f"https://top.gg/bot/{bot.user.id}/vote")
+
+        _cleanup_pending_votes()
+        pending_votes[int(user.id)] = (int(guild_id), time.time() + PENDING_VOTE_TTL)
+        print(f"[TopGG Vote] Pending vote registered: user {user.id} → guild {guild_id}")
+        return redirect(f"https://top.gg/bot/{bot.user.id}/vote")
+
+    @app.route("/webhooks/topgg/vote", methods=["POST"])
+    async def topgg_vote_webhook():
+        import hmac
+        import hashlib
+        import time as _time
+
+        # Log incoming headers (masked) for debugging
+        all_headers = {k: v for k, v in quart.request.headers.items()}
+        masked = {k: (v[:6] + "…" + v[-4:] if len(v) > 16 else v) for k, v in all_headers.items()}
+        print(f"[TopGG Vote] Incoming headers: {masked}")
+
+        expected_secret = auth.TopGG.webhook_secret
+        if not expected_secret or expected_secret == "YOUR-TOPGG-WEBHOOK-SECRET":
+            print("[TopGG Vote] Webhook secret not configured.")
+            return quart.jsonify({"error": "Not configured"}), 503
+
+        # Top.gg V1 uses HMAC-SHA256 signature verification via the
+        # `x-topgg-signature` header (format: "t={unix_ts},v1={hex_sig}").
+        sig_header = quart.request.headers.get("x-topgg-signature", "")
+        trace_id = quart.request.headers.get("x-topgg-trace", "")
+        if trace_id:
+            print(f"[TopGG Vote] Trace ID: {trace_id}")
+
+        # Read the raw body BEFORE parsing JSON — signature is computed over raw bytes
+        raw_body: bytes = await quart.request.get_data()
+
+        if not sig_header:
+            print("[TopGG Vote] ABORT: Missing x-topgg-signature header.")
+            return quart.jsonify({"error": "Missing signature"}), 401
+
+        # Parse "t=...,v1=..."
+        sig_parts: dict[str, str] = {}
+        for part in sig_header.split(","):
+            if "=" in part:
+                k, _, v = part.partition("=")
+                sig_parts[k.strip()] = v.strip()
+
+        sig_timestamp = sig_parts.get("t", "")
+        sig_value = sig_parts.get("v1", "")
+
+        if not sig_timestamp or not sig_value:
+            print(f"[TopGG Vote] ABORT: Malformed signature header: {sig_header!r}")
+            return quart.jsonify({"error": "Malformed signature"}), 401
+
+        # Reject stale requests (>5 min) to prevent replay
+        try:
+            ts_int = int(sig_timestamp)
+            age = abs(_time.time() - ts_int)
+            if age > 300:
+                print(f"[TopGG Vote] ABORT: Stale request — timestamp {sig_timestamp} is {age:.0f}s old.")
+                return quart.jsonify({"error": "Stale"}), 401
+        except ValueError:
+            print(f"[TopGG Vote] ABORT: Invalid timestamp in signature: {sig_timestamp!r}")
+            return quart.jsonify({"error": "Bad timestamp"}), 401
+
+        # Compute HMAC-SHA256 over "{timestamp}.{raw_body}"
+        signed_payload = f"{sig_timestamp}.".encode("utf-8") + raw_body
+        expected_sig = hmac.new(
+            expected_secret.encode("utf-8"),
+            signed_payload,
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected_sig, sig_value):
+            print(f"[TopGG Vote] ABORT: Signature mismatch. Got v1={sig_value[:12]}…, expected={expected_sig[:12]}…")
+            return quart.jsonify({"error": "Bad signature"}), 401
+
+        print("[TopGG Vote] Signature verified ✓")
+
+        # Parse JSON
+        try:
+            import json as _json
+            payload = _json.loads(raw_body.decode("utf-8")) if raw_body else None
+        except Exception as e:
+            print(f"[TopGG Vote] ABORT: Could not parse JSON body: {e}")
+            return quart.jsonify({"error": "Bad request"}), 400
+
+        if not payload or not isinstance(payload, dict):
+            print("[TopGG Vote] ABORT: Empty or non-object payload.")
+            return quart.jsonify({"error": "Bad request"}), 400
+
+        print(f"[TopGG Vote] Received payload: {payload}")
+
+        # V1 payload structure:
+        #   { "type": "vote.create" | "webhook.test",
+        #     "data": {
+        #       "user": { "id": <topgg_id>, "platform_id": <discord_id>, "name": ..., "avatar_url": ... },
+        #       "project": { "id": ..., "platform_id": <bot_discord_id>, ... },
+        #       "query": "?guild=..."   # only on real votes
+        #     }
+        #   }
+        event_type = payload.get("type", "")
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+
+        is_test = event_type == "webhook.test"
+        if event_type and event_type not in ("vote.create", "webhook.test"):
+            print(f"[TopGG Vote] Ignoring unknown event '{event_type}'. Returning 200.")
+            return quart.jsonify({"ok": True}), 200
+
+        # Extract Discord user ID from the nested user object
+        voter_id: int = 0
+        user_obj = data.get("user")
+        if isinstance(user_obj, dict):
+            try:
+                voter_id = int(user_obj.get("platform_id") or user_obj.get("id") or 0)
+            except (ValueError, TypeError):
+                voter_id = 0
+        else:
+            # Legacy flat format fallback
+            try:
+                voter_id = int(data.get("user", 0) or 0)
+            except (ValueError, TypeError):
+                voter_id = 0
+
+        # Top.gg V1 webhooks don't carry the original query string anymore,
+        # so look up the guild in our pending-vote map (populated by /vote/<guild_id>).
+        guild_id: int = 0
+        raw_query: str = ""
+        _cleanup_pending_votes()
+        if voter_id and voter_id in pending_votes:
+            guild_id, _exp = pending_votes.pop(voter_id)
+            print(f"[TopGG Vote] Matched pending vote: user {voter_id} → guild {guild_id}")
+        else:
+            # Fallback: legacy `query` field (V0) — keep for safety
+            raw_query = data.get("query", "") or ""
+            if isinstance(raw_query, str) and raw_query:
+                try:
+                    from urllib.parse import parse_qs
+                    qs = raw_query.lstrip("?")
+                    parsed = parse_qs(qs)
+                    gid_vals = parsed.get("guild") or parsed.get("guild_id")
+                    if gid_vals:
+                        guild_id = int(gid_vals[0])
+                except Exception as e:
+                    print(f"[TopGG Vote] Failed to parse query string {raw_query!r}: {e}")
+
+        print(f"[TopGG Vote] Parsed voter_id={voter_id}, guild_id={guild_id} (from query={raw_query!r})")
+
+        if not voter_id:
+            print("[TopGG Vote] ABORT: Missing user id in payload.")
+            return quart.jsonify({"error": "Missing user"}), 400
+
+        avocloud_guild_id: int = auth.TopGG.avocloud_guild_id
+        vote_channel_id: int = auth.TopGG.vote_channel_id
+        print(f"[TopGG Vote] Config: avocloud_guild_id={avocloud_guild_id}, vote_channel_id={vote_channel_id}")
+
+        if not avocloud_guild_id or not vote_channel_id:
+            print("[TopGG Vote] ABORT: avocloud_guild_id or vote_channel_id is 0 — set them in config/auth.py")
+            return quart.jsonify({"ok": True, "warning": "channel/guild not configured"}), 200
+
+        avocloud_guild: discord.Guild | None = bot.get_guild(avocloud_guild_id)
+        if avocloud_guild is None:
+            print(f"[TopGG Vote] ABORT: bot is not in avocloud guild (id={avocloud_guild_id}). Make sure the bot is invited!")
+            return quart.jsonify({"ok": True, "warning": "bot not in avocloud guild"}), 200
+
+        print(f"[TopGG Vote] Found avocloud guild: {avocloud_guild.name} ({avocloud_guild.member_count} members)")
+
+        # Only announce if the voter is a member of avocloud.net
+        voter_member = avocloud_guild.get_member(voter_id)
+        if voter_member is None:
+            print(f"[TopGG Vote] Voter {voter_id} not in cache, fetching from API...")
+            try:
+                voter_member = await avocloud_guild.fetch_member(voter_id)
+            except discord.NotFound:
+                print(f"[TopGG Vote] ABORT: Voter {voter_id} is NOT a member of avocloud.net.")
+                return quart.jsonify({"ok": True, "warning": "voter not on avocloud"}), 200
+            except discord.Forbidden as e:
+                print(f"[TopGG Vote] ABORT: Forbidden while fetching member {voter_id}: {e}. Bot may lack 'Server Members Intent' or guild permissions.")
+                return quart.jsonify({"ok": True, "warning": "forbidden"}), 200
+            except Exception as e:
+                print(f"[TopGG Vote] ABORT: Unexpected error fetching member {voter_id}: {type(e).__name__}: {e}")
+                return quart.jsonify({"ok": True, "warning": "fetch error"}), 200
+
+        print(f"[TopGG Vote] Voter is on avocloud: {voter_member} ({voter_member.id})")
+
+        vote_channel = bot.get_channel(vote_channel_id)
+        if vote_channel is None:
+            print(f"[TopGG Vote] ABORT: Channel {vote_channel_id} not found in bot cache.")
+            return quart.jsonify({"ok": True, "warning": "channel not found"}), 200
+        if not isinstance(vote_channel, discord.TextChannel):
+            print(f"[TopGG Vote] ABORT: Channel {vote_channel_id} is not a TextChannel — got {type(vote_channel).__name__}")
+            return quart.jsonify({"ok": True, "warning": "channel wrong type"}), 200
+
+        print(f"[TopGG Vote] Found vote channel: #{vote_channel.name} in {vote_channel.guild.name}")
+
+        voted_guild: discord.Guild | None = bot.get_guild(guild_id) if guild_id else None
+        if voted_guild is None:
+            print(f"[TopGG Vote] No guild context (guild_id={guild_id}). Sending generic announcement instead of skipping.")
+
+        # Build the embed — fall back to a generic message if there's no guild context
+        title = "Top.gg Webhook Test" if is_test else "New Top.gg Vote!"
+        if voted_guild:
+            description = (
+                f"{voter_member.mention} voted for Baxi on server **{voted_guild.name}**"
+            )
+        else:
+            description = f"{voter_member.mention} voted for Baxi on Top.gg!"
+        if is_test:
+            description = f":test_tube: *Test webhook from Top.gg dashboard*\n\n{description}"
+
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=discord.Color.from_rgb(147, 51, 234),  # avocloud purple
+        )
+        if voted_guild and voted_guild.icon:
+            embed.set_thumbnail(url=voted_guild.icon.url)
+        if voted_guild:
+            embed.add_field(name="Server", value=voted_guild.name, inline=True)
+            embed.add_field(name="Members", value=str(voted_guild.member_count), inline=True)
+        embed.set_footer(text="top.gg • Baxi")
+
+        try:
+            await vote_channel.send(embed=embed)
+            print(f"[TopGG Vote] SUCCESS: Sent announcement to #{vote_channel.name}")
+        except discord.Forbidden as e:
+            print(f"[TopGG Vote] ABORT: Forbidden while sending message: {e}. Bot needs Send Messages + Embed Links in #{vote_channel.name}")
+        except Exception as e:
+            print(f"[TopGG Vote] ABORT: Unexpected error sending message: {type(e).__name__}: {e}")
+
+        return quart.jsonify({"ok": True}), 200
 
     app.config["BOT_READY"] = True
