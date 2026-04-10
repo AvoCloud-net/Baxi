@@ -305,6 +305,10 @@
                 <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
                 Tickets
             </a>
+            <a href="#donations" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Donations
+            </a>
 
             <span class="dash-nav-group-label">Automation</span>
             <a href="#welcomer" class="dash-nav-item">
@@ -1596,6 +1600,195 @@
                 </div>
             </section>
 
+            <!-- ── Donations ─────────────────────────────────────────── -->
+            <section class="pb-16 dash-section" id="donations">
+                <div class="section-label">DONATIONS</div>
+                <form id="donations-form">
+                    <div class="card">
+                        <header>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Donations
+                            </h2>
+                            <p class="text-muted">Let your community support your server via PayPal or Stripe. Roles are assigned automatically after a successful donation.</p>
+                        </header>
+                        <section>
+                            <!-- Enable toggle -->
+                            <div class="field">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="donations-enabled" role="switch" {% if data.donations and data.donations.enabled %}checked{% endif %}>
+                                    <span class="font-medium">Enable Donations</span>
+                                </label>
+                            </div>
+
+                            <!-- Payment provider -->
+                            <div class="field">
+                                <label class="label" for="donations-provider">Payment Provider</label>
+                                <select id="donations-provider" class="select" style="max-width:240px">
+                                    <option value="stripe" {% if not data.donations or data.donations.provider == "stripe" %}selected{% endif %}>Stripe</option>
+                                    <option value="paypal" {% if data.donations and data.donations.provider == "paypal" %}selected{% endif %}>PayPal</option>
+                                </select>
+                            </div>
+
+                            <!-- Stripe credentials -->
+                            <div id="donations-stripe-fields" class="flex flex-col gap-4 mt-4">
+                                <div class="field">
+                                    <label class="label" for="donations-stripe-secret">Stripe Secret Key</label>
+                                    <input type="password" id="donations-stripe-secret" class="input"
+                                           value=""
+                                           placeholder="{% if data.donations and data.donations.has_stripe_secret_key %}•••••••• (stored — leave blank to keep){% else %}sk_live_…{% endif %}"
+                                           autocomplete="new-password" spellcheck="false">
+                                    <p class="text-muted text-sm mt-1">Encrypted at rest. Found in your Stripe Dashboard under Developers → API Keys.</p>
+                                </div>
+                                <div class="field">
+                                    <label class="label" for="donations-stripe-webhook">Stripe Webhook Secret</label>
+                                    <input type="password" id="donations-stripe-webhook" class="input"
+                                           value=""
+                                           placeholder="{% if data.donations and data.donations.has_stripe_webhook_secret %}•••••••• (stored — leave blank to keep){% else %}whsec_…{% endif %}"
+                                           autocomplete="new-password" spellcheck="false">
+                                    <p class="text-muted text-sm mt-1">
+                                        Webhook URL für das Stripe Dashboard:<br>
+                                        <code style="font-size:0.78rem; opacity:0.8">https://baxi.avocloud.net/webhooks/stripe/{{ guild.id }}</code><br>
+                                        Event: <code style="font-size:0.78rem; opacity:0.8">checkout.session.completed</code>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- PayPal credentials -->
+                            <div id="donations-paypal-fields" class="flex flex-col gap-4 mt-4" style="display:none">
+                                <div class="field">
+                                    <label class="label" for="donations-paypal-client-id">PayPal Client ID</label>
+                                    <input type="password" id="donations-paypal-client-id" class="input"
+                                           value=""
+                                           placeholder="{% if data.donations and data.donations.has_paypal_client_id %}•••••••• (stored — leave blank to keep){% else %}PayPal Client ID{% endif %}"
+                                           autocomplete="new-password" spellcheck="false">
+                                </div>
+                                <div class="field">
+                                    <label class="label" for="donations-paypal-client-secret">PayPal Client Secret</label>
+                                    <input type="password" id="donations-paypal-client-secret" class="input"
+                                           value=""
+                                           placeholder="{% if data.donations and data.donations.has_paypal_client_secret %}•••••••• (stored — leave blank to keep){% else %}PayPal Client Secret{% endif %}"
+                                           autocomplete="new-password" spellcheck="false">
+                                    <p class="text-muted text-sm mt-1">
+                                        Encrypted at rest. Webhook URL für das PayPal Developer Dashboard:<br>
+                                        <code style="font-size:0.78rem; opacity:0.8">https://baxi.avocloud.net/webhooks/paypal/{{ guild.id }}</code><br>
+                                        Event: <code style="font-size:0.78rem; opacity:0.8">CHECKOUT.ORDER.APPROVED</code>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <hr style="opacity:0.15; margin: 1.25rem 0">
+
+                            <!-- Page texts -->
+                            <div class="field">
+                                <label class="label" for="donations-page-text">Donation Page Text</label>
+                                <textarea id="donations-page-text" class="textarea" rows="3"
+                                          placeholder="Tell your community why donations help and what they're used for.">{{ data.donations.page_text if data.donations else 'Support this server!' }}</textarea>
+                                <p class="text-muted text-sm mt-1">Shown below the server name on the public donation page.</p>
+                            </div>
+                            <div class="field">
+                                <label class="label" for="donations-success-text">Success Text</label>
+                                <textarea id="donations-success-text" class="textarea" rows="2"
+                                          placeholder="Thank you for your support!">{{ data.donations.success_text if data.donations else 'Thank you for your donation! Your role has been assigned.' }}</textarea>
+                                <p class="text-muted text-sm mt-1">Shown after a successful payment.</p>
+                            </div>
+
+                            <hr style="opacity:0.15; margin: 1.25rem 0">
+
+                            <!-- Announcement channel -->
+                            <div class="field">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="donations-log-enabled" role="switch" {% if data.donations and data.donations.log_enabled %}checked{% endif %}>
+                                    <span class="font-medium">Post donation announcement in a channel</span>
+                                </label>
+                            </div>
+                            <div class="field" id="donations-log-channel-field" style="display:none">
+                                <label class="label" for="donations-log-channel">Announcement Channel ID</label>
+                                <input type="text" id="donations-log-channel" class="input"
+                                       value="{{ data.donations.log_channel if data.donations else '' }}"
+                                       placeholder="Channel ID (e.g. 123456789012345678)" style="max-width:280px">
+                                <p class="text-muted text-sm mt-1">The bot will post an embed when someone donates.</p>
+                            </div>
+
+                            <hr style="opacity:0.15; margin: 1.25rem 0">
+
+                            <!-- Donation tiers -->
+                            <div class="field">
+                                <label class="label">Donation Tiers</label>
+                                <p class="text-muted text-sm mb-3">Each tier has a fixed price or a custom amount range, and a Discord role that is assigned automatically.</p>
+                                <div id="donations-tiers-list"></div>
+
+                                <!-- Add / Edit tier form -->
+                                <div class="card mt-3" style="border-style:dashed">
+                                    <header>
+                                        <h3 class="text-sm font-semibold" id="tier-form-title">Add Tier</h3>
+                                    </header>
+                                    <section>
+                                        <input type="hidden" id="tier-edit-index" value="">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="field">
+                                                <label class="label">Label</label>
+                                                <input type="text" id="tier-add-label" class="input" placeholder="e.g. Supporter">
+                                            </div>
+                                            <div class="field">
+                                                <label class="label">Type</label>
+                                                <select id="tier-add-type" class="select">
+                                                    <option value="fixed">Fixed Amount</option>
+                                                    <option value="range">Custom Range</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div id="tier-fixed-fields">
+                                            <div class="field">
+                                                <label class="label">Amount (EUR)</label>
+                                                <input type="number" id="tier-add-amount" class="input" min="0.50" step="0.01" placeholder="5.00" style="max-width:160px">
+                                            </div>
+                                        </div>
+                                        <div id="tier-range-fields" style="display:none">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="field">
+                                                    <label class="label">Min (EUR)</label>
+                                                    <input type="number" id="tier-add-min" class="input" min="0.50" step="0.01" placeholder="10.00">
+                                                </div>
+                                                <div class="field">
+                                                    <label class="label">Max (EUR, leer = unbegrenzt)</label>
+                                                    <input type="number" id="tier-add-max" class="input" min="0.51" step="0.01" placeholder="(optional)">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label class="label">Discord Role</label>
+                                            <select id="tier-add-role" class="select">
+                                                <option value="">-- Select role --</option>
+                                                {% for role_id, role_name in roles.items() %}
+                                                <option value="{{ role_id }}">{{ role_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <p class="text-muted text-sm mt-1">Diese Rolle wird nach erfolgreicher Zahlung zugewiesen.</p>
+                                        </div>
+                                        <div class="flex gap-2 mt-2">
+                                            <button type="button" class="btn-primary" onclick="donationTierAdd()">
+                                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                <span id="tier-btn-label">Add Tier</span>
+                                            </button>
+                                            <button type="button" id="tier-cancel-edit" class="btn-outline" style="display:none" onclick="donationTierCancelEdit()">Cancel</button>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </section>
+                        <footer style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; padding:1rem 1.25rem">
+                            <button type="submit" class="btn-primary" style="width:100%; justify-content:center">Save Donations</button>
+                            <a href="https://baxi.avocloud.net/donate/{{ guild.id }}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="width:100%; justify-content:center; text-decoration:none; display:flex; align-items:center; gap:0.375rem">
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                Preview Donation Page
+                            </a>
+                        </footer>
+                    </div>
+                </form>
+            </section>
+            <!-- ── /Donations ─────────────────────────────────────────── -->
+
             <!-- Welcomer Config -->
             <section class="pb-16 dash-section" id="welcomer">
                 <div class="section-label">WELCOMER</div>
@@ -2520,7 +2713,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket',
+                'minigames', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket', 'donations',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds'
             ];
@@ -4709,6 +4902,187 @@
                 text.classList.add('hidden');
             });
         });
+
+        // ── Donations JS ─────────────────────────────────────────────────
+        let _donationTiers = {{ (data.donations.tiers if data.donations else []) | tojson | safe }};
+        const _rolesMap = {};
+        {% for role_id, role_name in roles.items() %}_rolesMap["{{ role_id }}"] = {{ role_name | tojson | safe }};
+        {% endfor %}
+
+        function renderDonationTiers() {
+            const list = document.getElementById('donations-tiers-list');
+            if (!list) return;
+            list.innerHTML = '';
+            if (_donationTiers.length === 0) {
+                list.innerHTML = '<p class="text-muted text-sm">No tiers yet. Add one below.</p>';
+                return;
+            }
+            _donationTiers.forEach((tier, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3 p-3 rounded-lg border mb-2';
+                row.style.cssText = 'border-color: color-mix(in srgb, currentColor 15%, transparent);';
+                const desc = tier.type === 'fixed'
+                    ? `€${Number(tier.amount).toFixed(2)} fixed`
+                    : `€${tier.amount_min}${tier.amount_max ? ' – €' + tier.amount_max : '+'} range`;
+                const roleName = _rolesMap[tier.role_id] || tier.role_id;
+                row.innerHTML = `
+                    <div style="flex:1; min-width:0">
+                        <span class="font-semibold text-sm">${tier.label}</span>
+                        <span class="text-muted text-sm ml-2">${desc}</span>
+                        <span class="text-muted text-sm ml-2">→ <strong>${roleName}</strong></span>
+                    </div>`;
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn-outline';
+                editBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem;';
+                editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                editBtn.title = 'Edit tier';
+                editBtn.onclick = () => donationTierEdit(idx);
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn-outline';
+                removeBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem; color: var(--color-danger, #ef4444);';
+                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                removeBtn.title = 'Remove tier';
+                removeBtn.onclick = () => { _donationTiers.splice(idx, 1); renderDonationTiers(); };
+                row.appendChild(editBtn);
+                row.appendChild(removeBtn);
+                list.appendChild(row);
+            });
+        }
+        renderDonationTiers();
+
+        function donationTierEdit(idx) {
+            const tier = _donationTiers[idx];
+            document.getElementById('tier-edit-index').value = idx;
+            document.getElementById('tier-add-label').value = tier.label;
+            document.getElementById('tier-add-type').value = tier.type;
+            document.getElementById('tier-add-type').dispatchEvent(new Event('change'));
+            if (tier.type === 'fixed') {
+                document.getElementById('tier-add-amount').value = tier.amount !== null ? tier.amount : '';
+            } else {
+                document.getElementById('tier-add-min').value = tier.amount_min !== null ? tier.amount_min : '';
+                document.getElementById('tier-add-max').value = tier.amount_max !== null ? tier.amount_max : '';
+            }
+            document.getElementById('tier-add-role').value = tier.role_id;
+            document.getElementById('tier-form-title').textContent = 'Edit Tier';
+            document.getElementById('tier-btn-label').textContent = 'Save Changes';
+            document.getElementById('tier-cancel-edit').style.display = '';
+            document.getElementById('tier-add-label').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function donationTierCancelEdit() {
+            document.getElementById('tier-edit-index').value = '';
+            document.getElementById('tier-add-label').value = '';
+            document.getElementById('tier-add-amount').value = '';
+            document.getElementById('tier-add-min').value = '';
+            document.getElementById('tier-add-max').value = '';
+            document.getElementById('tier-add-role').value = '';
+            document.getElementById('tier-form-title').textContent = 'Add Tier';
+            document.getElementById('tier-btn-label').textContent = 'Add Tier';
+            document.getElementById('tier-cancel-edit').style.display = 'none';
+        }
+
+        // Provider toggle
+        (function initDonationsUI() {
+            const providerSel = document.getElementById('donations-provider');
+            const stripeFields = document.getElementById('donations-stripe-fields');
+            const paypalFields = document.getElementById('donations-paypal-fields');
+            const logEnabled = document.getElementById('donations-log-enabled');
+            const logField = document.getElementById('donations-log-channel-field');
+            const tierType = document.getElementById('tier-add-type');
+            const fixedFields = document.getElementById('tier-fixed-fields');
+            const rangeFields = document.getElementById('tier-range-fields');
+
+            function updateProvider() {
+                const isStripe = providerSel.value === 'stripe';
+                stripeFields.style.display = isStripe ? '' : 'none';
+                paypalFields.style.display = isStripe ? 'none' : '';
+            }
+            updateProvider();
+            providerSel.addEventListener('change', updateProvider);
+
+            logField.style.display = logEnabled.checked ? '' : 'none';
+            logEnabled.addEventListener('change', () => {
+                logField.style.display = logEnabled.checked ? '' : 'none';
+            });
+
+            function updateTierType() {
+                const isFixed = tierType.value === 'fixed';
+                fixedFields.style.display = isFixed ? '' : 'none';
+                rangeFields.style.display = isFixed ? 'none' : '';
+            }
+            updateTierType();
+            tierType.addEventListener('change', updateTierType);
+        })();
+
+        function donationTierAdd() {
+            const label = document.getElementById('tier-add-label').value.trim();
+            const type = document.getElementById('tier-add-type').value;
+            const roleId = document.getElementById('tier-add-role').value;
+            const editIdxRaw = document.getElementById('tier-edit-index').value;
+            const isEdit = editIdxRaw !== '';
+
+            if (!label) { showSaveToast(false, 'Tier label is required.'); return; }
+            if (!roleId) { showSaveToast(false, 'Please select a role.'); return; }
+
+            const existingId = isEdit ? _donationTiers[parseInt(editIdxRaw)].id : 'tier_' + Date.now();
+            const tier = { id: existingId, label, type, amount: null, amount_min: null, amount_max: null, role_id: roleId };
+
+            if (type === 'fixed') {
+                const amount = parseFloat(document.getElementById('tier-add-amount').value);
+                if (isNaN(amount) || amount < 0.50) { showSaveToast(false, 'Fixed amount must be at least €0.50.'); return; }
+                tier.amount = amount;
+            } else {
+                const min = parseFloat(document.getElementById('tier-add-min').value);
+                if (isNaN(min) || min < 0.50) { showSaveToast(false, 'Min amount must be at least €0.50.'); return; }
+                const maxRaw = document.getElementById('tier-add-max').value;
+                const max = maxRaw ? parseFloat(maxRaw) : null;
+                if (max !== null && max <= min) { showSaveToast(false, 'Max must be greater than min.'); return; }
+                tier.amount_min = min;
+                tier.amount_max = max;
+            }
+
+            if (isEdit) {
+                _donationTiers[parseInt(editIdxRaw)] = tier;
+            } else {
+                _donationTiers.push(tier);
+            }
+            renderDonationTiers();
+            donationTierCancelEdit();
+        }
+
+        document.getElementById('donations-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = { donations: {
+                enabled: document.getElementById('donations-enabled').checked,
+                provider: document.getElementById('donations-provider').value,
+                stripe_secret_key: document.getElementById('donations-stripe-secret').value,
+                stripe_webhook_secret: document.getElementById('donations-stripe-webhook').value,
+                paypal_client_id: document.getElementById('donations-paypal-client-id').value,
+                paypal_client_secret: document.getElementById('donations-paypal-client-secret').value,
+                page_text: document.getElementById('donations-page-text').value,
+                success_text: document.getElementById('donations-success-text').value,
+                log_enabled: document.getElementById('donations-log-enabled').checked,
+                log_channel: document.getElementById('donations-log-channel').value.trim(),
+                tiers: _donationTiers,
+            }};
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=donations&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+        // ── /Donations JS ────────────────────────────────────────────────
     </script>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>

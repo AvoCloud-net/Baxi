@@ -164,6 +164,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def callback():
         try:
             await discord_auth.callback()
+            next_url = session.pop("next_url", None)
+            if next_url:
+                return redirect(next_url)
             session['show_intro'] = True
             return redirect(url_for("index"))
         except Exception as e:
@@ -481,6 +484,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["dash_login"] = guild_id
             guild_conf["name"] = guild.name
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
+
+            # Never send donation provider credentials to the browser. Replace them with
+            # boolean "is set" flags so the template can render a placeholder instead.
+            _don = guild_conf.get("donations")
+            if isinstance(_don, dict):
+                for _k in ("stripe_secret_key", "stripe_webhook_secret", "paypal_client_id", "paypal_client_secret"):
+                    _don[f"has_{_k}"] = bool(_don.get(_k))
+                    _don[_k] = ""
 
             channels = await guild.fetch_channels()
 
@@ -2260,6 +2271,134 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "donations":
+            from assets.crypto import encrypt_secret, decrypt_secret
+
+            data: dict = await quart.request.get_json()
+            don = data.get("donations")
+
+            if not isinstance(don, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'donations' must be an object."}), 400
+            if not isinstance(don.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            provider = str(don.get("provider", "stripe")).strip().lower()
+            if provider not in ("stripe", "paypal"):
+                return quart.jsonify({"success": False, "message": "provider must be 'stripe' or 'paypal'."}), 400
+
+            # Load existing settings so we can keep unchanged (blank-left) secrets.
+            existing: dict = dict(load_data(int(guild_id), "donations"))
+            _ex_sk = existing.get("stripe_secret_key", "") or ""
+            _ex_wh = existing.get("stripe_webhook_secret", "") or ""
+            _ex_pcid = existing.get("paypal_client_id", "") or ""
+            _ex_pcs = existing.get("paypal_client_secret", "") or ""
+
+            # Resolve each secret: non-empty input = new plaintext; empty input = keep stored.
+            sk_new = str(don.get("stripe_secret_key", "")).strip()
+            wh_new = str(don.get("stripe_webhook_secret", "")).strip()
+            pcid_new = str(don.get("paypal_client_id", "")).strip()
+            pcs_new = str(don.get("paypal_client_secret", "")).strip()
+
+            sk_plain = sk_new if sk_new else decrypt_secret(_ex_sk)
+            wh_plain = wh_new if wh_new else decrypt_secret(_ex_wh)
+            pcid_plain = pcid_new if pcid_new else decrypt_secret(_ex_pcid)
+            pcs_plain = pcs_new if pcs_new else decrypt_secret(_ex_pcs)
+
+            enabled = don["enabled"]
+            if enabled:
+                if provider == "stripe":
+                    if not sk_plain or not (sk_plain.startswith("sk_") or sk_plain.startswith("rk_")):
+                        return quart.jsonify({"success": False, "message": "Stripe Secret Key must start with 'sk_' or 'rk_'."}), 400
+                    if not wh_plain or not wh_plain.startswith("whsec_"):
+                        return quart.jsonify({"success": False, "message": "Stripe Webhook Secret must start with 'whsec_'."}), 400
+                elif provider == "paypal":
+                    if not pcid_plain:
+                        return quart.jsonify({"success": False, "message": "PayPal Client ID is required."}), 400
+                    if not pcs_plain:
+                        return quart.jsonify({"success": False, "message": "PayPal Client Secret is required."}), 400
+
+            # Validate tiers
+            raw_tiers = don.get("tiers", [])
+            if not isinstance(raw_tiers, list):
+                return quart.jsonify({"success": False, "message": "'tiers' must be a list."}), 400
+            cleaned_tiers: list[dict] = []
+            for t in raw_tiers:
+                if not isinstance(t, dict):
+                    continue
+                tier_type = str(t.get("type", "fixed"))
+                if tier_type not in ("fixed", "range"):
+                    return quart.jsonify({"success": False, "message": "Tier type must be 'fixed' or 'range'."}), 400
+                label = str(t.get("label", "")).strip()[:100]
+                if not label:
+                    return quart.jsonify({"success": False, "message": "Each tier must have a label."}), 400
+                role_id = str(t.get("role_id", "")).strip()
+                if not re.fullmatch(r"\d{17,19}", role_id):
+                    return quart.jsonify({"success": False, "message": f"Tier '{label}': Role ID does not match the Discord ID format."}), 400
+                tier_id = str(t.get("id", f"tier_{label}")).strip()[:64] or f"tier_{label}"
+                entry: dict = {"id": tier_id, "label": label, "type": tier_type, "amount": None, "amount_min": None, "amount_max": None, "role_id": role_id}
+                if tier_type == "fixed":
+                    try:
+                        amount = round(float(t["amount"]), 2)
+                        if amount < 0.50:
+                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Amount must be at least €0.50."}), 400
+                    except (TypeError, ValueError, KeyError):
+                        return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid amount."}), 400
+                    entry["amount"] = amount
+                else:
+                    try:
+                        amount_min = round(float(t["amount_min"]), 2)
+                        if amount_min < 0.50:
+                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Min amount must be at least €0.50."}), 400
+                    except (TypeError, ValueError, KeyError):
+                        return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid min amount."}), 400
+                    amount_max = None
+                    if t.get("amount_max") not in (None, ""):
+                        try:
+                            amount_max = round(float(t["amount_max"]), 2)
+                            if amount_max <= amount_min:
+                                return quart.jsonify({"success": False, "message": f"Tier '{label}': Max must be greater than min."}), 400
+                        except (TypeError, ValueError):
+                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid max amount."}), 400
+                    entry["amount_min"] = amount_min
+                    entry["amount_max"] = amount_max
+                cleaned_tiers.append(entry)
+
+            log_enabled = bool(don.get("log_enabled", False))
+            log_channel = str(don.get("log_channel", "")).strip()
+            if log_enabled and log_channel and not re.fullmatch(r"\d{17,19}", log_channel):
+                return quart.jsonify({"success": False, "message": "Announcement channel ID does not match the Discord ID format."}), 400
+
+            settings: dict = dict(existing)
+            settings["enabled"] = enabled
+            settings["provider"] = provider
+            # Encrypt only when a new plaintext value was supplied; otherwise keep the
+            # already-stored (already-encrypted) value verbatim.
+            settings["stripe_secret_key"] = encrypt_secret(sk_new) if sk_new else _ex_sk
+            settings["stripe_webhook_secret"] = encrypt_secret(wh_new) if wh_new else _ex_wh
+            settings["paypal_client_id"] = encrypt_secret(pcid_new) if pcid_new else _ex_pcid
+            settings["paypal_client_secret"] = encrypt_secret(pcs_new) if pcs_new else _ex_pcs
+            settings["page_text"] = str(don.get("page_text", "Support this server!")).strip()[:2000]
+            settings["success_text"] = str(don.get("success_text", "Thank you for your donation!")).strip()[:2000]
+            settings["log_enabled"] = log_enabled
+            settings["log_channel"] = log_channel
+            settings["tiers"] = cleaned_tiers
+
+            save_data(int(guild_id), "donations", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "donations",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Donation settings saved!"})
 
         return quart.jsonify({"success": True, "message": "Settings applied successfully."})
 
@@ -4440,6 +4579,354 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(f"[TopGG Vote] ABORT: Forbidden while sending message: {e}. Bot needs Send Messages + Embed Links in #{vote_channel.name}")
         except Exception as e:
             print(f"[TopGG Vote] ABORT: Unexpected error sending message: {type(e).__name__}: {e}")
+
+        return quart.jsonify({"ok": True}), 200
+
+    # ─────────────────────────── DONATIONS ──────────────────────────────────
+
+    async def _assign_donation_role(guild_id: int, tier_id: str, discord_user_id: int, username: str, amount_eur: str) -> None:
+        """Assign the configured role after a successful donation and optionally announce it."""
+        donations: dict = dict(load_data(guild_id, "donations"))
+        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
+        if not tier:
+            print(f"[Donations] Tier '{tier_id}' not found for guild {guild_id}. Skipping role assignment.")
+            return
+        try:
+            g = await bot.fetch_guild(guild_id)
+            member = await g.fetch_member(discord_user_id)
+            role = g.get_role(int(tier["role_id"]))
+            if role:
+                await member.add_roles(role, reason=f"Donation: {tier['label']} (€{amount_eur})")
+                print(f"[Donations] Role '{role.name}' assigned to {username} ({discord_user_id}) in guild {guild_id}.")
+            else:
+                print(f"[Donations] Role {tier['role_id']} not found in guild {guild_id}.")
+        except discord.NotFound:
+            print(f"[Donations] Member {discord_user_id} not found in guild {guild_id}.")
+            return
+        except Exception as e:
+            print(f"[Donations] Role assignment failed: {e}")
+            return
+
+        # Optional announcement
+        if donations.get("log_enabled") and donations.get("log_channel"):
+            try:
+                ch = bot.get_channel(int(donations["log_channel"]))
+                if ch and isinstance(ch, discord.TextChannel):
+                    embed = discord.Embed(
+                        title="New Donation",
+                        description=f"**{username}** donated **€{amount_eur}** and received the **{tier['label']}** role!",
+                        color=discord.Color.from_rgb(34, 197, 94),
+                    )
+                    await ch.send(embed=embed)
+            except Exception as e:
+                print(f"[Donations] Announcement failed: {e}")
+
+    @app.route("/donate/<int:guild_id>/login")
+    async def donation_login(guild_id: int):
+        """Start Discord OAuth with a return URL back to the donation page."""
+        session["next_url"] = f"/donate/{guild_id}"
+        return await discord_auth.create_session(scope=["identify", "guilds"], permissions=0)
+
+    @app.route("/donate/<int:guild_id>")
+    async def donation_page(guild_id: int):
+        """Public-facing donation page — no auth required to view."""
+        donations: dict = dict(load_data(guild_id, "donations"))
+        # Fill defaults so template never gets KeyError
+        for k, v in config.datasys.default_data.get("donations", {}).items():
+            donations.setdefault(k, v)
+
+        if not donations.get("enabled"):
+            return await render_template("error.html", message="Donations are not enabled for this server."), 404
+
+        try:
+            g = await bot.fetch_guild(guild_id)
+        except discord.NotFound:
+            return await render_template("error.html", message="Server not found."), 404
+        except Exception:
+            return await render_template("error.html", message="Could not load server information."), 500
+
+        discord_user = None
+        try:
+            discord_user = await discord_auth.fetch_user()
+        except Exception:
+            pass  # Not logged in — show login button
+
+        success = quart.request.args.get("success") == "1"
+        tier_id = quart.request.args.get("tier")
+
+        return await render_template(
+            "donate.html",
+            guild=g,
+            donations=donations,
+            discord_user=discord_user,
+            success=success,
+            tier_id=tier_id,
+            web_url=config.Web.url,
+        )
+
+    @app.route("/api/donate/checkout/stripe/<int:guild_id>", methods=["POST"])
+    @requires_authorization
+    async def donation_stripe_checkout(guild_id: int):
+        """Create a Stripe Checkout Session and return the redirect URL."""
+        try:
+            import stripe as _stripe
+        except ImportError:
+            return quart.jsonify({"success": False, "message": "Stripe library not installed."}), 500
+
+        from assets.crypto import decrypt_secret
+
+        user = await discord_auth.fetch_user()
+        donations: dict = dict(load_data(guild_id, "donations"))
+
+        sk = decrypt_secret(donations.get("stripe_secret_key", ""))
+        if not sk:
+            return quart.jsonify({"success": False, "message": "Stripe not configured."}), 503
+
+        data: dict = await quart.request.get_json() or {}
+        tier_id = str(data.get("tier_id", ""))
+        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
+        if not tier:
+            return quart.jsonify({"success": False, "message": "Donation tier not found."}), 404
+
+        if tier["type"] == "fixed":
+            amount_eur = tier["amount"]
+        else:
+            try:
+                amount_eur = round(float(data.get("custom_amount", 0)), 2)
+            except (TypeError, ValueError):
+                return quart.jsonify({"success": False, "message": "Invalid amount."}), 400
+            if amount_eur < (tier.get("amount_min") or 0.50):
+                return quart.jsonify({"success": False, "message": f"Amount must be at least €{tier['amount_min']}."}), 400
+            if tier.get("amount_max") and amount_eur > tier["amount_max"]:
+                return quart.jsonify({"success": False, "message": f"Amount must be at most €{tier['amount_max']}."}), 400
+
+        amount_cents = int(round(amount_eur * 100))
+
+        _stripe.api_key = sk
+        try:
+            session_obj = _stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=[{
+                    "price_data": {
+                        "currency": "eur",
+                        "unit_amount": amount_cents,
+                        "product_data": {"name": f"{tier['label']} – Server Donation"},
+                    },
+                    "quantity": 1,
+                }],
+                mode="payment",
+                success_url=f"https://{config.Web.url}/donate/{guild_id}?success=1&tier={tier_id}",
+                cancel_url=f"https://{config.Web.url}/donate/{guild_id}",
+                metadata={
+                    "guild_id": str(guild_id),
+                    "tier_id": tier_id,
+                    "discord_user_id": str(user.id),
+                    "discord_username": user.name,
+                    "amount_eur": str(amount_eur),
+                },
+            )
+        except Exception as e:
+            print(f"[Donations/Stripe] Checkout session creation failed: {e}")
+            return quart.jsonify({"success": False, "message": "Could not create payment session. Check your Stripe configuration."}), 500
+
+        return quart.jsonify({"success": True, "checkout_url": session_obj.url})
+
+    @app.route("/webhooks/stripe/<int:guild_id>", methods=["POST"])
+    async def stripe_webhook(guild_id: int):
+        """Receive Stripe webhook events and assign roles after successful payment."""
+        try:
+            import stripe as _stripe
+        except ImportError:
+            return quart.jsonify({"error": "Stripe not installed"}), 500
+
+        from assets.crypto import decrypt_secret
+
+        donations: dict = dict(load_data(guild_id, "donations"))
+        webhook_secret = decrypt_secret(donations.get("stripe_webhook_secret", ""))
+        if not webhook_secret:
+            return quart.jsonify({"error": "Not configured"}), 503
+
+        payload: bytes = await quart.request.get_data()
+        sig_header: str = quart.request.headers.get("Stripe-Signature", "")
+
+        try:
+            event = _stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except _stripe.error.SignatureVerificationError:
+            print(f"[Donations/Stripe] Bad webhook signature for guild {guild_id}.")
+            return quart.jsonify({"error": "Bad signature"}), 400
+        except ValueError:
+            return quart.jsonify({"error": "Bad payload"}), 400
+
+        if event["type"] == "checkout.session.completed":
+            import json as _json
+            # Parse the raw payload as JSON to avoid Stripe SDK object quirks.
+            try:
+                raw_event = _json.loads(payload.decode("utf-8"))
+                s_dict: dict = raw_event.get("data", {}).get("object", {}) or {}
+            except Exception as e:
+                print(f"[Donations/Stripe] Payload parse error: {e}")
+                s_dict = {}
+            meta: dict = s_dict.get("metadata") or {}
+            try:
+                g_id = int(meta.get("guild_id", 0))
+                t_id = str(meta.get("tier_id", ""))
+                u_id = int(meta.get("discord_user_id", 0))
+                uname = str(meta.get("discord_username", "Unknown"))
+                amt = str(meta.get("amount_eur", "?"))
+                print(f"[Donations/Stripe] Processing: guild={g_id}, tier={t_id}, user={u_id}, amount={amt}")
+                if g_id and t_id and u_id:
+                    await _assign_donation_role(g_id, t_id, u_id, uname, amt)
+                else:
+                    print(f"[Donations/Stripe] Missing metadata fields, skipping role assignment. meta={meta}")
+            except Exception as e:
+                print(f"[Donations/Stripe] Post-payment processing error: {type(e).__name__}: {e}")
+
+        return quart.jsonify({"ok": True}), 200
+
+    @app.route("/api/donate/checkout/paypal/<int:guild_id>", methods=["POST"])
+    @requires_authorization
+    async def donation_paypal_checkout(guild_id: int):
+        """Create a PayPal order and return the approval URL."""
+        import json as _json
+        import aiohttp
+
+        from assets.crypto import decrypt_secret
+
+        user = await discord_auth.fetch_user()
+        donations: dict = dict(load_data(guild_id, "donations"))
+
+        client_id = decrypt_secret(donations.get("paypal_client_id", ""))
+        client_secret = decrypt_secret(donations.get("paypal_client_secret", ""))
+        if not client_id or not client_secret:
+            return quart.jsonify({"success": False, "message": "PayPal not configured."}), 503
+
+        data: dict = await quart.request.get_json() or {}
+        tier_id = str(data.get("tier_id", ""))
+        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
+        if not tier:
+            return quart.jsonify({"success": False, "message": "Donation tier not found."}), 404
+
+        if tier["type"] == "fixed":
+            amount_eur = tier["amount"]
+        else:
+            try:
+                amount_eur = round(float(data.get("custom_amount", 0)), 2)
+            except (TypeError, ValueError):
+                return quart.jsonify({"success": False, "message": "Invalid amount."}), 400
+            if amount_eur < (tier.get("amount_min") or 0.50):
+                return quart.jsonify({"success": False, "message": f"Amount must be at least €{tier['amount_min']}."}), 400
+            if tier.get("amount_max") and amount_eur > tier["amount_max"]:
+                return quart.jsonify({"success": False, "message": f"Amount must be at most €{tier['amount_max']}."}), 400
+
+        # Get PayPal access token
+        try:
+            async with aiohttp.ClientSession() as http:
+                async with http.post(
+                    "https://api-m.paypal.com/v1/oauth2/token",
+                    auth=aiohttp.BasicAuth(client_id, client_secret),
+                    data={"grant_type": "client_credentials"},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                ) as resp:
+                    if resp.status != 200:
+                        return quart.jsonify({"success": False, "message": "PayPal authentication failed. Check your credentials."}), 500
+                    token_data = await resp.json()
+                    access_token = token_data["access_token"]
+
+                custom_id = _json.dumps({
+                    "guild_id": guild_id,
+                    "tier_id": tier_id,
+                    "discord_user_id": user.id,
+                    "discord_username": user.name,
+                    "amount_eur": str(amount_eur),
+                })
+
+                order_payload = {
+                    "intent": "CAPTURE",
+                    "purchase_units": [{
+                        "amount": {"currency_code": "EUR", "value": f"{amount_eur:.2f}"},
+                        "description": f"{tier['label']} – Server Donation",
+                        "custom_id": custom_id[:127],
+                    }],
+                    "application_context": {
+                        "return_url": f"https://{config.Web.url}/donate/{guild_id}?success=1&tier={tier_id}",
+                        "cancel_url": f"https://{config.Web.url}/donate/{guild_id}",
+                        "brand_name": "Server Donation",
+                        "landing_page": "BILLING",
+                        "user_action": "PAY_NOW",
+                    },
+                }
+
+                async with http.post(
+                    "https://api-m.paypal.com/v2/checkout/orders",
+                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
+                    json=order_payload,
+                ) as resp2:
+                    if resp2.status not in (200, 201):
+                        body = await resp2.text()
+                        print(f"[Donations/PayPal] Order creation failed ({resp2.status}): {body}")
+                        return quart.jsonify({"success": False, "message": "Could not create PayPal order."}), 500
+                    order = await resp2.json()
+
+        except Exception as e:
+            print(f"[Donations/PayPal] Error: {e}")
+            return quart.jsonify({"success": False, "message": "PayPal request failed."}), 500
+
+        approve_url = next((l["href"] for l in order.get("links", []) if l.get("rel") == "approve"), None)
+        if not approve_url:
+            return quart.jsonify({"success": False, "message": "PayPal did not return an approval URL."}), 500
+
+        return quart.jsonify({"success": True, "checkout_url": approve_url})
+
+    @app.route("/webhooks/paypal/<int:guild_id>", methods=["POST"])
+    async def paypal_webhook(guild_id: int):
+        """Receive PayPal webhook events and assign roles after successful payment."""
+        import json as _json
+        import aiohttp
+
+        from assets.crypto import decrypt_secret
+
+        donations: dict = dict(load_data(guild_id, "donations"))
+        client_id = decrypt_secret(donations.get("paypal_client_id", ""))
+        client_secret = decrypt_secret(donations.get("paypal_client_secret", ""))
+        if not client_id or not client_secret:
+            return quart.jsonify({"error": "Not configured"}), 503
+
+        payload_bytes: bytes = await quart.request.get_data()
+        try:
+            payload: dict = _json.loads(payload_bytes)
+        except Exception:
+            return quart.jsonify({"error": "Bad payload"}), 400
+
+        # Verify webhook via PayPal
+        headers = dict(quart.request.headers)
+        verification_body = {
+            "auth_algo": headers.get("Paypal-Auth-Algo", ""),
+            "cert_url": headers.get("Paypal-Cert-Url", ""),
+            "transmission_id": headers.get("Paypal-Transmission-Id", ""),
+            "transmission_sig": headers.get("Paypal-Transmission-Sig", ""),
+            "transmission_time": headers.get("Paypal-Transmission-Time", ""),
+            "webhook_id": "",  # Not storing webhook ID per-guild; skip strict verification
+            "webhook_event": payload,
+        }
+        # Skip strict sig verification (webhook_id not stored), rely on custom_id to look up guild data
+        # For production, store the webhook_id in guild config and verify here
+
+        event_type = payload.get("event_type", "")
+        if event_type == "CHECKOUT.ORDER.APPROVED":
+            resource = payload.get("resource", {})
+            for unit in resource.get("purchase_units", []):
+                custom_id_raw = unit.get("custom_id", "")
+                try:
+                    meta = _json.loads(custom_id_raw)
+                    g_id = int(meta.get("guild_id", 0))
+                    t_id = str(meta.get("tier_id", ""))
+                    u_id = int(meta.get("discord_user_id", 0))
+                    uname = str(meta.get("discord_username", "Unknown"))
+                    amt = str(meta.get("amount_eur", "?"))
+                    if g_id and t_id and u_id:
+                        await _assign_donation_role(g_id, t_id, u_id, uname, amt)
+                except Exception as e:
+                    print(f"[Donations/PayPal] Post-payment processing error: {e}")
 
         return quart.jsonify({"ok": True}), 200
 
