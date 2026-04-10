@@ -17,11 +17,6 @@ def _is_milestone(n: int) -> bool:
 
 
 async def check_counting(message: discord.Message, bot: commands.AutoShardedBot) -> bool:
-    """
-    Handle the counting game for the given message.
-    Returns True if the message was in the counting channel (consumed),
-    False otherwise.
-    """
     if message.guild is None or message.author.bot:
         return False
 
@@ -42,7 +37,6 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
 
     content = message.content.strip()
 
-    # Non-numeric messages in the counting channel → ❌ reaction, no count change
     if not content.isdigit() or int(content) == 0:
         if data.get("react_wrong", True):
             try:
@@ -55,8 +49,6 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
     current_count = int(data.get("current_count", 0))
     expected = current_count + 1
 
-    # No-double-count rule: same user cannot count twice in a row
-    # → reject with reaction + embed, do NOT reset the counter
     if data.get("no_double_count", True):
         last_user_id = int(data.get("last_user_id", 0))
         if last_user_id != 0 and last_user_id == message.author.id:
@@ -77,15 +69,12 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
             return True
 
     if user_number == expected:
-        # Correct number
-        data["current_count"] = expected
-        data["last_user_id"] = message.author.id
-
         old_hs = int(data.get("high_score", 0))
-        new_hs = expected > old_hs
-        if new_hs:
+        if expected > old_hs:
             data["high_score"] = expected
 
+        data["current_count"] = expected
+        data["last_user_id"] = message.author.id
         datasys.save_data(message.guild.id, "counting", data)
 
         if data.get("react_correct", True):
@@ -94,19 +83,6 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
-        # Highscore announcement
-        if new_hs:
-            hs_embed = discord.Embed(
-                description=t["new_highscore"].format(
-                    user=message.author.display_name,
-                    count=expected,
-                ),
-                color=cfg.Discord.success_color,
-            )
-            hs_embed.set_footer(text=t["footer"])
-            await message.channel.send(embed=hs_embed)
-
-        # Milestone announcement (hardcoded: 10, 50, 100, 200, 300, ...)
         if _is_milestone(expected):
             ms_embed = discord.Embed(
                 description=t["milestone"].format(count=expected),
@@ -115,15 +91,19 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
             ms_embed.set_footer(text=t["footer"])
             await message.channel.send(embed=ms_embed)
     else:
-        # Wrong number → reset
+        old_hs = int(data.get("high_score", 0))
+        was_record = current_count > 0 and current_count >= old_hs
+
         if data.get("react_wrong", True):
             try:
                 await message.add_reaction("❌")
             except (discord.Forbidden, discord.HTTPException):
                 pass
+
         data["current_count"] = 0
         data["last_user_id"] = 0
         datasys.save_data(message.guild.id, "counting", data)
+
         embed = discord.Embed(
             description=str(t["wrong_number"]).format(
                 user=message.author.display_name,
@@ -133,6 +113,12 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
             ),
             color=cfg.Discord.danger_color,
         )
+        if was_record:
+            embed.add_field(
+                name="🏆 Neuer Highscore!",
+                value=f"**{current_count}** – gut gemacht!",
+                inline=False,
+            )
         embed.set_footer(text=t["footer"])
         await message.channel.send(embed=embed)
 

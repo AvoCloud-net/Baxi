@@ -210,5 +210,18 @@ class datasys:
         "auto_forward_threshold": 10,
     },
     "suggestion_votes": {},
+    "donations": {
+        "enabled": False,
+        "provider": "stripe",
+        "stripe_secret_key": "",
+        "stripe_webhook_secret": "",
+        "paypal_client_id": "",
+        "paypal_client_secret": "",
+        "page_text": "Support this server!",
+        "success_text": "Thank you for your donation! Your role has been assigned.",
+        "log_enabled": False,
+        "log_channel": "",
+        "tiers": [],
+    },
 }
 
