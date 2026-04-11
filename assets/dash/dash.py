@@ -2674,7 +2674,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     return quart.jsonify({"error": "channel_id is required for this system"}), 400
 
                 channel = await guild.fetch_channel(channel_id)
-                permissions = channel.permissions_for(bot_member)
+                permissions = bot_member.guild_permissions
 
                 required_perms = set()
                 if system == "globalchat":
