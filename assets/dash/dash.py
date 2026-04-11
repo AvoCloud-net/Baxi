@@ -2594,11 +2594,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"error": "Missing required fields"}), 400
 
         try:
-            guild = await bot.fetch_guild(guild_id)
+            # Prefer cached guild so that channel.guild and bot_member.guild
+            # reference the same object, avoiding permission calculation
+            # mismatches when fetch_guild() creates a guild object outside
+            # the bot's internal state cache.
+            guild = bot.get_guild(guild_id)
+            if guild is None:
+                guild = await bot.fetch_guild(guild_id)
             assert bot.user is not None, "Bot user unknown"
             bot_member = await guild.fetch_member(bot.user.id)
-            if not bot_member:
-                bot_member = await guild.fetch_member(bot.user.id)
 
             if system == "bot_general":
                 permissions = bot_member.guild_permissions
