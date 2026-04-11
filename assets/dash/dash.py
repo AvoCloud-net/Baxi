@@ -2713,12 +2713,21 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "embed_links",
                     }
                 elif system == "welcomer":
+                    welcomer_cfg = dict(datasys.load_data(guild_id, "welcomer"))
                     required_perms = {
                         "view_channel",
                         "read_message_history",
                         "send_messages",
                         "embed_links",
-                        "attach_files",
+                    }
+                    if welcomer_cfg.get("image_mode") == "generate":
+                        required_perms.add("attach_files")
+                elif system == "welcomer_leave":
+                    required_perms = {
+                        "view_channel",
+                        "read_message_history",
+                        "send_messages",
+                        "embed_links",
                     }
                 elif system == "category":
                     required_perms = {

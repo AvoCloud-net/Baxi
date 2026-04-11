@@ -1842,7 +1842,7 @@
 
                             <div class="grid gap-2">
                                 <label for="welcomer-image-mode">Welcome image:</label>
-                                <select id="welcomer-image-mode" class="select w-full" onchange="document.getElementById('welcomer-image-upload-section').classList.toggle('hidden', this.value !== 'generate')">
+                                <select id="welcomer-image-mode" class="select w-full" onchange="document.getElementById('welcomer-image-upload-section').classList.toggle('hidden', this.value !== 'generate'); checkChannelPermissions('welcomer', document.getElementById('welcomer-channel').value, 'feedback-welcomer-channel');">
                                     <option value="none">No image</option>
                                     <option value="generate">Auto-generate welcome card</option>
                                 </select>
@@ -4760,7 +4760,7 @@
             if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
             if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
             if (wc) checkChannelPermissions('welcomer', wc, 'feedback-welcomer-channel');
-            if (wlc) checkChannelPermissions('welcomer', wlc, 'feedback-welcomer-leave-channel');
+            if (wlc) checkChannelPermissions('welcomer_leave', wlc, 'feedback-welcomer-leave-channel');
             const vr = document.getElementById('verify-role')?.value;
             if (vr) checkRolePosition(vr, 'verify-role-warning');
         }
@@ -4777,7 +4777,7 @@
             document.getElementById('welcomer-channel')?.addEventListener('change', e =>
                 checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-channel'));
             document.getElementById('welcomer-leave-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-leave-channel'));
+                checkChannelPermissions('welcomer_leave', e.target.value, 'feedback-welcomer-leave-channel'));
         });
 
         function checkBotRolePosition() {
