@@ -29,7 +29,7 @@ class BanConfirmView(ui.View):
         self.duration = duration
 
     @ui.button(
-        label="✅", style=discord.ButtonStyle.danger, custom_id="ban_admin_confirm"
+        style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="ban_admin_confirm"
     )
     async def confirm_ban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -149,7 +149,7 @@ class BanConfirmView(ui.View):
                 ephemeral=True,
             )
 
-    @ui.button(label="❌", style=discord.ButtonStyle.gray, custom_id="ban_admin_cancel")
+    @ui.button(style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="ban_admin_cancel")
     async def cancel_ban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
@@ -181,7 +181,7 @@ class KickConfirmView(ui.View):
         self.reason = reason
 
     @ui.button(
-        label="✅", style=discord.ButtonStyle.danger, custom_id="kick_admin_confirm"
+        style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="kick_admin_confirm"
     )
     async def confirm_kick(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -282,7 +282,7 @@ class KickConfirmView(ui.View):
             )
 
     @ui.button(
-        label="❌", style=discord.ButtonStyle.gray, custom_id="kick_admin_cancel"
+        style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="kick_admin_cancel"
     )
     async def cancel_kick(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -320,7 +320,7 @@ class UbanConfirmView(ui.View):
         self.reason = reason
 
     @ui.button(
-        label="✅", style=discord.ButtonStyle.danger, custom_id="unban_admin_confirm"
+        style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="unban_admin_confirm"
     )
     async def confirm_uban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -379,7 +379,7 @@ class UbanConfirmView(ui.View):
             )
 
     @ui.button(
-        label="❌", style=discord.ButtonStyle.gray, custom_id="unban_admin_cancel"
+        style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="unban_admin_cancel"
     )
     async def cancel_unban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -417,7 +417,7 @@ class ClearConfirmView(ui.View):
         self.channel = channel
 
     @ui.button(
-        label="✅", style=discord.ButtonStyle.danger, custom_id="clear_admin_confirm"
+        style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="clear_admin_confirm"
     )
     async def confirm_clear(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -477,7 +477,7 @@ class ClearConfirmView(ui.View):
             )
 
     @ui.button(
-        label="❌", style=discord.ButtonStyle.gray, custom_id="clear_admin_cancel"
+        style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="clear_admin_cancel"
     )
     async def cancel_clear(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
@@ -506,7 +506,7 @@ class VerifyView(ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @ui.button(style=discord.ButtonStyle.success, emoji="✅", custom_id="verify_user")
+    @ui.button(style=discord.ButtonStyle.success, emoji=config.Icons.check, custom_id="verify_user")
     async def verify(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
@@ -829,7 +829,7 @@ class TicketAdminButtons(ui.View):
         super().__init__(timeout=None)
 
     @ui.button(
-        emoji="🗑️", style=discord.ButtonStyle.danger, custom_id="ticket_admin_delete"
+        emoji=config.Icons.trash, style=discord.ButtonStyle.danger, custom_id="ticket_admin_delete"
     )
     async def delete(self, interaction: discord.Interaction, button: ui.Button):
         try:
@@ -1017,7 +1017,7 @@ class TicketAdminButtons(ui.View):
             print(f"error in ticket delete: {e}")
 
     @ui.button(
-        emoji="🖐️", style=discord.ButtonStyle.primary, custom_id="ticket_admin_claim"
+        emoji=config.Icons.hand, style=discord.ButtonStyle.primary, custom_id="ticket_admin_claim"
     )
     async def claim(self, interaction: discord.Interaction, button: ui.Button):
         try:

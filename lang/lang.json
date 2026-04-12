@@ -321,6 +321,24 @@
                 "leaderboard_pts_single": "Punkt",
                 "leaderboard_pts_plural": "Punkte"
             }
+        },
+        "leveling": {
+            "levelup_title": "⬆️ Level Up! · Level {level}",
+            "levelup_desc": "{user} hat **Level {level}** erreicht!",
+            "disabled_title": "Level-System deaktiviert",
+            "disabled_desc": "Das Level-System ist auf diesem Server nicht aktiviert. Ein Admin kann es im Dashboard einschalten.",
+            "level_title": "📊 Level · {user}",
+            "level_field": "Level",
+            "xp_field": "Gesamt-XP",
+            "progress_field": "Fortschritt zum nächsten Level",
+            "leaderboard_title": "🏆 Bestenliste · {guild}",
+            "leaderboard_empty": "Noch keine Beiträge aufgezeichnet.",
+            "messages_label": "Nachrichten",
+            "rank_title": "📋 Rang · {user}",
+            "rank_xp_field": "Beigetragene XP",
+            "rank_msgs_field": "Nachrichten",
+            "rank_share_field": "Anteil am Server-XP",
+            "rank_pos_field": "Rang in der Bestenliste"
         }
     },
     "en": {
@@ -645,6 +663,24 @@
                 "leaderboard_pts_single": "point",
                 "leaderboard_pts_plural": "points"
             }
+        },
+        "leveling": {
+            "levelup_title": "⬆️ Level Up! · Level {level}",
+            "levelup_desc": "{user} has reached **Level {level}**!",
+            "disabled_title": "Level System disabled",
+            "disabled_desc": "The level system is not enabled on this server. An admin can enable it in the dashboard.",
+            "level_title": "📊 Level · {user}",
+            "level_field": "Level",
+            "xp_field": "Total XP",
+            "progress_field": "Progress to next level",
+            "leaderboard_title": "🏆 Leaderboard · {guild}",
+            "leaderboard_empty": "No contributions recorded yet.",
+            "messages_label": "messages",
+            "rank_title": "📋 Rank · {user}",
+            "rank_xp_field": "XP contributed",
+            "rank_msgs_field": "Messages",
+            "rank_share_field": "Share of server XP",
+            "rank_pos_field": "Leaderboard rank"
         }
     }
 }

@@ -40,7 +40,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
     if not content.isdigit() or int(content) == 0:
         if data.get("react_wrong", True):
             try:
-                await message.add_reaction("❌")
+                await message.add_reaction(cfg.Icons.cross)
             except (discord.Forbidden, discord.HTTPException):
                 pass
         return True
@@ -54,7 +54,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
         if last_user_id != 0 and last_user_id == message.author.id:
             if data.get("react_wrong", True):
                 try:
-                    await message.add_reaction("❌")
+                    await message.add_reaction(cfg.Icons.cross)
                 except (discord.Forbidden, discord.HTTPException):
                     pass
             embed = discord.Embed(
@@ -79,7 +79,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
 
         if data.get("react_correct", True):
             try:
-                await message.add_reaction("✅")
+                await message.add_reaction(cfg.Icons.check)
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -96,7 +96,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
 
         if data.get("react_wrong", True):
             try:
-                await message.add_reaction("❌")
+                await message.add_reaction(cfg.Icons.cross)
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -115,7 +115,7 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
         )
         if was_record:
             embed.add_field(
-                name="🏆 Neuer Highscore!",
+                name=f"{cfg.Icons.trophy} Neuer Highscore!",
                 value=f"**{current_count}** – gut gemacht!",
                 inline=False,
             )

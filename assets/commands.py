@@ -295,7 +295,7 @@ def base_commands(bot: commands.AutoShardedBot):
                     trust_profile = sentinel.get_profile(int(user["id"]))
                     if trust_profile:
                         score     = trust_profile.get("score", "?")
-                        flag_src  = "🤖 Auto" if user.get("auto_flagged") else "👤 Manuell"
+                        flag_src  = f"{config.Icons.robot} Auto" if user.get("auto_flagged") else f"{config.Icons.user} Manuell"
                         event_cnt = len(trust_profile.get("events", []))
                         score_str = f"`{score}/100` · {flag_src} · {event_cnt} Ereignisse"
                     else:
@@ -360,7 +360,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             parsed_duration = datasys.parse_duration(duration)
             if parsed_duration is None:
                 return await interaction.response.send_message(
-                    "❌ Invalid duration format. Use e.g. `7d`, `2h`, `30m`, `1w`.", ephemeral=True
+                    f"{config.Icons.cross} Invalid duration format. Use e.g. `7d`, `2h`, `30m`, `1w`.", ephemeral=True
                 )
 
         duration_str = datasys.format_duration(parsed_duration) if parsed_duration else "Permanent"
@@ -506,7 +506,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         channel = interaction.channel
         if not isinstance(channel, discord.abc.Messageable):
             await interaction.response.send_message(
-                "❌ Dieser Channel unterstützt keine Nachrichten.", ephemeral=True
+                f"{config.Icons.cross} Dieser Channel unterstützt keine Nachrichten.", ephemeral=True
             )
             return
         if isinstance(interaction.channel, discord.TextChannel):
@@ -533,17 +533,17 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         if member.top_role <= user.top_role:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description="❌ You cannot mute someone with an equal or higher role.", color=config.Discord.danger_color)
+                embed=discord.Embed(description=f"{config.Icons.cross} You cannot mute someone with an equal or higher role.", color=config.Discord.danger_color)
             )
 
         parsed = datasys.parse_duration(duration)
         if not parsed:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description="❌ Invalid duration format. Use e.g. `10m`, `1h`, `7d`.", color=config.Discord.danger_color)
+                embed=discord.Embed(description=f"{config.Icons.cross} Invalid duration format. Use e.g. `10m`, `1h`, `7d`.", color=config.Discord.danger_color)
             )
         if parsed.total_seconds() > 28 * 86400:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description="❌ Maximum timeout duration is 28 days.", color=config.Discord.danger_color)
+                embed=discord.Embed(description=f"{config.Icons.cross} Maximum timeout duration is 28 days.", color=config.Discord.danger_color)
             )
 
         duration_str = datasys.format_duration(parsed)
@@ -568,7 +568,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             await user.timeout(until, reason=reason)
         except discord.Forbidden:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description="❌ Missing permissions to timeout this user.", color=config.Discord.danger_color)
+                embed=discord.Embed(description=f"{config.Icons.cross} Missing permissions to timeout this user.", color=config.Discord.danger_color)
             )
 
         # Log mod event for BaxiInsights
@@ -622,7 +622,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             await user.timeout(None, reason=reason)
         except discord.Forbidden:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description="❌ Missing permissions to unmute this user.", color=config.Discord.danger_color)
+                embed=discord.Embed(description=f"{config.Icons.cross} Missing permissions to unmute this user.", color=config.Discord.danger_color)
             )
 
         # Remove stored timeout entry + DM user
@@ -755,7 +755,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
         if not interaction.user.guild_permissions.manage_guild:
             return await interaction.response.send_message(
-                embed=discord.Embed(description="❌ You need Manage Server permission to use this command.", color=config.Discord.danger_color),
+                embed=discord.Embed(description=f"{config.Icons.cross} You need Manage Server permission to use this command.", color=config.Discord.danger_color),
                 ephemeral=True,
             )
         await interaction.response.defer(ephemeral=True)
@@ -800,17 +800,17 @@ def utility_commands(bot: commands.AutoShardedBot):
 
             insights_url = f"https://{config.Web.url}/guild/insights/?guild_login={guild_id}"
             embed = discord.Embed(
-                title=f"📊 BaxiInsights // {interaction.guild.name}",
+                title=f"{config.Icons.stats} BaxiInsights // {interaction.guild.name}",
                 description=f"Moderation overview — last 30 days\n[**View full dashboard →**]({insights_url})",
                 color=config.Discord.color,
             )
-            embed.add_field(name="⚠️ Warns", value=str(warns), inline=True)
-            embed.add_field(name="👟 Kicks", value=str(kicks), inline=True)
-            embed.add_field(name="🔨 Bans", value=str(bans), inline=True)
-            embed.add_field(name="🔇 Mutes", value=str(mutes), inline=True)
-            embed.add_field(name="🛡️ Filter Hits", value=str(len(recent_filter)), inline=True)
+            embed.add_field(name=f"{config.Icons.alert} Warns", value=str(warns), inline=True)
+            embed.add_field(name=f"{config.Icons.people_crossed} Kicks", value=str(kicks), inline=True)
+            embed.add_field(name=f"{config.Icons.people_crossed} Bans", value=str(bans), inline=True)
+            embed.add_field(name=f"{config.Icons.mute} Mutes", value=str(mutes), inline=True)
+            embed.add_field(name=f"{config.Icons.shield} Filter Hits", value=str(len(recent_filter)), inline=True)
             color_health = config.Discord.success_color if health >= 70 else (config.Discord.warn_color if health >= 40 else config.Discord.danger_color)
-            embed.add_field(name="❤️ Health Score", value=f"{health}/100", inline=True)
+            embed.add_field(name=f"{config.Icons.health} Health Score", value=f"{health}/100", inline=True)
             embed.set_footer(text="Baxi · avocloud.net")
             await interaction.edit_original_response(embed=embed)
         except Exception as e:
@@ -820,6 +820,149 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
 
     bot.tree.add_command(insights_group)
+
+
+def leveling_commands(bot: commands.AutoShardedBot):
+    logger.debug.info("Leveling commands loaded.")
+
+    import assets.leveling as leveling_sys
+
+    def _disabled_embed(t: dict) -> Embed:
+        return Embed(title=t["disabled_title"], description=t["disabled_desc"], color=config.Discord.warn_color)
+
+    def _check_enabled(leveling_cfg: dict) -> bool:
+        return bool(leveling_cfg.get("enabled", False))
+
+    @bot.tree.command(name="level", description="Show your current level and XP progress on this server")
+    async def level_cmd(interaction: discord.Interaction):
+        await interaction.response.defer()
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(0)
+            await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t: dict = lang["leveling"]
+
+        if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
+            await interaction.edit_original_response(embed=_disabled_embed(t))
+            return
+
+        entry = leveling_sys.get_user_entry(guild_id, interaction.user.id)
+        total_xp: int = int(entry.get("xp", 0))
+        cur_level, xp_into, xp_needed = leveling_sys.xp_progress(total_xp)
+
+        bar_filled = int((xp_into / xp_needed) * 20) if xp_needed else 20
+        bar = "█" * bar_filled + "░" * (20 - bar_filled)
+
+        embed = Embed(
+            title=t["level_title"].format(user=interaction.user.display_name),
+            color=config.Discord.color,
+        )
+        embed.add_field(name=t["level_field"], value=str(cur_level), inline=True)
+        embed.add_field(name=t["xp_field"], value=f"{total_xp:,} XP", inline=True)
+        embed.add_field(
+            name=t["progress_field"],
+            value=f"`{bar}` {xp_into:,} / {xp_needed:,} XP",
+            inline=False,
+        )
+        embed.set_thumbnail(url=interaction.user.display_avatar.url)
+        embed.set_footer(text="Baxi · avocloud.net")
+        await interaction.edit_original_response(embed=embed)
+
+    @bot.tree.command(name="leaderboard", description="Show the top users by level on this server")
+    async def leaderboard_cmd(interaction: discord.Interaction):
+        await interaction.response.defer()
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(0)
+            await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t: dict = lang["leveling"]
+
+        if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
+            await interaction.edit_original_response(embed=_disabled_embed(t))
+            return
+
+        users: dict = leveling_sys._load_users(guild_id)
+        if not users:
+            await interaction.edit_original_response(embed=Embed(
+                title=t["leaderboard_title"].format(guild=interaction.guild.name),
+                description=t["leaderboard_empty"],
+                color=config.Discord.color,
+            ))
+            return
+
+        sorted_users = sorted(users.items(), key=lambda x: int(x[1].get("xp", 0)), reverse=True)[:10]
+
+        medals = ["🥇", "🥈", "🥉"]
+        lines = []
+        for i, (uid, data) in enumerate(sorted_users):
+            prefix = medals[i] if i < 3 else f"`{i + 1}.`"
+            name = data.get("name", f"User {uid}")
+            lvl = leveling_sys.current_level_from_xp(int(data.get("xp", 0)))
+            xp_val = int(data.get("xp", 0))
+            lines.append(f"{prefix} **{name}** — Level {lvl} · {xp_val:,} XP")
+
+        embed = Embed(
+            title=t["leaderboard_title"].format(guild=interaction.guild.name),
+            description="\n".join(lines),
+            color=config.Discord.color,
+        )
+        embed.set_footer(text="Baxi · avocloud.net")
+        await interaction.edit_original_response(embed=embed)
+
+    @bot.tree.command(name="rank", description="Show a user's level on this server")
+    @app_commands.describe(user="The user to look up (defaults to yourself)")
+    async def rank_cmd(interaction: discord.Interaction, user: Optional[discord.Member] = None):
+        await interaction.response.defer()
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(0)
+            await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t: dict = lang["leveling"]
+
+        if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
+            await interaction.edit_original_response(embed=_disabled_embed(t))
+            return
+
+        target = user or interaction.user
+        users: dict = leveling_sys._load_users(guild_id)
+        entry: dict = users.get(str(target.id), {})
+
+        total_xp = int(entry.get("xp", 0))
+        msgs = int(entry.get("messages", 0))
+        cur_level, xp_into, xp_needed = leveling_sys.xp_progress(total_xp)
+
+        sorted_users = sorted(users.items(), key=lambda x: int(x[1].get("xp", 0)), reverse=True)
+        rank_pos = next((i + 1 for i, (uid, _) in enumerate(sorted_users) if uid == str(target.id)), None)
+
+        bar_filled = int((xp_into / xp_needed) * 20) if xp_needed else 20
+        bar = "█" * bar_filled + "░" * (20 - bar_filled)
+
+        embed = Embed(
+            title=t["rank_title"].format(user=target.display_name),
+            color=config.Discord.color,
+        )
+        embed.add_field(name=t["level_field"], value=str(cur_level), inline=True)
+        embed.add_field(name=t["rank_xp_field"], value=f"{total_xp:,} XP", inline=True)
+        embed.add_field(name=t["rank_msgs_field"], value=f"{msgs:,}", inline=True)
+        embed.add_field(
+            name=t["progress_field"],
+            value=f"`{bar}` {xp_into:,} / {xp_needed:,} XP",
+            inline=False,
+        )
+        if rank_pos is not None:
+            embed.add_field(name=t["rank_pos_field"], value=f"#{rank_pos}", inline=True)
+        embed.set_thumbnail(url=target.display_avatar.url)
+        embed.set_footer(text="Baxi · avocloud.net")
+        await interaction.edit_original_response(embed=embed)
 
 
 def bot_admin_commands(bot: commands.AutoShardedBot):

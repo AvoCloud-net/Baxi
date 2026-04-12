@@ -248,7 +248,7 @@ async def check_answer(
         t: dict = lang["games"]["flag_quiz"]
 
         try:
-            await message.add_reaction("🎉")
+            await message.add_reaction(cfg.Icons.celebrate)
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -279,7 +279,7 @@ async def check_answer(
     else:
         # Wrong answer — react and increment attempt counter, send hint if threshold reached
         try:
-            await message.add_reaction("❌")
+            await message.add_reaction(cfg.Icons.cross)
         except (discord.Forbidden, discord.HTTPException):
             pass
 

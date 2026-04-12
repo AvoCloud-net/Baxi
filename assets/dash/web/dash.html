@@ -281,6 +281,10 @@
                 <svg viewBox="0 0 24 24"><path d="M6 11H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2"/><path d="M18 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M6 11V7a6 6 0 0 1 12 0v4"/><path d="M10 11v5"/><path d="M14 11v5"/><path d="M8 16h8"/></svg>
                 Minigames
             </a>
+            <a href="#leveling" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Level System
+            </a>
             <a href="#suggestions" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v2"/><path d="M12 13h.01"/></svg>
                 Suggestions
@@ -478,6 +482,7 @@
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <div class="channel-perm-feedback hidden" id="feedback-notification-channel"></div>
                                 </div>
 
                                 <button type="submit" class="btn-primary submit-btn w-full">
@@ -498,6 +503,7 @@
                             </form>
 
                             <!-- Bot Permissions sub-card -->
+
                             <div class="card mt-6">
                                 <header>
                                     <h2 class="text-base font-semibold flex items-center gap-2">
@@ -775,6 +781,7 @@
                                     <p class="text-muted text-xs">Messages in these channels are never checked by the chatfilter.</p>
                                 </div>
 
+                                <div id="chatfilter-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
                                 <button type="submit" class="btn-primary submit-btn w-full">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
@@ -835,6 +842,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-suggestions-log"></div>
                                 <p class="text-muted text-xs">Accepted / declined decisions will be logged to this channel.</p>
                             </div>
 
@@ -889,6 +897,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-suggestions-forward"></div>
                             </div>
 
                             <div class="grid gap-2">
@@ -898,7 +907,7 @@
                             </div>
 
                             <div class="flex gap-3">
-                                <button type="submit" id="suggestions-save-btn" class="btn-primary flex-1 flex items-center justify-center gap-2">
+                                <button type="submit" id="suggestions-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -939,12 +948,14 @@
                                 <label class="font-medium text-sm">Add sticky message</label>
                                 <div class="grid gap-2">
                                     <label for="sticky-add-channel">Channel:</label>
-                                    <select id="sticky-add-channel" class="select w-full">
+                                    <select id="sticky-add-channel" class="select w-full"
+                                      onchange="checkChannelPermissions('sticky_messages', this.value, 'feedback-sticky-add-channel', null, null)">
                                         <option value="">— Select a channel —</option>
                                         {% for id, name in channels.items() %}
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <div class="channel-perm-feedback hidden" id="feedback-sticky-add-channel"></div>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="sticky-add-message">Message:</label>
@@ -1075,6 +1086,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-ticket-role"></div>
                             </div>
 
                             <div class="grid gap-2">
@@ -1254,6 +1266,7 @@
                                 <p class="text-muted text-xs">Members with any of these roles are exempt from anti-spam checks.</p>
                             </div>
 
+                            <div id="antispam-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
                             <button type="submit" class="btn-primary submit-btn w-full">
                                 <span class="btn-text">
                                     <svg class="lucide" viewBox="0 0 24 24">
@@ -1366,7 +1379,7 @@
 
                             <div class="grid gap-2">
                                 <label for="verify-role">Role to assign after verification:</label>
-                                <select id="verify-role" class="select w-full" onchange="checkRolePosition(this.value, 'verify-role-warning')">
+                                <select id="verify-role" class="select w-full" onchange="checkRoleHierarchyFeedback(this.value, 'verify-role-warning', 'verify-form', 'verify-role')">
                                     <option value="">-- Please select --</option>
                                     {% for id, name in roles.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
@@ -1398,6 +1411,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-verify-channel"></div>
                             </div>
 
                             <div class="grid gap-2">
@@ -1489,12 +1503,14 @@
                                 <form id="rr-add-panel-form" class="form grid gap-4">
                                     <div class="grid gap-2">
                                         <label for="rr-channel">Channel to post the panel in:</label>
-                                        <select id="rr-channel" class="select w-full">
+                                        <select id="rr-channel" class="select w-full"
+                                          onchange="checkChannelPermissions('reaction_role_channel', this.value, 'feedback-rr-channel', null, null)">
                                             <option value="">-- Please select --</option>
                                             {% for id, name in channels.items() %}
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
+                                        <div class="channel-perm-feedback hidden" id="feedback-rr-channel"></div>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-title">Panel title:</label>
@@ -1707,6 +1723,7 @@
                                 <input type="text" id="donations-log-channel" class="input"
                                        value="{{ data.donations.log_channel if data.donations else '' }}"
                                        placeholder="Channel ID (e.g. 123456789012345678)" style="max-width:280px">
+                                <div class="channel-perm-feedback hidden" id="feedback-donations-log"></div>
                                 <p class="text-muted text-sm mt-1">The bot will post an embed when someone donates.</p>
                             </div>
 
@@ -2013,6 +2030,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-livestream-category"></div>
                                 <p class="text-muted text-xs">New streamer channels will be created in this category.</p>
                             </div>
 
@@ -2101,6 +2119,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-youtube-channel"></div>
                                 <p class="text-muted text-xs">New video notifications will be sent here.</p>
                             </div>
 
@@ -2176,12 +2195,14 @@
 
                             <div class="grid gap-2">
                                 <label for="sc-category">Channel category:</label>
-                                <select id="sc-category" class="select w-full">
+                                <select id="sc-category" class="select w-full"
+                                  onchange="checkChannelPermissions('stats_category', this.value, 'feedback-stats-category', 'stats-channels-form', 'sc-category')">
                                     <option value="">-- No category (root) --</option>
                                     {% for id, name in categorys.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div id="feedback-stats-category" class="channel-perm-feedback text-sm mt-1"></div>
                             </div>
 
                             <div class="grid gap-3">
@@ -2369,6 +2390,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-tv-trigger"></div>
                             </div>
 
                             <div class="grid gap-2">
@@ -2379,6 +2401,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-tv-category"></div>
                             </div>
 
                             <div class="grid gap-2">
@@ -2437,6 +2460,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-counting-channel"></div>
                                 <p class="text-muted text-xs">The channel where the counting game takes place.</p>
                             </div>
 
@@ -2511,6 +2535,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-flagquiz-channel"></div>
                                 <p class="text-muted text-xs">Questions are posted and answers are accepted in this channel.</p>
                             </div>
 
@@ -2546,6 +2571,73 @@
                                     Reset scores
                                 </button>
                             </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Level System -->
+            <section class="pb-16 dash-section" id="leveling">
+                <div class="section-label">LEVEL SYSTEM</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            Level System
+                        </h2>
+                        <p class="text-muted">Every user earns XP individually by sending messages. Longer messages give more XP. Celebrate level-ups with automatic announcements and role rewards.</p>
+                    </header>
+                    <section>
+                        <form id="leveling-form" class="form grid gap-6 settings-form">
+
+                            <!-- Enable -->
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="leveling-enabled" role="switch">
+                                    <span class="font-medium">Enable Level System</span>
+                                </label>
+                            </div>
+
+                            <!-- Level-up announcement -->
+                            <div class="grid gap-2">
+                                <label class="label" for="leveling-announcement">Level-up announcement</label>
+                                <select id="leveling-announcement" class="select" style="max-width:300px">
+                                    <option value="same_channel">Same channel as the message</option>
+                                    <option value="channel">Specific channel</option>
+                                    <option value="off">Off</option>
+                                </select>
+                            </div>
+
+                            <!-- Announcement channel (shown only when mode = channel) -->
+                            <div class="grid gap-2" id="leveling-channel-row" style="display:none">
+                                <label class="label" for="leveling-announcement-channel">Announcement channel</label>
+                                <select id="leveling-announcement-channel" class="select w-full">
+                                    <option value="">— Select a channel —</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-leveling-channel"></div>
+                            </div>
+
+                            <!-- Role rewards -->
+                            <div class="grid gap-2">
+                                <label class="label">Role Rewards</label>
+                                <p class="text-muted text-xs">When the server reaches a level, a role is automatically assigned to all members.</p>
+                                <div id="leveling-role-rewards-list" class="grid gap-2"></div>
+                                <button type="button" id="leveling-add-reward-btn" class="btn-secondary" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Add reward
+                                </button>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            </button>
                         </form>
                     </section>
                 </div>
@@ -2713,7 +2805,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket', 'donations',
+                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket', 'donations',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds'
             ];
@@ -2970,6 +3062,20 @@
                 document.getElementById('flagquiz-hint-attempts').value = data.flag_quiz.hint_after_attempts ?? 3;
                 document.getElementById('flagquiz-next-delay').value = data.flag_quiz.next_delay ?? 3;
                 document.getElementById('flagquiz-points').checked = data.flag_quiz.points_enabled !== false;
+            }
+
+            // Level System
+            if (data.leveling) {
+                document.getElementById('leveling-enabled').checked = data.leveling.enabled === true;
+                const ann = data.leveling.announcement || 'same_channel';
+                document.getElementById('leveling-announcement').value = ann;
+                document.getElementById('leveling-channel-row').style.display = ann === 'channel' ? '' : 'none';
+                if (data.leveling.announcement_channel && String(data.leveling.announcement_channel) !== '0') {
+                    document.getElementById('leveling-announcement-channel').value = String(data.leveling.announcement_channel);
+                }
+                // Role rewards
+                const rewards = data.leveling.role_rewards || [];
+                rewards.forEach(r => _levelingAddRewardRow(r.level, r.role_id));
             }
 
             // Suggestions
@@ -4041,6 +4147,61 @@
             };
         };
 
+        // ── Level System ───────────────────────────────────────────────────────
+        document.getElementById('leveling-announcement').addEventListener('change', function () {
+            document.getElementById('leveling-channel-row').style.display = this.value === 'channel' ? '' : 'none';
+        });
+
+        // Roles dropdown HTML helper (reused for each reward row)
+        const _levelingRolesOptions = `{% for id, name in roles.items() %}<option value="{{ id }}">{{ name }}</option>{% endfor %}`;
+
+        function _levelingAddRewardRow(level, roleId) {
+            const list = document.getElementById('leveling-role-rewards-list');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+            row.innerHTML = `
+                <input type="number" min="1" placeholder="Level" value="${level || ''}"
+                       class="input" style="width:80px" data-reward-level>
+                <select class="select flex-1" data-reward-role>
+                    <option value="">— Select a role —</option>
+                    ${_levelingRolesOptions}
+                </select>
+                <button type="button" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"
+                        onclick="this.closest('div').remove()">✕</button>`;
+            if (roleId) row.querySelector('[data-reward-role]').value = String(roleId);
+            list.appendChild(row);
+        }
+
+        document.getElementById('leveling-add-reward-btn').onclick = function () {
+            _levelingAddRewardRow('', '');
+        };
+
+        document.getElementById('leveling-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('leveling-enabled').checked;
+            const announcement = document.getElementById('leveling-announcement').value;
+            const announcement_channel = document.getElementById('leveling-announcement-channel').value;
+
+            const role_rewards = [];
+            document.querySelectorAll('#leveling-role-rewards-list > div').forEach(row => {
+                const lvl = parseInt(row.querySelector('[data-reward-level]').value, 10);
+                const roleId = row.querySelector('[data-reward-role]').value;
+                if (lvl > 0 && roleId) role_rewards.push({ level: lvl, role_id: roleId });
+            });
+
+            const payload = { leveling: { enabled, announcement, announcement_channel, role_rewards } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=leveling&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
         // ── Flag Quiz ──────────────────────────────────────────────────────────
         document.getElementById('flagquiz-form').onsubmit = function (event) {
             event.preventDefault();
@@ -4516,6 +4677,11 @@
             const maxRolesRaw = document.getElementById('rr-max-roles').value.trim();
             const max_roles = maxRolesRaw === '' ? 0 : (parseInt(maxRolesRaw) || 0);
             if (!channel_id) { showSaveToast(false, 'Please select a channel.'); return; }
+            const _rrFb = document.getElementById('feedback-rr-channel');
+            if (_rrFb && _rrFb.classList.contains('error')) {
+                showSaveToast(false, 'Fix the channel permission issues before creating a panel.');
+                return;
+            }
             const btn = document.getElementById('rr-add-panel-btn');
             btn.disabled = true;
             btn.textContent = 'Creating...';
@@ -4610,6 +4776,14 @@
             const label = labelInput ? labelInput.value.trim() : '';
             if (!role_id) { showSaveToast(false, 'Please select a role.'); return; }
             if (!emoji && !label) { showSaveToast(false, 'Please enter at least an emoji or a label.'); return; }
+            // Client-side role hierarchy guard
+            if (typeof rolePositions !== 'undefined' && typeof botTopRolePos !== 'undefined') {
+                const rpos = rolePositions[role_id];
+                if (rpos !== undefined && rpos >= botTopRolePos) {
+                    showSaveToast(false, "Baxi's top role must be above this role to assign it.");
+                    return;
+                }
+            }
             btn.disabled = true;
             btn.querySelector('.btn-text')?.classList.add('hidden');
             btn.querySelector('.spinner')?.classList.remove('hidden');
@@ -4707,77 +4881,193 @@
     </script>
 
     <script>
-        function checkChannelPermissions(system, channelId, feedbackElementId) {
+        // ── Shared SVG icons ───────────────────────────────────────────────────
+        const _checkIconSvg = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m9 12 2 2 4-4"/><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
+        const _warnIconSvg  = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+        // ── Per-form save-button locking ───────────────────────────────────────
+        // permBlockState[formId][checkKey] = true (ok) | false (blocked)
+        const permBlockState = {};
+
+        function setPermCheck(formId, checkKey, passed) {
+            if (!formId || !checkKey) return;
+            if (!permBlockState[formId]) permBlockState[formId] = {};
+            permBlockState[formId][checkKey] = passed;
+            _syncSaveButton(formId);
+        }
+
+        function _syncSaveButton(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            const btn = form.querySelector('.submit-btn');
+            if (!btn) return;
+            const blocked = Object.values(permBlockState[formId] || {}).some(v => v === false);
+            btn.disabled = blocked;
+            btn.style.opacity = blocked ? '0.55' : '';
+            btn.title = blocked ? 'Fix the permission issues shown above to enable saving.' : '';
+        }
+
+        // ── Channel permission check ───────────────────────────────────────────
+        function checkChannelPermissions(system, channelId, feedbackElementId, formId, checkKey) {
             const feedbackEl = document.getElementById(feedbackElementId);
-            if (!channelId || !feedbackEl) { if (feedbackEl) feedbackEl.classList.add('hidden'); return; }
+            if (!channelId) {
+                if (feedbackEl) feedbackEl.classList.add('hidden');
+                setPermCheck(formId, checkKey, true);
+                return;
+            }
+            if (!feedbackEl) return;
             const payload = { guild_id: data.guild_id, channel_id: channelId, system };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/check/channel/perms/');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    feedbackEl.classList.add('hidden');
-                    if (xhr.status === 200) {
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            if (resp.valid === true) {
-                                feedbackEl.innerHTML = 'Channel permissions seem correct';
-                                feedbackEl.classList.remove('error');
-                                feedbackEl.classList.remove('hidden');
-                            } else if (Array.isArray(resp.missing) && resp.missing.length > 0) {
-                                feedbackEl.innerHTML = `Missing permissions: ${resp.missing.join(', ')}`;
-                                feedbackEl.classList.add('error');
-                                feedbackEl.classList.remove('hidden');
-                            }
-                        } catch (e) {}
-                    }
+                if (xhr.readyState !== XMLHttpRequest.DONE) return;
+                feedbackEl.classList.add('hidden');
+                if (xhr.status === 200) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        if (resp.valid === true) {
+                            feedbackEl.innerHTML = `${_checkIconSvg} Channel permissions OK`;
+                            feedbackEl.classList.remove('error');
+                            feedbackEl.classList.remove('hidden');
+                            setPermCheck(formId, checkKey, true);
+                        } else if (Array.isArray(resp.missing) && resp.missing.length > 0) {
+                            feedbackEl.innerHTML = `${_warnIconSvg} Missing permissions: <strong>${resp.missing.join(', ')}</strong>`;
+                            feedbackEl.classList.add('error');
+                            feedbackEl.classList.remove('hidden');
+                            setPermCheck(formId, checkKey, false);
+                        }
+                    } catch (e) {}
                 }
             };
         }
 
-        function checkRolePosition(roleId, warningElementId) {
-            const el = document.getElementById(warningElementId);
-            if (!el) return;
-            if (!roleId) { el.classList.add('hidden'); return; }
+        // ── Role hierarchy check (client-side via rolePositions cache) ─────────
+        function checkRoleHierarchyFeedback(roleId, feedbackId, formId, checkKey) {
+            const feedbackEl = document.getElementById(feedbackId);
+            if (!feedbackEl) return;
+            if (!roleId) {
+                feedbackEl.classList.add('hidden');
+                setPermCheck(formId, checkKey, true);
+                return;
+            }
             const pos = rolePositions[roleId];
-            if (pos !== undefined && pos >= botTopRolePos) {
-                el.classList.remove('hidden');
+            if (pos === undefined) {
+                feedbackEl.classList.add('hidden');
+                setPermCheck(formId, checkKey, true);
+                return;
+            }
+            if (pos >= botTopRolePos) {
+                feedbackEl.innerHTML = `${_warnIconSvg} Baxi cannot manage this role — it is equal to or above the bot's top role. Move the Baxi role higher in Server Settings → Roles.`;
+                feedbackEl.classList.add('error');
+                feedbackEl.classList.remove('hidden');
+                setPermCheck(formId, checkKey, false);
             } else {
-                el.classList.add('hidden');
+                feedbackEl.innerHTML = `${_checkIconSvg} Role hierarchy OK.`;
+                feedbackEl.classList.remove('error');
+                feedbackEl.classList.remove('hidden');
+                setPermCheck(formId, checkKey, true);
             }
         }
 
+        // Legacy shim (still used by inline onchange in some places)
+        function checkRolePosition(roleId, warningElementId) {
+            checkRoleHierarchyFeedback(roleId, warningElementId, null, null);
+        }
+
+        // ── Channel stats for Chatfilter / Antispam ────────────────────────────
+        function loadChannelStats() {
+            fetch(`/api/dash/channel-stats/?guild_id=${data.guild_id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                    if (!d) return;
+                    const html = `Server Channels: <strong>${d.total}</strong> · Visible to Baxi: <strong>${d.visible}</strong> · View + Manage Messages: <strong>${d.correct_perms}</strong>`;
+                    const cfEl = document.getElementById('chatfilter-channel-stats');
+                    const asEl = document.getElementById('antispam-channel-stats');
+                    if (cfEl) cfEl.innerHTML = html;
+                    if (asEl) asEl.innerHTML = html;
+                })
+                .catch(() => {});
+        }
+
+        // ── Run all checks on load ─────────────────────────────────────────────
         function runInitialPermissionChecks() {
-            const gc = document.getElementById('globalchat-channel')?.value;
-            const tc = document.getElementById('ticket-channel')?.value;
-            const ttc = document.getElementById('ticket-transcript-channel')?.value;
-            const tcat = document.getElementById('ticket-cat')?.value;
-            const wc = document.getElementById('welcomer-channel')?.value;
-            const wlc = document.getElementById('welcomer-leave-channel')?.value;
-            if (gc) checkChannelPermissions('globalchat', gc, 'feedback-globalchat-channel');
-            if (tc) checkChannelPermissions('ticket', tc, 'feedback-ticket-channel');
-            if (ttc) checkChannelPermissions('ticket_transcript', ttc, 'feedback-ticket-transcript-channel');
-            if (tcat) checkChannelPermissions('category', tcat, 'feedback-category-channel');
-            if (wc) checkChannelPermissions('welcomer', wc, 'feedback-welcomer-channel');
-            if (wlc) checkChannelPermissions('welcomer', wlc, 'feedback-welcomer-leave-channel');
-            const vr = document.getElementById('verify-role')?.value;
-            if (vr) checkRolePosition(vr, 'verify-role-warning');
+            const v = id => document.getElementById(id)?.value || '';
+            // Globalchat
+            checkChannelPermissions('globalchat',        v('globalchat-channel'),             'feedback-globalchat-channel',          'globalchat-form',       'ch');
+            // Ticket
+            checkChannelPermissions('ticket',            v('ticket-channel'),                 'feedback-ticket-channel',              'ticket-form',           'panel_ch');
+            checkChannelPermissions('ticket_transcript', v('ticket-transcript-channel'),      'feedback-ticket-transcript-channel',   'ticket-form',           'transcript_ch');
+            checkChannelPermissions('category',          v('ticket-cat'),                     'feedback-category-channel',            'ticket-form',           'category');
+            checkRoleHierarchyFeedback(                  v('ticket-role'),                    'feedback-ticket-role',                 'ticket-form',           'role');
+            // Welcomer
+            checkChannelPermissions('welcomer',          v('welcomer-channel'),               'feedback-welcomer-channel',            'welcomer-form',         'ch');
+            checkChannelPermissions('welcomer',          v('welcomer-leave-channel'),         'feedback-welcomer-leave-channel',      'welcomer-form',         'leave_ch');
+            // Verify
+            checkRoleHierarchyFeedback(                  v('verify-role'),                    'verify-role-warning',                  'verify-form',           'verify-role');
+            checkChannelPermissions('verify_channel',    v('verify-channel'),                 'feedback-verify-channel',              'verify-form',           'ch');
+            // Livestream
+            checkChannelPermissions('livestream_category', v('livestream-category'),          'feedback-livestream-category',         'livestream-form',       'cat');
+            // YouTube
+            checkChannelPermissions('youtube_alert',     v('yvid-alert-channel'),             'feedback-youtube-channel',             'youtube-videos-form',   'ch');
+            // Temp Voice
+            checkChannelPermissions('temp_voice_trigger', v('tv-create-channel'),             'feedback-tv-trigger',                  'temp-voice-form',       'trigger');
+            checkChannelPermissions('temp_voice_category', v('tv-category'),                  'feedback-tv-category',                 'temp-voice-form',       'cat');
+            // Suggestions
+            checkChannelPermissions('suggestions_log',   v('suggestions-log-channel'),        'feedback-suggestions-log',             'suggestions-form',      'log_ch');
+            checkChannelPermissions('suggestions_log',   v('suggestions-auto-forward-channel'),'feedback-suggestions-forward',        'suggestions-form',      'fwd_ch');
+            // Counting
+            checkChannelPermissions('counting',          v('counting-channel'),               'feedback-counting-channel',            'counting-form',         'ch');
+            // Flag Quiz
+            checkChannelPermissions('flag_quiz',         v('flagquiz-channel'),               'feedback-flagquiz-channel',            'flagquiz-form',         'ch');
+            // Leveling
+            checkChannelPermissions('leveling',          v('leveling-announcement-channel'),  'feedback-leveling-channel',            'leveling-form',         'ch');
+            // Notification channel
+            checkChannelPermissions('notification',      v('notification-channel'),           'feedback-notification-channel',        'general-form',          'notif_ch');
+            // Reaction Roles panel channel
+            checkChannelPermissions('reaction_role_channel', v('rr-channel'),                 'feedback-rr-channel',                  null,                    null);
+            // Stats Channels
+            checkChannelPermissions('stats_category',    v('sc-category'),                    'feedback-stats-category',              'stats-channels-form',   'cat');
+            // Donations log
+            checkChannelPermissions('donations_log',     v('donations-log-channel'),          'feedback-donations-log',               null,                    null);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('globalchat-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('globalchat', e.target.value, 'feedback-globalchat-channel'));
-            document.getElementById('ticket-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('ticket', e.target.value, 'feedback-ticket-channel'));
-            document.getElementById('ticket-transcript-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('ticket_transcript', e.target.value, 'feedback-ticket-transcript-channel'));
-            document.getElementById('ticket-cat')?.addEventListener('change', e =>
-                checkChannelPermissions('category', e.target.value, 'feedback-category-channel'));
-            document.getElementById('welcomer-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-channel'));
-            document.getElementById('welcomer-leave-channel')?.addEventListener('change', e =>
-                checkChannelPermissions('welcomer', e.target.value, 'feedback-welcomer-leave-channel'));
+            const on = (id, sys, fbId, formId, key) => {
+                document.getElementById(id)?.addEventListener('change', e =>
+                    checkChannelPermissions(sys, e.target.value, fbId, formId, key));
+            };
+            const onRole = (id, fbId, formId, key) => {
+                document.getElementById(id)?.addEventListener('change', e =>
+                    checkRoleHierarchyFeedback(e.target.value, fbId, formId, key));
+            };
+            on('globalchat-channel',             'globalchat',           'feedback-globalchat-channel',         'globalchat-form',      'ch');
+            on('ticket-channel',                 'ticket',               'feedback-ticket-channel',             'ticket-form',          'panel_ch');
+            on('ticket-transcript-channel',      'ticket_transcript',    'feedback-ticket-transcript-channel',  'ticket-form',          'transcript_ch');
+            on('ticket-cat',                     'category',             'feedback-category-channel',           'ticket-form',          'category');
+            onRole('ticket-role',                                        'feedback-ticket-role',                'ticket-form',          'role');
+            on('welcomer-channel',               'welcomer',             'feedback-welcomer-channel',           'welcomer-form',        'ch');
+            on('welcomer-leave-channel',         'welcomer',             'feedback-welcomer-leave-channel',     'welcomer-form',        'leave_ch');
+            onRole('verify-role',                                        'verify-role-warning',                 'verify-form',          'verify-role');
+            on('verify-channel',                 'verify_channel',       'feedback-verify-channel',             'verify-form',          'ch');
+            on('livestream-category',            'livestream_category',  'feedback-livestream-category',        'livestream-form',      'cat');
+            on('yvid-alert-channel',             'youtube_alert',        'feedback-youtube-channel',            'youtube-videos-form',  'ch');
+            on('tv-create-channel',              'temp_voice_trigger',   'feedback-tv-trigger',                 'temp-voice-form',      'trigger');
+            on('tv-category',                    'temp_voice_category',  'feedback-tv-category',                'temp-voice-form',      'cat');
+            on('suggestions-log-channel',        'suggestions_log',      'feedback-suggestions-log',            'suggestions-form',     'log_ch');
+            on('suggestions-auto-forward-channel','suggestions_log',     'feedback-suggestions-forward',        'suggestions-form',     'fwd_ch');
+            on('counting-channel',               'counting',             'feedback-counting-channel',           'counting-form',        'ch');
+            on('flagquiz-channel',               'flag_quiz',            'feedback-flagquiz-channel',           'flagquiz-form',        'ch');
+            on('leveling-announcement-channel',  'leveling',             'feedback-leveling-channel',           'leveling-form',        'ch');
+            on('notification-channel',           'notification',         'feedback-notification-channel',       'general-form',         'notif_ch');
+            on('sc-category',                    'stats_category',       'feedback-stats-category',             'stats-channels-form',  'cat');
+            on('rr-channel',                     'reaction_role_channel','feedback-rr-channel',                 null,                   null);
+            on('sticky-add-channel',             'sticky_messages',      'feedback-sticky-add-channel',         null,                   null);
+            // Donations log is a text input — check on blur
+            document.getElementById('donations-log-channel')?.addEventListener('blur', e => {
+                checkChannelPermissions('donations_log', e.target.value.trim(), 'feedback-donations-log', null, null);
+            });
         });
 
         function checkBotRolePosition() {
@@ -4792,14 +5082,12 @@
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     try {
                         const resp = JSON.parse(xhr.responseText);
-                        const checkIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m9 12 2 2 4-4"/><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
-                        const warnIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
                         if (resp.warning) {
                             feedbackEl.classList.add('error');
-                            feedbackEl.innerHTML = `${warnIcon} Bot role "${resp.bot_role_name}" is not at the top of the hierarchy. Some features may not work properly.`;
+                            feedbackEl.innerHTML = `${_warnIconSvg} Bot role "${resp.bot_role_name}" is not at the top of the hierarchy. Some features may not work properly.`;
                         } else {
                             feedbackEl.classList.remove('error');
-                            feedbackEl.innerHTML = `${checkIcon} Bot role "${resp.bot_role_name}" is correctly positioned.`;
+                            feedbackEl.innerHTML = `${_checkIconSvg} Bot role "${resp.bot_role_name}" is correctly positioned.`;
                         }
                         feedbackEl.classList.remove('hidden');
                         updateRoleGatedFeatures(resp.warning);
@@ -4832,14 +5120,12 @@
                     }
                     try {
                         const resp = JSON.parse(xhr.responseText);
-                        const checkIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m9 12 2 2 4-4"/><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>';
-                        const warnIcon = '<svg viewBox="0 0 24 24" style="width:1em;height:1em;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
                         if (resp.valid) {
-                            feedbackEl.innerHTML = `${checkIcon} Bot has all required guild permissions`;
+                            feedbackEl.innerHTML = `${_checkIconSvg} Bot has all required guild permissions`;
                             feedbackEl.classList.remove('error');
                             feedbackEl.classList.remove('hidden');
                         } else if (resp.missing && resp.missing.length) {
-                            feedbackEl.innerHTML = `${warnIcon} Missing: ${resp.missing.join(', ')}`;
+                            feedbackEl.innerHTML = `${_warnIconSvg} Missing: ${resp.missing.join(', ')}`;
                             feedbackEl.classList.add('error');
                             feedbackEl.classList.remove('hidden');
                         }
@@ -4871,6 +5157,7 @@
         }
 
         checkBotRolePosition();
+        loadChannelStats();
     </script>
 
     <script>

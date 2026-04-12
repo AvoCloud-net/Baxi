@@ -320,7 +320,7 @@ async def _maybe_auto_forward(
         return
 
     fwd_embed = interaction.message.embeds[0].copy()
-    fwd_embed.title = t.get("auto_forward_title", "🔥 Popular Suggestion")
+    fwd_embed.title = t.get("auto_forward_title", f"{cfg.Icons.fire} Popular Suggestion")
     fwd_embed.set_footer(
         text=t.get("auto_forward_footer", "Baxi · Suggestions | {votes} upvotes").format(votes=len(up))
     )

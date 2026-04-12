@@ -35,6 +35,7 @@ import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
 import assets.games.counting as counting_game
 import assets.games.quiz as quiz_game
+import assets.leveling as leveling_sys
 import assets.suggestions as suggestions_sys
 import assets.trust as sentinel
 import config.config as config
@@ -575,6 +576,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         # Suggestions (dedicated channels – skip further pipeline if matched)
         if await suggestions_sys.check_suggestion(message, bot):
             return
+
+        # Level system — award XP for this message
+        asyncio.create_task(leveling_sys.process_xp(message, bot))
 
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
         guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))

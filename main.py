@@ -13,7 +13,7 @@ import config.auth as auth
 import config.config as config
 import discord
 import reds_simple_logger
-from assets.commands import base_commands, utility_commands, bot_admin_commands
+from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands
 from assets.dash.log import highlight_word
 
 from assets.data import set_bot
@@ -77,6 +77,7 @@ async def not_found(e):
 events(bot=bot, web=web)
 base_commands(bot=bot)
 utility_commands(bot=bot)
+leveling_commands(bot=bot)
 bot_admin_commands(bot=bot)
 
 web.jinja_env.filters['highlight_word'] = highlight_word

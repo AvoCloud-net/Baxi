@@ -1900,6 +1900,63 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Count was reset to 0."})
 
+        elif system == "leveling":
+            data: dict = await quart.request.get_json()
+            lev = data.get("leveling")
+
+            if not isinstance(lev, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+            if not isinstance(lev.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            announcement = str(lev.get("announcement", "same_channel"))
+            if announcement not in ("same_channel", "channel", "off"):
+                announcement = "same_channel"
+
+            ann_channel = str(lev.get("announcement_channel", "")).strip()
+            if ann_channel and not re.fullmatch(r"\d{17,19}", ann_channel):
+                return quart.jsonify({"success": False, "message": "Invalid announcement channel ID."}), 400
+
+            raw_rewards = lev.get("role_rewards", [])
+            if not isinstance(raw_rewards, list):
+                return quart.jsonify({"success": False, "message": "'role_rewards' must be a list."}), 400
+            role_rewards = []
+            for r in raw_rewards:
+                if not isinstance(r, dict):
+                    continue
+                lvl = r.get("level")
+                rid = str(r.get("role_id", "")).strip()
+                if not isinstance(lvl, int) or lvl < 1:
+                    continue
+                if not re.fullmatch(r"\d{17,19}", rid):
+                    continue
+                role_rewards.append({"level": lvl, "role_id": rid})
+
+            existing: dict = dict(load_data(int(guild_id), "leveling"))
+            settings = {
+                "enabled": lev["enabled"],
+                "xp": existing.get("xp", 0),
+                "level": existing.get("level", 0),
+                "announcement": announcement,
+                "announcement_channel": ann_channel,
+                "role_rewards": role_rewards,
+            }
+            save_data(int(guild_id), "leveling", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "leveling",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Level System settings saved!"})
+
         elif system == "flag_quiz":
             data: dict = await quart.request.get_json()
             fq = data.get("flag_quiz")
@@ -2595,14 +2652,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         try:
             # Prefer cached guild so that channel.guild and bot_member.guild
-            # reference the same object, avoiding permission calculation
-            # mismatches when fetch_guild() creates a guild object outside
-            # the bot's internal state cache.
+            # reference the same object, avoiding permission calculation mismatches.
             guild = bot.get_guild(guild_id)
             if guild is None:
                 guild = await bot.fetch_guild(guild_id)
             assert bot.user is not None, "Bot user unknown"
-            bot_member = await guild.fetch_member(bot.user.id)
+            bot_member = guild.get_member(bot.user.id) or await guild.fetch_member(bot.user.id)
 
             if system == "bot_general":
                 permissions = bot_member.guild_permissions
@@ -2669,12 +2724,33 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "total_roles": len(guild.roles),
                     "warning": not is_highest
                 })
+            elif system in ("ticket_role", "verify_role", "reaction_role"):
+                role_id_raw = data.get("role_id")
+                if not role_id_raw:
+                    return quart.jsonify({"error": "role_id is required for role hierarchy check"}), 400
+                role = guild.get_role(int(role_id_raw))
+                if not role:
+                    return quart.jsonify({"valid": True, "missing": None, "scope": "role", "note": "Role not found in cache"})
+                bot_top = bot_member.top_role
+                if bot_top.position > role.position:
+                    return quart.jsonify({"valid": True, "missing": None, "scope": "role"})
+                else:
+                    return quart.jsonify({
+                        "valid": False,
+                        "missing": [f"Baxi's top role \"{bot_top.name}\" must be above \"{role.name}\" to manage it"],
+                        "scope": "role"
+                    })
             else:
                 if not channel_id:
                     return quart.jsonify({"error": "channel_id is required for this system"}), 400
 
-                channel = await guild.fetch_channel(channel_id)
-                permissions = bot_member.guild_permissions
+                try:
+                    channel = await guild.fetch_channel(channel_id)
+                except discord.NotFound:
+                    return quart.jsonify({"valid": False, "missing": ["Channel not found — it may have been deleted"], "scope": "channel"})
+                except discord.Forbidden:
+                    return quart.jsonify({"valid": False, "missing": ["Baxi cannot access this channel (missing View Channel permission)"], "scope": "channel"})
+                permissions = channel.permissions_for(bot_member)
 
                 required_perms = set()
                 if system == "globalchat":
@@ -2686,6 +2762,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "embed_links",
                         "use_external_emojis",
                         "manage_messages",
+                        "manage_channels",  # for slowmode
                     }
                 elif system == "ticket_button":
                     required_perms = {
@@ -2727,6 +2804,58 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "manage_channels",
                         "manage_permissions",
                     }
+                elif system in ("temp_voice_category", "livestream_category", "stats_category"):
+                    required_perms = {
+                        "view_channel",
+                        "manage_channels",
+                        "manage_permissions",
+                    }
+                elif system == "temp_voice_trigger":
+                    if not isinstance(channel, discord.VoiceChannel):
+                        return quart.jsonify({"valid": False, "missing": ["Not a voice channel"], "scope": "channel"})
+                    vc_needed = ["view_channel", "connect"]
+                    missing_vc = [p for p in vc_needed if not getattr(permissions, p, False)]
+                    return quart.jsonify({"valid": not missing_vc, "missing": missing_vc if missing_vc else None, "scope": "channel"})
+                elif system == "sticky_messages":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "manage_messages",
+                    }
+                elif system == "suggestions":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "embed_links",
+                        "manage_messages",
+                        "add_reactions",
+                    }
+                elif system == "suggestions_log":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "embed_links",
+                    }
+                elif system == "counting":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "add_reactions",
+                    }
+                elif system == "reaction_role_channel":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "embed_links",
+                        "add_reactions",
+                        "read_message_history",
+                    }
+                elif system in ("flag_quiz", "leveling", "youtube_alert", "notification", "donations_log", "verify_channel"):
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                        "embed_links",
+                    }
                 else:
                     return quart.jsonify({"error": "Unknown system"}), 400
 
@@ -2735,7 +2864,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     valid = len(missing) == 0
                 else:
                     valid = False
-                    missing = "Channel is not a text channel or category."
+                    missing = ["Channel is not a text or category channel"]
 
                 return quart.jsonify({
                     "valid": valid,
@@ -2745,6 +2874,41 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         except Exception as e:
             return quart.jsonify({"error": str(e)}), 500
+
+    @app.route("/api/dash/channel-stats/", methods=["GET"])
+    @requires_authorization
+    async def channel_stats_api():
+        """Returns text-channel count, how many Baxi can see, and how many have view+manage_messages."""
+        guild_id_raw = quart.request.args.get("guild_id")
+        if not guild_id_raw:
+            return quart.jsonify({"error": "Missing guild_id"}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild_obj = await bot.fetch_guild(int(guild_id_raw))
+            member_check = await guild_obj.fetch_member(user.id)
+            if not member_check.guild_permissions.manage_guild:
+                return quart.jsonify({"error": "Unauthorized"}), 403
+        except Exception:
+            return quart.jsonify({"error": "Authorization failed"}), 403
+
+        cached = bot.get_guild(int(guild_id_raw))
+        if not cached:
+            return quart.jsonify({"error": "Guild not in cache"}), 404
+        me = cached.me
+        if not me:
+            return quart.jsonify({"error": "Bot not in guild"}), 404
+
+        text_chs = [ch for ch in cached.channels if isinstance(ch, discord.TextChannel)]
+        total = len(text_chs)
+        visible = 0
+        correct = 0
+        for ch in text_chs:
+            p = ch.permissions_for(me)
+            if p.view_channel:
+                visible += 1
+                if p.manage_messages:
+                    correct += 1
+        return quart.jsonify({"total": total, "visible": visible, "correct_perms": correct})
 
     @app.route("/attachments/<filename>")
     async def attachments(filename):
@@ -3897,7 +4061,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             ]
             if profile_rep:
                 _score = profile_rep.get("score", 100)
-                _flag_txt = " ⚠️ Auto-flagged" if profile_rep.get("auto_flagged") else ""
+                _flag_txt = f" {config.Icons.alert} Auto-flagged" if profile_rep.get("auto_flagged") else ""
                 overview_lines.append(f"**Prism Trust Score:** {_score}/100{_flag_txt}")
                 overview_lines.append(f"**Prism Events recorded:** {len(profile_rep.get('events', []))}")
                 if profile_rep.get("first_seen"):
