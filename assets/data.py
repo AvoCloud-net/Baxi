@@ -234,7 +234,7 @@ def update_activity(
 ):
     """
     Increment aggregated activity counters for a guild.
-    Stored in data/{guild_id}/activity.json — no message content, counts only.
+    Stored in data/{guild_id}/activity.json -  no message content, counts only.
     Automatically prunes data older than 90 days.
     """
     guild_data_dir = os.path.join("data", str(guild_id))

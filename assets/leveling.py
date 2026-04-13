@@ -109,7 +109,7 @@ async def _apply_role_rewards(member: discord.Member, new_level: int, role_rewar
 
 
 # ---------------------------------------------------------------------------
-# Main entry point — called from events.process_message
+# Main entry point -  called from events.process_message
 # ---------------------------------------------------------------------------
 
 async def process_xp(message: discord.Message, bot: commands.AutoShardedBot) -> None:

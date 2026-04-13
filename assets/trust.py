@@ -1,5 +1,5 @@
 """
-Baxi Prism — Automated Trust Scoring System v2
+Baxi Prism -  Automated Trust Scoring System v2
 Tracks user behavior across all Baxi servers and generates a trust score (0–100).
 Intelligently differentiates between offense severity with tiered scoring and recovery.
 """
@@ -43,7 +43,7 @@ EVENT_WEIGHTS: dict[str, int] = {
 }
 
 # ── Recovery rates per severity tier ───────────────────────────────────────────
-# (points_per_interval, interval_days) — based on the worst event in a user's history
+# (points_per_interval, interval_days) -  based on the worst event in a user's history
 RECOVERY_BY_TIER: dict[str, tuple[int, int]] = {
     "critical": (4,  30),   # +4 per 30 clean days (slow recovery)
     "severe":   (4,  30),
@@ -161,11 +161,11 @@ def _compute_risk_signals(account_age_days: int, events: list) -> list[str]:
     """
     Derive active risk signals from account age and event history.
     Signals:
-      new_account_1d  — account < 1 day old
-      new_account_7d  — account < 7 days old
-      new_account_30d — account < 30 days old
-      velocity_burst  — 3+ violations in last 24 hours
-      multi_server    — violations on 2+ different guild IDs
+      new_account_1d  -  account < 1 day old
+      new_account_7d  -  account < 7 days old
+      new_account_30d -  account < 30 days old
+      velocity_burst  -  3+ violations in last 24 hours
+      multi_server    -  violations on 2+ different guild IDs
     """
     signals: list[str] = []
 
@@ -349,7 +349,7 @@ def get_score_explanation(user_id: int) -> Optional[dict]:
 def ensure_profile(user_id: int, user_name: str, account_age_days: int = 365):
     """
     Create a Prism profile for the user if one doesn't exist yet.
-    Safe to call on every message — does nothing if the profile already exists.
+    Safe to call on every message -  does nothing if the profile already exists.
     """
     data = _load()
     uid  = str(user_id)
@@ -374,7 +374,7 @@ def ensure_profile(user_id: int, user_name: str, account_age_days: int = 365):
         "llm_summary_updated":   None,
     }
     _save(data)
-    logger.debug.info(f"[Prism] Profile created for {user_name} ({uid}) — initial score {initial_score}")
+    logger.debug.info(f"[Prism] Profile created for {user_name} ({uid}) -  initial score {initial_score}")
 
 
 def record_event(
@@ -389,20 +389,20 @@ def record_event(
     Record a Prism event and return the new trust score.
     Triggers auto-flag logic and schedules staff notifications for critical/severe events.
     """
-    logger.working(f"[Prism] record_event — user={user_name} ({user_id}) event={event_type} guild={guild_id}")
+    logger.working(f"[Prism] record_event -  user={user_name} ({user_id}) event={event_type} guild={guild_id}")
 
     # Guild-level opt-out check
     try:
         prism_setting = datasys.load_data(guild_id, "prism_enabled")
         if prism_setting is False:
-            logger.info(f"[Prism] Skipped — guild {guild_id} has Prism disabled")
+            logger.info(f"[Prism] Skipped -  guild {guild_id} has Prism disabled")
             return -1
     except Exception as _opt_err:
         logger.warn(f"[Prism] Could not read prism_enabled for guild {guild_id}: {_opt_err}")
 
     # User-level opt-out check
     if is_opted_out(user_id):
-        logger.info(f"[Prism] Skipped — user {user_id} has opted out")
+        logger.info(f"[Prism] Skipped -  user {user_id} has opted out")
         return -1
 
     data = _load()
@@ -450,7 +450,7 @@ def record_event(
 
     try:
         _save(data)
-        logger.success(f"[Prism] Saved — {user_name} ({uid}) event={event_type} score={score}")
+        logger.success(f"[Prism] Saved -  {user_name} ({uid}) event={event_type} score={score}")
     except Exception as _save_err:
         logger.error(f"[Prism] _save() FAILED for {user_name} ({uid}): {_save_err}")
         return -1
@@ -644,7 +644,7 @@ def _auto_flag_check(uid: str, user_name: str, score: int, trust_data: dict):
         datasys.save_data(1001, "users", users_list)
         trust_data[uid]["auto_flagged"] = True
         _save(trust_data)
-        logger.warn(f"[Prism] Auto-flagged {user_name} ({uid}) — Score: {score}")
+        logger.warn(f"[Prism] Auto-flagged {user_name} ({uid}) -  Score: {score}")
 
     elif score >= AUTO_UNFLAG_THRESHOLD and currently_flagged:
         if uid in users_list and users_list[uid].get("auto_flagged", False):
@@ -652,7 +652,7 @@ def _auto_flag_check(uid: str, user_name: str, score: int, trust_data: dict):
             datasys.save_data(1001, "users", users_list)
         trust_data[uid]["auto_flagged"] = False
         _save(trust_data)
-        logger.info(f"[Prism] Auto-unflagged {user_name} ({uid}) — Score: {score}")
+        logger.info(f"[Prism] Auto-unflagged {user_name} ({uid}) -  Score: {score}")
 
 
 # ── Staff channel notifications ────────────────────────────────────────────────
@@ -678,7 +678,7 @@ def _schedule_notification(
             _send_staff_notification(bot, guild_id, user_id, user_name, event_type, score, reason, auto_flagged, near_flag)
         )
     except RuntimeError:
-        pass  # no running loop — skip notification
+        pass  # no running loop -  skip notification
 
 
 async def _send_staff_notification(
@@ -755,7 +755,7 @@ def _schedule_user_dm(user_id: int, user_name: str, guild_id: int):
         loop = asyncio.get_running_loop()
         loop.create_task(_send_user_dm(bot, user_id, user_name, guild_id))
     except RuntimeError:
-        pass  # no running loop — skip DM
+        pass  # no running loop -  skip DM
 
 
 async def _send_user_dm(bot, user_id: int, user_name: str, guild_id: int):
@@ -889,8 +889,8 @@ async def _generate_llm_summary(uid: str, profile: dict) -> str | None:
                                 return content
                             return None
                         error_body = await resp.text()
-                        logger.error(f"[Prism LLM] HTTP {resp.status} for user {uid} — {error_body[:300]}")
-                        _admin_log("error", f"Summary failed for {user_label} — HTTP {resp.status}: {error_body[:200]}", source="PrismLLM")
+                        logger.error(f"[Prism LLM] HTTP {resp.status} for user {uid} -  {error_body[:300]}")
+                        _admin_log("error", f"Summary failed for {user_label} -  HTTP {resp.status}: {error_body[:200]}", source="PrismLLM")
                         return None
     except asyncio.TimeoutError:
         logger.warn(f"[Prism LLM] Timeout generating summary for {uid}")
@@ -931,7 +931,7 @@ def _schedule_summary_update(uid: str) -> None:
         loop = asyncio.get_running_loop()
         loop.create_task(_update_user_summary(uid))
     except RuntimeError:
-        pass  # no running loop — will be picked up by TrustScoreTask
+        pass  # no running loop -  will be picked up by TrustScoreTask
 
 
 async def update_pending_summaries() -> None:

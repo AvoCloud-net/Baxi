@@ -84,11 +84,11 @@ class Chatfilter:
             phishing_result = self._check_phishing_urls(message)
             if phishing_result.get("flagged"):
                 logger.warn(
-                    f"Chatfilter | Phishing detected — user={user_id} guild={gid} "
+                    f"Chatfilter | Phishing detected -  user={user_id} guild={gid} "
                     f"domain={phishing_result.get('json', {}).get('domain', '?')}"
                 )
                 _admin_log("warning",
-                    f"Phishing detected — user={user_id} guild={gid} "
+                    f"Phishing detected -  user={user_id} guild={gid} "
                     f"domain={phishing_result.get('json', {}).get('domain', '?')}",
                     source="Chatfilter"
                 )
@@ -103,11 +103,11 @@ class Chatfilter:
         rapid = _is_rapid_sender(user_id) if user_id else False
         if rapid:
             logger.warn(
-                f"Chatfilter | Rapid sender detected — user={user_id} guild={gid} "
+                f"Chatfilter | Rapid sender detected -  user={user_id} guild={gid} "
                 f"→ routing to SafeText only (AI skipped)"
             )
             _admin_log("warning",
-                f"Rapid sender → SafeText only — user={user_id} guild={gid}",
+                f"Rapid sender → SafeText only -  user={user_id} guild={gid}",
                 source="Chatfilter"
             )
 
@@ -119,11 +119,11 @@ class Chatfilter:
         # Custom keyword hit → return immediately, no AI needed
         if safetext_result and safetext_result.get("reason") == "custom":
             logger.info(
-                f"Chatfilter | SafeText [custom keyword] — user={user_id} guild={gid} "
+                f"Chatfilter | SafeText [custom keyword] -  user={user_id} guild={gid} "
                 f"reason={safetext_result.get('reason')}"
             )
             _admin_log("warning",
-                f"SafeText [custom keyword] flagged — user={user_id} guild={gid}",
+                f"SafeText [custom keyword] flagged -  user={user_id} guild={gid}",
                 source="Chatfilter"
             )
             return safetext_result
@@ -132,14 +132,14 @@ class Chatfilter:
         if safetext_result and safetext_result.get("flagged"):
             _st_json = safetext_result.get("json", {})
             logger.info(
-                f"Chatfilter | SafeText [flagged] — user={user_id} guild={gid} "
+                f"Chatfilter | SafeText [flagged] -  user={user_id} guild={gid} "
                 f"reason={safetext_result.get('reason')} distance={safetext_result.get('distance')} "
-                f"word={_st_json.get('word', '—')} → AI skipped"
+                f"word={_st_json.get('word', '- ')} → AI skipped"
             )
             _admin_log("warning",
-                f"SafeText flagged — user={user_id} guild={gid} | "
+                f"SafeText flagged -  user={user_id} guild={gid} | "
                 f"reason={safetext_result.get('reason')} distance={safetext_result.get('distance')} "
-                f"word={_st_json.get('word', '—')} full={_st_json}",
+                f"word={_st_json.get('word', '- ')} full={_st_json}",
                 source="Chatfilter"
             )
             return safetext_result
@@ -147,7 +147,7 @@ class Chatfilter:
         # ── 5. Routing decision ─────────────────────────────────────────────
         if rapid or preferred_system == "safetext":
             logger.info(
-                f"Chatfilter | SafeText [clean] — user={user_id} guild={gid} "
+                f"Chatfilter | SafeText [clean] -  user={user_id} guild={gid} "
                 f"system={preferred_system}{' rapid' if rapid else ''}"
             )
             return safetext_result or _safe_result()
@@ -161,11 +161,11 @@ class Chatfilter:
 
         # ── 7. AI via queue (preferred = AI, SafeText said clean) ───────────
         logger.working(
-            f"Chatfilter | Queuing AI check — user={user_id} guild={gid} "
+            f"Chatfilter | Queuing AI check -  user={user_id} guild={gid} "
             f"slots_free={_ai_semaphore._value}/{_AI_MAX_CONCURRENT}"
         )
         _admin_log("info",
-            f"AI check queued — user={user_id} guild={gid} "
+            f"AI check queued -  user={user_id} guild={gid} "
             f"slots={_ai_semaphore._value}/{_AI_MAX_CONCURRENT}",
             source="Chatfilter"
         )
@@ -180,30 +180,30 @@ class Chatfilter:
             _raw = ai_result.get("_raw", "?")
             if ai_result.get("flagged"):
                 logger.info(
-                    f"Chatfilter | AI [flagged] — user={user_id} guild={gid} "
+                    f"Chatfilter | AI [flagged] -  user={user_id} guild={gid} "
                     f"reason={ai_result.get('reason')} raw=\"{_raw}\""
                 )
                 _admin_log("warning",
-                    f"AI flagged — user={user_id} guild={gid} "
+                    f"AI flagged -  user={user_id} guild={gid} "
                     f"reason={ai_result.get('reason')} | raw: \"{_raw}\"",
                     source="Chatfilter"
                 )
             else:
                 logger.info(
-                    f"Chatfilter | AI [clean] — user={user_id} guild={gid} raw=\"{_raw}\""
+                    f"Chatfilter | AI [clean] -  user={user_id} guild={gid} raw=\"{_raw}\""
                 )
                 _admin_log("info",
-                    f"AI clean — user={user_id} guild={gid} | raw: \"{_raw}\"",
+                    f"AI clean -  user={user_id} guild={gid} | raw: \"{_raw}\"",
                     source="Chatfilter"
                 )
             return ai_result
 
         # AI failed or timed out → SafeText fallback
         logger.warn(
-            f"Chatfilter | AI unavailable, falling back to SafeText — user={user_id} guild={gid}"
+            f"Chatfilter | AI unavailable, falling back to SafeText -  user={user_id} guild={gid}"
         )
         _admin_log("warning",
-            f"AI unavailable → SafeText fallback — user={user_id} guild={gid}",
+            f"AI unavailable → SafeText fallback -  user={user_id} guild={gid}",
             source="Chatfilter"
         )
         return safetext_result or _safe_result()
@@ -230,10 +230,10 @@ class Chatfilter:
                     )
         except asyncio.TimeoutError:
             logger.warn(
-                f"Chatfilter | AI queue full (>{_AI_QUEUE_TIMEOUT}s wait) — degrading to SafeText"
+                f"Chatfilter | AI queue full (>{_AI_QUEUE_TIMEOUT}s wait) -  degrading to SafeText"
             )
             _admin_log("warning",
-                f"AI queue full (>{_AI_QUEUE_TIMEOUT}s wait) — degrading to SafeText",
+                f"AI queue full (>{_AI_QUEUE_TIMEOUT}s wait) -  degrading to SafeText",
                 source="Chatfilter"
             )
             return None
@@ -274,12 +274,12 @@ class Chatfilter:
 
                         logger.info(
                             f"Chatfilter | SafeText raw → code={data.get('code')} "
-                            f"distance={data.get('distance')} word={data.get('word', '—')} "
+                            f"distance={data.get('distance')} word={data.get('word', '- ')} "
                             f"full={data}"
                         )
                         _admin_log("warning",
                             f"SafeText raw → code={data.get('code')} distance={data.get('distance')} "
-                            f"word={data.get('word', '—')} full={data}",
+                            f"word={data.get('word', '- ')} full={data}",
                             source="Chatfilter"
                         )
                         return {

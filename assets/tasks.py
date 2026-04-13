@@ -1024,7 +1024,7 @@ class YouTubeVideoTask:
                 if video["video_id"] == last_video_id:
                     continue  # No new video
 
-                # Check published timestamp — only notify if video is strictly newer
+                # Check published timestamp -  only notify if video is strictly newer
                 # This prevents re-alerts when a video is deleted and an older one surfaces
                 video_published = video.get("published", "")
                 if video_published and last_video_published:
@@ -1033,15 +1033,15 @@ class YouTubeVideoTask:
                         dt_new  = datetime.fromisoformat(video_published.replace("Z", "+00:00"))
                         dt_last = datetime.fromisoformat(last_video_published.replace("Z", "+00:00"))
                         if dt_new <= dt_last:
-                            # RSS surfaced an older video (e.g. newest was deleted) — update silently
+                            # RSS surfaced an older video (e.g. newest was deleted) -  update silently
                             ch_entry["last_video_id"]        = video["video_id"]
                             ch_entry["last_video_published"] = video_published
                             changed = True
                             continue
                     except (ValueError, AttributeError):
-                        pass  # Can't parse timestamps — fall through to notify
+                        pass  # Can't parse timestamps -  fall through to notify
 
-                # New video detected — send notification
+                # New video detected -  send notification
                 ch_entry["last_video_id"]        = video["video_id"]
                 ch_entry["last_video_published"] = video_published
                 changed = True

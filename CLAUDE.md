@@ -18,12 +18,12 @@ pip install -r requirements.txt
 python main.py
 ```
 
-The bot runs in `asyncio.gather` — both the Discord bot (`discord.py`) and the Quart web server start concurrently. Web server listens on port `1637` by default.
+The bot runs in `asyncio.gather` -  both the Discord bot (`discord.py`) and the Quart web server start concurrently. Web server listens on port `1637` by default.
 
 ## Configuration
 
-- `config/auth.py` — secrets (bot token, OAuth client secret, API keys). **Never commit real values.**
-- `config/config.py` — non-secret settings (shard count, colors, API URLs, check intervals, default guild data schema).
+- `config/auth.py` -  secrets (bot token, OAuth client secret, API keys). **Never commit real values.**
+- `config/config.py` -  non-secret settings (shard count, colors, API URLs, check intervals, default guild data schema).
 
 To generate the Fernet master key for donation credential encryption:
 ```bash
@@ -51,17 +51,17 @@ Single `events(bot, web)` function that registers all `@bot.event` handlers. Han
 Classes using `discord.ext.tasks` loops: `GCDH_Task` (global chat data sync, 15s), `UpdateStatsTask` (guild stats, 10m), `LivestreamTask` (Twitch/YouTube/TikTok polling), `StatsChannelsTask` (voice channel stats, 10m), temp-action expiry (60s), PRISM trust score recalc (1h), phishing list refresh (12h), garbage collector (daily).
 
 ### Web Dashboard (`assets/dash/`)
-- `dash.py` — main Quart route registrations for the dashboard UI
-- `endpoints.py` — API endpoints (TopGG vote webhook, etc.)
-- `log.py` — admin log utilities
-- `web/` — Jinja2 HTML templates
-- `static/` — CSS/JS/image assets
+- `dash.py` -  main Quart route registrations for the dashboard UI
+- `endpoints.py` -  API endpoints (TopGG vote webhook, etc.)
+- `log.py` -  admin log utilities
+- `web/` -  Jinja2 HTML templates
+- `static/` -  CSS/JS/image assets
 
 ### Message Processing (`assets/message/`)
 Feature modules: `chatfilter.py` (SafeText + Llama Guard AI + phishing), `globalchat.py`, `welcomer.py`, `antispam.py`, `auto_slowmode.py`, `reactionroles.py`, `warnings.py`, `customcmd.py`.
 
 ### Games (`assets/games/`)
-`counting.py` — counting game logic. `quiz.py` — flag quiz logic.
+`counting.py` -  counting game logic. `quiz.py` -  flag quiz logic.
 
 ### Localisation (`lang/lang.json`)
 All user-facing strings. Loaded per-guild via `datasys.load_lang_file(guild_id)` based on the guild's `lang` setting.

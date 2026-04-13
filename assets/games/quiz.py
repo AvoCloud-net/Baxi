@@ -277,7 +277,7 @@ async def check_answer(
                 _next_round(message.guild.id, channel, bot, next_delay)
             )
     else:
-        # Wrong answer — react and increment attempt counter, send hint if threshold reached
+        # Wrong answer -  react and increment attempt counter, send hint if threshold reached
         try:
             await message.add_reaction(cfg.Icons.cross)
         except (discord.Forbidden, discord.HTTPException):
@@ -307,7 +307,7 @@ async def _next_round(
 
 
 async def resume_all(bot: commands.AutoShardedBot) -> None:
-    """Called once on bot ready — restores the saved active question or starts a new one."""
+    """Called once on bot ready -  restores the saved active question or starts a new one."""
     for guild in bot.guilds:
         try:
             data: dict = dict(datasys.load_data(guild.id, "flag_quiz"))
@@ -331,7 +331,7 @@ async def resume_all(bot: commands.AutoShardedBot) -> None:
                 }
                 logger.debug.info(f"[FlagQuiz] Restored active question for guild {guild.id}: {saved['answer']}")
             else:
-                # No saved state — start a fresh round
+                # No saved state -  start a fresh round
                 ch = guild.get_channel(int(channel_raw))
                 if isinstance(ch, discord.TextChannel):
                     await start_round(guild.id, ch, bot)

@@ -33,5 +33,5 @@ class Donations:
     # Fernet master key used to encrypt donation provider credentials (Stripe/PayPal) at rest.
     # Generate once with:
     #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-    # NEVER change this after credentials have been saved — stored keys become unreadable.
+    # NEVER change this after credentials have been saved -  stored keys become unreadable.
     master_key: str = "GENERATE-A-FERNET-KEY"

@@ -537,7 +537,7 @@ main {
 
 /* ── General: btn-link text wrapping ─────────────────────── */
 
-/* buttons default to white-space: nowrap — override so long link text wraps */
+/* buttons default to white-space: nowrap -  override so long link text wraps */
 .btn-link {
   white-space: normal;
   word-break: break-word;
@@ -700,7 +700,7 @@ fieldset {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   }
 
-  /* Hide the HR divider — not needed in horizontal pill layout */
+  /* Hide the HR divider -  not needed in horizontal pill layout */
   .local-button-group hr {
     display: none;
   }

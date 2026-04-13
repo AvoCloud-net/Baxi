@@ -101,7 +101,7 @@ def base_commands(bot: commands.AutoShardedBot):
             event_cnt   = explanation["event_count"]
             account_age = explanation["account_age_days"]
 
-            # LLM summary — pull directly from profile
+            # LLM summary -  pull directly from profile
             profile     = sentinel.get_profile(interaction.user.id)
             llm_summary = profile.get("llm_summary") if profile else None
 
@@ -743,7 +743,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
     insights_group = app_commands.Group(
         name="insights",
-        description="BaxiInsights — server moderation statistics",
+        description="BaxiInsights -  server moderation statistics",
     )
 
     @insights_group.command(name="stats", description="Show a quick overview of moderation stats (last 30 days).")
@@ -801,7 +801,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             insights_url = f"https://{config.Web.url}/guild/insights/?guild_login={guild_id}"
             embed = discord.Embed(
                 title=f"{config.Icons.stats} BaxiInsights // {interaction.guild.name}",
-                description=f"Moderation overview — last 30 days\n[**View full dashboard →**]({insights_url})",
+                description=f"Moderation overview -  last 30 days\n[**View full dashboard →**]({insights_url})",
                 color=config.Discord.color,
             )
             embed.add_field(name=f"{config.Icons.alert} Warns", value=str(warns), inline=True)
@@ -905,7 +905,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             name = data.get("name", f"User {uid}")
             lvl = leveling_sys.current_level_from_xp(int(data.get("xp", 0)))
             xp_val = int(data.get("xp", 0))
-            lines.append(f"{prefix} **{name}** — Level {lvl} · {xp_val:,} XP")
+            lines.append(f"{prefix} **{name}** -  Level {lvl} · {xp_val:,} XP")
 
         embed = Embed(
             title=t["leaderboard_title"].format(guild=interaction.guild.name),

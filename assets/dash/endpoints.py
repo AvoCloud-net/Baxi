@@ -62,7 +62,7 @@ def topgg_vote_endpoint(app: quart.Quart, bot: commands.AutoShardedBot):
             voter_member = None
 
         if voter_member is None:
-            # Voter is not on the avocloud.net server — skip announcement
+            # Voter is not on the avocloud.net server -  skip announcement
             logger.debug.info(f"[TopGG Vote] User {voter_id} voted but is not on avocloud server.")
             return jsonify({"ok": True}), 200
 
@@ -85,7 +85,7 @@ def topgg_vote_endpoint(app: quart.Quart, bot: commands.AutoShardedBot):
             embed.description = (
                 f"**{voter_member.mention}** voted for Baxi and boosted **{voted_guild.name}**'s reach!\n\n"
                 f"Want your server featured here too?\n"
-                f"[Vote for Baxi on Top.gg](https://top.gg/bot/{bot.user.id}/vote) — it's free and takes 2 seconds."
+                f"[Vote for Baxi on Top.gg](https://top.gg/bot/{bot.user.id}/vote) -  it's free and takes 2 seconds."
             )
             if voted_guild.icon:
                 embed.set_thumbnail(url=voted_guild.icon.url)

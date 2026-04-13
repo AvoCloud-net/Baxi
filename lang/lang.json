@@ -41,9 +41,9 @@
                     "title": "Prism // Dein Vertrauens-Score",
                     "score_line": "**Score: {score}/100** {trend}  ·  {count} Ereignis(se)",
                     "recent_events_title": "Letzte Ereignisse (max. 5)",
-                    "no_events": "Keine Ereignisse aufgezeichnet — weiter so!",
+                    "no_events": "Keine Ereignisse aufgezeichnet -  weiter so!",
                     "new_account_title": "Neues Konto",
-                    "new_account_value": "Dein Konto ist **{age} Tage** alt. Der volle Score wird nach **{full} Tagen** erreicht — dein Score steigt automatisch in ca. **{days} Tagen**.",
+                    "new_account_value": "Dein Konto ist **{age} Tage** alt. Der volle Score wird nach **{full} Tagen** erreicht -  dein Score steigt automatisch in ca. **{days} Tagen**.",
                     "recovery_title": "Score-Erholung",
                     "recovery_value": "Dein Score erholt sich automatisch durch gutes Verhalten. Geschätzte vollständige Erholung: **~{days} Tage**.",
                     "perfect_value": "Dein Score ist perfekt!",
@@ -56,7 +56,7 @@
                 },
                 "prism_optout": {
                     "title": "Prism // Opt-Out",
-                    "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv — nur Prism führt keinen Score mehr über dich.",
+                    "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv -  nur Prism führt keinen Score mehr über dich.",
                     "opted_in": "Du hast dich wieder bei Prism angemeldet. Dein Vertrauens-Score wird ab sofort wieder geführt.",
                     "footer": "Baxi Prism · avocloud.net"
                 },
@@ -70,7 +70,7 @@
                     "privacy_title": "Deine Privatsphäre",
                     "privacy_value": "PRISM speichert ausschließlich das Minimum: Art des Moderationsereignisses, Zeitstempel und der Server, auf dem es stattfand. Kein Nachrichteninhalt, keine persönlichen Daten – nur direkt moderationsrelevante Informationen.",
                     "actions_title": "Was kannst du tun?",
-                    "actions_value": "• `/my_trust` — Deinen aktuellen Score und vergangene Ereignisse anzeigen\n• `/prism-optout` — PRISM-Tracking jederzeit deaktivieren\n• [Dokumentation](https://baxi.avocloud.net/docs/user-guide/prism) — Alle Details zur Funktionsweise von PRISM",
+                    "actions_value": "• `/my_trust` -  Deinen aktuellen Score und vergangene Ereignisse anzeigen\n• `/prism-optout` -  PRISM-Tracking jederzeit deaktivieren\n• [Dokumentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Alle Details zur Funktionsweise von PRISM",
                     "footer": "Baxi PRISM · avocloud.net"
                 }
             },
@@ -237,7 +237,7 @@
                 "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
                 "embed_offline_description": "{name} streamt gerade nicht. Schau später wieder vorbei!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
-                "ping_message": "{role} — **{name}** streamt jetzt **{game}** live!"
+                "ping_message": "{role} -  **{name}** streamt jetzt **{game}** live!"
             },
             "youtube_videos": {
                 "embed_description": "**{name}** hat ein neues Video hochgeladen!",
@@ -247,7 +247,7 @@
             "button_roles": {
                 "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
                 "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
-                "not_found": "Rolle nicht gefunden — sie wurde möglicherweise gelöscht.",
+                "not_found": "Rolle nicht gefunden -  sie wurde möglicherweise gelöscht.",
                 "no_permission": "Ich habe keine Berechtigung, diese Rolle zu verwalten.",
                 "server_only": "Dies kann nur innerhalb eines Servers verwendet werden.",
                 "group_limit_removed": "Die Rolle **{removed}** wurde entfernt und **{added}** hinzugefügt."
@@ -258,7 +258,7 @@
             "suggestions": {
                 "embed_title": "💡 Vorschlag",
                 "footer": "Baxi · Vorschläge",
-                "no_text": "*— kein Text —*",
+                "no_text": "*-  kein Text - *",
                 "no_permission": "❌ Nur Server-Staff kann Vorschläge annehmen oder ablehnen.",
                 "already_decided": "Dieser Vorschlag wurde bereits entschieden.",
                 "status_field": "Status",
@@ -383,9 +383,9 @@
                     "title": "Prism // Your Trust Score",
                     "score_line": "**Score: {score}/100** {trend}  ·  {count} event(s)",
                     "recent_events_title": "Recent Events (last 5)",
-                    "no_events": "No events recorded — keep it up!",
+                    "no_events": "No events recorded -  keep it up!",
                     "new_account_title": "New Account",
-                    "new_account_value": "Your account is **{age} days** old. The full score bonus kicks in after **{full} days** — your score will rise automatically in ~**{days} days**.",
+                    "new_account_value": "Your account is **{age} days** old. The full score bonus kicks in after **{full} days** -  your score will rise automatically in ~**{days} days**.",
                     "recovery_title": "Score Recovery",
                     "recovery_value": "Your score recovers automatically through good behavior. Estimated full recovery: **~{days} days**.",
                     "perfect_value": "Your score is perfect!",
@@ -398,7 +398,7 @@
                 },
                 "prism_optout": {
                     "title": "Prism // Opt-Out",
-                    "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active — only Prism will no longer track a score for you.",
+                    "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active -  only Prism will no longer track a score for you.",
                     "opted_in": "You have opted back in to Prism. Your trust score will now be tracked again.",
                     "footer": "Baxi Prism · avocloud.net"
                 },
@@ -406,13 +406,13 @@
                     "title": "Your PRISM Profile Has Been Created",
                     "description": "A moderation event on a server you share with Baxi has triggered the creation of a **PRISM** profile for your account. This message is to keep you informed.",
                     "what_is_title": "What is PRISM?",
-                    "what_is_value": "PRISM is Baxi's cross-server trust-scoring system. It calculates a score from 0 to 100 based on your moderation history. Moderators can use this score as one signal among many to make fairer, more consistent decisions — especially when you join a new server.",
+                    "what_is_value": "PRISM is Baxi's cross-server trust-scoring system. It calculates a score from 0 to 100 based on your moderation history. Moderators can use this score as one signal among many to make fairer, more consistent decisions -  especially when you join a new server.",
                     "why_title": "Why does this exist?",
-                    "why_value": "Moderation context is often lost when someone joins a new server. PRISM helps moderators avoid repeat harm from bad actors, while giving well-behaved users a positive track record that follows them. Scores recover automatically over time as long as no new violations occur — one-off incidents don't define you permanently.",
+                    "why_value": "Moderation context is often lost when someone joins a new server. PRISM helps moderators avoid repeat harm from bad actors, while giving well-behaved users a positive track record that follows them. Scores recover automatically over time as long as no new violations occur -  one-off incidents don't define you permanently.",
                     "privacy_title": "Your privacy",
-                    "privacy_value": "PRISM stores only the minimum necessary: the type of moderation event, its timestamp, and the server it occurred on. No message content, no personal information — only data directly related to moderation actions.",
+                    "privacy_value": "PRISM stores only the minimum necessary: the type of moderation event, its timestamp, and the server it occurred on. No message content, no personal information -  only data directly related to moderation actions.",
                     "actions_title": "What can you do?",
-                    "actions_value": "• `/my_trust` — View your current score and recent events\n• `/prism-optout` — Opt out of PRISM tracking at any time\n• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) — Full details on how PRISM works",
+                    "actions_value": "• `/my_trust` -  View your current score and recent events\n• `/prism-optout` -  Opt out of PRISM tracking at any time\n• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Full details on how PRISM works",
                     "footer": "Baxi PRISM · avocloud.net"
                 }
             },
@@ -516,7 +516,7 @@
                     "to_many_files": "You can attach and send a maximum of one image.",
                     "message_to_long": "Your message is too long. Please note that the maximum length is 1000 characters.",
                     "baned": "You are banned from the global chat. The following reason is given: {reason}",
-                    "s11-not-sent": "⚠️ Your message wasn't sent in the global chat because it contains sensitive content related to self-harm or suicide.\nPlease check your private messages — our bot has sent you an important message there."
+                    "s11-not-sent": "⚠️ Your message wasn't sent in the global chat because it contains sensitive content related to self-harm or suicide.\nPlease check your private messages -  our bot has sent you an important message there."
                 }
             },
             "verify": {
@@ -579,7 +579,7 @@
                 "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
                 "embed_offline_description": "{name} is not streaming right now. Check back later!",
                 "embed_footer": "Baxi Livestream - avocloud.net",
-                "ping_message": "{role} — **{name}** is now live playing **{game}**!"
+                "ping_message": "{role} -  **{name}** is now live playing **{game}**!"
             },
             "youtube_videos": {
                 "embed_description": "**{name}** just uploaded a new video!",
@@ -589,7 +589,7 @@
             "button_roles": {
                 "applied": "The **{role}** role has been applied to your profile.",
                 "removed": "The **{role}** role has been removed from your profile.",
-                "not_found": "Role not found — it may have been deleted.",
+                "not_found": "Role not found -  it may have been deleted.",
                 "no_permission": "I don't have permission to manage that role.",
                 "server_only": "This can only be used inside a server.",
                 "group_limit_removed": "The **{removed}** role was removed and **{added}** was applied."
@@ -600,7 +600,7 @@
             "suggestions": {
                 "embed_title": "💡 Suggestion",
                 "footer": "Baxi · Suggestions",
-                "no_text": "*— no text —*",
+                "no_text": "*-  no text - *",
                 "no_permission": "❌ Only server staff can accept or decline suggestions.",
                 "already_decided": "This suggestion has already been decided.",
                 "status_field": "Status",

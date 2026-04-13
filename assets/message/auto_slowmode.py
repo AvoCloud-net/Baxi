@@ -13,7 +13,7 @@ logger = Logger()
 
 # {guild_id: {channel_id: [timestamps]}}
 _channel_timestamps: dict[int, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
-# {channel_id: asyncio.Task} — active slowmode removal tasks
+# {channel_id: asyncio.Task} -  active slowmode removal tasks
 _active_tasks: dict[int, asyncio.Task] = {}
 
 
@@ -53,7 +53,7 @@ async def check(message: discord.Message) -> None:
     if len(_channel_timestamps[guild_id][channel_id]) < threshold:
         return
 
-    # Threshold exceeded — apply slowmode
+    # Threshold exceeded -  apply slowmode
     _channel_timestamps[guild_id][channel_id].clear()
 
     try:

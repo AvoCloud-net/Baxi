@@ -115,7 +115,7 @@ class _SilentLogger:
 
 
 class YouTubeAPI:
-    """YouTube live stream tracking via yt-dlp — no API key or quota required.
+    """YouTube live stream tracking via yt-dlp -  no API key or quota required.
 
     yt-dlp handles all scraping internally and is actively maintained.
     Blocking yt-dlp calls run in a thread executor to avoid blocking the async loop.
@@ -216,7 +216,7 @@ class YouTubeAPI:
     ) -> Optional[dict]:
         """Fetch the latest uploaded video for a YouTube channel via the public RSS feed.
 
-        Uses the unauthenticated Atom feed — no API key or yt-dlp required.
+        Uses the unauthenticated Atom feed -  no API key or yt-dlp required.
         Returns a dict with video metadata or None on failure/empty channel.
         """
         import xml.etree.ElementTree as ET
@@ -336,7 +336,7 @@ class TikTokAPI:
         if not data:
             return None
 
-        # Navigate the nested structure — layout varies by TikTok version
+        # Navigate the nested structure -  layout varies by TikTok version
         # Try __DEFAULT_SCOPE__ → webapp.user-detail → userInfo.user
         scope = data.get("__DEFAULT_SCOPE__") or {}
         user_detail = scope.get("webapp.user-detail") or {}

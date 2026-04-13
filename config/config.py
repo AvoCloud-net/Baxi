@@ -4,11 +4,11 @@ import discord
 class Discord:
     shard_count = 4
     prefix = "b?"
-    color         = discord.Color.from_rgb(147, 51, 234)   # #9333ea — Purple (avocloud primary)
-    danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 — Red
-    warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b — Amber
-    success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e — Green
-    info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 — Blue
+    color         = discord.Color.from_rgb(147, 51, 234)   # #9333ea -  Purple (avocloud primary)
+    danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 -  Red
+    warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b -  Amber
+    success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e -  Green
+    info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 -  Blue
     version = "7.0.0"
 
 

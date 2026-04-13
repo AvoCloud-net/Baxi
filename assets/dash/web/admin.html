@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baxi — Admin Panel</title>
+    <title>Baxi -  Admin Panel</title>
     <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
-    <meta property="og:title" content="Avocloud.net — Baxi Admin">
+    <meta property="og:title" content="Avocloud.net -  Baxi Admin">
     <meta property="og:color" content="#9333ea">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
@@ -253,7 +253,7 @@
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Dashboard
     </a>
-    <a href="javascript:void(0)" id="btn-reload-templates" onclick="reloadTemplates()" title="Clear Jinja2 template cache — pick up changed HTML/CSS/JS without restarting the bot">
+    <a href="javascript:void(0)" id="btn-reload-templates" onclick="reloadTemplates()" title="Clear Jinja2 template cache -  pick up changed HTML/CSS/JS without restarting the bot">
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Reload Templates
     </a>
@@ -755,7 +755,7 @@
                     <div class="grid gap-3">
                         <div style="display:flex; gap:.5rem;">
                             <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
-                            <input id="notif-gid" type="text" placeholder="Guild ID (optional — all if empty)" style="width:260px;">
+                            <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                         </div>
                         <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#1a1a2e); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
                         <button onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
@@ -830,7 +830,7 @@
 <script src="https://avocloud.net/assets/js/main.js"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════
-   Admin Panel — client-side logic
+   Admin Panel -  client-side logic
    Polls /api/admin/data every 10s, /api/admin/logs every 3s
    ══════════════════════════════════════════════════════════════ */
 
@@ -1272,12 +1272,12 @@ async function searchUser() {
     if (r.data.prism) {
         const p = r.data.prism;
         const evRows = (p.events||[]).slice().reverse().map(ev => {
-            const ts = ev.timestamp ? ev.timestamp.slice(0,16).replace('T',' ') : '—';
+            const ts = ev.timestamp ? ev.timestamp.slice(0,16).replace('T',' ') : '- ';
             return `<tr>
                 <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(ts)}</td>
-                <td style="font-size:.75rem; font-weight:600;">${escHtml(ev.type||'—')}</td>
-                <td style="opacity:.65; font-size:.74rem; word-break:break-word; max-width:220px;">${escHtml(ev.reason||'—')}</td>
-                <td style="opacity:.4; font-size:.72rem;">${escHtml(ev.guild_id||'—')}</td>
+                <td style="font-size:.75rem; font-weight:600;">${escHtml(ev.type||'- ')}</td>
+                <td style="opacity:.65; font-size:.74rem; word-break:break-word; max-width:220px;">${escHtml(ev.reason||'- ')}</td>
+                <td style="opacity:.4; font-size:.72rem;">${escHtml(ev.guild_id||'- ')}</td>
             </tr>`;
         }).join('');
         const riskHtml = (p.risk_signals||[]).length
@@ -1312,8 +1312,8 @@ async function searchUser() {
         <div style="border:1px solid rgba(239,68,68,.25); border-radius:8px; padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Global Flag Entry</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
-                <span style="opacity:.7;">Reason: <span style="color:#fb923c;">${escHtml(f.reason||'—')}</span></span>
-                <span style="opacity:.5; font-size:.75rem;">Date: ${escHtml(f.entry_date||'—')}</span>
+                <span style="opacity:.7;">Reason: <span style="color:#fb923c;">${escHtml(f.reason||'- ')}</span></span>
+                <span style="opacity:.5; font-size:.75rem;">Date: ${escHtml(f.entry_date||'- ')}</span>
                 ${f.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}
             </div>
         </div>`);
@@ -1339,11 +1339,11 @@ async function searchUser() {
     if (r.data.chatfilter_violations && r.data.chatfilter_violations.length) {
         const viol = r.data.chatfilter_violations;
         const rows = viol.slice(0, 30).map(v => `<tr>
-            <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(v.timestamp||'—')}</td>
-            <td style="font-size:.73rem;">${escHtml(v.sname||'—')}</td>
-            <td style="font-size:.73rem;">${escHtml(v.cname||'—')}</td>
-            <td><span class="badge badge-flagged" style="font-size:.68rem;">${escHtml(v.reason||'—')}</span></td>
-            <td style="max-width:240px; word-break:break-word; font-size:.75rem;">${escHtml(v.message||'—')}</td>
+            <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(v.timestamp||'- ')}</td>
+            <td style="font-size:.73rem;">${escHtml(v.sname||'- ')}</td>
+            <td style="font-size:.73rem;">${escHtml(v.cname||'- ')}</td>
+            <td><span class="badge badge-flagged" style="font-size:.68rem;">${escHtml(v.reason||'- ')}</span></td>
+            <td style="max-width:240px; word-break:break-word; font-size:.75rem;">${escHtml(v.message||'- ')}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(192,132,252,.2); border-radius:8px; padding:.75rem 1rem;">
@@ -1363,11 +1363,11 @@ async function searchUser() {
         const totalWarns = gw.reduce((s, g) => s + g.count, 0);
         const warnRows = gw.flatMap(g =>
             (g.entries||[]).map(w => `<tr>
-                <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(w.date||'—')}</td>
+                <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(w.date||'- ')}</td>
                 <td style="font-size:.75rem; font-weight:600;">${escHtml(g.guild_name||g.guild_id)}</td>
-                <td style="word-break:break-word; font-size:.75rem;">${escHtml(w.reason||'—')}</td>
-                <td style="opacity:.6; font-size:.73rem;">${escHtml(w.mod||'—')}</td>
-                <td style="opacity:.4; font-size:.7rem; font-family:monospace;">${escHtml(w.id||'—')}</td>
+                <td style="word-break:break-word; font-size:.75rem;">${escHtml(w.reason||'- ')}</td>
+                <td style="opacity:.6; font-size:.73rem;">${escHtml(w.mod||'- ')}</td>
+                <td style="opacity:.4; font-size:.7rem; font-family:monospace;">${escHtml(w.id||'- ')}</td>
             </tr>`)
         ).join('');
         sections.insertAdjacentHTML('beforeend', `
@@ -1388,8 +1388,8 @@ async function searchUser() {
         const taRows = ta.map(t => `<tr>
             <td><span class="badge badge-auto">${escHtml(t.type)}</span></td>
             <td style="font-size:.75rem; font-weight:600;">${escHtml(t.guild_name||t.guild_id)}</td>
-            <td style="opacity:.7; font-size:.74rem;">${escHtml(t.reason||'—')}</td>
-            <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(t.expires_at||'—')}</td>
+            <td style="opacity:.7; font-size:.74rem;">${escHtml(t.reason||'- ')}</td>
+            <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(t.expires_at||'- ')}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(251,146,60,.25); border-radius:8px; padding:.75rem 1rem;">
@@ -1407,11 +1407,11 @@ async function searchUser() {
     if (r.data.open_tickets && r.data.open_tickets.length) {
         const ot = r.data.open_tickets;
         const otRows = ot.map(t => {
-            const created = t.created_at ? new Date(t.created_at * 1000).toLocaleString('en-GB') : '—';
+            const created = t.created_at ? new Date(t.created_at * 1000).toLocaleString('en-GB') : '- ';
             return `<tr>
                 <td style="font-size:.75rem; font-weight:600;">${escHtml(t.guild_name||t.guild_id)}</td>
-                <td style="font-size:.75rem;">${escHtml(t.title||'—')}</td>
-                <td style="max-width:200px; word-break:break-word; font-size:.74rem; opacity:.7;">${escHtml(t.message||'—')}</td>
+                <td style="font-size:.75rem;">${escHtml(t.title||'- ')}</td>
+                <td style="max-width:200px; word-break:break-word; font-size:.74rem; opacity:.7;">${escHtml(t.message||'- ')}</td>
                 <td><span class="badge badge-ok" style="font-size:.68rem;">${escHtml(t.status||'open')}</span></td>
                 <td style="opacity:.5; font-size:.72rem; white-space:nowrap;">${escHtml(created)}</td>
             </tr>`;
@@ -1432,11 +1432,11 @@ async function searchUser() {
     if (r.data.transcripts && r.data.transcripts.length) {
         const tr = r.data.transcripts;
         const trRows = tr.map(t => `<tr>
-            <td style="font-size:.75rem;">${escHtml(t.title||'—')}</td>
-            <td style="max-width:180px; word-break:break-word; font-size:.74rem; opacity:.7;">${escHtml(t.initial_message||'—')}</td>
-            <td style="opacity:.5; font-size:.73rem;">${escHtml(t.guild_id||'—')}</td>
-            <td style="opacity:.6; font-size:.73rem;">${escHtml(t.closed_by||'—')}</td>
-            <td style="opacity:.5; white-space:nowrap; font-size:.72rem;">${escHtml((t.closed_on||'—').slice(0,16))}</td>
+            <td style="font-size:.75rem;">${escHtml(t.title||'- ')}</td>
+            <td style="max-width:180px; word-break:break-word; font-size:.74rem; opacity:.7;">${escHtml(t.initial_message||'- ')}</td>
+            <td style="opacity:.5; font-size:.73rem;">${escHtml(t.guild_id||'- ')}</td>
+            <td style="opacity:.6; font-size:.73rem;">${escHtml(t.closed_by||'- ')}</td>
+            <td style="opacity:.5; white-space:nowrap; font-size:.72rem;">${escHtml((t.closed_on||'- ').slice(0,16))}</td>
             <td style="opacity:.4; font-size:.72rem;">${t.message_count}</td>
             <td><a href="/?ticket_transcript=${encodeURIComponent(t.id)}" target="_blank" class="btn-sm-outline" style="font-size:.7rem; padding:.15rem .4rem;">View</a></td>
         </tr>`).join('');
@@ -1578,7 +1578,7 @@ async function adminAction(action) {
 const SEV_CLASS = { critical:'sev-critical', severe:'sev-severe', high:'sev-high', medium:'sev-medium', low:'sev-low', minor:'sev-minor', minimal:'sev-minimal' };
 
 function fmtTs(iso) {
-    if (!iso) return '—';
+    if (!iso) return '- ';
     try { return new Date(iso).toLocaleString('de-AT', { dateStyle:'short', timeStyle:'short' }); }
     catch { return iso.slice(0,16).replace('T',' '); }
 }
@@ -1602,7 +1602,7 @@ async function viewPrismProfile(uid) {
     bar.style.background = scoreBarColor(p.score);
 
     document.getElementById('pm-age').textContent      = p.account_age_days + ' days';
-    document.getElementById('pm-created').textContent  = fmtTs(p.account_created_at) || '—';
+    document.getElementById('pm-created').textContent  = fmtTs(p.account_created_at) || '- ';
     document.getElementById('pm-first').textContent    = fmtTs(p.first_seen);
     document.getElementById('pm-last').textContent     = fmtTs(p.last_seen);
     document.getElementById('pm-evt-count').textContent = p.event_count;
@@ -1654,8 +1654,8 @@ async function viewPrismProfile(uid) {
                 <td style="font-weight:600;">${escHtml(ev.label)}</td>
                 <td class="${sevCls}">${ev.severity_label}</td>
                 <td>${weight}${decayed}</td>
-                <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '—')}</td>
-                <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '—'}</td>
+                <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '- ')}</td>
+                <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '- '}</td>
                 <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
                 <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:#f87171; padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
             </tr>`;
@@ -1863,7 +1863,7 @@ function gaRender() {
                 <div style="height:100%;width:${r.pct}%;background:${st.color};opacity:.8;border-radius:2px;"></div>
                </div>
                <span style="font-size:.68rem;opacity:.45;margin-left:.35rem;">${r.pct}%</span>`
-            : `<span style="opacity:.25;font-size:.72rem;">—</span>`;
+            : `<span style="opacity:.25;font-size:.72rem;">- </span>`;
         return `<tr>
             <td style="opacity:.35;">${i+1}</td>
             <td>
@@ -1962,7 +1962,7 @@ function renderGuildConfig(r) {
     if (c.chatfilter) {
         const cf = c.chatfilter;
         const cats = cf.ai_categories || {};
-        const enabledCats = Object.entries(cats).filter(([,v])=>v).map(([k])=>k).join(', ') || '—';
+        const enabledCats = Object.entries(cats).filter(([,v])=>v).map(([k])=>k).join(', ') || '- ';
         cards.push(gcDetailCard('Chatfilter', [
             ['Enabled', gcBool(cf.enabled)],
             ['Phishing Filter', gcBool(cf.phishing_filter)],
@@ -1975,10 +1975,10 @@ function renderGuildConfig(r) {
         const as = c.antispam;
         cards.push(gcDetailCard('Anti-Spam', [
             ['Enabled', gcBool(as.enabled)],
-            ['Max Messages', as.max_messages ?? '—'],
-            ['Interval (s)', as.interval ?? '—'],
-            ['Max Duplicates', as.max_duplicates ?? '—'],
-            ['Action', as.action || '—'],
+            ['Max Messages', as.max_messages ?? '- '],
+            ['Interval (s)', as.interval ?? '- '],
+            ['Max Duplicates', as.max_duplicates ?? '- '],
+            ['Action', as.action || '- '],
         ]));
     }
 
@@ -1995,8 +1995,8 @@ function renderGuildConfig(r) {
         cards.push(gcDetailCard('Welcomer', [
             ['Enabled', gcBool(w.enabled)],
             ['Leave Enabled', gcBool(w.leave_enabled)],
-            ['Image Mode', w.image_mode || '—'],
-            ['Message', w.message ? `<span style="opacity:.7;font-style:italic;">${w.message.substring(0,60)}${w.message.length>60?'…':''}</span>` : '—'],
+            ['Image Mode', w.image_mode || '- '],
+            ['Message', w.message ? `<span style="opacity:.7;font-style:italic;">${w.message.substring(0,60)}${w.message.length>60?'…':''}</span>` : '- '],
         ]));
     }
 
@@ -2005,7 +2005,7 @@ function renderGuildConfig(r) {
         const count = Object.keys(c.custom_commands).length;
         cards.push(gcDetailCard('Custom Commands', [
             ['Total', count],
-            ['Commands', count ? Object.keys(c.custom_commands).map(k=>`<code>${k}</code>`).join(', ') : '—'],
+            ['Commands', count ? Object.keys(c.custom_commands).map(k=>`<code>${k}</code>`).join(', ') : '- '],
         ]));
     }
 
@@ -2030,7 +2030,7 @@ function renderGuildConfig(r) {
     // Stats Channels
     if (c.stats_channels) {
         const sc = c.stats_channels;
-        const active = sc.stats ? Object.entries(sc.stats).filter(([,v])=>v.enabled).map(([k])=>k).join(', ') || '—' : '—';
+        const active = sc.stats ? Object.entries(sc.stats).filter(([,v])=>v.enabled).map(([k])=>k).join(', ') || '- ' : '- ';
         cards.push(gcDetailCard('Stats Channels', [
             ['Enabled', gcBool(sc.enabled)],
             ['Active Stats', active],
@@ -2057,9 +2057,9 @@ function renderGuildConfig(r) {
         const asm = c.auto_slowmode;
         cards.push(gcDetailCard('Auto Slowmode', [
             ['Enabled', gcBool(asm.enabled)],
-            ['Threshold', asm.threshold ?? '—'],
-            ['Slowmode Delay (s)', asm.slowmode_delay ?? '—'],
-            ['Duration (s)', asm.duration ?? '—'],
+            ['Threshold', asm.threshold ?? '- '],
+            ['Slowmode Delay (s)', asm.slowmode_delay ?? '- '],
+            ['Duration (s)', asm.duration ?? '- '],
         ]));
     }
 
@@ -2077,11 +2077,11 @@ function renderGuildConfig(r) {
     // Flag Quiz
     if (c.flag_quiz) {
         const fq = c.flag_quiz;
-        const topScores = fq.scores ? Object.entries(fq.scores).sort(([,a],[,b])=>b-a).slice(0,3).map(([id,s])=>`${id}: ${s}`).join(', ') : '—';
+        const topScores = fq.scores ? Object.entries(fq.scores).sort(([,a],[,b])=>b-a).slice(0,3).map(([id,s])=>`${id}: ${s}`).join(', ') : '- ';
         cards.push(gcDetailCard('Flag Quiz', [
             ['Enabled', gcBool(fq.enabled)],
             ['Points Enabled', gcBool(fq.points_enabled)],
-            ['Top Scores', topScores || '—'],
+            ['Top Scores', topScores || '- '],
         ]));
     }
 
@@ -2100,7 +2100,7 @@ function renderGuildConfig(r) {
         const tv = c.temp_voice;
         cards.push(gcDetailCard('Temp Voice', [
             ['Enabled', gcBool(tv.enabled)],
-            ['Name Template', tv.name_template || '—'],
+            ['Name Template', tv.name_template || '- '],
         ]));
     }
 
@@ -2118,10 +2118,10 @@ function renderGuildConfig(r) {
     if (c.warn_config) {
         const wc = c.warn_config;
         cards.push(gcDetailCard('Warn Config', [
-            ['Mute at', wc.mute_at ?? '—'],
-            ['Kick at', wc.kick_at ?? '—'],
-            ['Ban at', wc.ban_at ?? '—'],
-            ['Mute Duration (s)', wc.mute_duration ?? '—'],
+            ['Mute at', wc.mute_at ?? '- '],
+            ['Kick at', wc.kick_at ?? '- '],
+            ['Ban at', wc.ban_at ?? '- '],
+            ['Mute Duration (s)', wc.mute_duration ?? '- '],
         ]));
     }
 

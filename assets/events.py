@@ -233,7 +233,7 @@ def events(bot: commands.AutoShardedBot, web):
     @bot.event
     async def on_guild_join(guild: discord.Guild):
         logger.debug.info("on_guild_join")
-        admin_log("info", f"Bot joined guild: {guild.name} ({guild.id}) — {guild.member_count} members", source="GuildJoin")
+        admin_log("info", f"Bot joined guild: {guild.name} ({guild.id}) -  {guild.member_count} members", source="GuildJoin")
         try:
             guild_data_dir = os.path.join("data", str(guild.id))
             data_dir_exists: bool = os.path.exists(guild_data_dir)
@@ -461,7 +461,7 @@ def events(bot: commands.AutoShardedBot, web):
 
 
 async def handle_sticky_message(message: discord.Message, bot: commands.AutoShardedBot):
-    """Debounced re-post of sticky message — waits for a pause in activity before acting."""
+    """Debounced re-post of sticky message -  waits for a pause in activity before acting."""
     if message.guild is None or message.author.bot:
         return
     channel_id_str = str(message.channel.id)
@@ -577,7 +577,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if await suggestions_sys.check_suggestion(message, bot):
             return
 
-        # Level system — award XP for this message
+        # Level system -  award XP for this message
         asyncio.create_task(leveling_sys.process_xp(message, bot))
 
         gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
@@ -679,12 +679,12 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
             embed = discord.Embed(
                 title="SYS // NOTICE",
-                description="We saw that your message mentioned **self-harm**, **suicide**, or **disordered eating**, and we want you to know something really important: **you are not alone**. So many people struggle with these feelings, and it's okay to feel overwhelmed sometimes. What you're going through matters, and it's completely okay to ask for help—because you deserve support and kindness.\n\n"
+                description="We saw that your message mentioned **self-harm**, **suicide**, or **disordered eating**, and we want you to know something really important: **you are not alone**. So many people struggle with these feelings, and it's okay to feel overwhelmed sometimes. What you're going through matters, and it's completely okay to ask for help- because you deserve support and kindness.\n\n"
                 "If you ever feel like talking to someone, whether it's a **friend**, **family member**, or a **mental health professional**, please don't hesitate. **You don't have to carry this by yourself.** There are people who care deeply and want to be there for you.\n\n"
                 "For immediate support, you can reach out to the **International Suicide Prevention Lifeline** at **+1-800-273-8255** (this number also connects you to help worldwide), or visit https://www.iasp.info/resources/Crisis_Centres/ to find a crisis center near you.\n\n"
                 "If you're in **Austria** or **Germany**, here are some local resources you can contact anytime:\n"
-                "- Austria: Telefonseelsorge — 142 (free & confidential) | https://www.telefonseelsorge.at/\n"
-                "- Germany: Telefonseelsorge — 0800 111 0 111 or 0800 111 0 222 (free & confidential) | https://www.telefonseelsorge.de/",
+                "- Austria: Telefonseelsorge -  142 (free & confidential) | https://www.telefonseelsorge.at/\n"
+                "- Germany: Telefonseelsorge -  0800 111 0 111 or 0800 111 0 222 (free & confidential) | https://www.telefonseelsorge.de/",
                 color=config.Discord.danger_color,
             )
 
@@ -748,7 +748,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         account_age_days=account_age,
                     )
                     logger.info(
-                        f"[Prism] Silent scan recorded — user={message.author.name} "
+                        f"[Prism] Silent scan recorded -  user={message.author.name} "
                         f"guild={message.guild.id} reason={prism_req.get('reason')}"
                     )
                 except Exception as _prism_err:
@@ -872,7 +872,7 @@ async def del_chatfilter(
     }
     save_data(1001, "chatfilter_log", chatfilter_logs)
     admin_log("warning",
-        f"Chatfilter [{detected_system}] — {message.author.name} in #{cname} @ {message.guild.name}: "
+        f"Chatfilter [{detected_system}] -  {message.author.name} in #{cname} @ {message.guild.name}: "
         f"{reason_list.get(reason, reason)} | \"{message.content[:80]}{'…' if len(message.content) > 80 else ''}\" | ID: {id}",
         source="Chatfilter"
     )

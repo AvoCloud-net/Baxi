@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaxiInsights — {{ guild.name }}</title>
+    <title>BaxiInsights -  {{ guild.name }}</title>
     <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
-    <meta property="og:title" content="BaxiInsights — {{ guild.name }}">
+    <meta property="og:title" content="BaxiInsights -  {{ guild.name }}">
     <meta property="og:description" content="Server analytics for {{ guild.name }}.">
     <meta property="og:color" content="#DC143C">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -204,7 +204,7 @@
         </button>
     </div>
 
-    <!-- Mobile-only bottom nav — completely independent from the desktop sidebar -->
+    <!-- Mobile-only bottom nav -  completely independent from the desktop sidebar -->
     <nav id="mobile-nav" aria-label="Mobile navigation">
         <button onclick="location.href='/guild/?guild_login={{ guild_id }}'">← Dashboard</button>
         <div class="mnav-sep"></div>
@@ -297,7 +297,7 @@
                             </div>
                             {% endfor %}
                         {% else %}
-                            <p class="no-data">No data yet — starts tracking from now on.</p>
+                            <p class="no-data">No data yet -  starts tracking from now on.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -315,7 +315,7 @@
                             </div>
                             {% endfor %}
                         {% else %}
-                            <p class="no-data">No data yet — starts tracking from now on.</p>
+                            <p class="no-data">No data yet -  starts tracking from now on.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -382,7 +382,7 @@
                     </div>
                 </div>
                 <div class="chart-card">
-                    <h3>Most Filter Hits — Users</h3>
+                    <h3>Most Filter Hits -  Users</h3>
                     <div id="list-filter-users">
                         {% if data.top_filter_users %}
                             {% for u in data.top_filter_users %}
@@ -397,7 +397,7 @@
                     </div>
                 </div>
                 <div class="chart-card">
-                    <h3>Most Filter Hits — Channels</h3>
+                    <h3>Most Filter Hits -  Channels</h3>
                     <div id="list-filter-channels">
                         {% if data.top_filter_channels %}
                             {% for c in data.top_filter_channels %}
@@ -414,11 +414,11 @@
             </div>
             <div class="grid-2" style="margin-top:1rem;">
                 <div class="chart-card">
-                    <h3>Filter — Severity Distribution</h3>
+                    <h3>Filter -  Severity Distribution</h3>
                     <canvas id="chart-severity" height="160"></canvas>
                 </div>
                 <div class="chart-card">
-                    <h3>Filter — Category Breakdown</h3>
+                    <h3>Filter -  Category Breakdown</h3>
                     <canvas id="chart-category" height="160"></canvas>
                 </div>
             </div>

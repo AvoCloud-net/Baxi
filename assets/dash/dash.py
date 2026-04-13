@@ -920,11 +920,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 bot_member_check = await guild.fetch_member(bot.user.id)  # type: ignore
                 bot_top_role = bot_member_check.top_role
-                guild_roles_sorted = sorted(guild.roles, key=lambda r: r.position, reverse=True)
-                if bot_top_role.position != guild_roles_sorted[0].position:
+                staff_role = guild.get_role(int(ticket["role"]))
+                if staff_role is None:
+                    return quart.jsonify({"success": False, "message": "Staff role not found."}), 400
+                if bot_top_role.position <= staff_role.position:
                     return quart.jsonify({
                         "success": False,
-                        "message": f"Bot role \"{bot_top_role.name}\" is not at the top of the role hierarchy. The ticket system requires the bot role to be highest so it can manage channel permissions."
+                        "message": f"Baxi's top role \"{bot_top_role.name}\" must be above the staff role \"{staff_role.name}\" in the role hierarchy."
                     }), 403
 
                 channel = await guild.fetch_channel(int(ticket["channel"]))
@@ -2747,7 +2749,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 try:
                     channel = await guild.fetch_channel(channel_id)
                 except discord.NotFound:
-                    return quart.jsonify({"valid": False, "missing": ["Channel not found — it may have been deleted"], "scope": "channel"})
+                    return quart.jsonify({"valid": False, "missing": ["Channel not found -  it may have been deleted"], "scope": "channel"})
                 except discord.Forbidden:
                     return quart.jsonify({"valid": False, "missing": ["Baxi cannot access this channel (missing View Channel permission)"], "scope": "channel"})
                 permissions = channel.permissions_for(bot_member)
@@ -3061,7 +3063,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         cf_log: dict = dict(datasys.load_data(1001, "chatfilter_log"))
         entries = list(cf_log.values())
 
-        # Newest first — parse "DD.MM.YYYY - HH:MM" format for correct chronological order
+        # Newest first -  parse "DD.MM.YYYY - HH:MM" format for correct chronological order
         import datetime as _dt
         def _parse_cf_ts(ts: str):
             try:
@@ -3373,7 +3375,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Guild not found."}), 404
             guild_name = guild.name
             await guild.leave()
-            share.admin_log("warning", f"Bot left guild {guild_name} ({guild_id_str}) — triggered by {user.name}", source="AdminDash")
+            share.admin_log("warning", f"Bot left guild {guild_name} ({guild_id_str}) -  triggered by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Left guild {guild_name}."})
 
         elif action == "bulk_config":
@@ -3465,7 +3467,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 except Exception:
                     failed += 1
             del share.globalchat_message_data[message_id]
-            share.admin_log("warning", f"GC message {message_id} deleted by {user.name} — {deleted} copies removed", source="AdminDash")
+            share.admin_log("warning", f"GC message {message_id} deleted by {user.name} -  {deleted} copies removed", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Deleted {deleted} message copies. Failed: {failed}."})
 
         elif action == "run_task":
@@ -4076,7 +4078,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if _rsig:
                     overview_lines.append(f"**Active risk signals:** {', '.join(_rsig)}")
             if flagged_rep and flagged_rep.get("flagged"):
-                overview_lines.append(f"**Global flag:** Yes — Reason: {flagged_rep.get('reason', '—')}")
+                overview_lines.append(f"**Global flag:** Yes -  Reason: {flagged_rep.get('reason', '- ')}")
                 if flagged_rep.get("entry_date"):
                     overview_lines.append(f"**Flagged on:** {flagged_rep['entry_date']}")
             if gc_ban_rep is not None:
@@ -4105,9 +4107,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 for _ev in reversed(_evs):
                     _ev_ts = str(_ev.get("timestamp", ""))[:16].replace("T", " ")
                     _ev_type = _ev.get("type", "unknown")
-                    _ev_reason = _ev.get("reason", "—")
+                    _ev_reason = _ev.get("reason", "- ")
                     _ev_guild = _ev.get("guild_id", "")
-                    ev_lines.append(f"`{_ev_ts}` **{_ev_type}** — {_ev_reason} *(server {_ev_guild})*")
+                    ev_lines.append(f"`{_ev_ts}` **{_ev_type}** -  {_ev_reason} *(server {_ev_guild})*")
                 embed_events = discord.Embed(
                     title="Prism Events (last 20)",
                     description="\n".join(ev_lines) or "No events recorded.",
@@ -4119,11 +4121,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if violations_rep:
                 cf_lines = []
                 for _viol in violations_rep[:15]:
-                    _vts = _viol.get("timestamp", "—")
-                    _vsname = _viol.get("sname", "—")
-                    _vreason = _viol.get("reason", "—")
+                    _vts = _viol.get("timestamp", "- ")
+                    _vsname = _viol.get("sname", "- ")
+                    _vreason = _viol.get("reason", "- ")
                     _vmsg = (_viol.get("message", "") or "")[:80]
-                    cf_lines.append(f"`{_vts}` **{_vsname}** — *{_vreason}*\n> {_vmsg}")
+                    cf_lines.append(f"`{_vts}` **{_vsname}** -  *{_vreason}*\n> {_vmsg}")
                 if len(violations_rep) > 15:
                     cf_lines.append(f"*… and {len(violations_rep) - 15} more violations*")
                 embed_cf = discord.Embed(
@@ -4137,11 +4139,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if all_warnings_rep:
                 warn_lines = []
                 for _warn in all_warnings_rep[:20]:
-                    _wdate = _warn.get("date", "—")
-                    _wreason = _warn.get("reason", "—")
-                    _wmod = _warn.get("mod", "—")
-                    _wguild = _warn.get("guild_name", "—")
-                    warn_lines.append(f"`{_wdate}` **{_wguild}** — {_wreason} *(by {_wmod})*")
+                    _wdate = _warn.get("date", "- ")
+                    _wreason = _warn.get("reason", "- ")
+                    _wmod = _warn.get("mod", "- ")
+                    _wguild = _warn.get("guild_name", "- ")
+                    warn_lines.append(f"`{_wdate}` **{_wguild}** -  {_wreason} *(by {_wmod})*")
                 if len(all_warnings_rep) > 20:
                     warn_lines.append(f"*… and {len(all_warnings_rep) - 20} more warnings*")
                 embed_warns = discord.Embed(
@@ -4155,11 +4157,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if temp_actions_rep:
                 ta_lines = []
                 for _ta_r in temp_actions_rep:
-                    _ta_type = _ta_r.get("type", "—").upper()
-                    _ta_guild = _ta_r.get("guild_name", "—")
-                    _ta_exp = _ta_r.get("expires_at", "—")
-                    _ta_reason = _ta_r.get("reason", "—")
-                    ta_lines.append(f"**{_ta_type}** in {_ta_guild}\nExpires: `{_ta_exp}` — {_ta_reason}")
+                    _ta_type = _ta_r.get("type", "- ").upper()
+                    _ta_guild = _ta_r.get("guild_name", "- ")
+                    _ta_exp = _ta_r.get("expires_at", "- ")
+                    _ta_reason = _ta_r.get("reason", "- ")
+                    ta_lines.append(f"**{_ta_type}** in {_ta_guild}\nExpires: `{_ta_exp}` -  {_ta_reason}")
                 embed_ta = discord.Embed(
                     title=f"Active Temp Actions ({len(temp_actions_rep)})",
                     description="\n\n".join(ta_lines),
@@ -4191,10 +4193,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if open_tickets_rep2:
                 tk_lines = []
                 for _tk_r in open_tickets_rep2:
-                    _tk_guild = _tk_r.get("guild_name", "—")
-                    _tk_title = _tk_r.get("title", "—")
+                    _tk_guild = _tk_r.get("guild_name", "- ")
+                    _tk_title = _tk_r.get("title", "- ")
                     _tk_status = _tk_r.get("status", "open")
-                    tk_lines.append(f"**{_tk_guild}** — {_tk_title} *(Status: {_tk_status})*")
+                    tk_lines.append(f"**{_tk_guild}** -  {_tk_title} *(Status: {_tk_status})*")
                 embed_tickets = discord.Embed(
                     title=f"Open Tickets ({len(open_tickets_rep2)})",
                     description="\n".join(tk_lines),
@@ -4206,11 +4208,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if transcripts_rep2:
                 tr2_lines = []
                 for _tr2 in transcripts_rep2[:15]:
-                    _tr2_title = _tr2.get("title", "—")
-                    _tr2_guild = _tr2.get("guild_id", "—")
-                    _tr2_closed = str(_tr2.get("closed_on", "—"))[:10]
+                    _tr2_title = _tr2.get("title", "- ")
+                    _tr2_guild = _tr2.get("guild_id", "- ")
+                    _tr2_closed = str(_tr2.get("closed_on", "- "))[:10]
                     _tr2_count = _tr2.get("message_count", 0)
-                    tr2_lines.append(f"**{_tr2_title}** (Server: {_tr2_guild}) — Closed: {_tr2_closed} — {_tr2_count} msgs")
+                    tr2_lines.append(f"**{_tr2_title}** (Server: {_tr2_guild}) -  Closed: {_tr2_closed} -  {_tr2_count} msgs")
                 if len(transcripts_rep2) > 15:
                     tr2_lines.append(f"*… and {len(transcripts_rep2) - 15} more*")
                 embed_transcripts = discord.Embed(
@@ -4228,7 +4230,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 for _i in range(0, len(embeds_to_send), 10):
                     await target_rep.send(embeds=embeds_to_send[_i:_i + 10])
             except discord.Forbidden:
-                return quart.jsonify({"success": False, "message": "Could not send DM — user has DMs disabled."}), 400
+                return quart.jsonify({"success": False, "message": "Could not send DM -  user has DMs disabled."}), 400
             except Exception as _e2:
                 return quart.jsonify({"success": False, "message": f"Error sending DM: {_e2}"}), 500
 
@@ -4435,7 +4437,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         }
 
     async def _check_guild_auth(guild_id: str):
-        """Returns (user, guild, error_response) — error_response is None on success."""
+        """Returns (user, guild, error_response) -  error_response is None on success."""
         if not guild_id or not guild_id.isdigit():
             return None, None, (await render_template("error.html", message="Invalid guild ID."), 400)
         try:
@@ -4551,7 +4553,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if trace_id:
             print(f"[TopGG Vote] Trace ID: {trace_id}")
 
-        # Read the raw body BEFORE parsing JSON — signature is computed over raw bytes
+        # Read the raw body BEFORE parsing JSON -  signature is computed over raw bytes
         raw_body: bytes = await quart.request.get_data()
 
         if not sig_header:
@@ -4577,7 +4579,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             ts_int = int(sig_timestamp)
             age = abs(_time.time() - ts_int)
             if age > 300:
-                print(f"[TopGG Vote] ABORT: Stale request — timestamp {sig_timestamp} is {age:.0f}s old.")
+                print(f"[TopGG Vote] ABORT: Stale request -  timestamp {sig_timestamp} is {age:.0f}s old.")
                 return quart.jsonify({"error": "Stale"}), 401
         except ValueError:
             print(f"[TopGG Vote] ABORT: Invalid timestamp in signature: {sig_timestamp!r}")
@@ -4651,7 +4653,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_id, _exp = pending_votes.pop(voter_id)
             print(f"[TopGG Vote] Matched pending vote: user {voter_id} → guild {guild_id}")
         else:
-            # Fallback: legacy `query` field (V0) — keep for safety
+            # Fallback: legacy `query` field (V0) -  keep for safety
             raw_query = data.get("query", "") or ""
             if isinstance(raw_query, str) and raw_query:
                 try:
@@ -4675,7 +4677,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         print(f"[TopGG Vote] Config: avocloud_guild_id={avocloud_guild_id}, vote_channel_id={vote_channel_id}")
 
         if not avocloud_guild_id or not vote_channel_id:
-            print("[TopGG Vote] ABORT: avocloud_guild_id or vote_channel_id is 0 — set them in config/auth.py")
+            print("[TopGG Vote] ABORT: avocloud_guild_id or vote_channel_id is 0 -  set them in config/auth.py")
             return quart.jsonify({"ok": True, "warning": "channel/guild not configured"}), 200
 
         avocloud_guild: discord.Guild | None = bot.get_guild(avocloud_guild_id)
@@ -4708,7 +4710,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(f"[TopGG Vote] ABORT: Channel {vote_channel_id} not found in bot cache.")
             return quart.jsonify({"ok": True, "warning": "channel not found"}), 200
         if not isinstance(vote_channel, discord.TextChannel):
-            print(f"[TopGG Vote] ABORT: Channel {vote_channel_id} is not a TextChannel — got {type(vote_channel).__name__}")
+            print(f"[TopGG Vote] ABORT: Channel {vote_channel_id} is not a TextChannel -  got {type(vote_channel).__name__}")
             return quart.jsonify({"ok": True, "warning": "channel wrong type"}), 200
 
         print(f"[TopGG Vote] Found vote channel: #{vote_channel.name} in {vote_channel.guild.name}")
@@ -4717,7 +4719,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if voted_guild is None:
             print(f"[TopGG Vote] No guild context (guild_id={guild_id}). Sending generic announcement instead of skipping.")
 
-        # Build the embed — fall back to a generic message if there's no guild context
+        # Build the embed -  fall back to a generic message if there's no guild context
         title = "Top.gg Webhook Test" if is_test else "New Top.gg Vote!"
         if voted_guild:
             description = (
@@ -4797,7 +4799,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     @app.route("/donate/<int:guild_id>")
     async def donation_page(guild_id: int):
-        """Public-facing donation page — no auth required to view."""
+        """Public-facing donation page -  no auth required to view."""
         donations: dict = dict(load_data(guild_id, "donations"))
         # Fill defaults so template never gets KeyError
         for k, v in config.datasys.default_data.get("donations", {}).items():
@@ -4817,7 +4819,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         try:
             discord_user = await discord_auth.fetch_user()
         except Exception:
-            pass  # Not logged in — show login button
+            pass  # Not logged in -  show login button
 
         success = quart.request.args.get("success") == "1"
         tier_id = quart.request.args.get("tier")

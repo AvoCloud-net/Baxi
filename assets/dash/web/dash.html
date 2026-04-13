@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baxi Dashboard — {{data.name}}</title>
+    <title>Baxi Dashboard -  {{data.name}}</title>
     <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <meta property="og:title" content="Baxi Dashboard — {{data.name}}">
+    <meta property="og:title" content="Baxi Dashboard -  {{data.name}}">
     <meta property="og:description" content="5 minute administrative access for the Discord guild {{data.name}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
     <meta property="og:color" content="#DC143C">
@@ -86,7 +86,7 @@
 </head>
 
 <body>
-    <!-- Full-page loader — hidden once window.load fires -->
+    <!-- Full-page loader -  hidden once window.load fires -->
     <div id="page-loader" aria-hidden="true">
         <span class="loader-badge">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
@@ -171,7 +171,7 @@
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 
-        <!-- Top.gg Vote Banner — avocloud.net styled -->
+        <!-- Top.gg Vote Banner -  avocloud.net styled -->
         <div style="position:relative; background:rgba(147,51,234,0.06); border:1px solid rgba(147,51,234,0.25); border-radius:10px; backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
             <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,#9333ea,#ec4899,#eab308,#9333ea); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
@@ -184,7 +184,7 @@
                     </span>
                     <div style="min-width:0;">
                         <div style="font-weight:600; font-size:0.95rem; line-height:1.3; margin-bottom:0.15rem;">Enjoying Baxi? Help us grow.</div>
-                        <div style="font-size:0.825rem; opacity:0.75; line-height:1.4;">A free vote on Top.gg keeps Baxi climbing — and as a thank you, we'll feature {{guild.name}} in the avocloud.net community Discord.</div>
+                        <div style="font-size:0.825rem; opacity:0.75; line-height:1.4;">A free vote on Top.gg keeps Baxi climbing -  and as a thank you, we'll feature {{guild.name}} in the avocloud.net community Discord.</div>
                     </div>
                 </div>
                 {% if user_on_avocloud %}
@@ -472,7 +472,7 @@
                                 <div class="grid gap-2">
                                     <label for="notification-channel">Notification Channel:</label>
                                     <p class="text-muted text-sm">
-                                        Channel where Baxi posts notifications — including bot updates, announcements and Prism alerts
+                                        Channel where Baxi posts notifications -  including bot updates, announcements and Prism alerts
                                         (critical events, auto-flagged users). Leave on <em>Auto-detect</em> and Baxi will search for a channel
                                         named <code>baxi-updates</code>, <code>staff</code>, <code>mod</code>, <code>admin</code>, etc.
                                     </p>
@@ -551,7 +551,7 @@
                                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
                                 <path d="M12 9v4"/><path d="M12 17h.01"/>
                             </svg>
-                            PRISM — Trust Scoring
+                            PRISM -  Trust Scoring
                             <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#9333ea) 15%,transparent);color:var(--color-primary,#9333ea);vertical-align:middle;">BETA</span>
                         </h2>
                         <p class="text-muted">Prism analyzes user behavior across all Baxi servers and generates a network-wide trust score per user.</p>
@@ -672,7 +672,7 @@
 
                                 <div class="grid gap-2">
                                     <label class="block text-sm font-medium">Filter Pipeline</label>
-                                    <p class="text-xs text-muted">Every message passes through these stages in order. SafeText is always active — the option below only controls whether the AI stage is additionally enabled.</p>
+                                    <p class="text-xs text-muted">Every message passes through these stages in order. SafeText is always active -  the option below only controls whether the AI stage is additionally enabled.</p>
                                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 2px;font-size:0.75rem;">
                                         <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">📨 Message</span>
                                         <span style="color:var(--text-muted,#888);">→</span>
@@ -692,7 +692,7 @@
                                             <div>
                                                 <span class="block text-sm font-medium">Disabled</span>
                                                 <span class="block text-xs text-muted">
-                                                    Only SafeText is used — fast word-level checks. No AI analysis.
+                                                    Only SafeText is used -  fast word-level checks. No AI analysis.
                                                 </span>
                                             </div>
                                         </label>
@@ -728,23 +728,23 @@
                                     <div class="grid gap-2 mt-1">
                                         <label for="ai-cat-1">
                                             <input type="checkbox" id="ai-cat-1" value="true">
-                                            <span class="text-sm"><strong>1 — NSFW / Explicit Content</strong> <span class="text-muted">— sexual content, graphic violence, gore</span></span>
+                                            <span class="text-sm"><strong>1 -  NSFW / Explicit Content</strong> <span class="text-muted">-  sexual content, graphic violence, gore</span></span>
                                         </label>
                                         <label for="ai-cat-2">
                                             <input type="checkbox" id="ai-cat-2" value="true">
-                                            <span class="text-sm"><strong>2 — Insults / Toxicity</strong> <span class="text-muted">— direct insults, targeted harassment, sustained mockery</span></span>
+                                            <span class="text-sm"><strong>2 -  Insults / Toxicity</strong> <span class="text-muted">-  direct insults, targeted harassment, sustained mockery</span></span>
                                         </label>
                                         <label for="ai-cat-3">
                                             <input type="checkbox" id="ai-cat-3" value="true">
-                                            <span class="text-sm"><strong>3 — Hate Speech / Discrimination</strong> <span class="text-muted">— racism, homophobia, slurs with harmful intent</span></span>
+                                            <span class="text-sm"><strong>3 -  Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, homophobia, slurs with harmful intent</span></span>
                                         </label>
                                         <label for="ai-cat-4">
                                             <input type="checkbox" id="ai-cat-4" value="true">
-                                            <span class="text-sm"><strong>4 — Doxxing / Personal Data</strong> <span class="text-muted">— real names + addresses, phone numbers, IPs</span></span>
+                                            <span class="text-sm"><strong>4 -  Doxxing / Personal Data</strong> <span class="text-muted">-  real names + addresses, phone numbers, IPs</span></span>
                                         </label>
                                         <label for="ai-cat-5">
                                             <input type="checkbox" id="ai-cat-5" value="true">
-                                            <span class="text-sm"><strong>5 — Suicide / Self-Harm</strong> <span class="text-muted">— method descriptions, active ideation, encouragement</span></span>
+                                            <span class="text-sm"><strong>5 -  Suicide / Self-Harm</strong> <span class="text-muted">-  method descriptions, active ideation, encouragement</span></span>
                                         </label>
                                     </div>
                                 </div>
@@ -768,7 +768,7 @@
                                     <p id="cf-bypass-empty" class="text-muted text-xs">No channels whitelisted. Chatfilter runs in all channels.</p>
                                     <div class="flex gap-2 mt-1">
                                         <select id="cf-bypass-add" class="select flex-1">
-                                            <option value="">— Select a channel to whitelist —</option>
+                                            <option value="">-  Select a channel to whitelist - </option>
                                             {% for id, name in channels.items() %}
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
@@ -812,7 +812,7 @@
                             <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v2"/><path d="M12 13h.01"/></svg>
                             Suggestions
                         </h2>
-                        <p class="text-muted">Users post suggestions in designated channels — Baxi wraps them in an embed with Accept / Decline buttons for staff.</p>
+                        <p class="text-muted">Users post suggestions in designated channels -  Baxi wraps them in an embed with Accept / Decline buttons for staff.</p>
                     </header>
                     <section>
                         <form id="suggestions-form" class="form grid gap-6 settings-form">
@@ -826,7 +826,7 @@
                             <div class="grid gap-2">
                                 <label for="suggestions-staff-role">Staff role (can accept / decline):</label>
                                 <select id="suggestions-staff-role" class="select w-full">
-                                    <option value="">— Anyone with Manage Server —</option>
+                                    <option value="">-  Anyone with Manage Server - </option>
                                     {% for id, name in roles.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
@@ -837,7 +837,7 @@
                             <div class="grid gap-2">
                                 <label for="suggestions-log-channel">Log channel (optional):</label>
                                 <select id="suggestions-log-channel" class="select w-full">
-                                    <option value="">— No log channel —</option>
+                                    <option value="">-  No log channel - </option>
                                     {% for id, name in channels.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
@@ -859,7 +859,7 @@
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Channel</label>
                                         <select id="suggestions-add-channel" class="select w-full">
-                                            <option value="">— Select —</option>
+                                            <option value="">-  Select - </option>
                                             {% for id, name in channels.items() %}
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
@@ -892,7 +892,7 @@
                             <div class="grid gap-2">
                                 <label for="suggestions-auto-forward-channel">Forward channel:</label>
                                 <select id="suggestions-auto-forward-channel" class="select w-full">
-                                    <option value="">— No forward channel —</option>
+                                    <option value="">-  No forward channel - </option>
                                     {% for id, name in channels.items() %}
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
@@ -950,7 +950,7 @@
                                     <label for="sticky-add-channel">Channel:</label>
                                     <select id="sticky-add-channel" class="select w-full"
                                       onchange="checkChannelPermissions('sticky_messages', this.value, 'feedback-sticky-add-channel', null, null)">
-                                        <option value="">— Select a channel —</option>
+                                        <option value="">-  Select a channel - </option>
                                         {% for id, name in channels.items() %}
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
@@ -1056,7 +1056,7 @@
                                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
                                 <path d="M12 9v4"/><path d="M12 17h.01"/>
                             </svg>
-                            <span>The ticket system requires Baxi's role to be at the top of the role hierarchy. Move the bot role to the top in Server Settings → Roles, then re-check permissions.</span>
+                            <span id="ticket-role-warning-text">Baxi's top role must be above the selected staff role. Move the Baxi role above the staff role in Server Settings → Roles.</span>
                         </div>
                         <form id="ticket-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
@@ -1080,7 +1080,8 @@
 
                             <div class="grid gap-2">
                                 <label for="ticket-role">Staff role:</label>
-                                <select name="ticket-role" id="ticket-role" class="select w-full" required>
+                                <select name="ticket-role" id="ticket-role" class="select w-full" required
+                                    onchange="checkTicketStaffRoleHierarchy(this.value)">
                                     <option value="">-- Please select --</option>
                                     {% for id, name in roles.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
@@ -1234,7 +1235,7 @@
                                 <p id="antispam-wl-channels-empty" class="text-muted text-xs">No whitelisted channels.</p>
                                 <div class="flex gap-2 mt-1">
                                     <select id="antispam-add-wl-channel" class="select flex-1">
-                                        <option value="">— Select a channel —</option>
+                                        <option value="">-  Select a channel - </option>
                                         {% for id, name in channels.items() %}
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
@@ -1253,7 +1254,7 @@
                                 <p id="antispam-wl-roles-empty" class="text-muted text-xs">No whitelisted roles.</p>
                                 <div class="flex gap-2 mt-1">
                                     <select id="antispam-add-wl-role" class="select flex-1">
-                                        <option value="">— Select a role —</option>
+                                        <option value="">-  Select a role - </option>
                                         {% for id, name in roles.items() %}
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
@@ -1385,7 +1386,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
-                                <div id="verify-role-warning" class="channel-perm-feedback error hidden">Baxi cannot assign this role — it is equal to or higher than the bot's own role in the hierarchy. Move the Baxi role above it in Server Settings → Roles.</div>
+                                <div id="verify-role-warning" class="channel-perm-feedback error hidden">Baxi cannot assign this role -  it is equal to or higher than the bot's own role in the hierarchy. Move the Baxi role above it in Server Settings → Roles.</div>
                             </div>
 
                             <div class="grid gap-2">
@@ -1472,12 +1473,12 @@
                             </svg>
                             Button Roles
                         </h2>
-                        <p class="text-muted">Let members assign themselves roles by clicking buttons — fully automated.</p>
+                        <p class="text-muted">Let members assign themselves roles by clicking buttons -  fully automated.</p>
                     </header>
                     <section>
                         <!-- How it works -->
                         <div style="background:color-mix(in srgb,var(--color-primary,#9333ea) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#9333ea) 25%,transparent);border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;">
-                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#9333ea);">How it works — 2 steps</p>
+                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#9333ea);">How it works -  2 steps</p>
                             <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
                                 <li class="text-sm flex gap-3 items-start">
                                     <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
@@ -1544,7 +1545,7 @@
                         <div>
                             <h3 class="text-base font-semibold flex items-center gap-2 mb-3">
                                 <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
-                                Your panels — add emoji → role entries
+                                Your panels -  add emoji → role entries
                             </h3>
                             <div id="rr-panels-list">
                                 <p id="rr-panels-empty" class="text-muted text-sm {% if data.reaction_roles and data.reaction_roles.panels %}hidden{% endif %}">
@@ -1652,7 +1653,7 @@
                                     <label class="label" for="donations-stripe-secret">Stripe Secret Key</label>
                                     <input type="password" id="donations-stripe-secret" class="input"
                                            value=""
-                                           placeholder="{% if data.donations and data.donations.has_stripe_secret_key %}•••••••• (stored — leave blank to keep){% else %}sk_live_…{% endif %}"
+                                           placeholder="{% if data.donations and data.donations.has_stripe_secret_key %}•••••••• (stored -  leave blank to keep){% else %}sk_live_…{% endif %}"
                                            autocomplete="new-password" spellcheck="false">
                                     <p class="text-muted text-sm mt-1">Encrypted at rest. Found in your Stripe Dashboard under Developers → API Keys.</p>
                                 </div>
@@ -1660,7 +1661,7 @@
                                     <label class="label" for="donations-stripe-webhook">Stripe Webhook Secret</label>
                                     <input type="password" id="donations-stripe-webhook" class="input"
                                            value=""
-                                           placeholder="{% if data.donations and data.donations.has_stripe_webhook_secret %}•••••••• (stored — leave blank to keep){% else %}whsec_…{% endif %}"
+                                           placeholder="{% if data.donations and data.donations.has_stripe_webhook_secret %}•••••••• (stored -  leave blank to keep){% else %}whsec_…{% endif %}"
                                            autocomplete="new-password" spellcheck="false">
                                     <p class="text-muted text-sm mt-1">
                                         Webhook URL für das Stripe Dashboard:<br>
@@ -1676,14 +1677,14 @@
                                     <label class="label" for="donations-paypal-client-id">PayPal Client ID</label>
                                     <input type="password" id="donations-paypal-client-id" class="input"
                                            value=""
-                                           placeholder="{% if data.donations and data.donations.has_paypal_client_id %}•••••••• (stored — leave blank to keep){% else %}PayPal Client ID{% endif %}"
+                                           placeholder="{% if data.donations and data.donations.has_paypal_client_id %}•••••••• (stored -  leave blank to keep){% else %}PayPal Client ID{% endif %}"
                                            autocomplete="new-password" spellcheck="false">
                                 </div>
                                 <div class="field">
                                     <label class="label" for="donations-paypal-client-secret">PayPal Client Secret</label>
                                     <input type="password" id="donations-paypal-client-secret" class="input"
                                            value=""
-                                           placeholder="{% if data.donations and data.donations.has_paypal_client_secret %}•••••••• (stored — leave blank to keep){% else %}PayPal Client Secret{% endif %}"
+                                           placeholder="{% if data.donations and data.donations.has_paypal_client_secret %}•••••••• (stored -  leave blank to keep){% else %}PayPal Client Secret{% endif %}"
                                            autocomplete="new-password" spellcheck="false">
                                     <p class="text-muted text-sm mt-1">
                                         Encrypted at rest. Webhook URL für das PayPal Developer Dashboard:<br>
@@ -2100,7 +2101,7 @@
                             <svg class="lucide" viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
                             YouTube Video Tracking
                         </h2>
-                        <p class="text-muted">Get notified when tracked YouTube channels upload a new video. Checks every 10 minutes via RSS — no API key required.</p>
+                        <p class="text-muted">Get notified when tracked YouTube channels upload a new video. Checks every 10 minutes via RSS -  no API key required.</p>
                     </header>
                     <section>
                         <form id="youtube-videos-form" class="form grid gap-6 settings-form">
@@ -2181,7 +2182,7 @@
                         <p class="text-muted">Display server statistics in voice channel names. Channels update every 10 minutes.</p>
                         <p class="text-muted text-xs flex items-center gap-1" style="margin-top:0.35rem;">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Next channel update in: <span id="sc-update-timer" style="font-variant-numeric:tabular-nums;font-weight:600;">—</span>
+                            Next channel update in: <span id="sc-update-timer" style="font-variant-numeric:tabular-nums;font-weight:600;">- </span>
                         </p>
                     </header>
                     <section>
@@ -2407,7 +2408,7 @@
                             <div class="grid gap-2">
                                 <label for="tv-name-template">Channel name template:</label>
                                 <input type="text" id="tv-name-template" class="input w-full" maxlength="64" placeholder="{user}'s Channel">
-                                <p class="text-xs text-muted">Variable: <code>{user}</code> — replaced with the member's display name.</p>
+                                <p class="text-xs text-muted">Variable: <code>{user}</code> -  replaced with the member's display name.</p>
                             </div>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
@@ -2455,7 +2456,7 @@
                             <div class="grid gap-2">
                                 <label for="counting-channel">Channel:</label>
                                 <select id="counting-channel" class="select w-full">
-                                    <option value="">— Select a channel —</option>
+                                    <option value="">-  Select a channel - </option>
                                     {% for id, name in channels.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
@@ -2487,8 +2488,8 @@
 
                             <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#18181b);border-radius:8px;border:1px solid var(--border,#27272a);">
                                 <p class="text-muted text-xs" style="margin:0;">
-                                    <strong>Current count:</strong> <span id="counting-current-display">—</span> &nbsp;|&nbsp;
-                                    <strong>High score:</strong> <span id="counting-highscore-display">—</span>
+                                    <strong>Current count:</strong> <span id="counting-current-display">- </span> &nbsp;|&nbsp;
+                                    <strong>High score:</strong> <span id="counting-highscore-display">- </span>
                                 </p>
                             </div>
 
@@ -2516,7 +2517,7 @@
                             <svg class="lucide" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
                             Flag Quiz
                         </h2>
-                        <p class="text-muted">The bot posts a flag — whoever types the correct country first earns a point. The next round starts automatically!</p>
+                        <p class="text-muted">The bot posts a flag -  whoever types the correct country first earns a point. The next round starts automatically!</p>
                     </header>
                     <section>
                         <form id="flagquiz-form" class="form grid gap-6 settings-form">
@@ -2530,7 +2531,7 @@
                             <div class="grid gap-2">
                                 <label for="flagquiz-channel">Channel:</label>
                                 <select id="flagquiz-channel" class="select w-full">
-                                    <option value="">— Select a channel —</option>
+                                    <option value="">-  Select a channel - </option>
                                     {% for id, name in channels.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
@@ -2612,7 +2613,7 @@
                             <div class="grid gap-2" id="leveling-channel-row" style="display:none">
                                 <label class="label" for="leveling-announcement-channel">Announcement channel</label>
                                 <select id="leveling-announcement-channel" class="select w-full">
-                                    <option value="">— Select a channel —</option>
+                                    <option value="">-  Select a channel - </option>
                                     {% for id, name in channels.items() %}
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
@@ -2809,7 +2810,7 @@
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds'
             ];
-            // Collect and detach all sections (non-destructive — we re-insert them)
+            // Collect and detach all sections (non-destructive -  we re-insert them)
             var sectionMap = {};
             main.querySelectorAll('.dash-section').forEach(function (s) {
                 sectionMap[s.id] = s;
@@ -3570,7 +3571,7 @@
                     </div>
                     <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#f0f0f0'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
                     <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
-                        <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '—' : score}</span>
+                        <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
                         <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
                     </div>
                     ${badges}
@@ -3617,7 +3618,7 @@
                         </div>
                         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:${scoreBg};border:1px solid ${scoreBord};">
                             <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
-                            <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '—' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
+                            <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
                         </div>
                         ${optOutSection}
                         ${manualSection}
@@ -4163,7 +4164,7 @@
                 <input type="number" min="1" placeholder="Level" value="${level || ''}"
                        class="input" style="width:80px" data-reward-level>
                 <select class="select flex-1" data-reward-role>
-                    <option value="">— Select a role —</option>
+                    <option value="">-  Select a role - </option>
                     ${_levelingRolesOptions}
                 </select>
                 <button type="button" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"
@@ -4642,7 +4643,7 @@
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <div id="rr-role-warning-${mid}" class="channel-perm-feedback error hidden" style="font-size:0.75rem;margin-top:4px;">Baxi cannot assign this role — it is too high in the hierarchy.</div>
+                                    <div id="rr-role-warning-${mid}" class="channel-perm-feedback error hidden" style="font-size:0.75rem;margin-top:4px;">Baxi cannot assign this role -  it is too high in the hierarchy.</div>
                                 </div>
                                 <div style="flex:1;min-width:130px;">
                                     <label class="form-label" style="white-space:nowrap;">Label <span class="text-muted">(opt.)</span></label>
@@ -4959,7 +4960,7 @@
                 return;
             }
             if (pos >= botTopRolePos) {
-                feedbackEl.innerHTML = `${_warnIconSvg} Baxi cannot manage this role — it is equal to or above the bot's top role. Move the Baxi role higher in Server Settings → Roles.`;
+                feedbackEl.innerHTML = `${_warnIconSvg} Baxi cannot manage this role -  it is equal to or above the bot's top role. Move the Baxi role higher in Server Settings → Roles.`;
                 feedbackEl.classList.add('error');
                 feedbackEl.classList.remove('hidden');
                 setPermCheck(formId, checkKey, false);
@@ -5000,7 +5001,7 @@
             checkChannelPermissions('ticket',            v('ticket-channel'),                 'feedback-ticket-channel',              'ticket-form',           'panel_ch');
             checkChannelPermissions('ticket_transcript', v('ticket-transcript-channel'),      'feedback-ticket-transcript-channel',   'ticket-form',           'transcript_ch');
             checkChannelPermissions('category',          v('ticket-cat'),                     'feedback-category-channel',            'ticket-form',           'category');
-            checkRoleHierarchyFeedback(                  v('ticket-role'),                    'feedback-ticket-role',                 'ticket-form',           'role');
+            checkTicketStaffRoleHierarchy(                v('ticket-role'));
             // Welcomer
             checkChannelPermissions('welcomer',          v('welcomer-channel'),               'feedback-welcomer-channel',            'welcomer-form',         'ch');
             checkChannelPermissions('welcomer',          v('welcomer-leave-channel'),         'feedback-welcomer-leave-channel',      'welcomer-form',         'leave_ch');
@@ -5064,7 +5065,7 @@
             on('sc-category',                    'stats_category',       'feedback-stats-category',             'stats-channels-form',  'cat');
             on('rr-channel',                     'reaction_role_channel','feedback-rr-channel',                 null,                   null);
             on('sticky-add-channel',             'sticky_messages',      'feedback-sticky-add-channel',         null,                   null);
-            // Donations log is a text input — check on blur
+            // Donations log is a text input -  check on blur
             document.getElementById('donations-log-channel')?.addEventListener('blur', e => {
                 checkChannelPermissions('donations_log', e.target.value.trim(), 'feedback-donations-log', null, null);
             });
@@ -5090,10 +5091,29 @@
                             feedbackEl.innerHTML = `${_checkIconSvg} Bot role "${resp.bot_role_name}" is correctly positioned.`;
                         }
                         feedbackEl.classList.remove('hidden');
-                        updateRoleGatedFeatures(resp.warning);
                     } catch (e) {}
                 }
             };
+        }
+
+        function checkTicketStaffRoleHierarchy(roleId) {
+            // Delegate feedback-div + save-button blocking to the shared helper
+            checkRoleHierarchyFeedback(roleId, 'feedback-ticket-role', 'ticket-form', 'role');
+            // Additionally show/hide the full-form warning banner
+            const banner = document.getElementById('ticket-role-warning');
+            const warningText = document.getElementById('ticket-role-warning-text');
+            if (!roleId) { banner?.classList.add('hidden'); updateRoleGatedFeatures(false); return; }
+            const rpos = typeof rolePositions !== 'undefined' ? rolePositions[roleId] : undefined;
+            if (rpos === undefined) { banner?.classList.add('hidden'); updateRoleGatedFeatures(false); return; }
+            const roleName = document.querySelector(`#ticket-role option[value="${roleId}"]`)?.textContent?.trim() || roleId;
+            if (rpos >= botTopRolePos) {
+                if (warningText) warningText.textContent = `Baxi's top role must be above the staff role "${roleName}". Move the Baxi role higher in Server Settings → Roles.`;
+                banner?.classList.remove('hidden');
+                updateRoleGatedFeatures(true);
+            } else {
+                banner?.classList.add('hidden');
+                updateRoleGatedFeatures(false);
+            }
         }
 
         function checkBotGeneralPermissions() {
@@ -5140,19 +5160,13 @@
         }
 
         function updateRoleGatedFeatures(warning) {
-            const banner = document.getElementById('ticket-role-warning');
             const form = document.getElementById('ticket-form');
             if (!form) return;
+            const saveBtn = form.querySelector('.submit-btn');
             if (warning) {
-                banner?.classList.remove('hidden');
-                form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = true);
-                form.style.opacity = '0.5';
-                form.style.pointerEvents = 'none';
+                if (saveBtn) saveBtn.disabled = true;
             } else {
-                banner?.classList.add('hidden');
-                form.querySelectorAll('input, select, textarea, button').forEach(el => el.disabled = false);
-                form.style.opacity = '';
-                form.style.pointerEvents = '';
+                if (saveBtn) saveBtn.disabled = false;
             }
         }
 
