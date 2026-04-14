@@ -4569,8 +4569,10 @@
                 const entriesHtml = (panel.entries || []).map(e => {
                     return `<div class="flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
                         <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;"
-                            onclick="removeRREntry('${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">Remove</button>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
+                            <span class="btn-text">Remove</span>
+                            <svg viewBox="0 0 24 24" class="spinner hidden" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:loader-spin 0.9s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        </button>
                     </div>`;
                 }).join('');
 
@@ -4806,7 +4808,16 @@
                     try {
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
-                        if (resp.success) location.reload();
+                        if (resp.success) {
+                            if (data.reaction_roles) {
+                                const p = (data.reaction_roles.panels || []).find(p => p.message_id === messageId);
+                                if (p) p.entries = [...(p.entries || []), { emoji, label, role_id }];
+                            }
+                            if (emojiInput) emojiInput.value = '';
+                            if (labelInput) labelInput.value = '';
+                            if (roleSelect) roleSelect.value = '';
+                            renderReactionRolePanels();
+                        }
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
                     }
@@ -4814,7 +4825,10 @@
             };
         }
 
-        function removeRREntry(messageId, emoji) {
+        function removeRREntry(btn, messageId, emoji) {
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
             const payload = { reaction_roles: { action: 'remove_entry', message_id: messageId, emoji: emoji } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=reaction_roles&dash_login={{ data.dash_login }}');
@@ -4822,6 +4836,9 @@
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
                     try {
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
