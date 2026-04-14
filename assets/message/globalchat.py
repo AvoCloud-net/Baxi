@@ -16,8 +16,6 @@ from io import BytesIO
 import re
 from urllib.parse import urlparse
 import aiohttp
-from bs4 import BeautifulSoup
-import requests
 
 
 async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: dict):
@@ -101,27 +99,32 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
         embed.set_footer(text=(f"{message.guild.name} | {gcmid}"), icon_url=guild_icon)
 
-        def extract_gif_link(tenor_link_var):
-            response = requests.get(tenor_link_var)
-
-            if response.status_code != 200:
-                raise Exception(
-                    f"Failed to retrieve page. Status code: {response.status_code}"
-                )
-
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            gif_link = None
-            for img_gif_var in soup.find_all("img"):
-                src = img_gif_var.get("src")
-                if src and "gif" in src:
-                    gif_link = src
-                    break
-
-            if gif_link is None:
-                pass
-
-            return gif_link
+        async def extract_gif_link(tenor_link_var):
+            try:
+                # Extract numeric ID from URL like:
+                # https://tenor.com/view/name-12345678
+                id_match = re.search(r"-(\d+)$", urlparse(tenor_link_var).path)
+                if id_match:
+                    gif_id = id_match.group(1)
+                    api_url = f"https://g.tenor.com/v1/gifs?ids={gif_id}&key=LIVDSRZULELA"
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(api_url) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                results = data.get("results", [])
+                                if results:
+                                    media = results[0].get("media", [{}])[0]
+                                    gif_url = (
+                                        media.get("gif", {}).get("url")
+                                        or media.get("mediumgif", {}).get("url")
+                                        or media.get("tinygif", {}).get("url")
+                                    )
+                                    if gif_url:
+                                        return gif_url
+                return None
+            except Exception as e:
+                print(f"Error extracting Tenor gif link: {e}")
+                return None
 
         async def process_image_links(content):
 
@@ -170,9 +173,9 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                         return url, "video"
 
                     if "tenor.com" in parsed_url.netloc:
-                        gif_url = extract_gif_link(str(url))
-                        print(gif_url)
-                        return gif_url, "gif"
+                        gif_url = await extract_gif_link(str(url))
+                        if gif_url:
+                            return gif_url, "gif"
 
                     if "imgur.com" in parsed_url.netloc:
 
