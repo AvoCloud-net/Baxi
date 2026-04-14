@@ -898,7 +898,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
 
         sorted_users = sorted(users.items(), key=lambda x: int(x[1].get("xp", 0)), reverse=True)[:10]
 
-        medals = ["🥇", "🥈", "🥉"]
+        medals = [config.Icons.medal, config.Icons.medal, config.Icons.medal]
         lines = []
         for i, (uid, data) in enumerate(sorted_users):
             prefix = medals[i] if i < 3 else f"`{i + 1}.`"

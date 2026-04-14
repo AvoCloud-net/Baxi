@@ -38,19 +38,19 @@ class SuggestionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="👍  0", style=discord.ButtonStyle.secondary, custom_id="suggestion:upvote")
+    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsup, style=discord.ButtonStyle.secondary, custom_id="suggestion:upvote")
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _handle_public_vote(interaction, upvoted=True)
 
-    @discord.ui.button(label="👎  0", style=discord.ButtonStyle.secondary, custom_id="suggestion:downvote")
+    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsdown, style=discord.ButtonStyle.secondary, custom_id="suggestion:downvote")
     async def downvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _handle_public_vote(interaction, upvoted=False)
 
-    @discord.ui.button(label="✅  Accept", style=discord.ButtonStyle.success, custom_id="suggestion:accept")
+    @discord.ui.button(label="Accept", emoji=cfg.Icons.check, style=discord.ButtonStyle.success, custom_id="suggestion:accept")
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _open_decision_modal(interaction, accepted=True)
 
-    @discord.ui.button(label="❌  Decline", style=discord.ButtonStyle.danger, custom_id="suggestion:decline")
+    @discord.ui.button(label="Decline", emoji=cfg.Icons.cross, style=discord.ButtonStyle.danger, custom_id="suggestion:decline")
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _open_decision_modal(interaction, accepted=False)
 
@@ -64,16 +64,20 @@ def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False) -> 
         if not isinstance(item, discord.ui.Button):
             continue
         if item.custom_id == "suggestion:upvote":
-            item.label = f"👍  {upvotes}"
+            item.label = str(upvotes)
+            item.emoji = cfg.Icons.thumbsup
             item.disabled = decided
         elif item.custom_id == "suggestion:downvote":
-            item.label = f"👎  {downvotes}"
+            item.label = str(downvotes)
+            item.emoji = cfg.Icons.thumbsdown
             item.disabled = decided
         elif item.custom_id == "suggestion:accept":
-            item.label = t.get("btn_accept", "✅  Accept")
+            item.label = t.get("btn_accept", "Accept")
+            item.emoji = cfg.Icons.check
             item.disabled = decided
         elif item.custom_id == "suggestion:decline":
-            item.label = t.get("btn_decline", "❌  Decline")
+            item.label = t.get("btn_decline", "Decline")
+            item.emoji = cfg.Icons.cross
             item.disabled = decided
     return v
 
@@ -82,13 +86,15 @@ def _make_staff_only_view(t: dict, decided: bool = False) -> discord.ui.View:
     """View with only Accept / Decline when public voting is disabled."""
     v = discord.ui.View(timeout=None)
     v.add_item(discord.ui.Button(
-        label=t.get("btn_accept", "✅  Accept"),
+        label=t.get("btn_accept", "Accept"),
+        emoji=cfg.Icons.check,
         style=discord.ButtonStyle.success,
         custom_id="suggestion:accept",
         disabled=decided,
     ))
     v.add_item(discord.ui.Button(
-        label=t.get("btn_decline", "❌  Decline"),
+        label=t.get("btn_decline", "Decline"),
+        emoji=cfg.Icons.cross,
         style=discord.ButtonStyle.danger,
         custom_id="suggestion:decline",
         disabled=decided,
