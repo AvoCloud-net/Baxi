@@ -134,6 +134,49 @@ html:not(.dark) .site-nav {
   bottom: 20px;
   left: 20px;
   z-index: 10000;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  gap: 0;
+}
+
+.local-button-group button {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.local-button-group button:first-child {
+  cursor: default;
+  pointer-events: none;
+}
+
+.local-button-group hr {
+  margin: 0;
+}
+
+.local-button-group .user-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+}
+
+.local-button-group .user-label__welcome {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  line-height: 1;
+}
+
+.local-button-group .user-label__name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* ── Section label ────────────────────────────────────────── */
@@ -968,6 +1011,11 @@ fieldset {
   .local-button-group button:hover {
     background: rgba(147, 51, 234, 0.07);
     color: #9333ea;
+  }
+
+  .local-button-group button:first-child:hover {
+    background: transparent;
+    color: inherit;
   }
 
   .local-button-group button svg {

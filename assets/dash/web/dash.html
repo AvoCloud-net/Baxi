@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap"></noscript>
 
     <style>
         #page-loader {
@@ -140,7 +142,10 @@
     <div class="button-group local-button-group" data-orientation="vertical">
         <button type="button" class="btn-lg-outline p-6">
             <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
-            {{user.name}}
+            <span class="user-label">
+                <span class="user-label__welcome">Welcome</span>
+                <span class="user-label__name">{{user.name}}</span>
+            </span>
         </button>
         <hr role="separator" />
         <button onclick="location.href = '/'" class="btn-lg-outline">
