@@ -428,26 +428,6 @@ Members earn XP for every message they send, scaling with message length, and le
 
 ---
 
-## Donations
-
-Integrated donation system supporting Stripe and PayPal payment providers.
-
-### What it does
-- Configurable donation page text and success message
-- Supports Stripe and PayPal payment processing
-- Encrypted storage of payment provider secrets using Fernet (AES-128-CBC)
-- Optional logging of donations to a dedicated channel
-- Tiered donation rewards
-
-### Customization
-- `provider`: `"stripe"` or `"paypal"`
-- Encrypted API keys via `crypto.py` (master key in `config/auth.py`)
-- Custom `page_text` for the donation button/panel
-- Custom `success_text` shown after payment
-- `log_enabled` + `log_channel` for donation tracking
-- Configurable donation `tiers`
-
----
 
 ## Admin & Utility
 
