@@ -23,7 +23,11 @@ import time
 import json
 import os
 import asyncio
+import uuid
 import assets.share as share
+
+# In-memory store for notification broadcast jobs { job_id: {...} }
+_notif_jobs: dict = {}
 
 
 def get_feature_adoption() -> dict:
@@ -3570,30 +3574,44 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             target_guilds = [bot.get_guild(int(guild_id_str))] if guild_id_str else list(bot.guilds)
             target_guilds = [g for g in target_guilds if g]
 
-            sent = 0
-            failed = 0
-            ts = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
-            for g in target_guilds:
-                try:
-                    channel = await _resolve_notification_channel(g)
-                    if channel is None:
-                        failed += 1
-                        continue
-                    embed = discord.Embed(
-                        title=title,
-                        description=text,
-                        color=config.Discord.color,
-                    )
-                    embed.set_author(name="Avocloud.net")
-                    embed.set_footer(text=f"Baxi · {ts}")
-                    await channel.send(embed=embed)
-                    sent += 1
-                except Exception:
-                    failed += 1
+            job_id = str(uuid.uuid4())
+            _notif_jobs[job_id] = {
+                "sent": 0,
+                "total": len(target_guilds),
+                "failed_guilds": [],
+                "done": False,
+            }
 
-            scope = f"guild {guild_id_str}" if guild_id_str else f"all {len(target_guilds)} guilds"
-            share.admin_log("info", f"Notification sent to {sent}/{len(target_guilds)} ({scope}) by {user.name}: \"{title}\"", source="AdminDash")
-            return quart.jsonify({"success": True, "message": f"Sent to {sent} server(s). Failed: {failed}."})
+            async def _run_job():
+                ts = datetime.now(_VIENNA).strftime("%d.%m.%Y %H:%M")
+                sent = 0
+                failed_guilds = []
+                for g in target_guilds:
+                    try:
+                        channel = await _resolve_notification_channel(g)
+                        if channel is None:
+                            failed_guilds.append({"id": str(g.id), "name": g.name, "reason": "No notification channel configured"})
+                        else:
+                            embed = discord.Embed(
+                                title=title,
+                                description=text,
+                                color=config.Discord.color,
+                            )
+                            embed.set_author(name="Avocloud.net")
+                            embed.set_footer(text=f"Baxi · {ts}")
+                            await channel.send(embed=embed)
+                            sent += 1
+                    except Exception as exc:
+                        failed_guilds.append({"id": str(g.id), "name": g.name, "reason": str(exc)[:120]})
+                    _notif_jobs[job_id]["sent"] = sent
+                    _notif_jobs[job_id]["failed_guilds"] = failed_guilds
+
+                _notif_jobs[job_id]["done"] = True
+                scope = f"guild {guild_id_str}" if guild_id_str else f"all {len(target_guilds)} guilds"
+                share.admin_log("info", f"Notification sent to {sent}/{len(target_guilds)} ({scope}) by {user.name}: \"{title}\"", source="AdminDash")
+
+            asyncio.create_task(_run_job())
+            return quart.jsonify({"success": True, "job_id": job_id, "total": len(target_guilds)})
 
         elif action == "search_user":
             query = str(data.get("query", "")).strip()
@@ -4435,6 +4453,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "days": days,
             "member_count": member_count,
         }
+
+    @app.route("/api/admin/notify-progress/<job_id>")
+    @requires_authorization
+    async def notify_progress(job_id: str):
+        job = _notif_jobs.get(job_id)
+        if job is None:
+            return quart.jsonify({"error": "Job not found"}), 404
+        result = dict(job)
+        if job.get("done"):
+            _notif_jobs.pop(job_id, None)
+        return quart.jsonify(result)
 
     async def _check_guild_auth(guild_id: str):
         """Returns (user, guild, error_response) -  error_response is None on success."""

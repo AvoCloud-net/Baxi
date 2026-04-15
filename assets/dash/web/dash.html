@@ -668,9 +668,9 @@
                         <section>
                             <form id="chatfilter-form" class="form grid gap-6 settings-form">
                                 <div class="form-group">
-                                    <label for="chatfilter-enabled">
-                                        <input type="checkbox" id="chatfilter-enabled" name="chatfilter-enabled" value="true">
-                                        Enable chatfilter
+                                    <label class="flex items-center gap-3" style="cursor:pointer">
+                                        <input type="checkbox" id="chatfilter-enabled" role="switch">
+                                        <span class="font-medium">Enable chatfilter</span>
                                     </label>
                                     <input type="hidden" name="chatfilter-enabled" value="false">
                                 </div>
@@ -732,32 +732,32 @@
                                     <p class="text-xs text-muted">Enable or disable individual violation categories for the AI filter.</p>
                                     <div class="grid gap-2 mt-1">
                                         <label for="ai-cat-1">
-                                            <input type="checkbox" id="ai-cat-1" value="true">
+                                            <input type="checkbox" id="ai-cat-1">
                                             <span class="text-sm"><strong>1 -  NSFW / Explicit Content</strong> <span class="text-muted">-  sexual content, graphic violence, gore</span></span>
                                         </label>
                                         <label for="ai-cat-2">
-                                            <input type="checkbox" id="ai-cat-2" value="true">
+                                            <input type="checkbox" id="ai-cat-2">
                                             <span class="text-sm"><strong>2 -  Insults / Toxicity</strong> <span class="text-muted">-  direct insults, targeted harassment, sustained mockery</span></span>
                                         </label>
                                         <label for="ai-cat-3">
-                                            <input type="checkbox" id="ai-cat-3" value="true">
+                                            <input type="checkbox" id="ai-cat-3">
                                             <span class="text-sm"><strong>3 -  Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, homophobia, slurs with harmful intent</span></span>
                                         </label>
                                         <label for="ai-cat-4">
-                                            <input type="checkbox" id="ai-cat-4" value="true">
+                                            <input type="checkbox" id="ai-cat-4">
                                             <span class="text-sm"><strong>4 -  Doxxing / Personal Data</strong> <span class="text-muted">-  real names + addresses, phone numbers, IPs</span></span>
                                         </label>
                                         <label for="ai-cat-5">
-                                            <input type="checkbox" id="ai-cat-5" value="true">
+                                            <input type="checkbox" id="ai-cat-5">
                                             <span class="text-sm"><strong>5 -  Suicide / Self-Harm</strong> <span class="text-muted">-  method descriptions, active ideation, encouragement</span></span>
                                         </label>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="chatfilter-phishing">
-                                        <input type="checkbox" id="chatfilter-phishing" name="chatfilter-phishing" value="true">
-                                        Enable Phishing URL Filter
+                                    <label class="flex items-center gap-3" style="cursor:pointer">
+                                        <input type="checkbox" id="chatfilter-phishing" role="switch">
+                                        <span class="font-medium">Enable Phishing URL Filter</span>
                                     </label>
                                     <p class="text-xs text-muted mt-1">
                                         Detects and blocks known Discord phishing &amp; scam links. Updated every 12 hours from
@@ -822,9 +822,9 @@
                     <section>
                         <form id="suggestions-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="suggestions-enabled">
-                                    <input type="checkbox" id="suggestions-enabled">
-                                    Enable Suggestions
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="suggestions-enabled" role="switch">
+                                    <span class="font-medium">Enable Suggestions</span>
                                 </label>
                             </div>
 
@@ -887,9 +887,9 @@
                             <hr class="my-2">
 
                             <div class="form-group">
-                                <label for="suggestions-auto-forward-enabled">
-                                    <input type="checkbox" id="suggestions-auto-forward-enabled">
-                                    Auto-forward popular suggestions
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="suggestions-auto-forward-enabled" role="switch">
+                                    <span class="font-medium">Auto-forward popular suggestions</span>
                                 </label>
                                 <p class="text-muted text-xs" style="margin-top:4px;">When a suggestion reaches the upvote threshold, it is automatically forwarded once to a dedicated channel.</p>
                             </div>
@@ -1003,9 +1003,9 @@
                     <section>
                         <form id="globalchat-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="globalchat-enabled">
-                                    <input type="checkbox" id="globalchat-enabled" name="globalchat-enabled" value="true">
-                                    Enable globalchat
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="globalchat-enabled" role="switch">
+                                    <span class="font-medium">Enable globalchat</span>
                                 </label>
                                 <input type="hidden" name="globalchat-enabled" value="false">
                             </div>
@@ -1065,9 +1065,9 @@
                         </div>
                         <form id="ticket-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="ticket-enabled">
-                                    <input type="checkbox" id="ticket-enabled" name="ticket-enabled" value="true">
-                                    Enable ticket system
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="ticket-enabled" role="switch">
+                                    <span class="font-medium">Enable ticket system</span>
                                 </label>
                                 <input type="hidden" name="ticket-enabled" value="false">
                             </div>
@@ -1198,9 +1198,9 @@
                     <section>
                         <form id="antispam-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="antispam-enabled">
-                                    <input type="checkbox" id="antispam-enabled" name="antispam-enabled" value="true">
-                                    Enable Anti-Spam
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="antispam-enabled" role="switch">
+                                    <span class="font-medium">Enable Anti-Spam</span>
                                 </label>
                             </div>
 
@@ -1310,9 +1310,9 @@
                     <section>
                         <form id="auto-slowmode-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="asm-enabled">
-                                    <input type="checkbox" id="asm-enabled" name="asm-enabled" value="true">
-                                    Enable Auto-Slowmode
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="asm-enabled" role="switch">
+                                    <span class="font-medium">Enable Auto-Slowmode</span>
                                 </label>
                             </div>
 
@@ -1377,9 +1377,9 @@
                     <section>
                         <form id="verify-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="verify-enabled">
-                                    <input type="checkbox" id="verify-enabled" name="verify-enabled" value="true">
-                                    Enable Verification
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="verify-enabled" role="switch">
+                                    <span class="font-medium">Enable Verification</span>
                                 </label>
                             </div>
 
@@ -1831,9 +1831,9 @@
                     <section>
                         <form id="welcomer-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="welcomer-enabled">
-                                    <input type="checkbox" id="welcomer-enabled" name="welcomer-enabled" value="true">
-                                    Enable welcome messages
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="welcomer-enabled" role="switch">
+                                    <span class="font-medium">Enable welcome messages</span>
                                 </label>
                             </div>
 
@@ -1893,9 +1893,9 @@
                             <hr class="my-2">
 
                             <div class="form-group">
-                                <label for="welcomer-leave-enabled">
-                                    <input type="checkbox" id="welcomer-leave-enabled" name="welcomer-leave-enabled" value="true">
-                                    Enable leave messages
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="welcomer-leave-enabled" role="switch">
+                                    <span class="font-medium">Enable leave messages</span>
                                 </label>
                             </div>
 
@@ -1963,9 +1963,9 @@
                     <section>
                         <form id="auto-roles-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="ar-enabled">
-                                    <input type="checkbox" id="ar-enabled" name="ar-enabled" value="true">
-                                    Enable Auto-Roles
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="ar-enabled" role="switch">
+                                    <span class="font-medium">Enable Auto-Roles</span>
                                 </label>
                             </div>
 
@@ -2022,9 +2022,9 @@
                     <section>
                         <form id="livestream-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="livestream-enabled">
-                                    <input type="checkbox" id="livestream-enabled" name="livestream-enabled" value="true">
-                                    Enable Livestream Tracking
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="livestream-enabled" role="switch">
+                                    <span class="font-medium">Enable Livestream Tracking</span>
                                 </label>
                             </div>
 
@@ -2111,9 +2111,9 @@
                     <section>
                         <form id="youtube-videos-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="yvid-enabled">
-                                    <input type="checkbox" id="yvid-enabled" name="yvid-enabled" value="true">
-                                    Enable YouTube Video Tracking
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="yvid-enabled" role="switch">
+                                    <span class="font-medium">Enable YouTube Video Tracking</span>
                                 </label>
                             </div>
 
@@ -2193,9 +2193,9 @@
                     <section>
                         <form id="stats-channels-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="sc-enabled">
-                                    <input type="checkbox" id="sc-enabled" name="sc-enabled" value="true">
-                                    Enable Stats Channels
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="sc-enabled" role="switch">
+                                    <span class="font-medium">Enable Stats Channels</span>
                                 </label>
                             </div>
 
@@ -2382,9 +2382,9 @@
                     <section>
                         <form id="temp-voice-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="tv-enabled">
-                                    <input type="checkbox" id="tv-enabled" name="tv-enabled" value="true">
-                                    Enable Temp Voice Channels
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="tv-enabled" role="switch">
+                                    <span class="font-medium">Enable Temp Voice Channels</span>
                                 </label>
                             </div>
 
@@ -2452,9 +2452,9 @@
                     <section>
                         <form id="counting-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="counting-enabled">
-                                    <input type="checkbox" id="counting-enabled">
-                                    Enable Counting Game
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="counting-enabled" role="switch">
+                                    <span class="font-medium">Enable Counting Game</span>
                                 </label>
                             </div>
 
@@ -2527,9 +2527,9 @@
                     <section>
                         <form id="flagquiz-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
-                                <label for="flagquiz-enabled">
-                                    <input type="checkbox" id="flagquiz-enabled">
-                                    Enable Flag Quiz
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="flagquiz-enabled" role="switch">
+                                    <span class="font-medium">Enable Flag Quiz</span>
                                 </label>
                             </div>
 
@@ -4194,6 +4194,7 @@
                 const roleId = row.querySelector('[data-reward-role]').value;
                 if (lvl > 0 && roleId) role_rewards.push({ level: lvl, role_id: roleId });
             });
+            role_rewards.sort((a, b) => a.level - b.level);
 
             const payload = { leveling: { enabled, announcement, announcement_channel, role_rewards } };
             const xhr = new XMLHttpRequest();
@@ -4202,7 +4203,15 @@
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        showSaveToast(r.success, r.message);
+                        if (r.success) {
+                            const list = document.getElementById('leveling-role-rewards-list');
+                            list.innerHTML = '';
+                            role_rewards.forEach(rw => _levelingAddRewardRow(rw.level, rw.role_id));
+                        }
+                    }
                     catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
                 }
             };

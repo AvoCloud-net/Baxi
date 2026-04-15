@@ -758,7 +758,25 @@
                             <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                         </div>
                         <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#1a1a2e); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
-                        <button onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
+                        <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
+
+                        <!-- Progress UI (hidden until job starts) -->
+                        <div id="notif-progress-wrap" style="display:none;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.35rem;">
+                                <span style="font-size:.8rem; opacity:.7;">Sending…</span>
+                                <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,.08); border-radius:99px; height:8px; overflow:hidden;">
+                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#7c3aed,#a78bfa); border-radius:99px; transition:width .35s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Failed servers list (hidden until done) -->
+                        <div id="notif-failed-wrap" style="display:none;">
+                            <div style="font-size:.75rem; font-weight:600; opacity:.5; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Nicht gesendet</div>
+                            <div id="notif-failed-list" style="display:flex; flex-direction:column; gap:.3rem; max-height:220px; overflow-y:auto;"></div>
+                        </div>
+
                         <div id="notif-result" class="action-result"></div>
                     </div>
                 </section>
@@ -1499,6 +1517,10 @@ async function doAction(payload) {
     return { ok: data.success, message: data.message, data };
 }
 
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 async function adminAction(action) {
     const payload = { action };
 
@@ -1568,8 +1590,88 @@ async function adminAction(action) {
         }
         const scope = payload.guild_id ? `guild ${payload.guild_id}` : 'ALL servers';
         if (!confirm(`Send notification "${payload.title}" to ${scope}?`)) return;
+
+        // Reset UI
+        const btn = document.getElementById('notif-send-btn');
+        const progressWrap = document.getElementById('notif-progress-wrap');
+        const progressBar  = document.getElementById('notif-progress-bar');
+        const progressLbl  = document.getElementById('notif-progress-label');
+        const failedWrap   = document.getElementById('notif-failed-wrap');
+        const failedList   = document.getElementById('notif-failed-list');
+        const resultEl     = document.getElementById('notif-result');
+
+        btn.disabled = true;
+        progressWrap.style.display = 'block';
+        failedWrap.style.display   = 'none';
+        failedList.innerHTML       = '';
+        resultEl.textContent       = '';
+        resultEl.className         = 'action-result';
+        progressBar.style.width    = '0%';
+        progressLbl.textContent    = '0 / ?';
+
         const r = await doAction(payload);
-        setResult('notif-result', r.message, r.ok);
+        if (!r.ok) {
+            setResult('notif-result', r.message, false);
+            progressWrap.style.display = 'none';
+            btn.disabled = false;
+            return;
+        }
+
+        const jobId = r.data.job_id;
+        const total = r.data.total || 1;
+        progressLbl.textContent = `0 / ${total}`;
+
+        const _poll = async () => {
+            try {
+                const res  = await fetch(`/api/admin/notify-progress/${jobId}`);
+                if (!res.ok) {
+                    // 404 = job already cleaned up after done, treat as finished
+                    if (res.status === 404) return;
+                    setTimeout(_poll, 800);
+                    return;
+                }
+                const data = await res.json();
+                if (data.error) {
+                    setResult('notif-result', 'Error: ' + data.error, false);
+                    progressWrap.style.display = 'none';
+                    btn.disabled = false;
+                    return;
+                }
+                const sent = data.sent  || 0;
+                const ttl  = data.total || total;
+                const pct  = ttl > 0 ? Math.round((sent / ttl) * 100) : 0;
+                progressBar.style.width = pct + '%';
+                progressLbl.textContent = `${sent} / ${ttl}`;
+
+                if (data.done) {
+                    btn.disabled = false;
+                    const failed = data.failed_guilds || [];
+                    const failedCount = failed.length;
+                    progressBar.style.background = failedCount === 0
+                        ? 'linear-gradient(90deg,#16a34a,#4ade80)'
+                        : 'linear-gradient(90deg,#7c3aed,#a78bfa)';
+                    setResult('notif-result',
+                        `Gesendet: ${sent}/${ttl} Server. Fehlgeschlagen: ${failedCount}.`,
+                        failedCount === 0);
+                    if (failedCount > 0) {
+                        failedWrap.style.display = 'block';
+                        failedList.innerHTML = failed.map(g => `
+                            <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:rgba(248,113,113,.07); border:1px solid rgba(248,113,113,.15); border-radius:5px;">
+                                <span style="font-size:.78rem; font-weight:600; color:#fca5a5;">${escHtml(g.name)}</span>
+                                <span style="font-size:.7rem; opacity:.45;">${escHtml(g.id)}</span>
+                                <span style="font-size:.72rem; opacity:.6; margin-left:auto;">${escHtml(g.reason)}</span>
+                            </div>`).join('');
+                    }
+                } else {
+                    setTimeout(_poll, 500);
+                }
+            } catch (_) {
+                // network hiccup – retry silently
+                setTimeout(_poll, 1000);
+            }
+        };
+        _poll();
+        return; // skip the default setResult below
     }
 }
 

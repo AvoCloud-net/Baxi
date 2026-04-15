@@ -902,7 +902,8 @@ def leveling_commands(bot: commands.AutoShardedBot):
         lines = []
         for i, (uid, data) in enumerate(sorted_users):
             prefix = medals[i] if i < 3 else f"`{i + 1}.`"
-            name = data.get("name", f"User {uid}")
+            member = interaction.guild.get_member(int(uid))
+            name = member.display_name if member else data.get("name", f"User {uid}")
             lvl = leveling_sys.current_level_from_xp(int(data.get("xp", 0)))
             xp_val = int(data.get("xp", 0))
             lines.append(f"{prefix} **{name}** -  Level {lvl} · {xp_val:,} XP")
