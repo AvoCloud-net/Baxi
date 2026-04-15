@@ -11,7 +11,7 @@ html:not(.dark) {
   --bg-secondary: #f4f4f5;
 }
 
-/* Insights day-selector — hardcode colour; --color-primary resolves to white in dark mode */
+/* Insights day-selector - hardcode colour; --color-primary resolves to white in dark mode */
 html.dark .time-bar button.active,
 html.dark .time-bar button:hover {
   background: #6F83AA !important;

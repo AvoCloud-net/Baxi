@@ -489,6 +489,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["name"] = guild.name
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
 
+            # Feature access: determine which features are enabled for this guild
+            _global_conf_path = os.path.join("data", "1001", "conf.json")
+            _feature_access: dict = {}
+            if os.path.exists(_global_conf_path):
+                try:
+                    with open(_global_conf_path, "r", encoding="utf-8") as _f:
+                        _global_conf = json.load(_f)
+                    _feature_access = _global_conf.get("feature_access", {})
+                except Exception:
+                    pass
+            guild_conf["_feature_access"] = _feature_access
+
             # Never send donation provider credentials to the browser. Replace them with
             # boolean "is set" flags so the template can render a placeholder instead.
             _don = guild_conf.get("donations")
@@ -571,6 +583,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     except Exception:
                         user_on_avocloud = False
 
+            # Resolve per-feature access flags for this guild
+            _gid_str = str(guild.id)
+            def _feature_enabled(feature: str) -> bool:
+                fa = _feature_access.get(feature, {})
+                mode = fa.get("mode", "whitelist")
+                guilds = fa.get("guilds", [])
+                if mode == "whitelist":
+                    return _gid_str in guilds
+                else:  # blacklist
+                    return _gid_str not in guilds
+
             return await render_template(
                 "dash.html",
                 data=guild_conf,
@@ -588,6 +611,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 feature_adoption=get_feature_adoption(),
                 bot_id=bot.user.id,
                 user_on_avocloud=user_on_avocloud,
+                feature_donations=_feature_enabled("donations"),
             )
 
         except discord.NotFound:
@@ -3278,6 +3302,67 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             cache.clear()
         share.admin_log("info", f"Template cache cleared by {user.name}", source="AdminDash")
         return quart.jsonify({"success": True, "message": "Template cache cleared."})
+
+    @app.route("/api/admin/feature_access", methods=["GET"])
+    @requires_authorization
+    async def admin_feature_access_get():
+        """Returns the feature_access config from the global conf (data/1001/conf.json)."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        conf_path = os.path.join("data", "1001", "conf.json")
+        feature_access: dict = {}
+        if os.path.exists(conf_path):
+            try:
+                with open(conf_path, "r", encoding="utf-8") as f:
+                    feature_access = json.load(f).get("feature_access", {})
+            except Exception as e:
+                return quart.jsonify({"error": str(e)}), 500
+
+        return quart.jsonify({"success": True, "feature_access": feature_access})
+
+    @app.route("/api/admin/feature_access", methods=["POST"])
+    @requires_authorization
+    async def admin_feature_access_save():
+        """Saves the feature_access config into data/1001/conf.json."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        payload: dict = await quart.request.get_json()
+        feature_access = payload.get("feature_access")
+        if not isinstance(feature_access, dict):
+            return quart.jsonify({"error": "Invalid payload"}), 400
+
+        # Validate structure
+        for feature, cfg in feature_access.items():
+            if not isinstance(cfg, dict):
+                return quart.jsonify({"error": f"Invalid config for feature '{feature}'"}), 400
+            if cfg.get("mode") not in ("whitelist", "blacklist"):
+                return quart.jsonify({"error": f"Invalid mode for '{feature}'. Must be 'whitelist' or 'blacklist'."}), 400
+            if not isinstance(cfg.get("guilds", []), list):
+                return quart.jsonify({"error": f"'guilds' must be a list for '{feature}'"}), 400
+
+        conf_path = os.path.join("data", "1001", "conf.json")
+        os.makedirs(os.path.dirname(conf_path), exist_ok=True)
+        global_conf: dict = {}
+        if os.path.exists(conf_path):
+            try:
+                with open(conf_path, "r", encoding="utf-8") as f:
+                    global_conf = json.load(f)
+            except Exception:
+                pass
+
+        global_conf["feature_access"] = feature_access
+        try:
+            with open(conf_path, "w", encoding="utf-8") as f:
+                json.dump(global_conf, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            return quart.jsonify({"error": str(e)}), 500
+
+        share.admin_log("info", f"Feature access config updated by {user.name}", source="AdminDash")
+        return quart.jsonify({"success": True})
 
     @app.route("/api/admin/action", methods=["POST"])
     @requires_authorization

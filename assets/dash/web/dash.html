@@ -314,10 +314,12 @@
                 <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
                 Tickets
             </a>
+            {% if feature_donations %}
             <a href="#donations" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 Donations
             </a>
+            {% endif %}
 
             <span class="dash-nav-group-label">Automation</span>
             <a href="#welcomer" class="dash-nav-item">
@@ -1623,6 +1625,7 @@
             </section>
 
             <!-- ── Donations ─────────────────────────────────────────── -->
+            {% if feature_donations %}
             <section class="pb-16 dash-section" id="donations">
                 <div class="section-label">DONATIONS</div>
                 <form id="donations-form">
@@ -1810,6 +1813,7 @@
                     </div>
                 </form>
             </section>
+            {% endif %}
             <!-- ── /Donations ─────────────────────────────────────────── -->
 
             <!-- Welcomer Config -->
@@ -2811,7 +2815,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket', 'donations',
+                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %},
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds'
             ];
@@ -5062,7 +5066,7 @@
             // Stats Channels
             checkChannelPermissions('stats_category',    v('sc-category'),                    'feedback-stats-category',              'stats-channels-form',   'cat');
             // Donations log
-            checkChannelPermissions('donations_log',     v('donations-log-channel'),          'feedback-donations-log',               null,                    null);
+            {% if feature_donations %}checkChannelPermissions('donations_log',     v('donations-log-channel'),          'feedback-donations-log',               null,                    null);{% endif %}
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -5096,10 +5100,12 @@
             on('sc-category',                    'stats_category',       'feedback-stats-category',             'stats-channels-form',  'cat');
             on('rr-channel',                     'reaction_role_channel','feedback-rr-channel',                 null,                   null);
             on('sticky-add-channel',             'sticky_messages',      'feedback-sticky-add-channel',         null,                   null);
+            {% if feature_donations %}
             // Donations log is a text input -  check on blur
             document.getElementById('donations-log-channel')?.addEventListener('blur', e => {
                 checkChannelPermissions('donations_log', e.target.value.trim(), 'feedback-donations-log', null, null);
             });
+            {% endif %}
         });
 
         function checkBotRolePosition() {
@@ -5236,6 +5242,7 @@
         });
 
         // ── Donations JS ─────────────────────────────────────────────────
+        {% if feature_donations %}
         let _donationTiers = {{ (data.donations.tiers if data.donations else []) | tojson | safe }};
         const _rolesMap = {};
         {% for role_id, role_name in roles.items() %}_rolesMap["{{ role_id }}"] = {{ role_name | tojson | safe }};
@@ -5414,6 +5421,7 @@
                 }
             };
         };
+        {% endif %}
         // ── /Donations JS ────────────────────────────────────────────────
     </script>
 

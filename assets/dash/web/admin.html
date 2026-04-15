@@ -239,6 +239,10 @@
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Guild Config
     </a>
+    <a href="#section-feature-access">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Feature Access
+    </a>
     <div class="nav-sep"></div>
     <a href="#section-user-gdpr">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -601,6 +605,29 @@
                         <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON</summary>
                         <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:rgba(0,0,0,.3); border-radius:6px; padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
                     </details>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ── FEATURE ACCESS ────────────────────────────────────── -->
+    <section id="section-feature-access" style="margin-bottom:2.5rem;">
+        <div class="section-badge">Feature Access</div>
+        <div class="card">
+            <header>
+                <h2 style="font-size:1rem; font-weight:600;">Feature Access Control</h2>
+                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Control which guilds can access specific features. Whitelist = only listed guilds. Blacklist = all except listed guilds.</p>
+            </header>
+            <section>
+                <div id="fa-loading" style="font-size:.82rem; opacity:.4;">Loading…</div>
+                <div id="fa-error" class="action-result" style="display:none;"></div>
+                <div id="fa-body" style="display:none;">
+                    <!-- Feature rows rendered by JS -->
+                    <div id="fa-features-list" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+                    <div style="margin-top:1.25rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+                        <button onclick="faSave()" class="btn-primary">Save Changes</button>
+                        <div id="fa-save-result" class="action-result" style="display:inline-block;"></div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -2300,6 +2327,140 @@ window.addEventListener('scroll', () => {
         a.classList.toggle('active', a.getAttribute('href') === '#' + current);
     });
 }, { passive:true });
+
+// ── Feature Access ────────────────────────────────────────────────────────
+const FA_FEATURES = [
+    { key: 'donations', label: 'Donations', desc: 'PayPal / Stripe donation pages and tier role assignment.' },
+];
+
+let _faData = {};
+
+async function faLoad() {
+    try {
+        const r = await fetch('/api/admin/feature_access');
+        const j = await r.json();
+        if (!j.success) throw new Error(j.error || 'Unknown error');
+        _faData = j.feature_access || {};
+        faRender();
+        document.getElementById('fa-loading').style.display = 'none';
+        document.getElementById('fa-body').style.display = '';
+    } catch (e) {
+        document.getElementById('fa-loading').style.display = 'none';
+        const el = document.getElementById('fa-error');
+        el.textContent = 'Failed to load: ' + e.message;
+        el.className = 'action-result err';
+        el.style.display = 'block';
+    }
+}
+
+function faRender() {
+    const list = document.getElementById('fa-features-list');
+    list.innerHTML = '';
+    FA_FEATURES.forEach(feat => {
+        const cfg = _faData[feat.key] || { mode: 'whitelist', guilds: [] };
+        const isWhitelist = cfg.mode !== 'blacklist';
+
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:1rem 1.25rem; background:rgba(255,255,255,.02);';
+
+        wrap.innerHTML = `
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;">
+                <div>
+                    <div style="font-weight:600; font-size:.9rem;">${feat.label}</div>
+                    <div style="font-size:.75rem; opacity:.45; margin-top:.15rem;">${feat.desc}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:.5rem; flex-shrink:0;">
+                    <span style="font-size:.75rem; opacity:.5;">Mode:</span>
+                    <select id="fa-mode-${feat.key}" class="select" style="font-size:.78rem; padding:.25rem .5rem; height:auto;">
+                        <option value="whitelist" ${isWhitelist ? 'selected' : ''}>Whitelist</option>
+                        <option value="blacklist" ${!isWhitelist ? 'selected' : ''}>Blacklist</option>
+                    </select>
+                </div>
+            </div>
+            <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.07em; margin-bottom:.4rem;">
+                Guild IDs (<span id="fa-count-${feat.key}">${cfg.guilds.length}</span>)
+            </div>
+            <div id="fa-chips-${feat.key}" style="display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.6rem;"></div>
+            <div style="display:flex; gap:.4rem; align-items:center;">
+                <input id="fa-input-${feat.key}" type="text" placeholder="Add Guild ID…"
+                    style="flex:1; max-width:260px; font-size:.8rem; padding:.3rem .6rem;"
+                    onkeydown="if(event.key==='Enter'){faAddGuild('${feat.key}');event.preventDefault();}">
+                <button type="button" onclick="faAddGuild('${feat.key}')" class="btn-sm-outline" style="font-size:.78rem;">Add</button>
+            </div>
+        `;
+        list.appendChild(wrap);
+
+        // Render existing chips
+        faRenderChips(feat.key, cfg.guilds);
+    });
+}
+
+function faRenderChips(featureKey, guilds) {
+    const container = document.getElementById(`fa-chips-${featureKey}`);
+    const countEl = document.getElementById(`fa-count-${featureKey}`);
+    container.innerHTML = '';
+    guilds.forEach((gid, idx) => {
+        const chip = document.createElement('span');
+        chip.style.cssText = 'display:inline-flex; align-items:center; gap:.3rem; background:rgba(147,51,234,.15); border:1px solid rgba(147,51,234,.3); border-radius:999px; padding:.2rem .55rem; font-size:.75rem;';
+        chip.innerHTML = `${gid} <button type="button" onclick="faRemoveGuild('${featureKey}',${idx})" style="background:none;border:none;cursor:pointer;opacity:.6;color:inherit;padding:0;font-size:.85rem;line-height:1;" title="Remove">×</button>`;
+        container.appendChild(chip);
+    });
+    if (guilds.length === 0) {
+        container.innerHTML = '<span style="font-size:.75rem; opacity:.35; font-style:italic;">No guilds listed.</span>';
+    }
+    if (countEl) countEl.textContent = guilds.length;
+}
+
+function faAddGuild(featureKey) {
+    const input = document.getElementById(`fa-input-${featureKey}`);
+    const val = input.value.trim();
+    if (!val || !/^\d+$/.test(val)) { input.style.borderColor = '#f87171'; return; }
+    input.style.borderColor = '';
+    if (!_faData[featureKey]) _faData[featureKey] = { mode: 'whitelist', guilds: [] };
+    if (_faData[featureKey].guilds.includes(val)) { input.value = ''; return; }
+    _faData[featureKey].guilds.push(val);
+    faRenderChips(featureKey, _faData[featureKey].guilds);
+    input.value = '';
+}
+
+function faRemoveGuild(featureKey, idx) {
+    if (!_faData[featureKey]) return;
+    _faData[featureKey].guilds.splice(idx, 1);
+    faRenderChips(featureKey, _faData[featureKey].guilds);
+}
+
+async function faSave() {
+    // Sync mode selects into _faData
+    FA_FEATURES.forEach(feat => {
+        const modeEl = document.getElementById(`fa-mode-${feat.key}`);
+        if (!_faData[feat.key]) _faData[feat.key] = { mode: 'whitelist', guilds: [] };
+        _faData[feat.key].mode = modeEl ? modeEl.value : 'whitelist';
+    });
+
+    const resultEl = document.getElementById('fa-save-result');
+    resultEl.className = 'action-result';
+    resultEl.style.display = 'none';
+    try {
+        const r = await fetch('/api/admin/feature_access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feature_access: _faData }),
+        });
+        const j = await r.json();
+        if (!j.success) throw new Error(j.error || 'Unknown error');
+        resultEl.textContent = 'Saved.';
+        resultEl.className = 'action-result ok';
+        resultEl.style.display = 'inline-block';
+        setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
+    } catch (e) {
+        resultEl.textContent = 'Error: ' + e.message;
+        resultEl.className = 'action-result err';
+        resultEl.style.display = 'inline-block';
+    }
+}
+
+// Load feature access data on page load
+faLoad();
 </script>
 
 </body>
