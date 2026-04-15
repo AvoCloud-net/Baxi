@@ -965,48 +965,94 @@ class YouTubeVideoTask:
 
     async def _do_check(self):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+            # Collect all unique channel IDs and cache configs
+            all_channel_ids = set()
+            guild_data = {}  # guild_id -> (yv_config, [(ch_entry, channel_id), ...])
+            
             for guild in self.bot.guilds:
+                yv_config = dict(datasys.load_data(guild.id, "youtube_videos"))
+                if not yv_config.get("enabled", False):
+                    continue
+                
+                channels = yv_config.get("channels", [])
+                guild_data[guild.id] = (yv_config, [])
+                for ch_entry in channels:
+                    channel_id = ch_entry.get("channel_id", "")
+                    if channel_id:
+                        all_channel_ids.add(channel_id)
+                        guild_data[guild.id][1].append((ch_entry, channel_id))
+            
+            if not all_channel_ids:
+                return
+            
+            # Fetch all videos once (deduplicated)
+            video_cache = {}
+            logger.info(f"[YouTubeVideos] Checking {len(all_channel_ids)} unique channels across {len(guild_data)} guilds")
+            for channel_id in all_channel_ids:
                 try:
-                    await self._check_guild(session, guild)
+                    video = await youtube_api.get_latest_video(session, channel_id)
+                    video_cache[channel_id] = video
+                    logger.debug.info(f"[YouTubeVideos] {channel_id}: video={video['video_id'] if video else None}")
+                except Exception as e:
+                    logger.error(f"[YouTubeVideos] Failed to fetch {channel_id}: {e}")
+                    video_cache[channel_id] = None
+            
+            # Process each guild with cached videos and cached config
+            for guild in self.bot.guilds:
+                if guild.id not in guild_data:
+                    continue
+                try:
+                    yv_config, channel_list = guild_data[guild.id]
+                    changed = await self._check_guild(session, guild, video_cache, channel_list, yv_config)
+                    if changed:
+                        datasys.save_data(guild.id, "youtube_videos", yv_config)
                 except Exception as e:
                     logger.error(f"[YouTubeVideos] Error processing guild {guild.id}: {e}")
 
-    async def _check_guild(self, session: aiohttp.ClientSession, guild):
-        yv_config = dict(datasys.load_data(guild.id, "youtube_videos"))
-
-        if not yv_config.get("enabled", False):
-            return
-
+    async def _check_guild(self, session: aiohttp.ClientSession, guild, video_cache: dict, channel_list: list, yv_config: dict) -> bool:
         alert_channel_id = str(yv_config.get("alert_channel", "")).strip()
         if not alert_channel_id:
-            return
+            return False
 
         try:
             alert_channel = guild.get_channel(int(alert_channel_id))
         except (ValueError, TypeError):
-            return
+            return False
+
+        # Fallback: try fetching from API if not in cache
+        if not alert_channel:
+            try:
+                alert_channel = await self.bot.fetch_channel(int(alert_channel_id))
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                return False
+
+        if not alert_channel:
+            return False
+
         if not isinstance(alert_channel, discord.TextChannel):
-            return
+            return False
+
+        # Check bot permissions
+        if not alert_channel.permissions_for(guild.me).send_messages:
+            logger.error(f"[YouTubeVideos] Bot lacks 'Send Messages' permission in alert channel {alert_channel.name} ({alert_channel_id}) in {guild.name}")
+            return False
 
         ping_role_id = str(yv_config.get("ping_role", "")).strip()
-        channels = yv_config.get("channels", [])
         changed = False
 
         lang = datasys.load_lang_file(guild.id)
         yv_lang = lang.get("systems", {}).get("youtube_videos", {})
 
-        for ch_entry in channels:
+        for ch_entry, channel_id in channel_list:
             try:
-                channel_id = ch_entry.get("channel_id", "")
-                if not channel_id:
-                    continue
-
-                video = await youtube_api.get_latest_video(session, channel_id)
+                # Use cached video instead of fetching again
+                video = video_cache.get(channel_id)
                 if video is None:
                     continue
 
                 last_video_id        = ch_entry.get("last_video_id", "")
                 last_video_published = ch_entry.get("last_video_published", "")
+                logger.debug.info(f"[YouTubeVideos] {channel_id} @{guild.name}: last={last_video_id!r} new={video['video_id']!r}")
 
                 if not last_video_id:
                     # First run: seed silently without notifying
@@ -1049,32 +1095,63 @@ class YouTubeVideoTask:
                 display_name = ch_entry.get("display_name", channel_id)
                 profile_img  = ch_entry.get("profile_image_url", "")
 
-                embed = self._build_embed(video, display_name, profile_img, yv_lang)
+                try:
+                    embed = self._build_embed(video, display_name, profile_img, yv_lang)
+                except Exception as e:
+                    logger.error(f"[YouTubeVideos] Error building embed for {channel_id}: {e}")
+                    # Fallback to simple embed
+                    embed = discord.Embed(
+                        title=video.get("title", "New Video"),
+                        url=video.get("url", ""),
+                        color=discord.Color.from_rgb(255, 0, 0),
+                    )
+
                 ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
 
                 try:
-                    await alert_channel.send(content=ping_content, embed=embed)
+                    logger.info(f"[YouTubeVideos] Sending alert to {alert_channel.name} ({alert_channel_id}) in {guild.name}: \"{video['title']}\"")
+                    sent_msg = await alert_channel.send(content=ping_content, embed=embed)
+                    logger.info(f"[YouTubeVideos] Message sent successfully: {sent_msg.id}")
                     admin_log(
                         "success",
                         f"[YouTubeVideos] New video by {display_name} @ {guild.name}: "
                         f"\"{video['title']}\" ({video['video_id']})",
                         source="YouTubeVideos",
                     )
-                except (discord.Forbidden, discord.HTTPException) as e:
+                except discord.Forbidden as e:
                     logger.error(
-                        f"[YouTubeVideos] Could not send to {alert_channel_id} "
+                        f"[YouTubeVideos] Permission denied sending to {alert_channel.name} ({alert_channel_id}) "
                         f"in guild {guild.id}: {e}"
                     )
+                    admin_log(
+                        "error",
+                        f"[YouTubeVideos] Permission error: Cannot send to {alert_channel.name} - {e}",
+                        source="YouTubeVideos",
+                    )
+                except discord.HTTPException as e:
+                    logger.error(
+                        f"[YouTubeVideos] HTTP error sending to {alert_channel.name} ({alert_channel_id}) "
+                        f"in guild {guild.id}: {e}"
+                    )
+                    admin_log(
+                        "error",
+                        f"[YouTubeVideos] HTTP error: Cannot send to {alert_channel.name} - {e}",
+                        source="YouTubeVideos",
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"[YouTubeVideos] Unexpected error sending to {alert_channel.name} ({alert_channel_id}) "
+                        f"in guild {guild.id}: {type(e).__name__}: {e}"
+                    )
+
 
             except Exception as e:
                 logger.error(
                     f"[YouTubeVideos] Error checking channel "
-                    f"{ch_entry.get('channel_id')} in guild {guild.id}: {e}"
+                    f"{channel_id} in guild {guild.id}: {e}"
                 )
 
-        if changed:
-            yv_config["channels"] = channels
-            datasys.save_data(guild.id, "youtube_videos", yv_config)
+        return changed
 
     @staticmethod
     def _build_embed(video: dict, display_name: str, profile_image_url: str, yv_lang: dict) -> discord.Embed:

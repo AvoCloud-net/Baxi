@@ -128,6 +128,15 @@ class YouTubeAPI:
         "extract_flat": False,
         "socket_timeout": 15,
         "logger": _SilentLogger(),
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            # Bypass YouTube GDPR consent wall (EU/DE servers)
+            "Cookie": "SOCS=CAI; CONSENT=YES+cb",
+        },
     }
 
     def _channel_url(self, handle_or_id: str) -> str:
@@ -139,41 +148,89 @@ class YouTubeAPI:
     async def get_channel(
         self, session: aiohttp.ClientSession, handle_or_id: str
     ) -> Optional[dict]:
-        """Validate a YouTube channel and return basic info, or None if not found."""
-        import asyncio, yt_dlp
+        """Validate a YouTube channel and return basic info, or None if not found.
+
+        Uses direct HTTP scraping instead of yt-dlp — more robust against YouTube changes.
+        """
+        import re
 
         base_url = self._channel_url(handle_or_id)
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            # Bypass YouTube GDPR consent wall (EU/DE servers)
+            "Cookie": "SOCS=CAI; CONSENT=YES+cb",
+        }
 
-        def _extract(url: str):
-            opts = {**self._YDL_OPTS, "playlistend": 1}
+        import re as _re
+        html = None
+        channel_id_from_redirect: Optional[str] = None
+        for url in (base_url, base_url + "/about", base_url + "/videos"):
             try:
-                with yt_dlp.YoutubeDL(opts) as ydl:
-                    return ydl.extract_info(url, download=False)
-            except Exception:
-                return None
+                async with session.get(
+                    url, headers=headers, timeout=aiohttp.ClientTimeout(total=15),
+                    allow_redirects=True,
+                ) as resp:
+                    logger.debug.info(f"[YouTubeAPI] GET {url} -> {resp.status} (final: {resp.url})")
+                    if resp.status == 200:
+                        html = await resp.text()
+                        # YouTube sometimes redirects @handle -> /channel/UC...
+                        redirect_match = _re.search(r'/channel/(UC[\w-]{22})', str(resp.url))
+                        if redirect_match:
+                            channel_id_from_redirect = redirect_match.group(1)
+                        break
+            except Exception as e:
+                logger.error(f"[YouTubeAPI] Fetch error for {url}: {e}")
+                continue
 
-        # Try /live first (works for channels that have streamed before)
-        info = await asyncio.get_event_loop().run_in_executor(None, _extract, base_url + "/live")
-        # Fallback: plain channel URL (works for channels that have never streamed)
-        if not info:
-            info = await asyncio.get_event_loop().run_in_executor(None, _extract, base_url + "/videos")
-        if not info:
+        if not html:
             return None
 
-        channel_id = info.get("channel_id") or info.get("id", handle_or_id)
-        display_name = info.get("channel") or info.get("uploader") or info.get("title", handle_or_id)
+        # Resolve channel ID
+        if _re.match(r"^UC[\w-]{22}$", handle_or_id):
+            channel_id = handle_or_id
+        elif channel_id_from_redirect:
+            channel_id = channel_id_from_redirect
+        else:
+            # All known locations YouTube embeds the channel ID
+            channel_id_match = (
+                _re.search(r'<link rel="canonical"\s+href="https://www\.youtube\.com/channel/(UC[\w-]{22})"', html)
+                or _re.search(r'<meta property="og:url"\s+content="https://www\.youtube\.com/channel/(UC[\w-]{22})"', html)
+                or _re.search(r'"externalId"\s*:\s*"(UC[\w-]{22})"', html)
+                or _re.search(r'"browseId"\s*:\s*"(UC[\w-]{22})"', html)
+                or _re.search(r'"channelId"\s*:\s*"(UC[\w-]{22})"', html)
+                or _re.search(r'<meta itemprop="channelId"\s+content="(UC[\w-]{22})"', html)
+                or _re.search(r'youtube\.com/channel/(UC[\w-]{22})', html)
+            )
+            if not channel_id_match:
+                logger.error(
+                    f"[YouTubeAPI] Could not extract UC channel ID for '{handle_or_id}'. "
+                    f"Page snippet: {html[:300]!r}"
+                )
+                return None
+            channel_id = channel_id_match.group(1)
 
-        # yt-dlp exposes channel thumbnails under "thumbnails" list
-        thumbnails = info.get("thumbnails") or []
-        profile_img = next(
-            (t["url"] for t in reversed(thumbnails) if t.get("url") and "yt3" in t.get("url", "")),
-            "",
+        # Display name
+        name_match = (
+            re.search(r'"channelMetadataRenderer"\s*:\s*\{[^}]*?"title"\s*:\s*"([^"]+)"', html)
+            or re.search(r'<meta name="title"\s+content="([^"]+)"', html)
+            or re.search(r'"title"\s*:\s*"([^"]+)"\s*,\s*"description"', html)
         )
+        display_name = name_match.group(1) if name_match else handle_or_id.lstrip("@")
+
+        # Avatar (yt3.ggpht.com thumbnails embedded in page)
+        avatar_match = re.search(r'"(https://yt3\.ggpht\.com/[^"]+)"', html)
+        profile_img = avatar_match.group(1) if avatar_match else ""
 
         return {
             "channel_id": channel_id,
             "display_name": display_name,
-            "handle": (info.get("uploader_id") or "").lstrip("@"),
+            "handle": handle_or_id.lstrip("@"),
             "profile_image_url": profile_img,
         }
 
@@ -214,69 +271,137 @@ class YouTubeAPI:
     async def get_latest_video(
         self, session: aiohttp.ClientSession, channel_id: str
     ) -> Optional[dict]:
-        """Fetch the latest uploaded video for a YouTube channel via the public RSS feed.
+        """Fetch the latest uploaded video for a YouTube channel via yt-dlp.
 
-        Uses the unauthenticated Atom feed -  no API key or yt-dlp required.
+        YouTube deprecated their RSS feeds (now returning 404).
+        yt-dlp handles all the scraping internally and is actively maintained.
         Returns a dict with video metadata or None on failure/empty channel.
         """
-        import xml.etree.ElementTree as ET
+        import asyncio
+        import yt_dlp
+        import re as _re
 
-        url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
-        try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-                if resp.status == 404:
-                    logger.error(f"[YouTubeVideos] RSS 404 for channel {channel_id}")
-                    return None
-                if resp.status != 200:
-                    logger.error(f"[YouTubeVideos] RSS HTTP {resp.status} for channel {channel_id}")
-                    return None
-                xml_text = await resp.text()
-        except Exception as e:
-            logger.error(f"[YouTubeVideos] RSS fetch error for {channel_id}: {e}")
-            return None
+        # yt-dlp requires a real UC... channel ID — resolve handle first if needed
+        if not _re.match(r"^UC[\w-]{22}$", channel_id):
+            logger.info(f"[YouTubeVideos] '{channel_id}' is not a UC channel ID — resolving via get_channel")
+            resolved = await self.get_channel(session, channel_id)
+            if not resolved:
+                logger.error(f"[YouTubeVideos] Could not resolve channel ID for '{channel_id}'")
+                return None
+            channel_id = resolved["channel_id"]
 
-        try:
-            root = ET.fromstring(xml_text)
-        except ET.ParseError as e:
-            logger.error(f"[YouTubeVideos] XML parse error for {channel_id}: {e}")
-            return None
+        url = f"https://www.youtube.com/channel/{channel_id}/videos"
 
-        ns = {
-            "atom":  "http://www.w3.org/2005/Atom",
-            "yt":    "http://www.youtube.com/xml/schemas/2015",
-            "media": "http://search.yahoo.com/mrss/",
-        }
+        def _extract():
+            # Step 1: Get the video ID quickly with flat extraction
+            ydl_opts_flat = {
+                **self._YDL_OPTS,
+                "extract_flat": "in_playlist",
+                "playlistend": 1,
+            }
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts_flat) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    if not info:
+                        return None
+                    
+                    entries = info.get("entries") or []
+                    if not entries:
+                        return None
+                    
+                    # Get the first valid entry
+                    first_entry = None
+                    for entry in entries:
+                        if entry and entry.get("id"):
+                            first_entry = entry
+                            break
+                    
+                    if not first_entry:
+                        return None
+                    
+                    video_id = first_entry["id"]
+                    video_url = first_entry.get("url", f"https://www.youtube.com/watch?v={video_id}")
+                    title = first_entry.get("title", "")
+                    
+                    # Get thumbnail from thumbnails list
+                    thumbnail_url = ""
+                    thumbnails = first_entry.get("thumbnails") or []
+                    if thumbnails:
+                        thumbnail_url = thumbnails[-1].get("url", "")
+                    if not thumbnail_url:
+                        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+                    
+                # Step 2: Get full metadata for this specific video (including upload date)
+                ydl_opts_video = {
+                    **self._YDL_OPTS,
+                    "extract_flat": False,
+                }
+                video_full_url = f"https://www.youtube.com/watch?v={video_id}"
+                
+                with yt_dlp.YoutubeDL(ydl_opts_video) as ydl:
+                    video_info = ydl.extract_info(video_full_url, download=False)
+                    if not video_info:
+                        # Fallback: return with no timestamp
+                        return {
+                            "video_id": video_id,
+                            "title": title,
+                            "published": "",
+                            "thumbnail_url": thumbnail_url,
+                            "url": video_url,
+                        }
+                    
+                    # Get upload timestamp from full video info
+                    # PRIORITY: Use 'timestamp' (Unix timestamp with exact time) over 'upload_date' (date only, defaults to midnight)
+                    timestamp = video_info.get("timestamp")
+                    upload_date = video_info.get("upload_date")  # Format: YYYYMMDD (string)
 
-        entry = root.find("atom:entry", ns)
-        if entry is None:
-            return None  # Channel has no public videos
+                    published = ""
+                    
+                    # Best: Use Unix timestamp (has exact upload time)
+                    if timestamp:
+                        try:
+                            from datetime import datetime, timezone
+                            dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                            published = dt.isoformat()
+                        except (ValueError, OSError) as e:
+                            logger.debug.info(f"[YouTubeVideos] Failed to convert timestamp {timestamp}: {e}")
+                    
+                    # Fallback: Use upload_date (date only, will be midnight UTC)
+                    if not published and upload_date:
+                        try:
+                            upload_str = str(upload_date)
+                            if len(upload_str) == 8:
+                                year = int(upload_str[:4])
+                                month = int(upload_str[4:6])
+                                day = int(upload_str[6:8])
+                                from datetime import datetime, timezone
+                                dt = datetime(year, month, day, tzinfo=timezone.utc)
+                                published = dt.isoformat()
+                        except (ValueError, TypeError) as e:
+                            logger.debug.info(f"[YouTubeVideos] Failed to convert upload_date {upload_date}: {e}")
+                    
+                    # Use better thumbnail if available
+                    final_thumbnail = thumbnail_url
+                    if video_info.get("thumbnail"):
+                        final_thumbnail = video_info["thumbnail"]
+                    
+                    return {
+                        "video_id": video_id,
+                        "title": video_info.get("title", title),
+                        "published": published,
+                        "thumbnail_url": final_thumbnail,
+                        "url": video_full_url,
+                    }
+                    
+            except yt_dlp.utils.DownloadError as e:
+                logger.error(f"[YouTubeVideos] yt-dlp error for {channel_id}: {e}")
+                return None
+            except Exception as e:
+                logger.error(f"[YouTubeVideos] yt-dlp unexpected error for {channel_id}: {e}")
+                return None
 
-        video_id_el  = entry.find("yt:videoId", ns)
-        title_el     = entry.find("atom:title", ns)
-        published_el = entry.find("atom:published", ns)
-        link_el      = entry.find("atom:link", ns)
-
-        video_id  = video_id_el.text  if video_id_el  is not None else ""
-        title     = title_el.text     if title_el     is not None else ""
-        published = published_el.text if published_el is not None else ""
-        video_url = (
-            link_el.get("href", f"https://www.youtube.com/watch?v={video_id}")
-            if link_el is not None
-            else f"https://www.youtube.com/watch?v={video_id}"
-        )
-
-        if not video_id:
-            return None
-
-        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
-
-        return {
-            "video_id":     video_id,
-            "title":        title,
-            "published":    published,
-            "thumbnail_url": thumbnail_url,
-            "url":          video_url,
-        }
+        result = await asyncio.get_event_loop().run_in_executor(None, _extract)
+        return result
 
 
 class TikTokAPI:
