@@ -81,6 +81,11 @@
                 "reason": "Grund: ",
                 "amount": "Mänge: ",
                 "channel": "Kanal: ",
+                "field_reason": "Grund",
+                "field_mod": "Moderator",
+                "field_duration": "Dauer",
+                "field_expires": "Läuft ab",
+                "duration_permanent": "Permanent",
                 "ban": {
                     "title": "AKTION // BANN",
                     "confirmation": "Möchtest du diesen Benutzer wirklich mit folgendem Grund bannen?",
@@ -89,7 +94,9 @@
                     "success": "Der Benutzer wurde erfolgreich mit folgendem Grund gebannt:",
                     "audit_reason": "Gegannt von {moderator}: {reason}",
                     "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Bannvorgang wurde abgebrochen."
+                    "abort": "Der Bannvorgang wurde abgebrochen.",
+                    "dm_title": "AKTION // BANN // {guild}",
+                    "abort_title": "BANN ABGEBROCHEN // {user}"
                 },
                 "unban": {
                     "title": "AKTION // ENTBANN",
@@ -99,7 +106,8 @@
                     "success": "Der Benutzer wurde erfolgreich entbannen:",
                     "audit_reason": "Entbannung von {moderator}: {reason}",
                     "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Entbannvorgang wurde abgebrochen."
+                    "abort": "Der Entbannvorgang wurde abgebrochen.",
+                    "abort_title": "ENTBANN ABGEBROCHEN // {user}"
                 },
                 "kick": {
                     "title": "AKTION // KICK",
@@ -109,7 +117,9 @@
                     "success": "Der Benutzer wurde erfolgreich aus dem Server entfernt:",
                     "audit_reason": "Kick von {moderator}: {reason}",
                     "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Entbannvorgang wurde abgebrochen."
+                    "abort": "Der Entbannvorgang wurde abgebrochen.",
+                    "dm_title": "AKTION // KICK // {guild}",
+                    "abort_title": "KICK ABGEBROCHEN // {user}"
                 },
                 "clear": {
                     "title": "AKTION // CLEAR",
@@ -118,7 +128,8 @@
                     "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
                     "success": "Die Nachricht wurde erfolgreich gelöscht:",
                     "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Vorgang wurde abgebrochen."
+                    "abort": "Der Vorgang wurde abgebrochen.",
+                    "abort_title": "CLEAR ABGEBROCHEN // #{channel}"
                 },
                 "flag_user": {
                     "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
@@ -181,6 +192,8 @@
                 "title": "SYS // VERIFY",
                 "description_not_enabled": "Dieses System ist auf diesem Server nicht aktiviert. Bitte kontaktieren einen Administrator.",
                 "description_success": "Die verifizierung war erfolgreich. Willkommen auf dem Server!",
+                "role_not_found": "Rolle nicht gefunden.",
+                "user_not_found": "Benutzer nicht auf dem Server gefunden.",
                 "captcha": {
                     "description_wrong_code": "Der eingegebene Code ist falsch. Bitte versuche es erneut."
                 },
@@ -198,7 +211,24 @@
                 "description_claimed": "Der Supporter {user} übernimmt nun dieses Ticket.",
                 "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets auf {guild}:",
                 "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen.",
-                "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen."
+                "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen.",
+                "server_only": "Nur auf Servern verfügbar.",
+                "disabled": "Das Ticket-System ist derzeit deaktiviert.",
+                "button_not_found": "Diese Ticket-Schaltfläche ist nicht mehr verfügbar.",
+                "category_not_configured": "Ticket-Kategorie ist nicht konfiguriert.",
+                "category_invalid": "Die konfigurierte Ticket-Kategorie ist ungültig.",
+                "category_no_access": "Auf die Ticket-Kategorie kann nicht zugegriffen werden.",
+                "role_not_configured": "Die Ticket-Staff-Rolle ist nicht konfiguriert.",
+                "role_not_found": "Die konfigurierte Ticket-Staff-Rolle wurde nicht gefunden.",
+                "opened_description": "{user} hat ein **{label}**-Ticket geöffnet.",
+                "error_creating": "Beim Erstellen des Tickets ist ein Fehler aufgetreten.",
+                "channel_only": "Dieser Befehl kann nur in einem Textkanal verwendet werden.",
+                "not_valid_ticket": "Dieser Kanal ist kein gültiges Ticket.",
+                "system_not_configured": "Fehler: Das Ticket-System ist nicht richtig konfiguriert.",
+                "member_not_found": "Fehler: Mitglied nicht gefunden.",
+                "error_claiming": "Beim Übernehmen des Tickets ist ein Fehler aufgetreten.",
+                "transcript_sent_dm": "Transkript per DM an {user} gesendet.",
+                "transcript_dm_failed": "Transkript konnte nicht gesendet werden: DMs geschlossen oder blockiert."
             },
             "ai": {
                 "title": "SYS // AI",
@@ -256,7 +286,7 @@
                 "title": "SYS // STATS"
             },
             "suggestions": {
-                "embed_title": "💡 Vorschlag",
+                "embed_title": "Vorschlag",
                 "footer": "Baxi · Vorschläge",
                 "no_text": "*-  kein Text - *",
                 "no_permission": "<:x_:1492987102353166587> Nur Server-Staff kann Vorschläge annehmen oder ablehnen.",
@@ -314,7 +344,7 @@
                 "question": "Welchem Land gehört diese Flagge?",
                 "question_footer": "Baxi · Flag Quiz  |  Tippe deine Antwort!",
                 "correct": "<:celebrate:1492987070841491707> **{user}** hat es gewusst!\nDie Antwort war: **{country}** {flag}",
-                "hint": "💡 **Tipp:** `{hint}` ({length} Buchstaben)",
+                "hint": "**Tipp:** `{hint}` ({length} Buchstaben)",
                 "footer": "Baxi · Flag Quiz",
                 "leaderboard_title": "🌍 Flag Quiz – Rangliste",
                 "leaderboard_empty": "Noch keine Punkte vergeben. Sei der Erste!",
@@ -423,6 +453,11 @@
                 "reason": "Reason: ",
                 "amount": "Amount: ",
                 "channel": "Channel: ",
+                "field_reason": "Reason",
+                "field_mod": "Moderator",
+                "field_duration": "Duration",
+                "field_expires": "Expires",
+                "duration_permanent": "Permanent",
                 "ban": {
                     "title": "ACTION // BAN",
                     "confirmation": "Do you really want to ban this user for the following reason?",
@@ -431,7 +466,9 @@
                     "success": "The user has been successfully banned for the following reason:",
                     "audit_reason": "Banned by {moderator}: {reason}",
                     "error": "An error occurred: {error}",
-                    "abort": "The ban process has been aborted."
+                    "abort": "The ban process has been aborted.",
+                    "dm_title": "ACTION // BAN // {guild}",
+                    "abort_title": "BAN CANCELLED // {user}"
                 },
                 "unban": {
                     "title": "ACTION // UNBAN",
@@ -441,7 +478,8 @@
                     "success": "The user has been successfully unbanned:",
                     "audit_reason": "Unbanned by {moderator}: {reason}",
                     "error": "An error occurred: {error}",
-                    "abort": "The unban process has been aborted."
+                    "abort": "The unban process has been aborted.",
+                    "abort_title": "UNBAN CANCELLED // {user}"
                 },
                 "kick": {
                     "title": "ACTION // KICK",
@@ -451,7 +489,9 @@
                     "success": "The user has been successfully removed from the server:",
                     "audit_reason": "Kicked by {moderator}: {reason}",
                     "error": "An error occurred: {error}",
-                    "abort": "The kick process has been aborted."
+                    "abort": "The kick process has been aborted.",
+                    "dm_title": "ACTION // KICK // {guild}",
+                    "abort_title": "KICK CANCELLED // {user}"
                 },
                 "clear": {
                     "title": "ACTION // CLEAR",
@@ -460,7 +500,8 @@
                     "bot_missing_perms": "I do not have the necessary permissions to delete messages.",
                     "success": "The message has been successfully deleted:",
                     "error": "An error occurred: {error}",
-                    "abort": "The process has been aborted."
+                    "abort": "The process has been aborted.",
+                    "abort_title": "CLEAR CANCELLED // #{channel}"
                 },
                 "flag_user": {
                     "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
@@ -523,6 +564,8 @@
                 "title": "SYS // VERIFY",
                 "description_not_enabled": "This system is not enabled on this server. Please contact an administrator.",
                 "description_success": "The verification was successful. Welcome to the server!",
+                "role_not_found": "Role not found.",
+                "user_not_found": "User not found in guild.",
                 "captcha": {
                     "description_wrong_code": "The code entered is incorrect. Please try again."
                 },
@@ -540,7 +583,24 @@
                 "description_claimed": "The supporter {user} is now claiming this ticket.",
                 "link": "Here you can find a transcript of your recently closed ticket on {guild}:",
                 "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion.",
-                "close_cancel": "The ticket close process has been cancelled by {user}."
+                "close_cancel": "The ticket close process has been cancelled by {user}.",
+                "server_only": "Server only.",
+                "disabled": "The ticket system is currently disabled.",
+                "button_not_found": "This ticket button is no longer available.",
+                "category_not_configured": "Ticket category is not configured.",
+                "category_invalid": "Configured ticket category is invalid.",
+                "category_no_access": "Cannot access ticket category.",
+                "role_not_configured": "Ticket staff role is not configured.",
+                "role_not_found": "Configured ticket staff role was not found.",
+                "opened_description": "{user} opened a **{label}** ticket.",
+                "error_creating": "An error occurred creating the ticket.",
+                "channel_only": "This command can only be used in a text channel.",
+                "not_valid_ticket": "This channel is not a valid ticket.",
+                "system_not_configured": "Error: Ticket system not properly configured.",
+                "member_not_found": "Error: Member not found.",
+                "error_claiming": "An error occurred while trying to claim the ticket.",
+                "transcript_sent_dm": "Transcript sent to user {user} via DM.",
+                "transcript_dm_failed": "Unable to send transcript to user: DMs closed or blocked."
             },
             "ai": {
                 "title": "SYS // AI",
@@ -598,7 +658,7 @@
                 "title": "SYS // STATS"
             },
             "suggestions": {
-                "embed_title": "💡 Suggestion",
+                "embed_title": "Suggestion",
                 "footer": "Baxi · Suggestions",
                 "no_text": "*-  no text - *",
                 "no_permission": "<:x_:1492987102353166587> Only server staff can accept or decline suggestions.",
@@ -656,7 +716,7 @@
                 "question": "Which country does this flag belong to?",
                 "question_footer": "Baxi · Flag Quiz  |  Type your answer!",
                 "correct": "<:celebrate:1492987070841491707> **{user}** got it right!\nThe answer was: **{country}** {flag}",
-                "hint": "💡 **Hint:** `{hint}` ({length} letters)",
+                "hint": "**Hint:** `{hint}` ({length} letters)",
                 "footer": "Baxi · Flag Quiz",
                 "leaderboard_title": "🌍 Flag Quiz – Leaderboard",
                 "leaderboard_empty": "No points awarded yet. Be the first!",

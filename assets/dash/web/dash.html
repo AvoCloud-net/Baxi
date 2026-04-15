@@ -4424,7 +4424,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <div style="min-width:0;flex:1;">
-                            <h3 class="text-base font-semibold">#${(nameMap[cid] || cid).replace(/</g,'&lt;')}</h3>
+                            <h3 class="text-base font-semibold">${(nameMap[cid] || cid).replace(/</g,'&lt;')}</h3>
                             <p class="text-muted text-xs sticky-preview-${cid}" style="white-space:pre-wrap;margin-top:2px;">${preview.replace(/</g,'&lt;')}</p>
                         </div>
                         <div class="flex gap-2" style="flex-shrink:0;margin-left:12px;">

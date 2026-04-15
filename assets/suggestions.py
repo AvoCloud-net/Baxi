@@ -396,7 +396,7 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
         pass
 
     embed = discord.Embed(
-        title=t["embed_title"],
+        title=f"{cfg.Icons.bulb} {t['embed_title']}",
         description=raw_content or t["no_text"],
         color=cfg.Discord.info_color,
     )

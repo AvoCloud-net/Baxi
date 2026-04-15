@@ -198,7 +198,7 @@ async def _send_hint(guild_id: int, channel: discord.TextChannel) -> None:
     answer = q["answer"]
     hint_chars = answer[0] + " " + "_ " * (len(answer) - 1)
     embed = discord.Embed(
-        description=str(t["hint"]).format(
+        description=f"{cfg.Icons.bulb} " + str(t["hint"]).format(
             hint=hint_chars.strip(),
             length=len(answer),
         ),

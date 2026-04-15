@@ -42,20 +42,20 @@ class BanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
-            duration_str = datasys.format_duration(self.duration) if self.duration else "Permanent"
+            duration_str = datasys.format_duration(self.duration) if self.duration else lang["commands"]["admin"]["duration_permanent"]
             expires_at = datetime.datetime.utcnow() + self.duration if self.duration else None
 
             # DM user before ban
             try:
                 dm_embed = discord.Embed(
-                    title=f"ACTION // BAN // {interaction.guild.name}",
+                    title=str(lang["commands"]["admin"]["ban"]["dm_title"]).format(guild=interaction.guild.name),
                     color=config.Discord.danger_color,
                 )
-                dm_embed.add_field(name="Reason", value=self.reason, inline=False)
-                dm_embed.add_field(name="Duration", value=duration_str, inline=False)
-                dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+                dm_embed.add_field(name=lang["commands"]["admin"]["field_reason"], value=self.reason, inline=False)
+                dm_embed.add_field(name=lang["commands"]["admin"]["field_duration"], value=duration_str, inline=False)
+                dm_embed.add_field(name=lang["commands"]["admin"]["field_mod"], value=str(interaction.user), inline=False)
                 if expires_at:
-                    dm_embed.add_field(name="Expires", value=f"<t:{int(expires_at.timestamp())}:F>", inline=False)
+                    dm_embed.add_field(name=lang["commands"]["admin"]["field_expires"], value=f"<t:{int(expires_at.timestamp())}:F>", inline=False)
                 dm_embed.set_footer(text="Baxi · avocloud.net")
                 await self.user.send(embed=dm_embed)
             except (discord.Forbidden, discord.HTTPException):
@@ -130,7 +130,7 @@ class BanConfirmView(ui.View):
                 value=self.reason,
                 inline=False,
             )
-            embed.add_field(name="Duration", value=duration_str, inline=False)
+            embed.add_field(name=lang["commands"]["admin"]["field_duration"], value=duration_str, inline=False)
 
             for item in self.children:
                 button = cast(discord.ui.Button, item)
@@ -161,7 +161,7 @@ class BanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=f'BAN CANCELLED // {self.user.name}',
+            title=str(lang["commands"]["admin"]["ban"]["abort_title"]).format(user=self.user.name),
             description=lang["commands"]["admin"]["ban"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -197,11 +197,11 @@ class KickConfirmView(ui.View):
             # DM user before kick
             try:
                 dm_embed = discord.Embed(
-                    title=f"ACTION // KICK // {interaction.guild.name}",
+                    title=str(lang["commands"]["admin"]["kick"]["dm_title"]).format(guild=interaction.guild.name),
                     color=config.Discord.warn_color,
                 )
-                dm_embed.add_field(name="Reason", value=self.reason, inline=False)
-                dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
+                dm_embed.add_field(name=lang["commands"]["admin"]["field_reason"], value=self.reason, inline=False)
+                dm_embed.add_field(name=lang["commands"]["admin"]["field_mod"], value=str(interaction.user), inline=False)
                 dm_embed.set_footer(text="Baxi · avocloud.net")
                 await self.user.send(embed=dm_embed)
             except (discord.Forbidden, discord.HTTPException):
@@ -295,7 +295,7 @@ class KickConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=f'KICK CANCELLED // {self.user.name}',
+            title=str(lang["commands"]["admin"]["kick"]["abort_title"]).format(user=self.user.name),
             description=lang["commands"]["admin"]["kick"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -392,7 +392,7 @@ class UbanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=f'UNBAN CANCELLED // {self.user_id}',
+            title=str(lang["commands"]["admin"]["unban"]["abort_title"]).format(user=self.user_id),
             description=lang["commands"]["admin"]["unban"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -490,7 +490,7 @@ class ClearConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=f'CLEAR CANCELLED // #{self.channel.name}',
+            title=str(lang["commands"]["admin"]["clear"]["abort_title"]).format(channel=self.channel.name),
             description=lang["commands"]["admin"]["clear"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -538,7 +538,7 @@ class VerifyView(ui.View):
             )
             if role is None:
                 await interaction.response.send_message(
-                    "Role not found.", ephemeral=True
+                    lang["systems"]["verify"]["role_not_found"], ephemeral=True
                 )
                 return
             user: Optional[discord.Member] = interaction.guild.get_member(
@@ -546,7 +546,7 @@ class VerifyView(ui.View):
             )
             if user is None:
                 await interaction.response.send_message(
-                    "User not found in guild.", ephemeral=True
+                    lang["systems"]["verify"]["user_not_found"], ephemeral=True
                 )
                 return
 
@@ -665,7 +665,8 @@ class TicketButton(ui.DynamicItem[ui.Button], template=r"ticket_btn:(?P<btn_id>[
 async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str) -> None:
     try:
         if interaction.guild is None:
-            return await interaction.response.send_message("Server only.", ephemeral=True)
+            lang = datasys.load_lang_file(1001)
+            return await interaction.response.send_message(lang["systems"]["ticket"]["server_only"], ephemeral=True)
 
         guild = interaction.guild
         user = interaction.user
@@ -686,7 +687,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
         guild_data: dict = dict(datasys.load_data(guild.id, sys="ticket"))
         if not guild_data.get("enabled", False):
             await interaction.response.send_message(
-                "The ticket system is currently disabled.", ephemeral=True
+                lang["systems"]["ticket"]["disabled"], ephemeral=True
             )
             return
 
@@ -698,7 +699,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
                 break
         if button_def is None:
             await interaction.response.send_message(
-                "This ticket button is no longer available.", ephemeral=True
+                lang["systems"]["ticket"]["button_not_found"], ephemeral=True
             )
             return
 
@@ -726,19 +727,19 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
         cat_id = guild_data.get("catid")
         if not cat_id:
             await interaction.response.send_message(
-                "Ticket category is not configured.", ephemeral=True
+                lang["systems"]["ticket"]["category_not_configured"], ephemeral=True
             )
             return
         try:
             category = await guild.fetch_channel(int(cat_id))
             if not isinstance(category, discord.CategoryChannel):
                 await interaction.response.send_message(
-                    "Configured ticket category is invalid.", ephemeral=True
+                    lang["systems"]["ticket"]["category_invalid"], ephemeral=True
                 )
                 return
         except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
             await interaction.response.send_message(
-                "Cannot access ticket category.", ephemeral=True
+                lang["systems"]["ticket"]["category_no_access"], ephemeral=True
             )
             return
 
@@ -746,14 +747,14 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
         role_id = guild_data.get("role")
         if not role_id:
             await interaction.response.send_message(
-                "Ticket staff role is not configured.", ephemeral=True
+                lang["systems"]["ticket"]["role_not_configured"], ephemeral=True
             )
             return
         try:
             role = await guild.fetch_role(int(role_id))
         except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
             await interaction.response.send_message(
-                "Configured ticket staff role was not found.", ephemeral=True
+                lang["systems"]["ticket"]["role_not_found"], ephemeral=True
             )
             return
 
@@ -806,7 +807,9 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
 
         ticket_embed = discord.Embed(
             title=str(button_def.get("label", "Ticket")),
-            description=f"{user.mention} opened a **{button_def.get('label', 'Ticket')}** ticket.",
+            description=str(lang["systems"]["ticket"]["opened_description"]).format(
+                user=user.mention, label=button_def.get("label", "Ticket")
+            ),
             color=config.Discord.color,
         )
         await channel.send(
@@ -817,8 +820,9 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
     except Exception as e:
         print(f"Error in ticket button: {e}")
         try:
+            fallback_lang = datasys.load_lang_file(interaction.guild.id if interaction.guild else 1001)
             await interaction.response.send_message(
-                "An error occurred creating the ticket.", ephemeral=True
+                fallback_lang["systems"]["ticket"]["error_creating"], ephemeral=True
             )
         except Exception:
             pass
@@ -844,8 +848,9 @@ class TicketAdminButtons(ui.View):
                 )
 
             if not isinstance(interaction.channel, discord.TextChannel):
+                lang_tmp = datasys.load_lang_file(interaction.guild.id)
                 await interaction.response.send_message(
-                    "This command can only be used in a text channel.",
+                    lang_tmp["systems"]["ticket"]["channel_only"],
                     ephemeral=True,
                 )
                 return
@@ -950,14 +955,14 @@ class TicketAdminButtons(ui.View):
                                     transcript_channel, discord.TextChannel
                                 ):
                                     await transcript_channel.send(
-                                        f"Transcript sent to user {member.mention} via DM."
+                                        str(lang["systems"]["ticket"]["transcript_sent_dm"]).format(user=member.mention)
                                     )
                             except discord.Forbidden:
                                 if transcript_channel is not None and isinstance(
                                     transcript_channel, discord.TextChannel
                                 ):
                                     await transcript_channel.send(
-                                        f"Unable to send transcript to user: DMs closed or blocked."
+                                        lang["systems"]["ticket"]["transcript_dm_failed"]
                                     )
 
                             transcripts[str(transcript_id)] = transcript_data
@@ -1010,7 +1015,7 @@ class TicketAdminButtons(ui.View):
                     )
             else:
                 await interaction.response.send_message(
-                    "This channel is not a valid ticket.",
+                    lang["systems"]["ticket"]["not_valid_ticket"],
                     ephemeral=True,
                 )
         except Exception as e:
@@ -1031,14 +1036,15 @@ class TicketAdminButtons(ui.View):
                     ephemeral=True,
                 )
 
+            lang = datasys.load_lang_file(interaction.guild.id)
+
             if not isinstance(interaction.channel, discord.TextChannel):
                 await interaction.response.send_message(
-                    "This command can only be used in a text channel.",
+                    lang["systems"]["ticket"]["channel_only"],
                     ephemeral=True,
                 )
                 return
 
-            lang = datasys.load_lang_file(interaction.guild.id)
             guild_settings: dict = dict(
                 datasys.load_data(interaction.guild.id, sys="ticket")
             )
@@ -1050,7 +1056,7 @@ class TicketAdminButtons(ui.View):
                 tickets = {}
             if not isinstance(guild_settings, dict) or "role" not in guild_settings:
                 await interaction.response.send_message(
-                    "Error: Ticket system not properly configured.",
+                    lang["systems"]["ticket"]["system_not_configured"],
                     ephemeral=True,
                 )
                 return
@@ -1060,7 +1066,7 @@ class TicketAdminButtons(ui.View):
                 member = interaction.guild.get_member(interaction.user.id)
                 if member is None:
                     await interaction.response.send_message(
-                        "Error: Member not found.",
+                        lang["systems"]["ticket"]["member_not_found"],
                         ephemeral=True,
                     )
                     return
@@ -1105,12 +1111,16 @@ class TicketAdminButtons(ui.View):
                     )
             else:
                 await interaction.response.send_message(
-                    "This channel is not a valid ticket.",
+                    lang["systems"]["ticket"]["not_valid_ticket"],
                     ephemeral=True,
                 )
         except Exception as e:
             print(f"error in ticket claim: {e}")
-            await interaction.response.send_message(
-                "An error occurred while trying to claim the ticket.",
-                ephemeral=True,
-            )
+            try:
+                claim_lang = datasys.load_lang_file(interaction.guild.id if interaction.guild else 1001)
+                await interaction.response.send_message(
+                    claim_lang["systems"]["ticket"]["error_claiming"],
+                    ephemeral=True,
+                )
+            except Exception:
+                pass
