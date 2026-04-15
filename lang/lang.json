@@ -308,7 +308,22 @@
                 "modal_reason_label": "Begründung (optional)",
                 "modal_reason_placeholder": "Begründung eingeben...",
                 "auto_forward_title": "<:fire:1492987074389872660> Beliebter Vorschlag",
-                "auto_forward_footer": "Baxi · Vorschläge | {votes} Upvotes"
+                "auto_forward_footer": "Baxi · Vorschläge | {votes} Upvotes",
+                "btn_comment": "Kommentar",
+                "modal_comment_title": "Staff-Kommentar hinzufügen",
+                "modal_comment_label": "Kommentar",
+                "modal_comment_placeholder": "Kommentar oder Update eingeben...",
+                "comment_field": "Staff Update",
+                "comment_value": "{user}\n> {comment}",
+                "log_comment": "Staff-Kommentar hinzugefügt von {reviewer}\n**Kommentar:** {comment}\n[Zur Nachricht]({link})",
+                "btn_join_thread": "Diskussion beitreten",
+                "thread_joined": "Du bist der Diskussion beigetreten: {thread}",
+                "thread_not_found": "Diskussions-Thread nicht gefunden.",
+                "thread_update_accepted": "Vorschlag **angenommen** von {user}",
+                "thread_update_accepted_reason": "Vorschlag **angenommen** von {user}\n**Begründung:** {reason}",
+                "thread_update_declined": "Vorschlag **abgelehnt** von {user}",
+                "thread_update_declined_reason": "Vorschlag **abgelehnt** von {user}\n**Begründung:** {reason}",
+                "thread_update_comment": "**Staff Update** von {user}\n> {comment}"
             }
         },
         "events": {
@@ -680,7 +695,22 @@
                 "modal_reason_label": "Reason (optional)",
                 "modal_reason_placeholder": "Enter a reason...",
                 "auto_forward_title": "<:fire:1492987074389872660> Popular Suggestion",
-                "auto_forward_footer": "Baxi · Suggestions | {votes} upvotes"
+                "auto_forward_footer": "Baxi · Suggestions | {votes} upvotes",
+                "btn_comment": "Comment",
+                "modal_comment_title": "Add Staff Comment",
+                "modal_comment_label": "Comment",
+                "modal_comment_placeholder": "Enter your comment or update...",
+                "comment_field": "Staff Update",
+                "comment_value": "{user}\n> {comment}",
+                "log_comment": "Staff comment added by {reviewer}\n**Comment:** {comment}\n[Jump to message]({link})",
+                "btn_join_thread": "Join Discussion",
+                "thread_joined": "You joined the discussion: {thread}",
+                "thread_not_found": "Discussion thread not found.",
+                "thread_update_accepted": "Suggestion **accepted** by {user}",
+                "thread_update_accepted_reason": "Suggestion **accepted** by {user}\n**Reason:** {reason}",
+                "thread_update_declined": "Suggestion **declined** by {user}",
+                "thread_update_declined_reason": "Suggestion **declined** by {user}\n**Reason:** {reason}",
+                "thread_update_comment": "**Staff update** by {user}\n> {comment}"
             }
         },
         "events": {

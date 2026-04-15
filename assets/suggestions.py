@@ -9,7 +9,25 @@ logger = Logger()
 
 
 
-# ── Modal ─────────────────────────────────────────────────────────────────────
+# ── Modals ────────────────────────────────────────────────────────────────────
+
+class SuggestionCommentModal(discord.ui.Modal):
+    def __init__(self, t: dict):
+        super().__init__(title=t.get("modal_comment_title", "Add Staff Comment"))
+        self.t = t
+        self.comment_input = discord.ui.TextInput(
+            label=t.get("modal_comment_label", "Comment"),
+            placeholder=t.get("modal_comment_placeholder", "Enter your comment or update..."),
+            required=True,
+            max_length=500,
+            style=discord.TextStyle.paragraph,
+        )
+        self.add_item(self.comment_input)
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        comment = self.comment_input.value.strip()
+        await _process_comment(interaction, comment, self.t)
+
 
 class SuggestionDecisionModal(discord.ui.Modal):
     def __init__(self, accepted: bool, t: dict):
@@ -34,25 +52,37 @@ class SuggestionDecisionModal(discord.ui.Modal):
 # ── Persistent view ───────────────────────────────────────────────────────────
 
 class SuggestionView(discord.ui.View):
-    """Registered at startup so all custom_ids survive bot restarts."""
+    """Registered at startup so all custom_ids survive bot restarts.
+
+    Row 0: upvote | downvote | join discussion
+    Row 1: accept | decline | comment
+    """
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsup, style=discord.ButtonStyle.secondary, custom_id="suggestion:upvote")
+    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsup, style=discord.ButtonStyle.secondary, custom_id="suggestion:upvote", row=0)
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _handle_public_vote(interaction, upvoted=True)
 
-    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsdown, style=discord.ButtonStyle.secondary, custom_id="suggestion:downvote")
+    @discord.ui.button(label="0", emoji=cfg.Icons.thumbsdown, style=discord.ButtonStyle.secondary, custom_id="suggestion:downvote", row=0)
     async def downvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _handle_public_vote(interaction, upvoted=False)
 
-    @discord.ui.button(label="Accept", emoji=cfg.Icons.check, style=discord.ButtonStyle.success, custom_id="suggestion:accept")
+    @discord.ui.button(label="Join Discussion", emoji=cfg.Icons.message, style=discord.ButtonStyle.secondary, custom_id="suggestion:join_thread", row=0)
+    async def join_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _handle_join_thread(interaction)
+
+    @discord.ui.button(label="Accept", emoji=cfg.Icons.check, style=discord.ButtonStyle.success, custom_id="suggestion:accept", row=1)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _open_decision_modal(interaction, accepted=True)
 
-    @discord.ui.button(label="Decline", emoji=cfg.Icons.cross, style=discord.ButtonStyle.danger, custom_id="suggestion:decline")
+    @discord.ui.button(label="Decline", emoji=cfg.Icons.cross, style=discord.ButtonStyle.danger, custom_id="suggestion:decline", row=1)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _open_decision_modal(interaction, accepted=False)
+
+    @discord.ui.button(label="Comment", emoji=cfg.Icons.message, style=discord.ButtonStyle.secondary, custom_id="suggestion:comment", row=1)
+    async def comment(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _open_comment_modal(interaction)
 
 
 # ── View helpers ──────────────────────────────────────────────────────────────
@@ -71,6 +101,9 @@ def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False) -> 
             item.label = str(downvotes)
             item.emoji = cfg.Icons.thumbsdown
             item.disabled = decided
+        elif item.custom_id == "suggestion:join_thread":
+            item.label = t.get("btn_join_thread", "Join Discussion")
+            item.disabled = False  # always enabled
         elif item.custom_id == "suggestion:accept":
             item.label = t.get("btn_accept", "Accept")
             item.emoji = cfg.Icons.check
@@ -79,18 +112,30 @@ def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False) -> 
             item.label = t.get("btn_decline", "Decline")
             item.emoji = cfg.Icons.cross
             item.disabled = decided
+        elif item.custom_id == "suggestion:comment":
+            item.label = t.get("btn_comment", "Comment")
+            item.disabled = False  # always enabled
     return v
 
 
 def _make_staff_only_view(t: dict, decided: bool = False) -> discord.ui.View:
-    """View with only Accept / Decline when public voting is disabled."""
+    """View with Join Discussion (row 0) + Accept / Decline / Comment (row 1) when public voting is disabled."""
     v = discord.ui.View(timeout=None)
+    v.add_item(discord.ui.Button(
+        label=t.get("btn_join_thread", "Join Discussion"),
+        emoji=cfg.Icons.message,
+        style=discord.ButtonStyle.secondary,
+        custom_id="suggestion:join_thread",
+        disabled=False,
+        row=0,
+    ))
     v.add_item(discord.ui.Button(
         label=t.get("btn_accept", "Accept"),
         emoji=cfg.Icons.check,
         style=discord.ButtonStyle.success,
         custom_id="suggestion:accept",
         disabled=decided,
+        row=1,
     ))
     v.add_item(discord.ui.Button(
         label=t.get("btn_decline", "Decline"),
@@ -98,6 +143,15 @@ def _make_staff_only_view(t: dict, decided: bool = False) -> discord.ui.View:
         style=discord.ButtonStyle.danger,
         custom_id="suggestion:decline",
         disabled=decided,
+        row=1,
+    ))
+    v.add_item(discord.ui.Button(
+        label=t.get("btn_comment", "Comment"),
+        emoji=cfg.Icons.message,
+        style=discord.ButtonStyle.secondary,
+        custom_id="suggestion:comment",
+        disabled=False,
+        row=1,
     ))
     return v
 
@@ -112,8 +166,20 @@ def _get_vote_counts(guild_id: int, msg_id: str) -> tuple[list, list]:
 
 def _save_vote_counts(guild_id: int, msg_id: str, up: list, down: list) -> None:
     votes: dict = dict(datasys.load_data(guild_id, "suggestion_votes"))
-    votes[msg_id] = {"up": up, "down": down}
+    entry = votes.get(msg_id, {})
+    entry["up"] = up
+    entry["down"] = down
+    votes[msg_id] = entry
     datasys.save_data(guild_id, "suggestion_votes", votes)
+
+
+def _get_suggestion_thread(guild: discord.Guild, msg_id: str) -> discord.Thread | None:
+    votes: dict = dict(datasys.load_data(guild.id, "suggestion_votes"))
+    thread_id = votes.get(msg_id, {}).get("thread_id")
+    if not thread_id:
+        return None
+    thread = guild.get_channel_or_thread(int(thread_id))
+    return thread if isinstance(thread, discord.Thread) else None
 
 
 def _is_decided(embed: discord.Embed, status_field_name: str) -> bool:
@@ -139,7 +205,46 @@ def _get_channel_config(data: dict, channel_id: int) -> dict:
     return {"id": str(channel_id), "votes_enabled": True}
 
 
-# ── Modal trigger ─────────────────────────────────────────────────────────────
+# ── Join thread handler ───────────────────────────────────────────────────────
+
+async def _handle_join_thread(interaction: discord.Interaction) -> None:
+    if interaction.guild is None or interaction.message is None:
+        return
+
+    lang = datasys.load_lang_file(interaction.guild.id)
+    t: dict = lang["systems"]["suggestions"]
+
+    msg_id = str(interaction.message.id)
+    thread = _get_suggestion_thread(interaction.guild, msg_id)
+
+    # Fall back to API fetch if not in cache
+    if thread is None:
+        votes: dict = dict(datasys.load_data(interaction.guild.id, "suggestion_votes"))
+        thread_id = votes.get(msg_id, {}).get("thread_id")
+        if thread_id:
+            try:
+                fetched = await interaction.guild.fetch_channel(int(thread_id))
+                if isinstance(fetched, discord.Thread):
+                    thread = fetched
+            except (discord.NotFound, discord.HTTPException):
+                pass
+
+    if thread is None:
+        await interaction.response.send_message(t.get("thread_not_found", "Discussion thread not found."), ephemeral=True)
+        return
+
+    try:
+        await thread.add_user(interaction.user)
+    except (discord.Forbidden, discord.HTTPException):
+        pass
+
+    await interaction.response.send_message(
+        str(t.get("thread_joined", "You joined the discussion: {thread}")).format(thread=thread.mention),
+        ephemeral=True,
+    )
+
+
+# ── Modal triggers ────────────────────────────────────────────────────────────
 
 async def _open_decision_modal(interaction: discord.Interaction, accepted: bool) -> None:
     """Check permissions and either show ephemeral error or open the reason modal."""
@@ -161,7 +266,83 @@ async def _open_decision_modal(interaction: discord.Interaction, accepted: bool)
     await interaction.response.send_modal(SuggestionDecisionModal(accepted=accepted, t=t))
 
 
-# ── Decision processing (called from modal on_submit) ─────────────────────────
+async def _open_comment_modal(interaction: discord.Interaction) -> None:
+    """Check permissions and open the staff comment modal. Works on pending and decided suggestions."""
+    if interaction.guild is None or interaction.message is None:
+        return
+
+    data: dict = dict(datasys.load_data(interaction.guild.id, "suggestions"))
+    lang = datasys.load_lang_file(interaction.guild.id)
+    t: dict = lang["systems"]["suggestions"]
+
+    if not _check_permission(interaction, data):
+        await interaction.response.send_message(t["no_permission"], ephemeral=True)
+        return
+
+    await interaction.response.send_modal(SuggestionCommentModal(t=t))
+
+
+# ── Comment processing ────────────────────────────────────────────────────────
+
+async def _process_comment(
+    interaction: discord.Interaction,
+    comment: str,
+    t: dict,
+) -> None:
+    if interaction.guild is None or interaction.message is None:
+        return
+
+    data: dict = dict(datasys.load_data(interaction.guild.id, "suggestions"))
+    msg = interaction.message
+    if not msg.embeds:
+        return
+
+    msg_id = str(msg.id)
+    ts = f"<t:{int(discord.utils.utcnow().timestamp())}:f>"
+    embed = msg.embeds[0].copy()
+    embed.add_field(
+        name=t.get("comment_field", "Staff Update"),
+        value=f"{cfg.Icons.message} " + str(t.get("comment_value", "{user}\n> {comment}")).format(
+            user=interaction.user.display_name, comment=comment
+        ) + f"\n-# {ts}",
+        inline=False,
+    )
+
+    await interaction.response.edit_message(embed=embed)
+
+    # Thread update
+    thread = _get_suggestion_thread(interaction.guild, msg_id)
+    if thread:
+        try:
+            await thread.send(
+                f"{cfg.Icons.message} " + str(t.get("thread_update_comment", "**Staff update** by {user}\n> {comment}")).format(
+                    user=interaction.user.display_name, comment=comment
+                ) + f"\n-# {ts}"
+            )
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+    # Log channel
+    log_ch_id = str(data.get("log_channel", "") or "")
+    if log_ch_id and log_ch_id.isdigit():
+        log_ch = interaction.guild.get_channel(int(log_ch_id))
+        if isinstance(log_ch, discord.TextChannel):
+            log_embed = discord.Embed(
+                description=f"{cfg.Icons.message} " + str(t["log_comment"]).format(
+                    reviewer=interaction.user.mention,
+                    link=msg.jump_url,
+                    comment=comment,
+                ),
+                color=cfg.Discord.info_color,
+            )
+            log_embed.set_footer(text=t["footer"])
+            try:
+                await log_ch.send(embed=log_embed)
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
+
+# ── Decision processing ───────────────────────────────────────────────────────
 
 async def _process_decision(
     interaction: discord.Interaction,
@@ -210,7 +391,35 @@ async def _process_decision(
 
     await interaction.response.edit_message(embed=embed, view=disabled_view)
 
-    # Optional log channel
+    # Thread update
+    thread = _get_suggestion_thread(interaction.guild, msg_id)
+    if thread:
+        if accepted:
+            icon = cfg.Icons.check
+            if reason:
+                thread_msg = f"{icon} " + str(t.get("thread_update_accepted_reason", "Suggestion **accepted** by {user}\n**Reason:** {reason}")).format(
+                    user=interaction.user.display_name, reason=reason
+                )
+            else:
+                thread_msg = f"{icon} " + str(t.get("thread_update_accepted", "Suggestion **accepted** by {user}")).format(
+                    user=interaction.user.display_name
+                )
+        else:
+            icon = cfg.Icons.cross
+            if reason:
+                thread_msg = f"{icon} " + str(t.get("thread_update_declined_reason", "Suggestion **declined** by {user}\n**Reason:** {reason}")).format(
+                    user=interaction.user.display_name, reason=reason
+                )
+            else:
+                thread_msg = f"{icon} " + str(t.get("thread_update_declined", "Suggestion **declined** by {user}")).format(
+                    user=interaction.user.display_name
+                )
+        try:
+            await thread.send(thread_msg)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+    # Log channel
     log_ch_id = str(data.get("log_channel", "") or "")
     if log_ch_id and log_ch_id.isdigit():
         log_ch = interaction.guild.get_channel(int(log_ch_id))
@@ -412,10 +621,39 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
 
     try:
         if files:
-            await message.channel.send(embed=embed, view=view, files=files)
+            sent = await message.channel.send(embed=embed, view=view, files=files)
         else:
-            await message.channel.send(embed=embed, view=view)
+            sent = await message.channel.send(embed=embed, view=view)
     except Exception as e:
         logger.error(f"[Suggestions] Could not post suggestion embed: {e}")
+        return True
+
+    # Create private discussion thread
+    if isinstance(message.channel, discord.TextChannel):
+        thread_name = raw_content.strip()
+        if len(thread_name) > 80:
+            thread_name = thread_name[:77] + "..."
+        if not thread_name:
+            thread_name = t.get("embed_title", "Suggestion")
+        try:
+            thread = await message.channel.create_thread(
+                name=thread_name[:100],
+                type=discord.ChannelType.private_thread,
+                invitable=True,
+            )
+            # Add the suggestion author to the thread
+            try:
+                await thread.add_user(message.author)
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+            # Store thread_id
+            votes: dict = dict(datasys.load_data(message.guild.id, "suggestion_votes"))
+            msg_id = str(sent.id)
+            entry = votes.get(msg_id, {})
+            entry["thread_id"] = thread.id
+            votes[msg_id] = entry
+            datasys.save_data(message.guild.id, "suggestion_votes", votes)
+        except (discord.Forbidden, discord.HTTPException) as e:
+            logger.error(f"[Suggestions] Could not create discussion thread: {e}")
 
     return True

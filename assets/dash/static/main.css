@@ -4,6 +4,21 @@
   --font-family: "Quicksand", sans-serif;
 }
 
+/* Light-mode token overrides */
+html:not(.dark) {
+  --card-bg: #f4f4f5;
+  --border: #e4e4e7;
+  --bg-secondary: #f4f4f5;
+}
+
+/* Insights day-selector — hardcode colour; --color-primary resolves to white in dark mode */
+html.dark .time-bar button.active,
+html.dark .time-bar button:hover {
+  background: #6F83AA !important;
+  color: #fff !important;
+  border-color: #6F83AA !important;
+}
+
 body {
   font-family: var(--font-family);
   overflow-x: clip; /* prevent horizontal scroll from layout-viewport expansion */
