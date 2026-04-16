@@ -331,7 +331,9 @@ class LivestreamTask:
         except discord.Forbidden:
             logger.error(f"[Livestream] Cannot edit channel name in guild {guild_id}")
 
-        embed = self._build_embed(ls_lang, display_name, platform, is_live, stream_data, profile)
+        custom_message = streamer.get("custom_message", "").strip() if is_live else ""
+        custom_message_position = streamer.get("custom_message_position", "above")
+        embed = self._build_embed(ls_lang, display_name, platform, is_live, stream_data, profile, custom_message if custom_message_position == "in_embed" else "")
 
         if is_live and ping:
             ls_config = dict(datasys.load_data(guild_id, "livestream"))
@@ -341,6 +343,8 @@ class LivestreamTask:
                 ping_text = ls_lang.get(
                     "ping_message", "{role} \u2014 **{name}** is now live playing **{game}**!"
                 ).format(role=f"<@&{ping_role_id}>", name=display_name, game=game)
+                if custom_message:
+                    ping_text = f"{ping_text}\n{custom_message}"
                 try:
                     ping_msg = await channel.send(content=ping_text)
                     await asyncio.sleep(2)
@@ -348,16 +352,17 @@ class LivestreamTask:
                 except (discord.Forbidden, discord.HTTPException):
                     pass
 
+        msg_content = custom_message if (custom_message and custom_message_position == "above") else None
         try:
             if message_id:
                 try:
                     msg = await channel.fetch_message(int(message_id))
-                    await msg.edit(content=None, embed=embed)
+                    await msg.edit(content=msg_content, embed=embed)
                     return
                 except (discord.NotFound, discord.HTTPException):
                     pass
 
-            msg = await channel.send(content=None, embed=embed)
+            msg = await channel.send(content=msg_content, embed=embed)
             self._save_message_id(guild_id, login, platform, msg.id)
         except discord.Forbidden:
             logger.error(f"[Livestream] Cannot send message in guild {guild_id}")
@@ -387,11 +392,14 @@ class LivestreamTask:
         if not isinstance(channel, discord.TextChannel) or not message_id:
             return
 
-        embed = self._build_embed(ls_lang, display_name, platform, True, stream_data, profile)
+        custom_message = streamer.get("custom_message", "").strip()
+        custom_message_position = streamer.get("custom_message_position", "above")
+        embed = self._build_embed(ls_lang, display_name, platform, True, stream_data, profile, custom_message if custom_message_position == "in_embed" else "")
+        msg_content = custom_message if (custom_message and custom_message_position == "above") else None
 
         try:
             msg = await channel.fetch_message(int(message_id))
-            await msg.edit(embed=embed)
+            await msg.edit(content=msg_content, embed=embed)
         except (discord.NotFound, discord.HTTPException, discord.Forbidden):
             pass
 
@@ -403,6 +411,7 @@ class LivestreamTask:
         is_live: bool,
         stream_data: dict | None,
         profile: dict,
+        custom_message_in_embed: str = "",
     ) -> discord.Embed:
         """Build the Discord embed for a streamer (platform-aware URLs)."""
         profile_url = self._profile_url(display_name, platform, stream_data)
@@ -435,6 +444,9 @@ class LivestreamTask:
 
             if profile.get("profile_image_url"):
                 embed.set_thumbnail(url=profile["profile_image_url"])
+
+            if custom_message_in_embed:
+                embed.add_field(name="\u200b", value=custom_message_in_embed, inline=False)
 
         else:
             embed = discord.Embed(

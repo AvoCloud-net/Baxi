@@ -897,6 +897,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             settings.setdefault("color", "#9333ea")
             settings.setdefault("message", "")
             settings.setdefault("buttons", [])
+            settings.setdefault("channel_name_template", "{button}-{user}")
             settings.setdefault("panel_message_id", "")
 
             if ticket["enabled"] is False:
@@ -972,6 +973,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 settings["catid"] = ticket["category"]
                 settings["color"] = color_raw
                 settings["message"] = str(ticket.get("message", ""))[:4000]
+                raw_template = str(ticket.get("channel_name_template", "") or "").strip()[:80]
+                settings["channel_name_template"] = raw_template if raw_template else "{button}-{user}"
                 settings["buttons"] = cleaned_buttons
 
                 embed = discord.Embed(
@@ -1398,6 +1401,33 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     s for s in streamers
                     if not (s.get("login", "").lower() == login.lower() and s.get("platform", "twitch") == platform)
                 ]
+                ls_config["streamers"] = streamers
+                save_data(int(guild_id), "livestream", ls_config)
+
+            elif action == "update":
+                login = str(livestream.get("login", "")).strip()
+                platform = str(livestream.get("platform", "twitch")).strip().lower()
+                if not login:
+                    return quart.jsonify({"success": False, "message": "Login is required."}), 400
+
+                custom_message = str(livestream.get("custom_message", "")).strip()[:500]
+                custom_message_position = str(livestream.get("custom_message_position", "above")).strip()
+                if custom_message_position not in ("above", "in_embed"):
+                    custom_message_position = "above"
+
+                ls_config = dict(load_data(int(guild_id), "livestream"))
+                streamers = ls_config.get("streamers", [])
+                found = False
+                for s in streamers:
+                    if s.get("login", "").lower() == login.lower() and s.get("platform", "twitch") == platform:
+                        s["custom_message"] = custom_message
+                        s["custom_message_position"] = custom_message_position
+                        found = True
+                        break
+
+                if not found:
+                    return quart.jsonify({"success": False, "message": "Streamer not found."}), 400
+
                 ls_config["streamers"] = streamers
                 save_data(int(guild_id), "livestream", ls_config)
 

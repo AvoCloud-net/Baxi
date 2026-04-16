@@ -778,8 +778,10 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             ),
         }
 
-        slug = _slugify_label(str(button_def.get("label", "")), fallback=btn_id)
-        channel_name = f"{slug}-{user.name}"[:100]
+        slug = _slugify_label(button_def.get("label") or "", fallback=btn_id)
+        template = str(guild_data.get("channel_name_template") or "{button}-{user}")
+        raw_channel_name = template.replace("{button}", slug).replace("{user}", user.name)
+        channel_name = _slugify_label(raw_channel_name, fallback="ticket")[:100]
         channel = await guild.create_text_channel(
             name=channel_name, category=category, overwrites=perms_overwrites
         )
@@ -789,7 +791,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             "supporterid": None,
             "created_at": int(datetime.datetime.now().timestamp()),
             "status": "open",
-            "title": str(button_def.get("label", "Ticket")),
+            "title": button_def.get("label") or "Ticket",
             "message": "",
             "button_id": btn_id,
             "transcript": [],
@@ -805,10 +807,11 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
         )
         await interaction.response.send_message(embed=success_embed, ephemeral=True)
 
+        ticket_label = button_def.get("label") or "Ticket"
         ticket_embed = discord.Embed(
-            title=str(button_def.get("label", "Ticket")),
+            title=ticket_label,
             description=str(lang["systems"]["ticket"]["opened_description"]).format(
-                user=user.mention, label=button_def.get("label", "Ticket")
+                user=user.mention, label=ticket_label
             ),
             color=config.Discord.color,
         )

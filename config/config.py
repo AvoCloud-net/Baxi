@@ -128,6 +128,7 @@ class datasys:
         "role": "",
         "color": "#9333ea",
         "message": "Click a button below to open a ticket.",
+        "channel_name_template": "{button}-{user}",
         "panel_message_id": "",
         "buttons": [
             {"id": "support", "label": "Support", "emoji": "🛠️", "style": "primary"}

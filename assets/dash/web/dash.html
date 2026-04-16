@@ -1131,6 +1131,12 @@
                                     class="w-full min-h-[100px]"></textarea>
                             </div>
 
+                            <div class="grid gap-2">
+                                <label for="ticket-channel-name-template">Channel name template:</label>
+                                <input type="text" id="ticket-channel-name-template" placeholder="{button}-{user}" maxlength="80" class="w-full">
+                                <p class="text-muted text-xs">Placeholders: <code>{button}</code> = button label, <code>{user}</code> = username. Result is truncated to 100 chars and sanitized for Discord.</p>
+                            </div>
+
                             <!-- Ticket buttons -->
                             <div class="grid gap-2">
                                 <label class="font-medium text-sm">Ticket buttons <span class="text-muted font-normal" id="ticket-buttons-count">(0)</span></label>
@@ -2941,6 +2947,7 @@
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
             document.getElementById("ticket-color").value = data.ticket.color || '';
+            document.getElementById("ticket-channel-name-template").value = data.ticket.channel_name_template || '{button}-{user}';
             _ticketButtons = Array.isArray(data.ticket.buttons) ? data.ticket.buttons.map(b => ({
                 label: String(b.label || ''),
                 emoji: String(b.emoji || ''),
@@ -3169,11 +3176,15 @@
                 empty.classList.remove('hidden');
             } else {
                 empty.classList.add('hidden');
-                streamers.forEach(s => {
+                streamers.forEach((s, idx) => {
                     const platform = s.platform || 'twitch';
                     const platformColor = _platformColors[platform] || '#888';
                     const platformLabel = _platformLabels[platform] || platform;
                     const profileUrl = _streamerProfileUrl(s);
+                    const safeLogin = s.login.replace(/'/g, "\\'");
+                    const escapedMsg = (s.custom_message || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                    const posAbove = (s.custom_message_position || 'above') === 'above' ? 'selected' : '';
+                    const posEmbed = (s.custom_message_position || 'above') === 'in_embed' ? 'selected' : '';
                     const card = document.createElement('div');
                     card.className = 'card streamer-card';
                     card.innerHTML = `
@@ -3188,7 +3199,7 @@
                                     <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
                             </div>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="removeStreamer('${s.login.replace(/'/g, "\\'")}', '${platform}')">
+                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="removeStreamer('${safeLogin}', '${platform}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -3196,10 +3207,70 @@
                                 Remove
                             </button>
                         </header>
+                        <div class="grid gap-2" style="border-top:1px solid var(--border,#333);margin-top:12px;padding:12px 16px 4px 16px;">
+                            <label class="text-xs font-medium text-muted">Custom live message <span style="font-weight:normal;">(shown in ping &amp; above/in embed when live)</span></label>
+                            <textarea id="ls-cm-${idx}" placeholder="e.g. Hey @everyone ich bin live — schaut vorbei!" class="textarea" rows="2" maxlength="500">${escapedMsg}</textarea>
+                            <div class="flex gap-2 items-center flex-wrap">
+                                <select id="ls-cmp-${idx}" class="select text-sm" style="width:auto;">
+                                    <option value="above" ${posAbove}>Above embed</option>
+                                    <option value="in_embed" ${posEmbed}>In embed (as field)</option>
+                                </select>
+                                <button type="button" id="ls-save-${idx}" class="btn-outline submit-btn" onclick="updateStreamerMessage(${idx}, '${safeLogin}', '${platform}')">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                        </div>
                     `;
                     list.appendChild(card);
                 });
             }
+        }
+
+        function updateStreamerMessage(idx, login, platform) {
+            const msgEl = document.getElementById(`ls-cm-${idx}`);
+            const posEl = document.getElementById(`ls-cmp-${idx}`);
+            const btn = document.getElementById(`ls-save-${idx}`);
+            if (!msgEl || !posEl) return;
+            if (btn) {
+                btn.disabled = true;
+                btn.querySelector('.spinner')?.classList.remove('hidden');
+                btn.querySelector('.btn-text')?.classList.add('hidden');
+            }
+            const payload = {
+                livestream: {
+                    action: 'update',
+                    login: login,
+                    platform: platform,
+                    custom_message: msgEl.value.trim(),
+                    custom_message_position: posEl.value
+                }
+            };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=livestream&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message || (resp.success ? 'Saved.' : 'Error.'));
+                        if (resp.success) {
+                            const streamers = (data.livestream && data.livestream.streamers) || [];
+                            const s = streamers.find(x => x.login.toLowerCase() === login.toLowerCase() && (x.platform || 'twitch') === platform);
+                            if (s) {
+                                s.custom_message = msgEl.value.trim();
+                                s.custom_message_position = posEl.value;
+                            }
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
         }
 
         function addStreamer() {
@@ -3818,11 +3889,12 @@
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
+            const channel_name_template = document.getElementById('ticket-channel-name-template').value;
             if (enabled && _ticketButtons.length === 0) {
                 showSaveToast(false, 'Please add at least one ticket button.');
                 return;
             }
-            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, buttons: _ticketButtons } };
+            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, channel_name_template, buttons: _ticketButtons } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

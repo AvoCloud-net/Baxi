@@ -56,6 +56,7 @@ from assets.tasks import (
     YouTubeVideoTask,
 )
 from assets.giveaway import GiveawayTask
+from assets.poll import PollTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -219,6 +220,12 @@ def events(bot: commands.AutoShardedBot, web):
             giveaway_task.check_giveaways.start()
             share.task_instances["Giveaway"] = giveaway_task
             logger.debug.success("Giveaway task started.")
+
+            logger.working("Starting Poll task...")
+            poll_task = PollTask(bot)
+            poll_task.check_polls.start()
+            share.task_instances["Poll"] = poll_task
+            logger.debug.success("Poll task started.")
 
             logger.working("Resuming active Flag Quiz sessions...")
             await quiz_game.resume_all(bot)
