@@ -249,6 +249,14 @@ Two built-in community games with leaderboards and configurable settings.
 
 ---
 
+## Giveaway
+
+**Command:** `/giveaway`
+
+Start a giveaway in any text channel. Members enter via button (live participant count shown on button). When the duration expires, winners are drawn randomly, announced in the channel via embed, and notified by DM. Supports custom winner message, configurable winner count (1–20) and optional image attachment.
+
+---
+
 ## Suggestions
 
 Members submit ideas to a dedicated channel; Baxi converts each into a formatted embed with voting and staff review.

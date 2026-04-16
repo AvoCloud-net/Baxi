@@ -14,6 +14,7 @@ import config.config as config
 import discord
 import reds_simple_logger
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands
+from assets.giveaway import giveaway_commands
 from assets.dash.log import highlight_word
 
 from assets.data import set_bot
@@ -46,9 +47,11 @@ class PersistentViewBot(commands.AutoShardedBot):
         from assets.buttons import TicketButton, TicketAdminButtons, VerifyView
         from assets.message.reactionroles import RoleButton
         from assets.suggestions import SuggestionView
+        from assets.giveaway import GiveawayView
         self.add_view(TicketAdminButtons())
         self.add_view(VerifyView())
         self.add_view(SuggestionView())
+        self.add_view(GiveawayView())
         self.add_dynamic_items(RoleButton, TicketButton)
 
 
@@ -79,6 +82,7 @@ base_commands(bot=bot)
 utility_commands(bot=bot)
 leveling_commands(bot=bot)
 bot_admin_commands(bot=bot)
+giveaway_commands(bot=bot)
 
 web.jinja_env.filters['highlight_word'] = highlight_word
 

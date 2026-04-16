@@ -55,6 +55,7 @@ from assets.tasks import (
     GarbageCollectorTask,
     YouTubeVideoTask,
 )
+from assets.giveaway import GiveawayTask
 from discord.ext import commands
 from reds_simple_logger import Logger
 from assets.data import load_data, save_data
@@ -212,6 +213,12 @@ def events(bot: commands.AutoShardedBot, web):
             yt_video_task.check_videos.start()
             share.task_instances["YouTubeVideos"] = yt_video_task
             logger.debug.success("YouTube video tracking task started.")
+
+            logger.working("Starting Giveaway task...")
+            giveaway_task = GiveawayTask(bot)
+            giveaway_task.check_giveaways.start()
+            share.task_instances["Giveaway"] = giveaway_task
+            logger.debug.success("Giveaway task started.")
 
             logger.working("Resuming active Flag Quiz sessions...")
             await quiz_game.resume_all(bot)

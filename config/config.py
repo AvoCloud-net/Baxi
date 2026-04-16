@@ -248,6 +248,7 @@ class datasys:
         "auto_forward_threshold": 10,
     },
     "suggestion_votes": {},
+    "giveaways": {},
     "leveling": {
         "enabled": False,
         "announcement": "same_channel",   # "same_channel" | "channel" | "off"

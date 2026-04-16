@@ -324,6 +324,30 @@
                 "thread_update_declined": "Vorschlag **abgelehnt** von {user}",
                 "thread_update_declined_reason": "Vorschlag **abgelehnt** von {user}\n**Begründung:** {reason}",
                 "thread_update_comment": "**Staff Update** von {user}\n> {comment}"
+            },
+            "giveaway": {
+                "embed_title": "GIVEAWAY",
+                "footer": "Baxi · Giveaway",
+                "field_ends": "Endet",
+                "field_ended": "Beendet",
+                "field_winners": "Gewinner",
+                "field_host": "Veranstalter",
+                "entered": "Du nimmst jetzt am Gewinnspiel teil! Viel Erfolg!",
+                "left": "Du hast das Gewinnspiel verlassen.",
+                "not_found": "Dieses Gewinnspiel konnte nicht gefunden werden.",
+                "already_ended": "Dieses Gewinnspiel ist bereits beendet.",
+                "no_permission": "Du benötigst die Berechtigung **Server verwalten**, um ein Gewinnspiel zu starten.",
+                "invalid_duration": "Ungültige Dauer. Nutze z. B. `1h`, `30m`, `2d`, `1h30m`. Minimum sind 60 Sekunden.",
+                "channel_only": "Gewinnspiele können nur in Textkanälen gestartet werden.",
+                "send_error": "Gewinnspiel-Nachricht konnte nicht gesendet werden.",
+                "started": "Gewinnspiel in {channel} gestartet!",
+                "winner_announce_title": "GIVEAWAY // GEWINNER",
+                "winner_announce": "Herzlichen Glückwunsch {winners}!\nDu hast **{reward}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
+                "winner_message_field": "Nachricht vom Veranstalter",
+                "winner_dm_title": "GIVEAWAY // DU HAST GEWONNEN",
+                "winner_dm": "Du hast **{reward}** in **{guild}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
+                "no_winners_title": "GIVEAWAY // KEINE GEWINNER",
+                "no_winners": "Niemand hat am Gewinnspiel für **{reward}** teilgenommen.\n[Zum Gewinnspiel]({msg_link})"
             }
         },
         "events": {
@@ -711,6 +735,30 @@
                 "thread_update_declined": "Suggestion **declined** by {user}",
                 "thread_update_declined_reason": "Suggestion **declined** by {user}\n**Reason:** {reason}",
                 "thread_update_comment": "**Staff update** by {user}\n> {comment}"
+            },
+            "giveaway": {
+                "embed_title": "GIVEAWAY",
+                "footer": "Baxi · Giveaway",
+                "field_ends": "Ends",
+                "field_ended": "Ended",
+                "field_winners": "Winners",
+                "field_host": "Host",
+                "entered": "You've entered the giveaway! Good luck!",
+                "left": "You've left the giveaway.",
+                "not_found": "This giveaway could not be found.",
+                "already_ended": "This giveaway has already ended.",
+                "no_permission": "You need the **Manage Server** permission to start a giveaway.",
+                "invalid_duration": "Invalid duration. Use formats like `1h`, `30m`, `2d`, `1h30m`. Minimum is 60 seconds.",
+                "channel_only": "Giveaways can only be started in text channels.",
+                "send_error": "Failed to send the giveaway message.",
+                "started": "Giveaway started in {channel}!",
+                "winner_announce_title": "GIVEAWAY // WINNER",
+                "winner_announce": "Congratulations {winners}!\nYou won **{reward}**!\n[Jump to Giveaway]({msg_link})",
+                "winner_message_field": "Message from the host",
+                "winner_dm_title": "GIVEAWAY // YOU WON",
+                "winner_dm": "You won **{reward}** in **{guild}**!\n[Jump to Giveaway]({msg_link})",
+                "no_winners_title": "GIVEAWAY // NO WINNERS",
+                "no_winners": "No one entered the giveaway for **{reward}**.\n[Jump to Giveaway]({msg_link})"
             }
         },
         "events": {
