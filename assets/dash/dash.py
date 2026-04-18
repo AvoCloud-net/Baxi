@@ -517,6 +517,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if isinstance(channel, discord.TextChannel)
             }
 
+            news_channels = {
+                str(channel.id): channel.name
+                for channel in channels
+                if isinstance(channel, discord.TextChannel) and channel.is_news()
+            }
+
             voice_channels = {
                 str(channel.id): channel.name
                 for channel in channels
@@ -600,6 +606,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 guild=guild,
                 user=user,
                 channels=text_channels,
+                news_channels=news_channels,
                 voice_channels=voice_channels,
                 categorys=catrgorys_list,
                 roles=roles_list,
@@ -2094,6 +2101,45 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             save_data(int(guild_id), "audit_log", audit_log)
 
             return quart.jsonify({"success": True, "message": "All scores have been reset."})
+
+        elif system == "auto_release":
+            data: dict = await quart.request.get_json()
+            ar = data.get("auto_release")
+
+            if not isinstance(ar, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+            if not isinstance(ar.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            raw_channels = ar.get("channels", [])
+            if not isinstance(raw_channels, list):
+                return quart.jsonify({"success": False, "message": "'channels' must be a list."}), 400
+            channels: list[str] = []
+            for ch in raw_channels:
+                ch_id = str(ch).strip()
+                if re.fullmatch(r"\d{17,19}", ch_id) and ch_id not in channels:
+                    channels.append(ch_id)
+
+            settings = {
+                "enabled": ar["enabled"],
+                "channels": channels,
+                "ignore_bots": bool(ar.get("ignore_bots", True)),
+            }
+            save_data(int(guild_id), "auto_release", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "auto_release",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Auto-Release settings saved!"})
 
         elif system == "suggestions":
             data: dict = await quart.request.get_json()

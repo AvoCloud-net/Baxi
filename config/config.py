@@ -256,6 +256,11 @@ class datasys:
         "announcement_channel": "",
         "role_rewards": [],               # [{"level": 5, "role_id": "123..."}]
     },
+    "auto_release": {
+        "enabled": False,
+        "channels": [],
+        "ignore_bots": True,
+    },
     "donations": {
         "enabled": False,
         "provider": "stripe",

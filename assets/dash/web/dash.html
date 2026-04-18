@@ -346,6 +346,10 @@
                 <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 Custom Commands
             </a>
+            <a href="#auto-release" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>
+                Auto-Release
+            </a>
 
             <a href="https://baxi.avocloud.net/docs/" target="_blank" rel="noopener noreferrer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
@@ -2014,6 +2018,76 @@
                 </div>
             </section>
 
+            <!-- Auto-Release -->
+            <section class="pb-16 dash-section" id="auto-release">
+                <div class="section-label">AUTO-RELEASE</div>
+                <div class="card">
+                    <header style="position:relative;">
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>
+                            Auto-Release
+                        </h2>
+                        <p class="text-muted">Automatically publish messages sent in announcement (news) channels to all following servers, and react with a check.</p>
+                    </header>
+                    <section>
+                        <form id="auto-release-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="auto-release-enabled" role="switch">
+                                    <span class="font-medium">Enable Auto-Release</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-2" style="cursor:pointer">
+                                    <input type="checkbox" id="auto-release-ignore-bots" checked>
+                                    <span class="font-medium">Ignore bots / webhooks</span>
+                                </label>
+                                <p class="text-muted text-xs" style="margin-top:4px;">Skip publishing messages sent by other bots or webhooks.</p>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Announcement channels <span class="text-muted font-normal" id="auto-release-ch-count">(0)</span></label>
+                                <div id="auto-release-channels-list" class="grid gap-2"></div>
+                                <p id="auto-release-channels-empty" class="text-muted text-xs">No announcement channels added yet.</p>
+                                <p class="text-muted text-xs">Only Discord <strong>announcement (news)</strong> channels can be published. Convert a normal channel to an announcement channel in Discord channel settings.</p>
+
+                                <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;" class="mt-1">
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Channel</label>
+                                        <select id="auto-release-add-channel" class="select w-full">
+                                            <option value="">-  Select - </option>
+                                            {% for id, name in news_channels.items() %}
+                                            <option value="{{ id }}">#{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-secondary" onclick="autoReleaseAddChannel()" style="flex-shrink:0;align-self:end;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Hinzufügen
+                                    </button>
+                                </div>
+                                {% if not news_channels %}
+                                <p class="text-muted text-xs" style="color:var(--warn,#f59e0b);">No announcement channels found in this server.</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" id="auto-release-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Livestream Config -->
             <section class="pb-16 dash-section" id="livestream">
                 <div class="section-label">LIVESTREAM</div>
@@ -2823,7 +2897,7 @@
                 '__Community',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %},
                 '__Automation',
-                'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds'
+                'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds', 'auto-release'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
             var sectionMap = {};
@@ -3112,6 +3186,16 @@
                 document.getElementById('suggestions-auto-forward-enabled').checked = data.suggestions.auto_forward_enabled === true;
                 document.getElementById('suggestions-auto-forward-channel').value = data.suggestions.auto_forward_channel || '';
                 document.getElementById('suggestions-auto-forward-threshold').value = data.suggestions.auto_forward_threshold ?? 10;
+            }
+
+            // Auto-Release
+            if (data.auto_release) {
+                document.getElementById('auto-release-enabled').checked = data.auto_release.enabled === true;
+                document.getElementById('auto-release-ignore-bots').checked = data.auto_release.ignore_bots !== false;
+                _autoReleaseChannels = Array.isArray(data.auto_release.channels)
+                    ? data.auto_release.channels.map(String)
+                    : [];
+                renderAutoReleaseChannels();
             }
 
             // Sticky Messages
@@ -4463,6 +4547,72 @@
             const payload = { suggestions: { enabled, staff_role, log_channel, channels, auto_forward_enabled, auto_forward_channel, auto_forward_threshold } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=suggestions&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── Auto-Release ───────────────────────────────────────────────────────
+        let _autoReleaseChannels = [];
+
+        function renderAutoReleaseChannels() {
+            const list = document.getElementById('auto-release-channels-list');
+            const empty = document.getElementById('auto-release-channels-empty');
+            const count = document.getElementById('auto-release-ch-count');
+            list.innerHTML = '';
+            count.textContent = `(${_autoReleaseChannels.length})`;
+            if (_autoReleaseChannels.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            const sel = document.getElementById('auto-release-add-channel');
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            _autoReleaseChannels.forEach(cid => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                const chName = nameMap[cid] || ('#' + cid);
+                row.innerHTML = `
+                    <span style="font-weight:500;">${chName}</span>
+                    <button type="button" onclick="autoReleaseRemoveChannel('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>`;
+                list.appendChild(row);
+            });
+        }
+
+        function autoReleaseAddChannel() {
+            const sel = document.getElementById('auto-release-add-channel');
+            const val = sel.value;
+            if (!val) return;
+            if (_autoReleaseChannels.includes(val)) { sel.value = ''; return; }
+            _autoReleaseChannels.push(val);
+            sel.value = '';
+            renderAutoReleaseChannels();
+        }
+
+        function autoReleaseRemoveChannel(cid) {
+            _autoReleaseChannels = _autoReleaseChannels.filter(c => c !== cid);
+            renderAutoReleaseChannels();
+        }
+
+        document.getElementById('auto-release-form').onsubmit = function (event) {
+            event.preventDefault();
+            const btn = document.getElementById('auto-release-save-btn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            const enabled = document.getElementById('auto-release-enabled').checked;
+            const ignore_bots = document.getElementById('auto-release-ignore-bots').checked;
+            const payload = { auto_release: { enabled, ignore_bots, channels: _autoReleaseChannels } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=auto_release&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {

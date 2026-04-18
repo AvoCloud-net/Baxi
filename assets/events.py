@@ -337,6 +337,7 @@ def events(bot: commands.AutoShardedBot, web):
 
         asyncio.create_task(process_message(message, bot))
         asyncio.create_task(handle_sticky_message(message, bot))
+        asyncio.create_task(handle_auto_release(message))
 
     @bot.event
     async def on_message_delete(message: discord.Message):
@@ -472,6 +473,42 @@ def events(bot: commands.AutoShardedBot, web):
                 admin_log("info", f"Temp voice created: '{new_name}' for {member.name} in {guild.name}", source="TempVoice")
             except (discord.Forbidden, discord.HTTPException) as e:
                 logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
+
+
+async def handle_auto_release(message: discord.Message):
+    """Auto-publish messages in configured news/announcement channels and react with check/cross."""
+    if message.guild is None:
+        return
+    if not isinstance(message.channel, discord.TextChannel):
+        return
+    if not message.channel.is_news():
+        return
+
+    cfg: dict = dict(datasys.load_data(message.guild.id, "auto_release"))
+    if not cfg.get("enabled", False):
+        return
+
+    channels = cfg.get("channels", []) or []
+    if str(message.channel.id) not in [str(c) for c in channels]:
+        return
+
+    if cfg.get("ignore_bots", True) and (message.author.bot or message.webhook_id is not None):
+        return
+
+    try:
+        await message.publish()
+        try:
+            await message.add_reaction(config.Icons.check)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+        admin_log("info", f"Auto-Release: published msg {message.id} in #{message.channel.name} @ {message.guild.name}", source="AutoRelease")
+    except (discord.Forbidden, discord.HTTPException) as e:
+        try:
+            await message.add_reaction(config.Icons.cross)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+        logger.error(f"[AutoRelease] Publish failed in {message.guild.id}/{message.channel.id}: {e}")
+        admin_log("warning", f"Auto-Release failed in #{message.channel.name} @ {message.guild.name}: {e}", source="AutoRelease")
 
 
 async def handle_sticky_message(message: discord.Message, bot: commands.AutoShardedBot):
