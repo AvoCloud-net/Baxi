@@ -23,6 +23,8 @@ class Web:
 class Chatfilter:
     chatfilter_url = "http://solyra.avocloud.net:1652/chatfilter"
     ai_url = "https://owui.avocloud.net/api/chat/completions"
+    feedback_file_path = "data/ai_feedback.json"
+    feedback_max_entries = 15  # FIFO cap on admin-corrected few-shot examples
     phishing_list_url = "https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.txt"
     phishing_list_source = "https://github.com/Discord-AntiScam/scam-links"
 

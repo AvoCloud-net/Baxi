@@ -307,6 +307,10 @@ class Chatfilter:
         try:
             translated_message = message if skip_translation else await translate_api(message)
 
+            # Admin-corrected few-shot examples (local store, not a KB)
+            from assets.message.feedback import build_fewshot_block
+            fewshot = build_fewshot_block()
+
             # Build message content: prepend conversation history if available
             if history:
                 history_text = "\n".join(
@@ -318,6 +322,9 @@ class Chatfilter:
                 )
             else:
                 user_content = translated_message
+
+            if fewshot:
+                user_content = f"{fewshot}\n{user_content}"
 
             payload = {
                 "model":       "ai_chatsafety_baxi_v2.1:latest",

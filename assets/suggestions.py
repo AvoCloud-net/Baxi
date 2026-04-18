@@ -215,28 +215,104 @@ async def _handle_join_thread(interaction: discord.Interaction) -> None:
     t: dict = lang["systems"]["suggestions"]
 
     msg_id = str(interaction.message.id)
+    votes: dict = dict(datasys.load_data(interaction.guild.id, "suggestion_votes"))
+    entry = votes.get(msg_id, {})
+
     thread = _get_suggestion_thread(interaction.guild, msg_id)
+    thread_id = entry.get("thread_id")
+    if thread is None and thread_id:
+        try:
+            fetched = await interaction.guild.fetch_channel(int(thread_id))
+            if isinstance(fetched, discord.Thread):
+                thread = fetched
+        except (discord.NotFound, discord.HTTPException):
+            thread = None
 
-    # Fall back to API fetch if not in cache
-    if thread is None:
-        votes: dict = dict(datasys.load_data(interaction.guild.id, "suggestion_votes"))
-        thread_id = votes.get(msg_id, {}).get("thread_id")
-        if thread_id:
-            try:
-                fetched = await interaction.guild.fetch_channel(int(thread_id))
-                if isinstance(fetched, discord.Thread):
-                    thread = fetched
-            except (discord.NotFound, discord.HTTPException):
-                pass
+    # Thread exists -  check membership, then add or tell user they're already in
+    if thread is not None:
+        already = False
+        try:
+            await thread.fetch_member(interaction.user.id)
+            already = True
+        except discord.NotFound:
+            already = False
+        except discord.HTTPException:
+            already = False
 
-    if thread is None:
-        await interaction.response.send_message(t.get("thread_not_found", "Discussion thread not found."), ephemeral=True)
+        if already:
+            await interaction.response.send_message(
+                str(t.get("already_in_thread", "You are already in the conversation: {thread}")).format(thread=thread.mention),
+                ephemeral=True,
+            )
+            return
+
+        try:
+            await thread.add_user(interaction.user)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+        await interaction.response.send_message(
+            str(t.get("thread_joined", "You joined the discussion: {thread}")).format(thread=thread.mention),
+            ephemeral=True,
+        )
         return
+
+    # No thread yet -  create now, add author + clicker
+    parent = interaction.channel
+    if not isinstance(parent, discord.TextChannel):
+        await interaction.response.send_message(
+            t.get("thread_not_found", "Discussion thread not found."), ephemeral=True
+        )
+        return
+
+    thread_name = ""
+    if interaction.message.embeds:
+        thread_name = (interaction.message.embeds[0].description or "").strip()
+    if len(thread_name) > 80:
+        thread_name = thread_name[:77] + "..."
+    if not thread_name:
+        thread_name = t.get("embed_title", "Suggestion")
+
+    try:
+        thread = await parent.create_thread(
+            name=thread_name[:100],
+            type=discord.ChannelType.private_thread,
+            invitable=True,
+        )
+    except (discord.Forbidden, discord.HTTPException) as e:
+        logger.error(f"[Suggestions] Could not create discussion thread: {e}")
+        await interaction.response.send_message(
+            t.get("thread_not_found", "Discussion thread not found."), ephemeral=True
+        )
+        return
+
+    author_id = entry.get("author_id")
+    if author_id:
+        try:
+            author_id_int = int(author_id)
+        except (TypeError, ValueError):
+            author_id_int = 0
+        if author_id_int and author_id_int != interaction.user.id:
+            author = interaction.guild.get_member(author_id_int)
+            if author is None:
+                try:
+                    author = await interaction.guild.fetch_member(author_id_int)
+                except (discord.NotFound, discord.HTTPException):
+                    author = None
+            if author is not None:
+                try:
+                    await thread.add_user(author)
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
 
     try:
         await thread.add_user(interaction.user)
     except (discord.Forbidden, discord.HTTPException):
         pass
+
+    entry["thread_id"] = thread.id
+    votes[msg_id] = entry
+    datasys.save_data(interaction.guild.id, "suggestion_votes", votes)
 
     await interaction.response.send_message(
         str(t.get("thread_joined", "You joined the discussion: {thread}")).format(thread=thread.mention),
@@ -628,32 +704,12 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
         logger.error(f"[Suggestions] Could not post suggestion embed: {e}")
         return True
 
-    # Create private discussion thread
-    if isinstance(message.channel, discord.TextChannel):
-        thread_name = raw_content.strip()
-        if len(thread_name) > 80:
-            thread_name = thread_name[:77] + "..."
-        if not thread_name:
-            thread_name = t.get("embed_title", "Suggestion")
-        try:
-            thread = await message.channel.create_thread(
-                name=thread_name[:100],
-                type=discord.ChannelType.private_thread,
-                invitable=True,
-            )
-            # Add the suggestion author to the thread
-            try:
-                await thread.add_user(message.author)
-            except (discord.Forbidden, discord.HTTPException):
-                pass
-            # Store thread_id
-            votes: dict = dict(datasys.load_data(message.guild.id, "suggestion_votes"))
-            msg_id = str(sent.id)
-            entry = votes.get(msg_id, {})
-            entry["thread_id"] = thread.id
-            votes[msg_id] = entry
-            datasys.save_data(message.guild.id, "suggestion_votes", votes)
-        except (discord.Forbidden, discord.HTTPException) as e:
-            logger.error(f"[Suggestions] Could not create discussion thread: {e}")
+    # Store author for lazy thread creation on first Join Discussion click
+    votes: dict = dict(datasys.load_data(message.guild.id, "suggestion_votes"))
+    msg_id = str(sent.id)
+    entry = votes.get(msg_id, {})
+    entry["author_id"] = message.author.id
+    votes[msg_id] = entry
+    datasys.save_data(message.guild.id, "suggestion_votes", votes)
 
     return True

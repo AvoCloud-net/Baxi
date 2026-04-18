@@ -365,7 +365,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/chatfilter/")
     @requires_authorization
     async def chatfilter():
-        user = await discord_auth.fetch_user()
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if user is None:
+            user = await discord_auth.fetch_user()
         chatfilter_log_id = quart.request.args.get("id_chatfilter")
         chatfilter_log: dict = cast(dict, load_data(1001, "chatfilter_log"))
         try:
@@ -388,6 +390,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             data=requested_data,
             user=user,
             greeting=get_time_based_greeting(user.name),
+            is_bot_admin=is_admin,
         )
 
     @app.route("/ticket_transcript/")
@@ -3200,6 +3203,49 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "total": len(cf_log),
             "filtered": len(entries),
         })
+
+    @app.route("/api/admin/ai-feedback", methods=["POST"])
+    @requires_authorization
+    async def admin_ai_feedback():
+        """Submit an admin correction for a chatfilter log entry.
+
+        Body JSON: {"log_id": str, "correct": "SAFE"|"UNSAFE", "reason": str?}
+        Appends to data/1001/ai_feedback.md and resyncs the OpenWebUI KB."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        body = await quart.request.get_json(silent=True) or {}
+        log_id  = str(body.get("log_id", "")).strip()
+        correct = str(body.get("correct", "")).strip().upper()
+        reason  = str(body.get("reason", "")).strip()
+
+        if not log_id or correct not in ("SAFE", "UNSAFE"):
+            return quart.jsonify({"error": "Invalid payload"}), 400
+
+        cf_log: dict = dict(datasys.load_data(1001, "chatfilter_log"))
+        entry = cf_log.get(log_id)
+        if entry is None:
+            return quart.jsonify({"error": "Log entry not found"}), 404
+        if entry.get("false_positive") or entry.get("feedback"):
+            return quart.jsonify({"error": "Feedback already submitted"}), 409
+
+        from assets.message.feedback import submit_ai_feedback
+        try:
+            result = await submit_ai_feedback(
+                log_id=log_id,
+                message=str(entry.get("message", "")),
+                ai_said=str(entry.get("system") or entry.get("reason") or "UNSAFE"),
+                correct=correct,
+                reason=reason,
+                admin_name=str(user.name),
+            )
+        except Exception as e:
+            from reds_simple_logger import Logger as _L
+            _L().error(f"AI feedback submit failed: {e}")
+            return quart.jsonify({"error": str(e)}), 500
+
+        return quart.jsonify(result)
 
     @app.route("/api/admin/logs")
     @requires_authorization

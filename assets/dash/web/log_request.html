@@ -189,6 +189,55 @@
                 </div>
             </section>
 
+            {% if is_bot_admin %}
+            <!-- Admin AI Feedback -->
+            <section class="pb-16" id="ai-feedback">
+                <div class="section-label">ADMIN REVIEW</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M12 2a10 10 0 1 0 10 10"/>
+                                <path d="m9 11 3 3L22 4"/>
+                            </svg>
+                            AI Feedback
+                        </h2>
+                        <p class="text-muted">
+                            Teach the AI that this decision was wrong. The correction is
+                            appended to the OpenWebUI knowledge base and will be used as a
+                            few-shot example on future filter calls.
+                        </p>
+                    </header>
+                    <section>
+                        {% if data.false_positive or data.feedback %}
+                            <div class="update-badge" style="display:inline-flex;align-items:center;gap:0.4rem;background:color-mix(in srgb, var(--success, #22c55e) 15%, transparent);color:var(--success, #22c55e);">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                Feedback submitted
+                                {% if data.feedback and data.feedback.admin %}
+                                    by <strong>{{ data.feedback.admin }}</strong>
+                                    ({{ data.feedback.correct }})
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                                <label for="fp-reason" class="text-sm text-muted">Reason (optional -  helps the model generalise)</label>
+                                <input id="fp-reason" type="text" placeholder="e.g. gaming joke, no real intent" class="input" />
+                                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                                    <button id="btn-false-positive" type="button" class="btn-primary" onclick="submitFeedback('SAFE')">
+                                        Mark as false positive
+                                    </button>
+                                    <button id="btn-true-positive" type="button" class="btn-lg-outline" onclick="submitFeedback('UNSAFE')">
+                                        Confirm correct (true positive)
+                                    </button>
+                                </div>
+                                <p id="fp-status" class="text-sm text-muted" style="display:none;"></p>
+                            </div>
+                        {% endif %}
+                    </section>
+                </div>
+            </section>
+            {% endif %}
+
             <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 0.5rem 0 1rem; flex-wrap: wrap;">
                 <a href="/privacy/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Privacy Policy</a>
                 <a href="/terms/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Terms of Service</a>
@@ -217,6 +266,47 @@
         }
 
         window.onload = showOverlay;
+
+        async function submitFeedback(correct) {
+            const btnFP = document.getElementById('btn-false-positive');
+            const btnTP = document.getElementById('btn-true-positive');
+            const status = document.getElementById('fp-status');
+            const reasonEl = document.getElementById('fp-reason');
+            const reason = reasonEl ? reasonEl.value.trim() : '';
+
+            if (btnFP) btnFP.disabled = true;
+            if (btnTP) btnTP.disabled = true;
+            if (status) {
+                status.style.display = 'block';
+                status.textContent = 'Uploading feedback to knowledge base…';
+            }
+
+            try {
+                const resp = await fetch('/api/admin/ai-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        log_id: {{ data.id | tojson }},
+                        correct: correct,
+                        reason: reason,
+                    }),
+                });
+                const body = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    throw new Error(body.error || ('HTTP ' + resp.status));
+                }
+                if (status) {
+                    status.textContent = 'Feedback submitted. Reloading…';
+                }
+                setTimeout(() => location.reload(), 800);
+            } catch (err) {
+                if (status) {
+                    status.textContent = 'Failed: ' + err.message;
+                }
+                if (btnFP) btnFP.disabled = false;
+                if (btnTP) btnTP.disabled = false;
+            }
+        }
     </script>
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
     <script src="https://avocloud.net/assets/js/main.js"></script>
