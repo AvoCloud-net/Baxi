@@ -871,8 +871,13 @@ def leveling_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
-    @bot.tree.command(name="leaderboard", description="Show the top users by level on this server")
-    async def leaderboard_cmd(interaction: discord.Interaction):
+    @bot.tree.command(name="leaderboard", description="Show the top users for a given system on this server")
+    @app_commands.describe(sys="Which leaderboard to show")
+    @app_commands.choices(sys=[
+        app_commands.Choice(name="Level", value="level"),
+        app_commands.Choice(name="Flag Quiz", value="flagquiz"),
+    ])
+    async def leaderboard_cmd(interaction: discord.Interaction, sys: app_commands.Choice[str]):
         await interaction.response.defer()
         if interaction.guild is None:
             lang = datasys.load_lang_file(0)
@@ -881,6 +886,35 @@ def leveling_commands(bot: commands.AutoShardedBot):
 
         guild_id = interaction.guild.id
         lang = datasys.load_lang_file(guild_id)
+
+        if sys.value == "flagquiz":
+            from assets.games import quiz as quiz_sys
+            t_fq: dict = lang["games"]["flag_quiz"]
+            entries = quiz_sys.get_leaderboard(guild_id, bot)[:10]
+            if not entries:
+                await interaction.edit_original_response(embed=Embed(
+                    title=t_fq["leaderboard_title"],
+                    description=t_fq["leaderboard_empty"],
+                    color=config.Discord.color,
+                ))
+                return
+
+            medals = [config.Icons.medal, config.Icons.medal, config.Icons.medal]
+            lines = []
+            for i, (name, pts) in enumerate(entries):
+                prefix = medals[i] if i < 3 else f"`{i + 1}.`"
+                pts_label = t_fq["leaderboard_pts_single"] if pts == 1 else t_fq["leaderboard_pts_plural"]
+                lines.append(f"{prefix} **{name}** -  {pts} {pts_label}")
+
+            embed = Embed(
+                title=t_fq["leaderboard_title"],
+                description="\n".join(lines),
+                color=config.Discord.color,
+            )
+            embed.set_footer(text="Baxi · avocloud.net")
+            await interaction.edit_original_response(embed=embed)
+            return
+
         t: dict = lang["leveling"]
 
         if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
