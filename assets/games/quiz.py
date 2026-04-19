@@ -151,6 +151,9 @@ FLAGS: list[tuple[str, str, list[str]]] = [
 _active: dict[int, dict] = {}
 
 
+RECENT_HISTORY_SIZE = 15
+
+
 async def start_round(
     guild_id: int,
     channel: discord.TextChannel,
@@ -160,7 +163,19 @@ async def start_round(
     lang = datasys.load_lang_file(guild_id)
     t: dict = lang["games"]["flag_quiz"]
 
-    flag_emoji, country, accepted = random.choice(FLAGS)
+    data: dict = dict(datasys.load_data(guild_id, "flag_quiz"))
+    recent: list[str] = list(data.get("recent_flags", []))
+
+    candidates = [f for f in FLAGS if f[0] not in recent]
+    if not candidates:
+        candidates = FLAGS
+    flag_emoji, country, accepted = random.choice(candidates)
+
+    recent.append(flag_emoji)
+    if len(recent) > RECENT_HISTORY_SIZE:
+        recent = recent[-RECENT_HISTORY_SIZE:]
+    data["recent_flags"] = recent
+    datasys.save_data(guild_id, "flag_quiz", data)
 
     state = {
         "flag": flag_emoji,
@@ -174,7 +189,7 @@ async def start_round(
 
     code = _emoji_to_code(flag_emoji)
     embed = discord.Embed(
-        title=t["title"],
+        title=f"{cfg.Icons.trophy} " + t["title"],
         description=t["question"],
         color=cfg.Discord.info_color,
     )

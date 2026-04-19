@@ -893,7 +893,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             entries = quiz_sys.get_leaderboard(guild_id, bot)[:10]
             if not entries:
                 await interaction.edit_original_response(embed=Embed(
-                    title=t_fq["leaderboard_title"],
+                    title=f"{config.Icons.trophy} " + t_fq["leaderboard_title"],
                     description=t_fq["leaderboard_empty"],
                     color=config.Discord.color,
                 ))
@@ -907,7 +907,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
                 lines.append(f"{prefix} **{name}** -  {pts} {pts_label}")
 
             embed = Embed(
-                title=t_fq["leaderboard_title"],
+                title=f"{config.Icons.trophy} " + t_fq["leaderboard_title"],
                 description="\n".join(lines),
                 color=config.Discord.color,
             )

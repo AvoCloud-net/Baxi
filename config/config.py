@@ -239,6 +239,7 @@ class datasys:
         "next_delay": 3,
         "points_enabled": True,
         "scores": {},
+        "recent_flags": [],
     },
     "flag_quiz_active": {},
     "suggestions": {
