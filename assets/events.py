@@ -499,6 +499,15 @@ async def handle_auto_release(message: discord.Message):
         await message.publish()
         try:
             await message.add_reaction(config.Icons.check)
+
+            async def _remove_check():
+                await asyncio.sleep(2)
+                try:
+                    await message.remove_reaction(config.Icons.check, message.guild.me)
+                except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+                    pass
+
+            asyncio.create_task(_remove_check())
         except (discord.Forbidden, discord.HTTPException):
             pass
         admin_log("info", f"Auto-Release: published msg {message.id} in #{message.channel.name} @ {message.guild.name}", source="AutoRelease")
