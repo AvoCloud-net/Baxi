@@ -113,6 +113,7 @@ class datasys:
     "terms": False,
     "chatfilter": {
         "enabled": False,
+        "system": "AI",
         "phishing_filter": False,
         "ai_categories": {
             "1": True,

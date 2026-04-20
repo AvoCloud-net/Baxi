@@ -3210,7 +3210,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         """Submit an admin correction for a chatfilter log entry.
 
         Body JSON: {"log_id": str, "correct": "SAFE"|"UNSAFE", "reason": str?}
-        Appends to data/1001/ai_feedback.md and resyncs the OpenWebUI KB."""
+        Writes to the SafeText feedback store for LoRA fine-tuning."""
         user, is_admin = await _require_bot_admin(discord_auth)
         if not is_admin:
             return quart.jsonify({"error": "Access denied"}), 403
@@ -3230,20 +3230,38 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if entry.get("false_positive") or entry.get("feedback"):
             return quart.jsonify({"error": "Feedback already submitted"}), 409
 
-        from assets.message.feedback import submit_ai_feedback
+        model_said = str(entry.get("system") or entry.get("reason") or "UNSAFE")
+        # Map "UNSAFE" confirmation onto the concrete category the model picked.
+        if correct == "UNSAFE":
+            raw_reason = str(entry.get("reason", "")).strip()
+            if raw_reason in {"1", "2", "3", "4", "5"}:
+                correct_label = f"AI-{raw_reason}"
+            else:
+                correct_label = model_said if model_said.upper().startswith("AI-") else "AI-2"
+        else:
+            correct_label = "SAFE"
+
+        from assets.message.safetext import feedback as _safetext_feedback
         try:
-            result = await submit_ai_feedback(
+            result = await _safetext_feedback.submit(
                 log_id=log_id,
                 message=str(entry.get("message", "")),
-                ai_said=str(entry.get("system") or entry.get("reason") or "UNSAFE"),
-                correct=correct,
+                model_said=model_said,
+                correct_label=correct_label,
                 reason=reason,
-                admin_name=str(user.name),
+                admin=str(user.name),
             )
         except Exception as e:
             from reds_simple_logger import Logger as _L
-            _L().error(f"AI feedback submit failed: {e}")
+            _L().error(f"SafeText feedback submit failed: {e}")
             return quart.jsonify({"error": str(e)}), 500
+
+        # Persist flag on the chatfilter_log entry so the UI shows "submitted".
+        entry["feedback"] = {"admin": str(user.name), "correct": correct_label, "reason": reason}
+        if correct == "SAFE":
+            entry["false_positive"] = True
+        cf_log[log_id] = entry
+        datasys.save_data(1001, "chatfilter_log", cf_log)
 
         return quart.jsonify(result)
 
@@ -5335,5 +5353,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     print(f"[Donations/PayPal] Post-payment processing error: {e}")
 
         return quart.jsonify({"ok": True}), 200
+
+    # ── SafeText admin API ───────────────────────────────────────────────────
+    from assets.dash.safetext_routes import register as _register_safetext
+    _register_safetext(app, discord_auth, _require_bot_admin, bot=bot)
 
     app.config["BOT_READY"] = True

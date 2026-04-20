@@ -223,6 +223,10 @@
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Chatfilter Logs
     </a>
+    <a href="#section-safetext">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7z"/><path d="M9 12l2 2 4-4"/></svg>
+        SafeText Model
+    </a>
     <a href="#section-streamers">
         <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         Livestreamers
@@ -494,6 +498,164 @@
             </footer>
         </div>
     </section>
+
+    <!-- ── SAFETEXT MODEL ─────────────────────────────────────── -->
+    <section id="section-safetext" style="margin-bottom:2.5rem;">
+        <div class="section-badge">SafeText Model</div>
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2 style="font-size:1rem; font-weight:600;">Local Classifier</h2>
+                    <p class="text-muted" style="font-size:.78rem;">
+                        Toxic: <span id="st-toxic-model">–</span> ·
+                        NSFW: <span id="st-nsfw-model">–</span> ·
+                        LoRA: <span id="st-lora">–</span> ·
+                        <button onclick="loadSafeTextStatus()" style="background:none; border:none; cursor:pointer; font-size:.78rem; opacity:.6; text-decoration:underline; padding:0;">Refresh</button>
+                    </p>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <button class="btn-sm-outline" onclick="safetextReload()">Reload Models</button>
+                    <button class="btn-sm-outline" onclick="safetextFinetune()">Start Fine-tune</button>
+                </div>
+            </header>
+            <section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin-top:1rem;">
+                <div><div style="font-size:.7rem; opacity:.6;">Feedback total</div>
+                    <div style="font-size:1.3rem; font-weight:600;" id="st-fb-total">–</div></div>
+                <div><div style="font-size:.7rem; opacity:.6;">Untrained</div>
+                    <div style="font-size:1.3rem; font-weight:600;" id="st-fb-untrained">–</div></div>
+                <div><div style="font-size:.7rem; opacity:.6;">Fine-tune state</div>
+                    <div style="font-size:1rem; font-weight:600;" id="st-ft-state">–</div></div>
+                <div><div style="font-size:.7rem; opacity:.6;">Last finish</div>
+                    <div style="font-size:.85rem;" id="st-ft-finished">–</div></div>
+            </section>
+            <section style="margin-top:1rem; overflow-x:auto;">
+                <table class="admin-table" id="st-log-table">
+                    <thead><tr>
+                        <th>Time</th><th>Guild</th><th>User</th><th>Message</th>
+                        <th>Stage</th><th>Flagged</th><th>Confidence</th><th>Correct label</th>
+                    </tr></thead>
+                    <tbody id="st-log-body">
+                        <tr><td colspan="8" style="opacity:.4;">Loading…</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-muted" style="font-size:.72rem; margin-top:.5rem;">
+                    Use the dropdown in the right column to correct the classifier's verdict.
+                    <strong>SAFE</strong> = the message was fine, model over-blocked.
+                    <strong>AI-2</strong> = insult/toxic, <strong>AI-3</strong> = hate speech.
+                    Submitting adds a training sample; the fine-tune button consumes untrained samples (≥8 needed for categories 2/3).
+                </p>
+            </section>
+        </div>
+    </section>
+    <script>
+    async function loadSafeTextStatus() {
+        try {
+            const r = await fetch('/api/safetext/status');
+            if (!r.ok) return;
+            const d = await r.json();
+            document.getElementById('st-toxic-model').textContent = d.models?.toxic || '–';
+            document.getElementById('st-nsfw-model').textContent  = d.models?.nsfw  || '–';
+            document.getElementById('st-lora').textContent        = d.lora_present ? 'present' : 'base model';
+            document.getElementById('st-fb-total').textContent    = d.feedback?.total ?? '–';
+            document.getElementById('st-fb-untrained').textContent= d.feedback?.untrained ?? '–';
+            document.getElementById('st-ft-state').textContent    = d.finetune?.state || 'idle';
+            document.getElementById('st-ft-finished').textContent = d.finetune?.finished_at
+                ? new Date(d.finetune.finished_at * 1000).toLocaleString() : '–';
+        } catch (e) { console.error(e); }
+    }
+    function _stEsc(s) {
+        return String(s == null ? '' : s)
+            .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+            .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    }
+    let _stEntries = [];
+    async function loadSafeTextLog() {
+        try {
+            const r = await fetch('/api/safetext/log?limit=100');
+            if (!r.ok) return;
+            const d = await r.json();
+            _stEntries = d.entries || [];
+            const body = document.getElementById('st-log-body');
+            if (!_stEntries.length) { body.innerHTML = '<tr><td colspan="8" style="opacity:.4;">No entries.</td></tr>'; return; }
+            body.innerHTML = _stEntries.map((e, idx) => {
+                const ts = new Date((e.ts||0)*1000).toLocaleString();
+                const conf = (e.confidence==null) ? '–' : Number(e.confidence).toFixed(3);
+                const msg = e.message || ('#'+(e.msg_hash||''));
+                const guild = e.guild_name ? `${_stEsc(e.guild_name)} <span style="opacity:.4;font-size:.7rem;">${e.gid||''}</span>` : (e.gid||'');
+                const user  = e.user_name  ? `${_stEsc(e.user_name)}  <span style="opacity:.4;font-size:.7rem;">${e.user_id||''}</span>` : (e.user_id||'');
+                const hasMsg = !!e.message;
+                const logId = _stEsc(e.id || '');
+                const modelSaid = e.flagged ? (e.stage || '?') : 'safe';
+                const sel = hasMsg ? `
+                    <select class="select" id="st-fb-sel-${idx}" style="font-size:.72rem; padding:2px 4px;">
+                        <option value="">–</option>
+                        <option value="SAFE">SAFE (false-positive)</option>
+                        <option value="AI-2">AI-2 insult/toxic</option>
+                        <option value="AI-3">AI-3 hate speech</option>
+                        <option value="AI-1">AI-1 NSFW</option>
+                        <option value="AI-4">AI-4 doxxing</option>
+                        <option value="AI-5">AI-5 self-harm</option>
+                    </select>
+                    <button class="btn-sm-outline" style="font-size:.7rem; margin-left:4px;"
+                        data-idx="${idx}" data-logid="${logId}" data-model="${_stEsc(modelSaid)}"
+                        onclick="safetextMark(this)">Mark</button>`
+                    : `<span style="opacity:.4;font-size:.7rem;">no raw msg</span>`;
+                return `<tr>
+                    <td>${ts}</td><td>${guild}</td><td>${user}</td>
+                    <td style="max-width:280px; word-break:break-word; opacity:.9;">${_stEsc(msg)}</td>
+                    <td>${_stEsc(e.stage||'')}</td>
+                    <td>${e.flagged?'<span style="color:#f87171;">yes</span>':'no'}</td>
+                    <td>${conf}</td>
+                    <td style="white-space:nowrap;">${sel}</td>
+                </tr>`;
+            }).join('');
+        } catch (e) { console.error(e); }
+    }
+    async function safetextMark(btn) {
+        const idx = Number(btn.dataset.idx);
+        const entry = _stEntries[idx];
+        const sel = document.getElementById('st-fb-sel-'+idx);
+        const label = sel?.value;
+        if (!label) { alert('Pick a correct label first.'); return; }
+        if (!entry?.message) { alert('No raw message stored for this entry.'); return; }
+        try {
+            const r = await fetch('/api/safetext/feedback', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    log_id: btn.dataset.logid,
+                    message: entry.message,
+                    model_said: btn.dataset.model,
+                    correct_label: label,
+                }),
+            });
+            const d = await r.json();
+            if (d.ok) {
+                alert(`Saved. Untrained samples: ${d.untrained}`);
+                loadSafeTextStatus();
+                loadSafeTextLog();
+            } else {
+                alert('Error: '+(d.error||'unknown'));
+            }
+        } catch (err) { alert('Request failed: '+err); }
+    }
+    async function safetextFinetune() {
+        if (!confirm('Start LoRA fine-tune job?')) return;
+        const r = await fetch('/api/safetext/finetune', {method:'POST'});
+        const d = await r.json();
+        alert(d.ok ? ('Started, pid='+d.pid) : ('Error: '+(d.error||'unknown')));
+        loadSafeTextStatus();
+    }
+    async function safetextReload() {
+        const r = await fetch('/api/safetext/reload', {method:'POST'});
+        const d = await r.json();
+        alert(d.ok ? 'Models will reload on next classify.' : 'Reload failed.');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSafeTextStatus();
+        loadSafeTextLog();
+        setInterval(loadSafeTextStatus, 15000);
+    });
+    </script>
 
     <!-- ── ACTIVE STREAMERS ───────────────────────────────────── -->
     <section id="section-streamers" style="margin-bottom:2.5rem;">

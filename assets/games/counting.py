@@ -1,3 +1,7 @@
+import ast
+import operator
+import re
+
 import discord
 from discord.ext import commands
 import assets.data as datasys
@@ -14,6 +18,80 @@ def _is_milestone(n: int) -> bool:
     if n == 10 or n == 50:
         return True
     return n >= 100 and n % 100 == 0
+
+
+_MATH_RE = re.compile(r"^[\d\s+\-*/().^]+$")
+
+_SUPERSCRIPT = str.maketrans({
+    "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4",
+    "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+})
+
+_BIN_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
+_UNARY_OPS = {
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
+}
+
+
+def _safe_eval(node):
+    if isinstance(node, ast.Expression):
+        return _safe_eval(node.body)
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return node.value
+        raise ValueError("bad constant")
+    if isinstance(node, ast.BinOp):
+        op = _BIN_OPS.get(type(node.op))
+        if op is None:
+            raise ValueError("bad op")
+        left = _safe_eval(node.left)
+        right = _safe_eval(node.right)
+        if isinstance(node.op, ast.Pow):
+            if abs(right) > 32 or abs(left) > 10**6:
+                raise ValueError("pow too big")
+        return op(left, right)
+    if isinstance(node, ast.UnaryOp):
+        op = _UNARY_OPS.get(type(node.op))
+        if op is None:
+            raise ValueError("bad unary")
+        return op(_safe_eval(node.operand))
+    raise ValueError("bad node")
+
+
+def _normalize_expression(content: str) -> str:
+    content = re.sub(r"([⁰¹²³⁴⁵⁶⁷⁸⁹]+)", lambda m: "**" + m.group(1).translate(_SUPERSCRIPT), content)
+    content = content.replace("^", "**")
+    return content
+
+
+def _parse_count_expression(content: str):
+    """Return positive int result of arithmetic expression, or None if not parseable."""
+    if not content:
+        return None
+    content = _normalize_expression(content)
+    if not _MATH_RE.match(content):
+        return None
+    try:
+        tree = ast.parse(content, mode="eval")
+        value = _safe_eval(tree)
+    except (ValueError, SyntaxError, ZeroDivisionError, TypeError, OverflowError):
+        return None
+    if isinstance(value, float):
+        if not value.is_integer():
+            return None
+        value = int(value)
+    if not isinstance(value, int) or value <= 0:
+        return None
+    return value
 
 
 async def check_counting(message: discord.Message, bot: commands.AutoShardedBot) -> bool:
@@ -37,15 +115,14 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
 
     content = message.content.strip()
 
-    if not content.isdigit() or int(content) == 0:
+    user_number = _parse_count_expression(content)
+    if user_number is None:
         if data.get("react_wrong", True):
             try:
                 await message.add_reaction(cfg.Icons.cross)
             except (discord.Forbidden, discord.HTTPException):
                 pass
         return True
-
-    user_number = int(content)
     current_count = int(data.get("current_count", 0))
     expected = current_count + 1
 

@@ -682,38 +682,25 @@
                                 </div>
 
                                 <div class="grid gap-2">
-                                    <label class="block text-sm font-medium">Filter Pipeline</label>
-                                    <p class="text-xs text-muted">Every message passes through these stages in order. SafeText is always active -  the option below only controls whether the AI stage is additionally enabled.</p>
-                                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 2px;font-size:0.75rem;">
-                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">📨 Message</span>
-                                        <span style="color:var(--text-muted,#888);">→</span>
-                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🔗 1. Phishing Check</span>
-                                        <span style="color:var(--text-muted,#888);">→</span>
-                                        <span style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🔍 2. Keyword Filter <span style="opacity:0.6;">(SafeText, always on)</span></span>
-                                        <span style="color:var(--text-muted,#888);">→</span>
-                                        <span id="pipeline-ai-badge" style="background:var(--bg-secondary,#23272e);border:1px solid var(--border,#333);border-radius:6px;padding:4px 10px;white-space:nowrap;">🤖 3. AI Filter <span style="opacity:0.6;">(optional)</span></span>
-                                        <span style="color:var(--text-muted,#888);">→</span>
-                                        <span style="color:#4ade80;font-weight:600;">✅ Passed</span>
-                                    </div>
-                                    <label class="block text-sm font-medium" style="margin-top:8px;">AI Filter:</label>
+                                    <label class="block text-sm font-medium">Filter Mode:</label>
                                     <fieldset class="grid gap-3">
                                         <label class="radio-label">
-                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
-                                                value="SafeText" class="mt-1 h-4 w-4">
+                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-ai"
+                                                value="AI" class="mt-1 h-4 w-4" checked>
                                             <div>
-                                                <span class="block text-sm font-medium">Disabled</span>
+                                                <span class="block text-sm font-medium">Smart filter <span class="text-muted font-normal">(recommended)</span></span>
                                                 <span class="block text-xs text-muted">
-                                                    Only SafeText is used -  fast word-level checks. No AI analysis.
+                                                    Catches phishing links, insults, hate speech, NSFW content, personal data (doxxing) and self-harm keywords. Understands context and multiple languages.
                                                 </span>
                                             </div>
                                         </label>
                                         <label class="radio-label">
-                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-ai"
-                                                value="AI" class="mt-1 h-4 w-4">
+                                            <input type="radio" name="chatfilter-system" id="chatfilter-system-safetext"
+                                                value="SafeText" class="mt-1 h-4 w-4">
                                             <div>
-                                                <span class="block text-sm font-medium">Enabled</span>
+                                                <span class="block text-sm font-medium">Basic filter</span>
                                                 <span class="block text-xs text-muted">
-                                                    SafeText runs first, then a locally hosted LLM analyses the full message in context. Slightly slower, but much more precise.
+                                                    Catches phishing links, your custom word lists, personal data and self-harm keywords. Faster but misses context-dependent insults and hate speech.
                                                 </span>
                                             </div>
                                         </label>
@@ -732,30 +719,39 @@
                                     <div id="c_badwords_container" class="tag-input-container"></div>
                                 </div>
 
-                                <!-- AI category toggles (shown only when AI system is selected) -->
-                                <div id="ai-categories-section" class="grid gap-2" style="display:none;">
-                                    <label class="block text-sm font-medium">AI detection categories:</label>
-                                    <p class="text-xs text-muted">Enable or disable individual violation categories for the AI filter.</p>
-                                    <div class="grid gap-2 mt-1">
-                                        <label for="ai-cat-1">
-                                            <input type="checkbox" id="ai-cat-1">
-                                            <span class="text-sm"><strong>1 -  NSFW / Explicit Content</strong> <span class="text-muted">-  sexual content, graphic violence, gore</span></span>
-                                        </label>
-                                        <label for="ai-cat-2">
-                                            <input type="checkbox" id="ai-cat-2">
-                                            <span class="text-sm"><strong>2 -  Insults / Toxicity</strong> <span class="text-muted">-  direct insults, targeted harassment, sustained mockery</span></span>
-                                        </label>
-                                        <label for="ai-cat-3">
-                                            <input type="checkbox" id="ai-cat-3">
-                                            <span class="text-sm"><strong>3 -  Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, homophobia, slurs with harmful intent</span></span>
-                                        </label>
+                                <!-- Detection category toggles -->
+                                <div id="ai-categories-section" class="grid gap-2">
+                                    <label class="block text-sm font-medium">What to block:</label>
+                                    <p class="text-xs text-muted">Pick which kinds of content should be filtered.</p>
+                                    <div class="grid gap-2 mt-1" style="position:relative;">
+                                        <div id="ai-cats-smart-group" style="position:relative;display:grid;gap:0.5rem;">
+                                            <label for="ai-cat-1">
+                                                <input type="checkbox" id="ai-cat-1">
+                                                <span class="text-sm"><strong>NSFW / Explicit Content</strong> <span class="text-muted">-  sexual or graphic content.</span></span>
+                                            </label>
+                                            <label for="ai-cat-2">
+                                                <input type="checkbox" id="ai-cat-2">
+                                                <span class="text-sm"><strong>Insults / Toxicity</strong> <span class="text-muted">-  direct insults and harassment.</span></span>
+                                            </label>
+                                            <label for="ai-cat-3">
+                                                <input type="checkbox" id="ai-cat-3">
+                                                <span class="text-sm"><strong>Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, slurs, targeted hate.</span></span>
+                                            </label>
+                                            <div id="ai-cats-lock-overlay" style="display:none;position:absolute;inset:-4px;background:rgba(15,15,20,0.72);backdrop-filter:blur(1.5px);border:1px dashed var(--border,#444);border-radius:8px;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:10px;text-align:center;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted,#aaa);">
+                                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                                </svg>
+                                                <span class="text-xs" style="color:var(--text-muted,#bbb);font-weight:500;">Only available with the Smart filter.</span>
+                                            </div>
+                                        </div>
                                         <label for="ai-cat-4">
                                             <input type="checkbox" id="ai-cat-4">
-                                            <span class="text-sm"><strong>4 -  Doxxing / Personal Data</strong> <span class="text-muted">-  real names + addresses, phone numbers, IPs</span></span>
+                                            <span class="text-sm"><strong>Doxxing / Personal Data</strong> <span class="text-muted">-  emails, phone numbers, addresses, credit cards.</span></span>
                                         </label>
                                         <label for="ai-cat-5">
                                             <input type="checkbox" id="ai-cat-5">
-                                            <span class="text-sm"><strong>5 -  Suicide / Self-Harm</strong> <span class="text-muted">-  method descriptions, active ideation, encouragement</span></span>
+                                            <span class="text-sm"><strong>Suicide / Self-Harm</strong> <span class="text-muted">-  self-harm keywords and phrases.</span></span>
                                         </label>
                                     </div>
                                 </div>
@@ -2990,13 +2986,16 @@
                 _cfBypassChannels = Array.isArray(data.chatfilter.bypass) ? data.chatfilter.bypass.map(String) : [];
                 renderCfBypass();
             }
-            // Show/hide AI categories and update pipeline badge based on selected system
+            // Cats 1-3 require Smart filter. Show lock overlay when Basic is selected.
             function updateAiCategoriesVisibility() {
-                const selected = document.querySelector('input[name="chatfilter-system"]:checked')?.value;
-                const isAI = selected === 'AI';
-                document.getElementById('ai-categories-section').style.display = isAI ? '' : 'none';
-                const badge = document.getElementById('pipeline-ai-badge');
-                if (badge) badge.style.opacity = isAI ? '1' : '0.35';
+                const selected = document.querySelector('input[name="chatfilter-system"]:checked')?.value || 'AI';
+                const mlOn = selected === 'AI';
+                for (let i = 1; i <= 3; i++) {
+                    const cb = document.getElementById(`ai-cat-${i}`);
+                    if (cb) cb.disabled = !mlOn;
+                }
+                const overlay = document.getElementById('ai-cats-lock-overlay');
+                if (overlay) overlay.style.display = mlOn ? 'none' : 'flex';
             }
             document.querySelectorAll('input[name="chatfilter-system"]').forEach(r => {
                 r.addEventListener('change', updateAiCategoriesVisibility);
