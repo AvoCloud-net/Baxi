@@ -27,10 +27,11 @@ logger = Logger()
 # ── thresholds ───────────────────────────────────────────────────────────────
 TOXIC_THRESHOLD       = 0.60
 HATE_THRESHOLD        = 0.55
-NSFW_THRESHOLD        = 0.75
+OBSCENE_THRESHOLD     = 0.70   # obscene label from multilingual-toxic model → cat 1
 
-TOXIC_LABELS          = {"toxic", "severe_toxic", "obscene", "insult", "threat"}
+TOXIC_LABELS          = {"toxic", "severe_toxic", "insult", "threat"}
 HATE_LABELS           = {"identity_hate"}
+OBSCENE_LABELS        = {"obscene"}
 
 
 # ── result helpers ───────────────────────────────────────────────────────────
@@ -114,28 +115,23 @@ async def check(
             res = _flagged("ai-5", "5", "5", {"match": sui["match"], "lang": sui["lang"]})
             return _finalize(gid, user_id, "suicide_keyword", res, message=message)
 
-    # 6. NSFW model (category 1)
-    if "1" in enabled_categories:
-        try:
-            nsfw = await models.classify_nsfw(message)
-        except Exception as e:
-            logger.error(f"SafeText | NSFW model error: {e}")
-            nsfw = None
-        if nsfw:
-            nsfw_score = nsfw["score"] if nsfw["label"] == "NSFW" else 0.0
-            if nsfw["label"] == "NSFW" and nsfw["score"] >= NSFW_THRESHOLD:
-                res = _flagged("ai-1", "1", "1", {"confidence": round(nsfw["score"], 4)})
-                return _finalize(gid, user_id, "nsfw", res, confidence=nsfw["score"], message=message)
-
-    # 7. toxic / hate model (categories 2, 3)
+    # 6+7. multilingual toxic model — covers obscene (cat 1), toxic/hate (cat 2, 3)
+    wants_nsfw  = "1" in enabled_categories
     wants_toxic = "2" in enabled_categories
     wants_hate  = "3" in enabled_categories
-    if wants_toxic or wants_hate:
+    if wants_nsfw or wants_toxic or wants_hate:
         try:
             toxic_scores = await models.classify_toxic(message)
         except Exception as e:
             logger.error(f"SafeText | toxic model error: {e}")
             toxic_scores = {}
+
+        if wants_nsfw:
+            obscene_score = max((toxic_scores.get(l, 0.0) for l in OBSCENE_LABELS), default=0.0)
+            nsfw_score = obscene_score
+            if obscene_score >= OBSCENE_THRESHOLD:
+                res = _flagged("ai-1", "1", "1", {"confidence": round(obscene_score, 4)})
+                return _finalize(gid, user_id, "nsfw", res, confidence=obscene_score, message=message)
 
         hate_score  = max((toxic_scores.get(l, 0.0) for l in HATE_LABELS), default=0.0)
         toxic_score = max((toxic_scores.get(l, 0.0) for l in TOXIC_LABELS), default=0.0)

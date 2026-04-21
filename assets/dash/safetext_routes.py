@@ -87,9 +87,9 @@ def register(app, discord_auth, _require_bot_admin, bot=None) -> None:
         _user, is_admin = await _require_bot_admin(discord_auth)
         if not is_admin:
             return _deny()
-        from assets.message.safetext.models import LORA_DIR, TOXIC_MODEL, NSFW_MODEL
+        from assets.message.safetext.models import LORA_DIR, TOXIC_MODEL
         return quart.jsonify({
-            "models": {"toxic": TOXIC_MODEL, "nsfw": NSFW_MODEL},
+            "models": {"toxic": TOXIC_MODEL},
             "lora_present": LORA_DIR.exists() and any(LORA_DIR.iterdir()),
             "feedback": feedback.stats(),
             "finetune": finetune.read_status(),
