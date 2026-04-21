@@ -30,8 +30,7 @@ STATUS_FILE = Path("data/safetext/finetune_status.json")
 LORA_DIR    = Path("data/safetext/model/lora")
 MIN_SAMPLES = 8
 
-TOXIC_MODEL   = "unitary/multilingual-toxic-xlm-roberta"
-TOXIC_LABELS  = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+TOXIC_MODEL = "unitary/multilingual-toxic-xlm-roberta"
 
 
 # ── status helpers ───────────────────────────────────────────────────────────
@@ -55,21 +54,17 @@ def read_status() -> dict:
 
 # ── label mapping ────────────────────────────────────────────────────────────
 def _labels_for(correct: str) -> Optional[list[float]]:
-    """Return target vector for the toxic head, or None to skip this sample."""
-    c = (correct or "").strip().upper()
+    """Return [1.0] for any toxic category, [0.0] for safe, None to skip.
+
+    The model has num_labels=1 (single toxicity score), so labels must be
+    shape [1] — not a 6-dim multi-label vector.
+    """
+    c = (correct or "").strip().upper().removeprefix("AI-")
     if c == "SAFE":
-        return [0.0] * len(TOXIC_LABELS)
-    mapping = {
-        "2": {"toxic": 1.0, "insult": 1.0},
-        "3": {"toxic": 1.0, "identity_hate": 1.0},
-    }
-    c = c.removeprefix("AI-")
-    if c not in mapping:
-        return None
-    vec = [0.0] * len(TOXIC_LABELS)
-    for label, val in mapping[c].items():
-        vec[TOXIC_LABELS.index(label)] = val
-    return vec
+        return [0.0]
+    if c in {"2", "3"}:
+        return [1.0]
+    return None
 
 
 # ── async launcher ───────────────────────────────────────────────────────────
@@ -156,9 +151,7 @@ def _train_sync() -> dict:
     from peft import LoraConfig, TaskType, get_peft_model
 
     tokenizer = AutoTokenizer.from_pretrained(TOXIC_MODEL)
-    model     = AutoModelForSequenceClassification.from_pretrained(
-        TOXIC_MODEL, problem_type="multi_label_classification"
-    )
+    model     = AutoModelForSequenceClassification.from_pretrained(TOXIC_MODEL)
 
     lora_cfg = LoraConfig(
         task_type=TaskType.SEQ_CLS,
