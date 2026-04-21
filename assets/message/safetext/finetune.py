@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+from collections import deque
 from pathlib import Path
 from typing import Optional
 
@@ -91,15 +92,28 @@ async def start_job() -> dict:
 
 async def _wait_and_log(proc: asyncio.subprocess.Process) -> None:
     assert proc.stdout is not None
+    tail: deque[str] = deque(maxlen=60)
     async for line in proc.stdout:
-        logger.info(f"SafeText finetune | {line.decode(errors='ignore').rstrip()}")
+        text = line.decode(errors="ignore").rstrip()
+        tail.append(text)
+        if any(kw in text for kw in ("Error", "Traceback", "Exception", "error:")):
+            logger.error(f"SafeText finetune | {text}")
+        else:
+            logger.info(f"SafeText finetune | {text}")
     rc = await proc.wait()
     if rc != 0:
         logger.error(f"SafeText finetune | exited with code {rc}")
         cur = read_status()
         cur["state"] = "error"
         cur["error"] = f"subprocess exit {rc}"
+        cur["last_output"] = list(tail)
         _write_status(cur)
+    else:
+        try:
+            from assets.message.safetext.models import reload_models
+            reload_models()
+        except Exception:
+            pass
 
 
 # ── synchronous training ─────────────────────────────────────────────────────
@@ -175,7 +189,7 @@ def _train_sync() -> dict:
         learning_rate=5e-4,
         logging_steps=5,
         save_strategy="no",
-        report_to=[],
+        report_to="none",
         disable_tqdm=True,
     )
     trainer = Trainer(model=model, args=args, train_dataset=dataset)
@@ -205,6 +219,12 @@ if __name__ == "__main__":
         result = _train_sync()
         print(json.dumps(result))
     except Exception as e:
-        _write_status({"state": "error", "finished_at": int(time.time()), "error": str(e)})
-        print(f"error: {e}", file=sys.stderr)
+        import traceback
+        tb = traceback.format_exc()
+        print(tb, file=sys.stderr)
+        try:
+            _write_status({"state": "error", "finished_at": int(time.time()),
+                           "error": str(e), "traceback": tb})
+        except Exception:
+            pass
         sys.exit(1)
