@@ -321,6 +321,11 @@
             </a>
             {% endif %}
 
+            <a href="#mc-link" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                MC Link
+            </a>
+
             <span class="dash-nav-group-label">Automation</span>
             <a href="#welcomer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -2084,6 +2089,101 @@
                 </div>
             </section>
 
+            <!-- MC Account Link -->
+            <section class="pb-16 dash-section" id="mc-link">
+                <div class="section-label">MC ACCOUNT LINK</div>
+                <div class="card">
+                    <header style="position:relative;">
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            MC Account Link
+                        </h2>
+                        <p class="text-muted">Players must link their Discord before joining the Minecraft server. Integrates with BaxiBot via <code>/mc-link</code>.</p>
+                    </header>
+                    <section>
+                        <form id="mc-link-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-enabled" role="switch">
+                                    <span class="font-medium">Enable MC Account Link</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium" for="mcl-api-url">MC Plugin API URL</label>
+                                <p class="text-muted text-xs">Address of the McAccountLink HTTP API, e.g. <code>http://localhost:4321</code></p>
+                                <input type="text" id="mcl-api-url" class="input" placeholder="http://localhost:4321">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium" for="mcl-api-secret">API Secret</label>
+                                <p class="text-muted text-xs">Must match <code>secret</code> in the plugin's <code>config.yml</code>.</p>
+                                <input type="password" id="mcl-api-secret" class="input" placeholder="••••••••">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Role to assign on link (optional):</label>
+                                <p class="text-muted text-xs">Members receive this role after successfully linking, and lose it on unlink.</p>
+                                <select id="mcl-role" class="input">
+                                    <option value="">— None —</option>
+                                    {% for role_id, role_name in roles.items() %}
+                                    {% if role_name != '@everyone' %}
+                                    <option value="{{ role_id }}">{{ role_name }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Announce channel (optional):</label>
+                                <p class="text-muted text-xs">Post a public message in this channel when a member links their account.</p>
+                                <select id="mcl-announce-channel" class="input">
+                                    <option value="">— None —</option>
+                                    {% for channel_id, channel_name in channels.items() %}
+                                    <option value="{{ channel_id }}">#{{ channel_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-dm-on-link" role="switch">
+                                    <span class="font-medium">DM users on successful link</span>
+                                </label>
+                                <p class="text-muted text-xs mt-1">Send the user a private message confirming their account was linked.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-allow-self-unlink" role="switch">
+                                    <span class="font-medium">Allow self-unlink</span>
+                                </label>
+                                <p class="text-muted text-xs mt-1">Let users unlink their own account via <code>/mc unlink</code>. Disable to require admin action.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Livestream Config -->
             <section class="pb-16 dash-section" id="livestream">
                 <div class="section-label">LIVESTREAM</div>
@@ -2891,7 +2991,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %},
+                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds', 'auto-release'
             ];
@@ -3195,6 +3295,17 @@
                     ? data.auto_release.channels.map(String)
                     : [];
                 renderAutoReleaseChannels();
+            }
+
+            // MC Link
+            if (data.mc_link) {
+                document.getElementById('mcl-enabled').checked = data.mc_link.enabled === true;
+                document.getElementById('mcl-api-url').value = data.mc_link.api_url || '';
+                document.getElementById('mcl-api-secret').value = data.mc_link.api_secret ? '••••••••' : '';
+                document.getElementById('mcl-role').value = data.mc_link.role_id || '';
+                document.getElementById('mcl-announce-channel').value = data.mc_link.announce_channel || '';
+                document.getElementById('mcl-dm-on-link').checked = data.mc_link.dm_on_link === true;
+                document.getElementById('mcl-allow-self-unlink').checked = data.mc_link.allow_self_unlink !== false;
             }
 
             // Sticky Messages
@@ -4051,6 +4162,33 @@
             const payload = { auto_roles: { enabled, roles } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=auto_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('mc-link-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('mcl-enabled').checked;
+            const api_url = document.getElementById('mcl-api-url').value.trim();
+            const api_secret_raw = document.getElementById('mcl-api-secret').value;
+            const api_secret = api_secret_raw === '••••••••' ? null : api_secret_raw.trim();
+            const role_id = document.getElementById('mcl-role').value;
+            const announce_channel = document.getElementById('mcl-announce-channel').value;
+            const dm_on_link = document.getElementById('mcl-dm-on-link').checked;
+            const allow_self_unlink = document.getElementById('mcl-allow-self-unlink').checked;
+            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=mc_link&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {

@@ -265,6 +265,15 @@ class datasys:
         "channels": [],
         "ignore_bots": True,
     },
+    "mc_link": {
+        "enabled": False,
+        "api_url": "",
+        "api_secret": "",
+        "role_id": "",
+        "announce_channel": "",
+        "dm_on_link": False,
+        "allow_self_unlink": True,
+    },
     "donations": {
         "enabled": False,
         "provider": "stripe",

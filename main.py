@@ -13,7 +13,7 @@ import config.auth as auth
 import config.config as config
 import discord
 import reds_simple_logger
-from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands
+from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands
 from assets.giveaway import giveaway_commands
 from assets.poll import poll_commands, PollButton, PollCloseButton
 from assets.dash.log import highlight_word
@@ -85,6 +85,7 @@ leveling_commands(bot=bot)
 bot_admin_commands(bot=bot)
 giveaway_commands(bot=bot)
 poll_commands(bot=bot)
+mc_link_commands(bot=bot)
 
 web.jinja_env.filters['highlight_word'] = highlight_word
 

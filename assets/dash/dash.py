@@ -2144,6 +2144,58 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Auto-Release settings saved!"})
 
+        elif system == "mc_link":
+            data: dict = await quart.request.get_json()
+            mcl = data.get("mc_link")
+
+            if not isinstance(mcl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+            if not isinstance(mcl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            api_url = str(mcl.get("api_url", "")).strip()
+            api_secret_new = str(mcl.get("api_secret", "")).strip()
+            role_id = str(mcl.get("role_id", "")).strip()
+            announce_channel = str(mcl.get("announce_channel", "")).strip()
+            dm_on_link = bool(mcl.get("dm_on_link", False))
+            allow_self_unlink = bool(mcl.get("allow_self_unlink", True))
+
+            # Keep existing secret if blank was submitted (placeholder shown)
+            existing_conf = load_data(int(guild_id), "mc_link")
+            api_secret = api_secret_new if api_secret_new else existing_conf.get("api_secret", "")
+
+            if mcl["enabled"] and (not api_url or not api_secret):
+                return quart.jsonify({"success": False, "message": "API URL and secret are required when enabled."}), 400
+            if role_id and not re.fullmatch(r"\d{17,19}", role_id):
+                return quart.jsonify({"success": False, "message": "Invalid role ID."}), 400
+            if announce_channel and not re.fullmatch(r"\d{17,19}", announce_channel):
+                return quart.jsonify({"success": False, "message": "Invalid announce channel ID."}), 400
+
+            settings = {
+                "enabled": mcl["enabled"],
+                "api_url": api_url,
+                "api_secret": api_secret,
+                "role_id": role_id,
+                "announce_channel": announce_channel,
+                "dm_on_link": dm_on_link,
+                "allow_self_unlink": allow_self_unlink,
+            }
+            save_data(int(guild_id), "mc_link", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "mc_link",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "MC Link settings saved!"})
+
         elif system == "suggestions":
             data: dict = await quart.request.get_json()
             sugg = data.get("suggestions")

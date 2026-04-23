@@ -1000,6 +1000,388 @@ def leveling_commands(bot: commands.AutoShardedBot):
         await interaction.edit_original_response(embed=embed)
 
 
+def mc_link_commands(bot: commands.AutoShardedBot):
+    logger.debug.info("MC link commands loaded.")
+
+    mc_group = app_commands.Group(name="mc", description="Minecraft account linking")
+    mc_admin_group = app_commands.Group(name="admin", description="MC Link admin commands", parent=mc_group)
+
+    def _get_conf(guild_id: int):
+        return datasys.load_data(guild_id, "mc_link")
+
+    def _check_enabled(guild_conf: dict, t: dict) -> str | None:
+        if not guild_conf.get("enabled", False):
+            return t["not_enabled"]
+        if not guild_conf.get("api_url", "").strip() or not guild_conf.get("api_secret", "").strip():
+            return t["not_configured"]
+        return None
+
+    async def _announce_link(interaction: Interaction, guild_conf: dict, mc_name: str, lang: dict):
+        channel_id_str: str = guild_conf.get("announce_channel", "")
+        if not channel_id_str:
+            return
+        try:
+            channel = interaction.guild.get_channel(int(channel_id_str))
+            if channel:
+                t = lang["systems"]["mc_link"]
+                embed = discord.Embed(
+                    description=t["announce"].format(mention=interaction.user.mention, mc_name=mc_name),
+                    color=config.Discord.success_color,
+                )
+                embed.set_footer(text=t["footer"])
+                await channel.send(embed=embed)
+        except Exception:
+            pass
+
+    async def _dm_user(interaction: Interaction, guild_conf: dict, mc_name: str, lang: dict):
+        if not guild_conf.get("dm_on_link", False):
+            return
+        try:
+            t = lang["systems"]["mc_link"]
+            embed = discord.Embed(
+                title=f"{config.Icons.check} {t['success_title']}",
+                description=t["dm_desc"].format(mc_name=mc_name, guild=interaction.guild.name),
+                color=config.Discord.success_color,
+            )
+            embed.set_footer(text=t["footer"])
+            await interaction.user.send(embed=embed)
+        except Exception:
+            pass
+
+    @mc_group.command(name="link", description="Link your Minecraft account to Discord.")
+    @app_commands.describe(code="The 8-character code shown in the Minecraft kick message.")
+    async def mc_link_cmd(interaction: Interaction, code: str):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            t = lang["systems"]["mc_link"]
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+        guild_conf = _get_conf(guild_id)
+
+        err = _check_enabled(guild_conf, t)
+        if err:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        api_url: str = guild_conf["api_url"].strip()
+        secret: str = guild_conf["api_secret"].strip()
+
+        from assets.mc_link import is_linked, resolve_token, whitelist_player, store_link
+
+        if is_linked(guild_id, interaction.user.id):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.check} {t['already_linked']}", color=config.Discord.success_color),
+                ephemeral=True,
+            )
+
+        token_data = await resolve_token(api_url, secret, code.strip().upper())
+        if token_data is None:
+            return await interaction.followup.send(
+                embed=discord.Embed(title=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        uuid: str = token_data["uuid"]
+        mc_name: str = token_data.get("name", "Unknown")
+        discord_name: str = interaction.user.name
+
+        success = await whitelist_player(api_url, secret, uuid, mc_name, interaction.user.id, discord_name)
+        if not success:
+            return await interaction.followup.send(
+                embed=discord.Embed(title=f"{config.Icons.cross} {t['link_failed']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        await store_link(guild_id, interaction.user.id, uuid, mc_name)
+
+        role_id_str: str = guild_conf.get("role_id", "")
+        if role_id_str:
+            try:
+                role = interaction.guild.get_role(int(role_id_str))
+                if role:
+                    await cast(discord.Member, interaction.user).add_roles(role, reason="MC account linked")
+            except Exception:
+                pass
+
+        desc = t["success_desc"].format(mc_name=mc_name, mention=interaction.user.mention)
+        embed = discord.Embed(
+            title=f"{config.Icons.check} {t['success_title']}",
+            description=desc,
+            color=config.Discord.success_color,
+        )
+        embed.set_footer(text=t["footer"])
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+        await _announce_link(interaction, guild_conf, mc_name, lang)
+        await _dm_user(interaction, guild_conf, mc_name, lang)
+
+    @mc_group.command(name="unlink", description="Unlink your Minecraft account.")
+    async def mc_unlink_cmd(interaction: Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            t = lang["systems"]["mc_link"]
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+        guild_conf = _get_conf(guild_id)
+
+        err = _check_enabled(guild_conf, t)
+        if err:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        from assets.mc_link import is_linked, get_link, unlink_player, remove_link
+
+        if not is_linked(guild_id, interaction.user.id):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        if not guild_conf.get("allow_self_unlink", True):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['unlink_disabled']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        link = get_link(guild_id, interaction.user.id)
+        uuid = link["uuid"]
+        mc_name = link.get("name", "Unknown")
+
+        api_url: str = guild_conf["api_url"].strip()
+        secret: str = guild_conf["api_secret"].strip()
+
+        # Always clean up Baxi side. MC-side failure (unreachable) = warn but still unlink locally.
+        mc_success = await unlink_player(api_url, secret, uuid)
+        await remove_link(guild_id, interaction.user.id)
+
+        role_id_str: str = guild_conf.get("role_id", "")
+        if role_id_str:
+            try:
+                role = interaction.guild.get_role(int(role_id_str))
+                if role:
+                    await cast(discord.Member, interaction.user).remove_roles(role, reason="MC account unlinked")
+            except Exception:
+                pass
+
+        desc = t["unlink_success_desc"].format(mc_name=mc_name)
+        if not mc_success:
+            desc += f"\n{config.Icons.alert} MC server unreachable — removed locally. Ask an admin to de-whitelist manually."
+        await interaction.followup.send(
+            embed=discord.Embed(
+                title=f"{config.Icons.check} {t['unlink_success_title']}",
+                description=desc,
+                color=config.Discord.success_color,
+            ),
+            ephemeral=True,
+        )
+
+    @mc_group.command(name="status", description="Show your linked Minecraft account.")
+    async def mc_status_cmd(interaction: Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            t = lang["systems"]["mc_link"]
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+
+        from assets.mc_link import is_linked, get_link
+
+        if not is_linked(guild_id, interaction.user.id):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        link = get_link(guild_id, interaction.user.id)
+        mc_name = link.get("name", "Unknown")
+        import datetime
+        linked_at = link.get("linked_at", 0)
+        linked_dt = f"<t:{linked_at}:R>" if linked_at else "—"
+
+        embed = discord.Embed(
+            title=f"{config.Icons.check} {t['status_title']}",
+            description=t["status_desc"].format(mc_name=mc_name, mention=interaction.user.mention, linked_at=linked_dt),
+            color=config.Discord.info_color,
+        )
+        embed.set_footer(text=t["footer"])
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @mc_admin_group.command(name="unlink", description="Force-unlink a Discord user's Minecraft account.")
+    @app_commands.describe(user="The Discord user to unlink.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def mc_admin_unlink_cmd(interaction: Interaction, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+        guild_conf = _get_conf(guild_id)
+
+        err = _check_enabled(guild_conf, t)
+        if err:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        from assets.mc_link import is_linked, get_link, unlink_player, remove_link
+
+        if not is_linked(guild_id, user.id):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        link = get_link(guild_id, user.id)
+        uuid = link["uuid"]
+        mc_name = link.get("name", "Unknown")
+
+        api_url: str = guild_conf["api_url"].strip()
+        secret: str = guild_conf["api_secret"].strip()
+        await unlink_player(api_url, secret, uuid)
+        await remove_link(guild_id, user.id)
+
+        role_id_str: str = guild_conf.get("role_id", "")
+        if role_id_str:
+            try:
+                role = interaction.guild.get_role(int(role_id_str))
+                if role:
+                    await user.remove_roles(role, reason="MC account force-unlinked by admin")
+            except Exception:
+                pass
+
+        await interaction.followup.send(
+            embed=discord.Embed(
+                description=t["admin_unlink_success"].format(mention=user.mention, mc_name=mc_name),
+                color=config.Discord.success_color,
+            ),
+            ephemeral=True,
+        )
+
+    @mc_admin_group.command(name="link", description="Manually link a Minecraft account to a Discord user.")
+    @app_commands.describe(mc_name="Minecraft username.", user="Discord user to link to.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def mc_admin_link_cmd(interaction: Interaction, mc_name: str, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+        guild_conf = _get_conf(guild_id)
+
+        err = _check_enabled(guild_conf, t)
+        if err:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        api_url: str = guild_conf["api_url"].strip()
+        secret: str = guild_conf["api_secret"].strip()
+
+        from assets.mc_link import admin_link_player, store_link, is_linked
+
+        result = await admin_link_player(api_url, secret, mc_name.strip(), user.id, user.name)
+        if result is None:
+            return await interaction.followup.send(
+                embed=discord.Embed(
+                    description=f"{config.Icons.cross} Failed — MC server unreachable or player has never joined.",
+                    color=config.Discord.danger_color,
+                ),
+                ephemeral=True,
+            )
+
+        uuid: str = result["uuid"]
+        await store_link(guild_id, user.id, uuid, mc_name.strip())
+
+        role_id_str: str = guild_conf.get("role_id", "")
+        if role_id_str:
+            try:
+                role = interaction.guild.get_role(int(role_id_str))
+                if role:
+                    await user.add_roles(role, reason="MC account manually linked by admin")
+            except Exception:
+                pass
+
+        await interaction.followup.send(
+            embed=discord.Embed(
+                description=f"{config.Icons.check} Linked `{mc_name}` → {user.mention} and whitelisted.",
+                color=config.Discord.success_color,
+            ),
+            ephemeral=True,
+        )
+
+    @mc_admin_group.command(name="lookup", description="Show which Minecraft account a Discord user has linked.")
+    @app_commands.describe(user="The Discord user to look up.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def mc_admin_lookup_cmd(interaction: Interaction, user: discord.Member):
+        await interaction.response.defer(ephemeral=True)
+
+        if interaction.guild is None:
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+
+        from assets.mc_link import is_linked, get_link
+
+        if not is_linked(guild_id, user.id):
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                ephemeral=True,
+            )
+
+        link = get_link(guild_id, user.id)
+        mc_name = link.get("name", "Unknown")
+        uuid = link.get("uuid", "—")
+        linked_at = link.get("linked_at", 0)
+        linked_dt = f"<t:{linked_at}:R>" if linked_at else "—"
+
+        embed = discord.Embed(
+            title=t["lookup_title"],
+            description=t["lookup_desc"].format(mention=user.mention, mc_name=mc_name, uuid=uuid, linked_at=linked_dt),
+            color=config.Discord.info_color,
+        )
+        embed.set_footer(text=t["footer"])
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    bot.tree.add_command(mc_group)
+
+
 def bot_admin_commands(bot: commands.AutoShardedBot):
     """Bot admin commands have been moved to the Admin Dashboard at /admin/"""
     logger.debug.info("Bot admin commands: all admin actions are now handled via the web dashboard at /admin/.")
