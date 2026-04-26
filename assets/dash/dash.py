@@ -2159,6 +2159,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             announce_channel = str(mcl.get("announce_channel", "")).strip()
             dm_on_link = bool(mcl.get("dm_on_link", False))
             allow_self_unlink = bool(mcl.get("allow_self_unlink", True))
+            announcement_channel = str(mcl.get("announcement_channel", "")).strip()
+            dm_announcements = bool(mcl.get("dm_announcements", False))
 
             # Keep existing secret if blank was submitted (placeholder shown)
             existing_conf = load_data(int(guild_id), "mc_link")
@@ -2170,6 +2172,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Invalid role ID."}), 400
             if announce_channel and not re.fullmatch(r"\d{17,19}", announce_channel):
                 return quart.jsonify({"success": False, "message": "Invalid announce channel ID."}), 400
+            if announcement_channel and not re.fullmatch(r"\d{17,19}", announcement_channel):
+                return quart.jsonify({"success": False, "message": "Invalid announcement channel ID."}), 400
 
             settings = {
                 "enabled": mcl["enabled"],
@@ -2179,6 +2183,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "announce_channel": announce_channel,
                 "dm_on_link": dm_on_link,
                 "allow_self_unlink": allow_self_unlink,
+                "announcement_channel": announcement_channel,
+                "dm_announcements": dm_announcements,
             }
             save_data(int(guild_id), "mc_link", settings)
 
@@ -2792,6 +2798,88 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             welcomer_data["has_custom_bg"] = False
             save_data(int(guild_id), "welcomer", welcomer_data)
             return quart.jsonify({"success": True, "message": "Background removed."})
+
+    @app.route("/dg/announce", methods=["POST"])
+    async def mc_announce():
+        auth = quart.request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return quart.jsonify({"error": "Unauthorized"}), 401
+        provided_secret = auth[len("Bearer "):]
+
+        body = await quart.request.get_json(silent=True)
+        if not body or not isinstance(body.get("message"), str) or not body["message"].strip():
+            return quart.jsonify({"error": "Invalid or empty message"}), 400
+        message = body["message"].strip()
+        sender_name: str = body.get("sender_name") or "Unknown"
+        sender_uuid: str = body.get("sender_uuid") or ""
+
+        import os as _os, json as _json
+        matched = []
+        for entry in _os.listdir("data"):
+            if not entry.isdigit():
+                continue
+            conf_path = _os.path.join("data", entry, "conf.json")
+            if not _os.path.exists(conf_path):
+                continue
+            try:
+                with open(conf_path) as f:
+                    conf = _json.load(f)
+                mcl = conf.get("mc_link", {})
+                if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
+                    matched.append((int(entry), mcl))
+            except Exception:
+                continue
+
+        if not matched:
+            return quart.jsonify({"error": "Unauthorized"}), 401
+
+        from assets.mc_link import _links
+        import config.config as _cfg
+
+        for guild_id_int, mcl_conf in matched:
+            guild = bot.get_guild(guild_id_int)
+            if not guild:
+                continue
+
+            # Resolve sender's Discord ID by matching UUID in _links
+            sender_discord_id: str | None = None
+            if sender_uuid:
+                for dc_id, link_data in _links.get(str(guild_id_int), {}).items():
+                    if link_data.get("uuid") == sender_uuid:
+                        sender_discord_id = dc_id
+                        break
+            sender_field = f"<@{sender_discord_id}>" if sender_discord_id else f"`{sender_name}`"
+
+            def _make_embed() -> discord.Embed:
+                e = discord.Embed(
+                    title=f"{_cfg.Icons.messageexclamation} Server Announcement",
+                    description=message,
+                    color=_cfg.Discord.color,
+                )
+                e.add_field(name="Announced by", value=sender_field, inline=True)
+                e.set_footer(text=f"{guild.name} · via Minecraft")
+                return e
+
+            if mcl_conf.get("dm_announcements", False):
+                for discord_id_str in _links.get(str(guild_id_int), {}):
+                    try:
+                        member = guild.get_member(int(discord_id_str))
+                        if not member:
+                            continue
+                        await member.send(embed=_make_embed())
+                    except Exception:
+                        pass
+
+            ann_ch = mcl_conf.get("announcement_channel", "").strip()
+            if ann_ch:
+                try:
+                    channel = guild.get_channel(int(ann_ch))
+                    if channel:
+                        await channel.send(embed=_make_embed())
+                except Exception:
+                    pass
+
+        return quart.jsonify({"success": True}), 200
 
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():

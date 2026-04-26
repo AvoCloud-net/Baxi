@@ -69,6 +69,21 @@ web.config["BOT_READY"] = False
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 
+@web.context_processor
+def _inject_static_version():
+    """Cache-bust static assets by appending file mtime as ?v=<int>."""
+    static_dir = config.Web.static_folder
+    versions = {}
+    try:
+        for fname in ("main.css",):
+            fpath = os.path.join(static_dir, fname)
+            if os.path.isfile(fpath):
+                versions[fname] = int(os.path.getmtime(fpath))
+    except Exception:
+        pass
+    return {"static_versions": versions}
+
+
 @web.errorhandler(404)
 async def not_found(e):
     if not web.config.get("BOT_READY"):

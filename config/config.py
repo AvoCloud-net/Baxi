@@ -273,6 +273,8 @@ class datasys:
         "announce_channel": "",
         "dm_on_link": False,
         "allow_self_unlink": True,
+        "announcement_channel": "",
+        "dm_announcements": False,
     },
     "donations": {
         "enabled": False,

@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap"></noscript>
@@ -323,7 +323,7 @@
 
             <a href="#mc-link" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                MC Link
+                DiscordGate
             </a>
 
             <span class="dash-nav-group-label">Automation</span>
@@ -2091,7 +2091,7 @@
 
             <!-- MC Account Link -->
             <section class="pb-16 dash-section" id="mc-link">
-                <div class="section-label">MC ACCOUNT LINK</div>
+                <div class="section-label">DISCORDGATE</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2099,29 +2099,39 @@
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                             </svg>
-                            MC Account Link
+                            DiscordGate
                         </h2>
-                        <p class="text-muted">Players must link their Discord before joining the Minecraft server. Integrates with BaxiBot via <code>/mc-link</code>.</p>
+                        <p class="text-muted">Players must link their Discord before joining the Minecraft server. Discord: <code>/mc link</code> · In-game: <code>/dg</code>. Download the plugin on <a href="https://modrinth.com/plugin/discordgate" target="_blank" rel="noopener">Modrinth</a>.</p>
                     </header>
                     <section>
                         <form id="mc-link-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
                                     <input type="checkbox" id="mcl-enabled" role="switch">
-                                    <span class="font-medium">Enable MC Account Link</span>
+                                    <span class="font-medium">Enable DiscordGate</span>
                                 </label>
                             </div>
 
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium" for="mcl-api-url">MC Plugin API URL</label>
-                                <p class="text-muted text-xs">Address of the McAccountLink HTTP API, e.g. <code>http://localhost:4321</code></p>
+                                <p class="text-muted text-xs">Address of the DiscordGate HTTP API, e.g. <code>http://localhost:4321</code></p>
                                 <input type="text" id="mcl-api-url" class="input" placeholder="http://localhost:4321">
                             </div>
 
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium" for="mcl-api-secret">API Secret</label>
-                                <p class="text-muted text-xs">Must match <code>secret</code> in the plugin's <code>config.yml</code>.</p>
-                                <input type="password" id="mcl-api-secret" class="input" placeholder="••••••••">
+                                <p class="text-muted text-xs">Shared secret between BaxiBot and the plugin. Must match <code>secret</code> in <code>plugins/DiscordGate/config.yml</code>.</p>
+                                <div class="mcl-secret-row" style="display:flex;gap:0.5rem;align-items:center;">
+                                    <input type="password" id="mcl-api-secret" class="input" placeholder="••••••••" style="flex:1;" oninput="mclCheckSecret()">
+                                    <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
+                                    <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclCopySecret(this)">Copy</button>
+                                </div>
+                                <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--color-error, #ef4444);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
+                                <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--color-surface-2,rgba(0,0,0,.08));border-radius:0.5rem;padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
+                                    Paste this secret into <code>plugins/DiscordGate/config.yml</code> on your Minecraft server:
+                                    <pre style="margin:0.4rem 0 0.2rem;font-size:0.85em;"><code id="mcl-secret-hint-value">secret: "…"</code></pre>
+                                    Then run <code>/dg reload</code> in-game or restart the server. Save these settings afterwards.
+                                </div>
                             </div>
 
                             <div class="grid gap-2">
@@ -2162,6 +2172,25 @@
                                     <span class="font-medium">Allow self-unlink</span>
                                 </label>
                                 <p class="text-muted text-xs mt-1">Let users unlink their own account via <code>/mc unlink</code>. Disable to require admin action.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Announcement channel <span class="text-muted">(optional)</span></label>
+                                <p class="text-muted text-xs">Post server announcements from <code>/mcannounce</code> to this Discord channel.</p>
+                                <select id="mcl-announcement-channel" class="input">
+                                    <option value="">— None —</option>
+                                    {% for channel_id, channel_name in channels.items() %}
+                                    <option value="{{ channel_id }}">#{{ channel_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-dm-announcements" role="switch">
+                                    <span class="font-medium">Send announcements to DMs</span>
+                                </label>
+                                <p class="text-muted text-xs mt-1">DM every linked Discord user when an admin runs <code>/mcannounce</code>.</p>
                             </div>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
@@ -3306,6 +3335,8 @@
                 document.getElementById('mcl-announce-channel').value = data.mc_link.announce_channel || '';
                 document.getElementById('mcl-dm-on-link').checked = data.mc_link.dm_on_link === true;
                 document.getElementById('mcl-allow-self-unlink').checked = data.mc_link.allow_self_unlink !== false;
+                document.getElementById('mcl-announcement-channel').value = data.mc_link.announcement_channel || '';
+                document.getElementById('mcl-dm-announcements').checked = data.mc_link.dm_announcements === true;
             }
 
             // Sticky Messages
@@ -3398,7 +3429,7 @@
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                 </svg>
-                                Remove
+                                <span class="btn-label">Remove</span>
                             </button>
                         </header>
                         <div class="grid gap-2" style="border-top:1px solid var(--border,#333);margin-top:12px;padding:12px 16px 4px 16px;">
@@ -3575,7 +3606,7 @@
                     + '</div></div>'
                     + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="yvidRemoveChannel(\'' + ch.channel_id.replace(/'/g, "\\'") + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-                    + ' Remove</button>'
+                    + '<span class="btn-label">Remove</span></button>'
                     + '</header>';
                 list.appendChild(card);
             });
@@ -4176,17 +4207,58 @@
             };
         };
 
+        // ── DiscordGate secret helpers ────────────────────────────────────────
+        const MCL_WEAK = /^(change.?me|changeme|secret|test|1234|password|changethis)$/i;
+
+        function mclCheckSecret() {
+            const val = document.getElementById('mcl-api-secret').value;
+            const masked = val === '••••••••';
+            const weak = !masked && (val.trim().length < 8 || MCL_WEAK.test(val.trim()));
+            document.getElementById('mcl-secret-warning').style.display = weak ? '' : 'none';
+        }
+
+        function mclGenerateSecret() {
+            const arr = new Uint8Array(24);
+            crypto.getRandomValues(arr);
+            const secret = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+            const field = document.getElementById('mcl-api-secret');
+            field.type = 'text';
+            field.value = secret;
+            document.getElementById('mcl-secret-warning').style.display = 'none';
+            const hint = document.getElementById('mcl-secret-hint');
+            hint.style.display = '';
+            document.getElementById('mcl-secret-hint-value').textContent = `secret: "${secret}"`;
+        }
+
+        function mclCopySecret(btn) {
+            const field = document.getElementById('mcl-api-secret');
+            const val = field.value;
+            if (!val || val === '••••••••') return;
+            navigator.clipboard.writeText(val).then(() => {
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = orig, 1500);
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         document.getElementById('mc-link-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('mcl-enabled').checked;
             const api_url = document.getElementById('mcl-api-url').value.trim();
             const api_secret_raw = document.getElementById('mcl-api-secret').value;
             const api_secret = api_secret_raw === '••••••••' ? null : api_secret_raw.trim();
+            if (enabled && api_secret !== null && (api_secret.length < 8 || MCL_WEAK.test(api_secret))) {
+                showSaveToast(false, 'Please set a strong API secret before enabling DiscordGate.');
+                return;
+            }
             const role_id = document.getElementById('mcl-role').value;
             const announce_channel = document.getElementById('mcl-announce-channel').value;
             const dm_on_link = document.getElementById('mcl-dm-on-link').checked;
             const allow_self_unlink = document.getElementById('mcl-allow-self-unlink').checked;
-            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink } };
+            const announcement_channel = document.getElementById('mcl-announcement-channel').value;
+            const dm_announcements = document.getElementById('mcl-dm-announcements').checked;
+            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink, announcement_channel, dm_announcements } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mc_link&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -4797,7 +4869,7 @@
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/>
                                 </svg>
-                                Edit
+                                <span class="btn-label">Edit</span>
                             </button>
                             <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
                                 onclick="stickyRemove('${cid}')">
@@ -4805,7 +4877,7 @@
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                 </svg>
-                                Remove
+                                <span class="btn-label">Remove</span>
                             </button>
                         </div>
                     </header>
@@ -4939,7 +5011,7 @@
                 const maxRoles = panel.max_roles || 0;
 
                 const entriesHtml = (panel.entries || []).map(e => {
-                    return `<div class="flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
+                    return `<div class="rr-entry-row flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
                         <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
                         <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
                             <span class="btn-text">Remove</span>
@@ -4960,7 +5032,7 @@
                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                 <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                             </svg>
-                            Delete panel
+                            <span class="btn-label">Delete panel</span>
                         </button>
                     </header>
                     <section>

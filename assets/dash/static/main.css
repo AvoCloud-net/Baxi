@@ -793,6 +793,66 @@ fieldset {
     flex-shrink: 0;
     border-radius: 50%;
   }
+
+  /* Card header action buttons: icon-only on mobile */
+  .card header .btn-outline .btn-label,
+  .card header .btn-secondary .btn-label {
+    display: none;
+  }
+
+  /* Cards: keep all content inside the card, wrap long strings */
+  .card {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* All flex rows inside cards may wrap to respect card padding */
+  .card .flex {
+    flex-wrap: wrap;
+  }
+
+  /* Flex children may shrink below intrinsic content size */
+  .card .flex > *,
+  .card .grid > * {
+    min-width: 0;
+  }
+
+  /* Inputs/selects/textareas never exceed their container */
+  .card input,
+  .card select,
+  .card textarea {
+    max-width: 100%;
+  }
+
+  /* Preformatted text wraps on mobile (e.g. DiscordGate secret hint) */
+  .card pre,
+  .card code {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* DiscordGate secret row: Generate/Copy fill remaining row when wrapped */
+  .mcl-secret-row .btn-secondary {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  /* Override fixed-width platform select on Add Streamer row */
+  #livestream-add-platform {
+    width: auto !important;
+    flex: 1;
+    min-width: 110px;
+  }
+  #livestream-add-login,
+  #yvid-add-login {
+    flex: 1 1 100%;
+  }
+
+  /* PRISM user-card grid: 2 columns on mobile (overrides inline 4-col grid) */
+  #prism-scores-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 /* ── Dashboard nav group labels ─────────────────────────────── */

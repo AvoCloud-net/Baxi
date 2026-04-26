@@ -48,8 +48,8 @@ def get_link(guild_id: int, discord_id: int) -> dict | None:
 
 
 async def resolve_token(api_url: str, secret: str, token: str) -> dict | None:
-    """GET /mc/token/{token} → {uuid, name} or None."""
-    url = f"{api_url.rstrip('/')}/mc/token/{token.upper()}"
+    """GET /dg/token/{token} → {uuid, name} or None."""
+    url = f"{api_url.rstrip('/')}/dg/token/{token.upper()}"
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
@@ -62,8 +62,8 @@ async def resolve_token(api_url: str, secret: str, token: str) -> dict | None:
 
 
 async def whitelist_player(api_url: str, secret: str, uuid: str, name: str, discord_id: int, discord_name: str = "") -> bool:
-    """POST /mc/whitelist → bool success."""
-    url = f"{api_url.rstrip('/')}/mc/whitelist"
+    """POST /dg/whitelist → bool success."""
+    url = f"{api_url.rstrip('/')}/dg/whitelist"
     payload = {"uuid": uuid, "name": name, "discord_id": str(discord_id), "discord_name": discord_name}
     try:
         async with aiohttp.ClientSession() as session:
@@ -75,8 +75,8 @@ async def whitelist_player(api_url: str, secret: str, uuid: str, name: str, disc
 
 
 async def unlink_player(api_url: str, secret: str, uuid: str) -> bool:
-    """POST /mc/unlink → bool success. 404 = already unlinked on MC side, treat as OK."""
-    url = f"{api_url.rstrip('/')}/mc/unlink"
+    """POST /dg/unlink → bool success. 404 = already unlinked on MC side, treat as OK."""
+    url = f"{api_url.rstrip('/')}/dg/unlink"
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json={"uuid": uuid}, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
@@ -87,8 +87,8 @@ async def unlink_player(api_url: str, secret: str, uuid: str) -> bool:
 
 
 async def admin_link_player(api_url: str, secret: str, mc_name: str, discord_id: int, discord_name: str = "") -> dict | None:
-    """POST /mc/admin-link → {success, uuid} or None on failure."""
-    url = f"{api_url.rstrip('/')}/mc/admin-link"
+    """POST /dg/admin-link → {success, uuid} or None on failure."""
+    url = f"{api_url.rstrip('/')}/dg/admin-link"
     payload = {"mc_name": mc_name, "discord_id": str(discord_id), "discord_name": discord_name}
     try:
         async with aiohttp.ClientSession() as session:
