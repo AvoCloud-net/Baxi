@@ -1,4 +1,5 @@
 discord
+PyNaCl>=1.5.0
 reds_simple_logger
 requests
 quart
@@ -6,6 +7,7 @@ quart_cors
 quart_discord
 pillow
 yt-dlp
+gTTS
 stripe
 cryptography
 transformers>=4.40

@@ -1752,6 +1752,68 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "music":
+            data: dict = await quart.request.get_json()
+            m_data = data.get("music")
+
+            if not isinstance(m_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'music' must be an object."}), 400
+
+            try:
+                queue_limit = int(m_data.get("queue_limit", 50))
+                default_volume = int(m_data.get("default_volume", 100))
+                max_song_duration = int(m_data.get("max_song_duration", 600))
+                disconnect_timeout = int(m_data.get("disconnect_timeout", 300))
+            except (TypeError, ValueError):
+                return quart.jsonify({"success": False, "message": "Numeric fields must be integers."}), 400
+
+            queue_limit = max(1, min(500, queue_limit))
+            default_volume = max(0, min(200, default_volume))
+            max_song_duration = max(0, min(36000, max_song_duration))
+            disconnect_timeout = max(30, min(7200, disconnect_timeout))
+
+            allowed_sources_in = m_data.get("allowed_sources", ["youtube", "soundcloud", "radio"])
+            if not isinstance(allowed_sources_in, list):
+                return quart.jsonify({"success": False, "message": "'allowed_sources' must be a list."}), 400
+            valid_sources = {"youtube", "soundcloud", "radio"}
+            allowed_sources = [s for s in allowed_sources_in if isinstance(s, str) and s in valid_sources]
+
+            radio_whitelist_in = m_data.get("radio_whitelist", [])
+            if not isinstance(radio_whitelist_in, list):
+                return quart.jsonify({"success": False, "message": "'radio_whitelist' must be a list."}), 400
+            radio_whitelist: list = []
+            for u in radio_whitelist_in:
+                if isinstance(u, str) and u.startswith(("http://", "https://")) and len(u) <= 500:
+                    radio_whitelist.append(u.strip())
+
+            allow_all_radios = bool(m_data.get("allow_all_radios", False))
+
+            m_config = {
+                "enabled": True,
+                "queue_limit": queue_limit,
+                "default_volume": default_volume,
+                "max_song_duration": max_song_duration,
+                "disconnect_timeout": disconnect_timeout,
+                "allowed_sources": allowed_sources,
+                "radio_whitelist": radio_whitelist,
+                "allow_all_radios": allow_all_radios,
+            }
+            save_data(int(guild_id), "music", m_config)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "music",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
         elif system == "temp_voice":
             data: dict = await quart.request.get_json()
             tv_data = data.get("temp_voice")
@@ -2881,6 +2943,72 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         return quart.jsonify({"success": True}), 200
 
+    @app.route("/dg/unlink-notify", methods=["POST"])
+    async def mc_unlink_notify():
+        auth = quart.request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return quart.jsonify({"error": "Unauthorized"}), 401
+        provided_secret = auth[len("Bearer "):]
+
+        body = await quart.request.get_json(silent=True)
+        if not body or (not body.get("uuid") and not body.get("discord_id")):
+            return quart.jsonify({"error": "Missing uuid or discord_id"}), 400
+        uuid_str = (body.get("uuid") or "").strip() or None
+        discord_id_hint = (body.get("discord_id") or "").strip() or None
+
+        import os as _os, json as _json
+        matched = []
+        for entry in _os.listdir("data"):
+            if not entry.isdigit():
+                continue
+            conf_path = _os.path.join("data", entry, "conf.json")
+            if not _os.path.exists(conf_path):
+                continue
+            try:
+                with open(conf_path) as f:
+                    conf = _json.load(f)
+                mcl = conf.get("mc_link", {})
+                if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
+                    matched.append((int(entry), mcl))
+            except Exception:
+                continue
+
+        if not matched:
+            return quart.jsonify({"error": "Unauthorized"}), 401
+
+        from assets.mc_link import _links, remove_link
+
+        removed = []
+        for guild_id_int, mcl_conf in matched:
+            guild_links = _links.get(str(guild_id_int), {})
+            target_dc_id: str | None = None
+            if uuid_str:
+                for dc_id, link_data in guild_links.items():
+                    if link_data.get("uuid") == uuid_str:
+                        target_dc_id = dc_id
+                        break
+            if not target_dc_id and discord_id_hint and discord_id_hint in guild_links:
+                target_dc_id = discord_id_hint
+            if not target_dc_id:
+                continue
+
+            await remove_link(guild_id_int, int(target_dc_id))
+            removed.append({"guild_id": str(guild_id_int), "discord_id": target_dc_id})
+
+            role_id_str = (mcl_conf.get("role_id") or "").strip()
+            if role_id_str:
+                try:
+                    guild = bot.get_guild(guild_id_int)
+                    if guild:
+                        member = guild.get_member(int(target_dc_id))
+                        role = guild.get_role(int(role_id_str))
+                        if member and role and role in member.roles:
+                            await member.remove_roles(role, reason="Unlinked from Minecraft side")
+                except Exception:
+                    pass
+
+        return quart.jsonify({"success": True, "removed": removed}), 200
+
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():
         data: dict = dict(await quart.request.get_json())
@@ -3734,6 +3862,55 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             loop.create_task(sentinel._update_user_summary(user_id_str))
             share.admin_log("info", f"Prism summary re-analysis requested for {user_id_str} by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": "Re-analysis started. Refresh the profile in a few seconds."})
+
+        elif action == "restart_notice":
+            guild_id_str = str(data.get("guild_id", "")).strip()
+            target_gid: Optional[int] = None
+            if guild_id_str:
+                if not guild_id_str.isdigit():
+                    return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
+                target_gid = int(guild_id_str)
+                if not bot.get_guild(target_gid):
+                    return quart.jsonify({"success": False, "message": "Guild not found."}), 404
+            try:
+                volume = float(data.get("volume", 2.0))
+            except (TypeError, ValueError):
+                volume = 2.0
+            volume = max(0.5, min(4.0, volume))
+
+            from assets.music.announce import announce_restart_notice, RESTART_NOTICE_MESSAGE
+            custom_msg = str(data.get("message", "")).strip()
+            if custom_msg:
+                if len(custom_msg) > 1000:
+                    return quart.jsonify({"success": False, "message": "Message too long (max 1000 chars)."}), 400
+                msg = custom_msg
+            else:
+                msg = RESTART_NOTICE_MESSAGE
+
+            count = await announce_restart_notice(bot, guild_id=target_gid, message=msg, volume=volume)
+            scope = f"guild {target_gid}" if target_gid else "all servers"
+            share.admin_log("info", f"Restart-notice TTS played in {count} voice channel(s) on {scope} by {user.name} (vol={volume}, custom={'yes' if custom_msg else 'no'})", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Played restart notice in {count} voice channel(s)."})
+
+        elif action == "reboot":
+            share.admin_log("warning", f"Bot reboot triggered by {user.name}", source="AdminDash")
+
+            async def _do_reboot():
+                try:
+                    from assets.music.announce import announce_reboot_in_voice_channels
+                    await announce_reboot_in_voice_channels(bot)
+                except Exception as e:
+                    share.admin_log("error", f"Reboot announce failed: {type(e).__name__}: {e}", source="AdminDash")
+                try:
+                    await bot.close()
+                except Exception:
+                    pass
+                import os as _os
+                _os._exit(0)
+
+            import asyncio as _asyncio
+            _asyncio.get_event_loop().create_task(_do_reboot())
+            return quart.jsonify({"success": True, "message": "Reboot started — TTS playing in voice channels, then exit."})
 
         elif action == "leave_server":
             guild_id_str = str(data.get("guild_id", "")).strip()

@@ -1194,3 +1194,60 @@ class YouTubeVideoTask:
         embed.set_footer(text=footer)
         return embed
 
+
+class MusicIdleTask:
+    """Disconnects idle/empty music players every 30s."""
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    GRACE_SECONDS = 60   # never disconnect a player younger than this
+    DISCONNECT_GRACE = 10  # wait 10s after disconnect before auto-removing player
+
+    @tasks.loop(seconds=30)
+    async def watch(self):
+        import assets.share as share
+        set_task_status("MusicIdle", "running", "Scanning music players...")
+        now = datetime.datetime.now(datetime.timezone.utc)
+        disconnected = 0
+        try:
+            for gid, player in list(share.music_players.items()):
+                vc = player.voice_client
+                if not vc or not vc.is_connected():
+                    idle = (now - player.last_activity).total_seconds()
+                    # Only remove player if it's been disconnected for > DISCONNECT_GRACE
+                    if idle > self.DISCONNECT_GRACE:
+                        logger.debug.info(f"[MusicIdle:{gid}] Player has no live voice_client (idle {idle:.0f}s) — popping")
+                        share.music_players.pop(gid, None)
+                    else:
+                        logger.debug.info(f"[MusicIdle:{gid}] Voice client disconnected (idle {idle:.0f}s/{self.DISCONNECT_GRACE}s) — will retry")
+                    continue
+                conf = dict(datasys.load_data(gid, "music") or {})
+                timeout = int(conf.get("disconnect_timeout", 300) or 300)
+                channel_humans = [m for m in vc.channel.members if not m.bot] if vc.channel else []
+                idle = (now - player.last_activity).total_seconds()
+                empty = len(channel_humans) == 0
+                stale = (not vc.is_playing()) and (not vc.is_paused()) and idle > timeout
+
+                if idle < self.GRACE_SECONDS:
+                    logger.debug.info(f"[MusicIdle:{gid}] grace period ({idle:.0f}s/{self.GRACE_SECONDS}s) — skip checks")
+                    continue
+
+                if empty:
+                    logger.info(f"[MusicIdle:{gid}] disconnect: channel empty (humans=0)")
+                elif stale:
+                    logger.info(f"[MusicIdle:{gid}] disconnect: idle for {idle:.0f}s > {timeout}s, not playing/paused")
+
+                if empty or stale:
+                    await player.stop_and_disconnect()
+                    share.music_players.pop(gid, None)
+                    disconnected += 1
+            set_task_status("MusicIdle", "ok", f"{disconnected} disconnected" if disconnected else "ok")
+        except Exception as e:
+            logger.error(f"[MusicIdle] Error: {e}")
+            set_task_status("MusicIdle", "error", f"Error: {e}")
+
+    @watch.before_loop
+    async def before_watch(self):
+        await self.bot.wait_until_ready()
+

@@ -54,6 +54,7 @@ from assets.tasks import (
     TrustScoreTask,
     GarbageCollectorTask,
     YouTubeVideoTask,
+    MusicIdleTask,
 )
 from assets.giveaway import GiveawayTask
 from assets.poll import PollTask
@@ -226,6 +227,51 @@ def events(bot: commands.AutoShardedBot, web):
             poll_task.check_polls.start()
             share.task_instances["Poll"] = poll_task
             logger.debug.success("Poll task started.")
+
+            logger.working("Starting MusicIdle task...")
+            music_idle_task = MusicIdleTask(bot)
+            music_idle_task.watch.start()
+            share.task_instances["MusicIdle"] = music_idle_task
+            logger.debug.success("Music idle watcher task started.")
+
+            # Music: enable discord.py voice debug logging
+            import logging as _logging
+            _vlog = _logging.getLogger("discord.voice_client")
+            _vlog.setLevel(_logging.DEBUG)
+            if not _vlog.handlers:
+                _h = _logging.StreamHandler()
+                _h.setFormatter(_logging.Formatter("%(asctime)s [discord.voice_client] %(levelname)s %(message)s"))
+                _vlog.addHandler(_h)
+            _gwlog = _logging.getLogger("discord.gateway")
+            _gwlog.setLevel(_logging.WARNING)
+
+            # Music: probe FFmpeg + PyNaCl + libopus
+            import shutil as _sh
+            if _sh.which("ffmpeg") is None:
+                logger.error("[Music] FFmpeg binary not found on PATH — playback will fail.")
+            else:
+                logger.debug.success("[Music] FFmpeg binary detected.")
+            try:
+                import nacl  # noqa: F401
+                logger.debug.success(f"[Music] PyNaCl available (v{nacl.__version__}) — voice encryption ready.")
+            except ImportError:
+                logger.error("[Music] PyNaCl not installed — voice will not work. Run: pip install PyNaCl")
+            try:
+                if not discord.opus.is_loaded():
+                    for _name in ("libopus.so.0", "libopus.so", "opus"):
+                        try:
+                            discord.opus.load_opus(_name)
+                            if discord.opus.is_loaded():
+                                logger.debug.success(f"[Music] libopus loaded explicitly via '{_name}'.")
+                                break
+                        except OSError:
+                            continue
+                if discord.opus.is_loaded():
+                    logger.debug.success("[Music] libopus is loaded.")
+                else:
+                    logger.error("[Music] libopus is NOT loaded — voice will fail. Install system package 'libopus0' / 'opus'.")
+            except Exception as _e:
+                logger.error(f"[Music] libopus probe error: {_e}")
 
             logger.working("Resuming active Flag Quiz sessions...")
             await quiz_game.resume_all(bot)
@@ -434,6 +480,18 @@ def events(bot: commands.AutoShardedBot, web):
         after: discord.VoiceState,
     ):
         guild = member.guild
+
+        # Music: log + clean up player on bot voice state transitions
+        if bot.user and member.id == bot.user.id:
+            b_id = before.channel.id if before.channel else None
+            a_id = after.channel.id if after.channel else None
+            logger.info(f"[Music:VS] Bot voice state in guild {guild.id}: before={b_id} after={a_id} mute={after.mute} deaf={after.deaf} self_mute={after.self_mute} self_deaf={after.self_deaf}")
+            if before.channel and not after.channel:
+                logger.warning(f"[Music:VS] Bot was disconnected from voice in guild {guild.id} (channel {b_id})")
+                # Don't immediately pop the player — let MusicIdleTask handle cleanup with grace period
+                # This allows the bot to reconnect on transient errors (Discord 4006, etc)
+
+
         tv_config: dict = dict(datasys.load_data(guild.id, "temp_voice"))
 
         # Clean up empty temp channels regardless of feature state

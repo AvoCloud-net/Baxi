@@ -2,7 +2,7 @@ import discord
 
 
 class Discord:
-    shard_count = 4
+    shard_count = 1  # Single shard for development/testing; use None for production auto-detect
     prefix = "b?"
     color         = discord.Color.from_rgb(147, 51, 234)   # #9333ea -  Purple (avocloud primary)
     danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 -  Red
@@ -275,6 +275,16 @@ class datasys:
         "allow_self_unlink": True,
         "announcement_channel": "",
         "dm_announcements": False,
+    },
+    "music": {
+        "enabled": True,
+        "queue_limit": 50,
+        "default_volume": 100,
+        "max_song_duration": 600,
+        "disconnect_timeout": 300,
+        "allowed_sources": ["youtube", "soundcloud", "radio"],
+        "radio_whitelist": [],
+        "allow_all_radios": False,
     },
     "donations": {
         "enabled": False,

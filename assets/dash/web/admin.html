@@ -890,6 +890,37 @@
                 </section>
             </div>
 
+            <!-- Restart Notice TTS -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Restart Notice TTS</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <p style="opacity:.6; font-size:.78rem; margin:0;">Pauses any active music and plays a louder TTS notice in voice channels Baxi is in. Bot does <strong>not</strong> exit. Leave Guild ID empty to target every server. Leave Message empty for the default text.</p>
+                        <input id="notice-gid" type="text" placeholder="Guild ID (leave empty for all servers)" class="w-full">
+                        <textarea id="notice-msg" rows="3" maxlength="1000" placeholder="Custom TTS message (leave empty for default: 'Hey everyone. Just a quick heads-up — I am currently restarting…')" class="w-full" style="resize:vertical;"></textarea>
+                        <div style="display:flex; gap:.5rem; align-items:center;">
+                            <label style="font-size:.78rem; opacity:.7;">Volume:</label>
+                            <input id="notice-vol" type="number" step="0.1" min="0.5" max="4.0" value="2.0" style="width:80px; text-align:center;">
+                            <span style="opacity:.45; font-size:.7rem;">(1.0 = normal, 2.0 = louder)</span>
+                        </div>
+                        <button onclick="adminAction('restart_notice')" class="btn-primary">Play TTS Notice</button>
+                        <div id="notice-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Reboot Bot -->
+            <div class="card">
+                <header><h2 style="font-size:.95rem; font-weight:600;">Reboot Bot</h2></header>
+                <section>
+                    <div class="grid gap-3">
+                        <p style="opacity:.6; font-size:.78rem; margin:0;">Plays a TTS reboot announcement in every voice channel Baxi is currently in, then exits the process. Your container/service must be configured to auto-restart.</p>
+                        <button onclick="adminAction('reboot')" class="btn-primary" style="background:rgba(239,68,68,.8);">Reboot Bot Now</button>
+                        <div id="reboot-result" class="action-result"></div>
+                    </div>
+                </section>
+            </div>
+
             <!-- Leave Server -->
             <div class="card">
                 <header><h2 style="font-size:.95rem; font-weight:600;">Leave Server</h2></header>
@@ -1730,6 +1761,23 @@ async function adminAction(action) {
         payload.percent     = parseInt(document.getElementById('bulk-percent').value) || 100;
         const r = await doAction(payload);
         setResult('bulk-result', r.message, r.ok);
+    } else if (action === 'restart_notice') {
+        const gid = document.getElementById('notice-gid').value.trim();
+        const vol = parseFloat(document.getElementById('notice-vol').value) || 2.0;
+        const msg = document.getElementById('notice-msg').value.trim();
+        if (gid) payload.guild_id = gid;
+        if (msg) payload.message = msg;
+        payload.volume = vol;
+        const scope = gid ? `guild ${gid}` : 'ALL servers';
+        const msgPreview = msg ? `\nMessage: "${msg.slice(0, 80)}${msg.length > 80 ? '…' : ''}"` : '\n(default message)';
+        if (!confirm(`Play TTS on ${scope}? Music will be paused.${msgPreview}`)) return;
+        setResult('notice-result', 'Playing TTS…', true);
+        const r = await doAction(payload);
+        setResult('notice-result', r.message, r.ok);
+    } else if (action === 'reboot') {
+        if (!confirm('Reboot the bot now? Baxi will play a TTS announcement in voice channels, then exit.')) return;
+        const r = await doAction(payload);
+        setResult('reboot-result', r.message, r.ok);
     } else if (action === 'leave_server') {
         payload.guild_id = document.getElementById('leave-gid').value.trim();
         if (!confirm(`Really leave guild ${payload.guild_id}?`)) return;

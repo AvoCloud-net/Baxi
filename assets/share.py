@@ -13,6 +13,9 @@ temp_voice_channels: set = set()
 
 livestream_task = None
 
+# ── Music: per-guild MusicPlayer instances ────────────────────────────────────
+music_players: dict = {}   # guild_id -> MusicPlayer
+
 # ── Task instances (populated in on_ready) ────────────────────────────────────
 task_instances: dict = {}   # task_key -> task object
 
@@ -76,6 +79,12 @@ task_status: dict = {
         "status": "idle",
         "last_run": None,
         "detail": "Checks YouTube channels for new video uploads every 10 min",
+    },
+    "MusicIdle": {
+        "name": "Music Idle Watcher",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Disconnects music players from empty/idle voice channels every 30s",
     },
 }
 

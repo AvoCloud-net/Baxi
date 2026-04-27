@@ -306,6 +306,10 @@
                 <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                 Temp Voice
             </a>
+            <a href="#music" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                Music
+            </a>
             <a href="#reaction-roles" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 Button Roles
@@ -2101,7 +2105,15 @@
                             </svg>
                             DiscordGate
                         </h2>
-                        <p class="text-muted">Players must link their Discord before joining the Minecraft server. Discord: <code>/mc link</code> · In-game: <code>/dg</code>. Download the plugin on <a href="https://modrinth.com/plugin/discordgate" target="_blank" rel="noopener">Modrinth</a>.</p>
+                        <p class="text-muted">Players must link their Discord before joining the Minecraft server. Discord: <code>/mc link</code> · In-game: <code>/dg</code>.</p>
+                        <a href="https://modrinth.com/plugin/discordgate" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex;align-items:center;gap:0.5rem;margin-top:0.5rem;text-decoration:none;width:fit-content;">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:1em;height:1em;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Download plugin on Modrinth
+                        </a>
                     </header>
                     <section>
                         <form id="mc-link-form" class="form grid gap-6 settings-form">
@@ -2148,7 +2160,7 @@
                             </div>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Announce channel (optional):</label>
+                                <label class="text-sm font-medium">Link notification channel <span class="text-muted">(optional)</span></label>
                                 <p class="text-muted text-xs">Post a public message in this channel when a member links their account.</p>
                                 <select id="mcl-announce-channel" class="input">
                                     <option value="">— None —</option>
@@ -2175,8 +2187,8 @@
                             </div>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Announcement channel <span class="text-muted">(optional)</span></label>
-                                <p class="text-muted text-xs">Post server announcements from <code>/mcannounce</code> to this Discord channel.</p>
+                                <label class="text-sm font-medium">Server announcement channel <span class="text-muted">(optional)</span></label>
+                                <p class="text-muted text-xs">Relay in-game announcements from <code>/mcannounce</code> to this Discord channel.</p>
                                 <select id="mcl-announcement-channel" class="input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
@@ -2645,6 +2657,77 @@
                 </div>
             </section>
 
+            <!-- Music -->
+            <section class="pb-16 dash-section" id="music">
+                <div class="section-label">MUSIC</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            Music
+                        </h2>
+                        <p class="text-muted">Play YouTube/SoundCloud songs and live radio streams (Hitradio Ö3, KroneHit, FM4) in voice channels via <code>/music</code>.</p>
+                    </header>
+                    <section>
+                        <form id="music-form" class="form grid gap-6 settings-form">
+                            <div class="grid gap-2">
+                                <label>Allowed sources:</label>
+                                <label><input type="checkbox" id="music-src-youtube"> YouTube</label>
+                                <label><input type="checkbox" id="music-src-soundcloud"> SoundCloud</label>
+                                <label><input type="checkbox" id="music-src-radio"> Live Radio</label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="music-queue-limit">Queue limit (1–500):</label>
+                                <input type="number" id="music-queue-limit" class="input w-full" min="1" max="500" value="50">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="music-default-volume">Default volume (0–200):</label>
+                                <input type="number" id="music-default-volume" class="input w-full" min="0" max="200" value="100">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="music-max-song-duration">Max track duration in seconds (0 = unlimited):</label>
+                                <input type="number" id="music-max-song-duration" class="input w-full" min="0" max="36000" value="600">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="music-disconnect-timeout">Auto-disconnect after idle seconds (30–7200):</label>
+                                <input type="number" id="music-disconnect-timeout" class="input w-full" min="30" max="7200" value="300">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="music-allow-all-radios" role="switch">
+                                    <span class="font-medium">Allow all radio URLs (skip whitelist)</span>
+                                </label>
+                                <p class="text-xs text-muted">If enabled, any custom URL can be played via <code>/music radio custom_url:&lt;url&gt;</code> -  the whitelist below is ignored.</p>
+                            </div>
+
+                            <div class="grid gap-2" id="music-radio-whitelist-group">
+                                <label for="music-radio-whitelist-input">Custom radio URL whitelist:</label>
+                                <input type="text" id="music-radio-whitelist-input" placeholder="Type a stream URL and press Enter (e.g. https://example.com/stream.mp3)">
+                                <div id="music-radio-whitelist_container" class="tag-input-container"></div>
+                                <p class="text-xs text-muted">Allows custom URLs for <code>/music radio custom_url:&lt;url&gt;</code>. Presets always work.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Minigames -->
             <section class="pb-16 dash-section" id="minigames">
                 <div class="section-label">MINIGAMES</div>
@@ -3020,7 +3103,7 @@
                 '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
                 '__Community',
-                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
+                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 '__Automation',
                 'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds', 'auto-release'
             ];
@@ -3093,6 +3176,19 @@
         });
         document.getElementById('c_badwords_input').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); addTag('c_badwords', this.value.trim()); this.value = ''; }
+        });
+        document.getElementById('music-radio-whitelist-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const v = this.value.trim();
+                if (v && /^https?:\/\//i.test(v)) {
+                    addTag('music-radio-whitelist', v);
+                    this.value = '';
+                }
+            }
+        });
+        document.getElementById('music-allow-all-radios').addEventListener('change', function () {
+            document.getElementById('music-radio-whitelist-group').style.display = this.checked ? 'none' : '';
         });
 
         function createDynamicFields() {
@@ -3249,6 +3345,23 @@
                 document.getElementById('tv-create-channel').value = data.temp_voice.create_channel_id || '';
                 document.getElementById('tv-category').value = data.temp_voice.category_id || '';
                 document.getElementById('tv-name-template').value = data.temp_voice.name_template || "{user}'s Channel";
+            }
+
+            // Music
+            if (data.music) {
+                const allowed = Array.isArray(data.music.allowed_sources) ? data.music.allowed_sources : ['youtube', 'soundcloud', 'radio'];
+                document.getElementById('music-src-youtube').checked = allowed.includes('youtube');
+                document.getElementById('music-src-soundcloud').checked = allowed.includes('soundcloud');
+                document.getElementById('music-src-radio').checked = allowed.includes('radio');
+                document.getElementById('music-queue-limit').value = data.music.queue_limit ?? 50;
+                document.getElementById('music-default-volume').value = data.music.default_volume ?? 100;
+                document.getElementById('music-max-song-duration').value = data.music.max_song_duration ?? 600;
+                document.getElementById('music-disconnect-timeout').value = data.music.disconnect_timeout ?? 300;
+                const allowAll = data.music.allow_all_radios === true;
+                document.getElementById('music-allow-all-radios').checked = allowAll;
+                const wl = Array.isArray(data.music.radio_whitelist) ? data.music.radio_whitelist : [];
+                renderTags('music-radio-whitelist', wl);
+                document.getElementById('music-radio-whitelist-group').style.display = allowAll ? 'none' : '';
             }
 
             // Custom Commands
@@ -4385,6 +4498,38 @@
             const payload = { temp_voice: { enabled, create_channel_id, category_id, name_template } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=temp_voice&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('music-form').onsubmit = function (event) {
+            event.preventDefault();
+            const allowed = [];
+            if (document.getElementById('music-src-youtube').checked) allowed.push('youtube');
+            if (document.getElementById('music-src-soundcloud').checked) allowed.push('soundcloud');
+            if (document.getElementById('music-src-radio').checked) allowed.push('radio');
+            const wl = getTags('music-radio-whitelist');
+            const payload = { music: {
+                queue_limit: parseInt(document.getElementById('music-queue-limit').value, 10) || 50,
+                default_volume: parseInt(document.getElementById('music-default-volume').value, 10) || 100,
+                max_song_duration: parseInt(document.getElementById('music-max-song-duration').value, 10) || 0,
+                disconnect_timeout: parseInt(document.getElementById('music-disconnect-timeout').value, 10) || 300,
+                allowed_sources: allowed,
+                radio_whitelist: wl,
+                allow_all_radios: document.getElementById('music-allow-all-radios').checked,
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=music&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {

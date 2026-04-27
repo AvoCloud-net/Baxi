@@ -5,6 +5,7 @@ time.tzset()
 
 import asyncio
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -37,6 +38,7 @@ class PersistentViewBot(commands.AutoShardedBot):
         intents.members = True
         intents.guilds = True
         intents.guild_messages = True
+        intents.voice_states = True
         super().__init__(
             command_prefix=str(
                 commands.when_mentioned_or(config.Discord.prefix)),
@@ -113,6 +115,37 @@ async def run_app():
     await web.run_task(port=config.Web.port, host=config.Web.host)
 
 
+_shutdown_started = False
+
+
+async def _graceful_shutdown():
+    global _shutdown_started
+    if _shutdown_started:
+        return
+    _shutdown_started = True
+    try:
+        from assets.music.announce import announce_reboot_in_voice_channels
+        await announce_reboot_in_voice_channels(bot)
+    except Exception as e:
+        logger.error(f"Reboot TTS announce failed: {type(e).__name__}: {e}")
+    try:
+        await bot.close()
+    except Exception:
+        pass
+
+
+def _install_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, lambda s=sig: asyncio.create_task(_graceful_shutdown()))
+        except (NotImplementedError, RuntimeError):
+            pass
+
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.gather(run_app(), run_bot()))
+    _install_signal_handlers(loop)
+    try:
+        loop.run_until_complete(asyncio.gather(run_app(), run_bot()))
+    except KeyboardInterrupt:
+        loop.run_until_complete(_graceful_shutdown())

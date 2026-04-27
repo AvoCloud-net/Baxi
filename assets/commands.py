@@ -327,6 +327,9 @@ def base_commands(bot: commands.AutoShardedBot):
             )
             await interaction.edit_original_response(embed=error_embed)
 
+    from assets.music import register_music_commands
+    register_music_commands(bot)
+
 
 def utility_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Utility commands loaded.")
