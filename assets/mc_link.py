@@ -101,6 +101,24 @@ async def admin_link_player(api_url: str, secret: str, mc_name: str, discord_id:
         return None
 
 
+async def send_chat_in(api_url: str, secret: str, discord_id: int, discord_name: str, mc_name: str, content: str) -> bool:
+    """POST /dg/chat-in → bool success. Relays a Discord message to MC players."""
+    url = f"{api_url.rstrip('/')}/dg/chat-in"
+    payload = {
+        "discord_id": str(discord_id),
+        "discord_name": discord_name,
+        "mc_name": mc_name,
+        "message": content,
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                return resp.status == 200
+    except Exception as e:
+        logger.error(f"[mc_link] send_chat_in failed: {e}")
+        return False
+
+
 async def remove_link(guild_id: int, discord_id: int):
     async with _lock:
         gid = str(guild_id)

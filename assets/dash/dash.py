@@ -1490,6 +1490,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if not re.fullmatch(r"[@a-zA-Z0-9_.\-]{2,64}", login):
                     return quart.jsonify({"success": False, "message": "Invalid YouTube channel handle or ID."}), 400
 
+                alert_channel_id = str(yv_data.get("alert_channel", "")).strip()
+                if not alert_channel_id or not re.fullmatch(r"\d{17,19}", alert_channel_id):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel is required."}), 400
+
                 yv_config = dict(load_data(int(guild_id), "youtube_videos"))
                 channels = yv_config.get("channels", [])
 
@@ -1516,6 +1520,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "handle":            handle,
                     "profile_image_url": profile_image_url,
                     "last_video_id":     "",
+                    "alert_channel":     alert_channel_id,
                 })
                 yv_config["channels"] = channels
                 save_data(int(guild_id), "youtube_videos", yv_config)
@@ -1539,6 +1544,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "display_name":      display_name,
                         "handle":            handle,
                         "profile_image_url": profile_image_url,
+                        "alert_channel":     alert_channel_id,
                     },
                 })
 
@@ -1570,6 +1576,35 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 audit_log.append(audit_log_new)
                 save_data(int(guild_id), "audit_log", audit_log)
                 return quart.jsonify({"success": True, "message": "Channel removed."})
+
+            elif action == "update_channel":
+                channel_id_to_update = str(yv_data.get("channel_id", "")).strip()
+                new_alert_channel    = str(yv_data.get("alert_channel", "")).strip()
+                if not channel_id_to_update:
+                    return quart.jsonify({"success": False, "message": "channel_id is required."}), 400
+                if not new_alert_channel or not re.fullmatch(r"\d{17,19}", new_alert_channel):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel ID is required."}), 400
+
+                yv_config = dict(load_data(int(guild_id), "youtube_videos"))
+                entry = next((c for c in yv_config.get("channels", []) if c.get("channel_id") == channel_id_to_update), None)
+                if not entry:
+                    return quart.jsonify({"success": False, "message": "Channel not found."}), 404
+
+                entry["alert_channel"] = new_alert_channel
+                save_data(int(guild_id), "youtube_videos", yv_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save",
+                    "user": user.name,
+                    "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                    "sys": "youtube_videos",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Alert channel updated."})
 
             elif action == "save":
                 if not isinstance(yv_data.get("enabled"), bool):
@@ -2223,10 +2258,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             allow_self_unlink = bool(mcl.get("allow_self_unlink", True))
             announcement_channel = str(mcl.get("announcement_channel", "")).strip()
             dm_announcements = bool(mcl.get("dm_announcements", False))
+            chat_enabled = bool(mcl.get("chat_enabled", False))
+            chat_channel = str(mcl.get("chat_channel", "")).strip()
+            chat_webhook_new = str(mcl.get("chat_webhook_url", "")).strip()
 
-            # Keep existing secret if blank was submitted (placeholder shown)
+            # Keep existing secret/webhook if blank was submitted (placeholder shown)
             existing_conf = load_data(int(guild_id), "mc_link")
             api_secret = api_secret_new if api_secret_new else existing_conf.get("api_secret", "")
+            chat_webhook_url = chat_webhook_new if chat_webhook_new else existing_conf.get("chat_webhook_url", "")
 
             if mcl["enabled"] and (not api_url or not api_secret):
                 return quart.jsonify({"success": False, "message": "API URL and secret are required when enabled."}), 400
@@ -2236,6 +2275,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Invalid announce channel ID."}), 400
             if announcement_channel and not re.fullmatch(r"\d{17,19}", announcement_channel):
                 return quart.jsonify({"success": False, "message": "Invalid announcement channel ID."}), 400
+            if chat_channel and not re.fullmatch(r"\d{17,19}", chat_channel):
+                return quart.jsonify({"success": False, "message": "Invalid chat channel ID."}), 400
+            if chat_enabled and (not chat_channel or not chat_webhook_url):
+                return quart.jsonify({"success": False, "message": "Bridge channel and webhook URL are required when cross-chat is enabled."}), 400
+            if chat_webhook_url and not re.match(r"^https://(?:canary\.|ptb\.)?discord\.com/api/webhooks/", chat_webhook_url, re.IGNORECASE):
+                return quart.jsonify({"success": False, "message": "Webhook URL must start with https://discord.com/api/webhooks/"}), 400
 
             settings = {
                 "enabled": mcl["enabled"],
@@ -2247,6 +2292,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "allow_self_unlink": allow_self_unlink,
                 "announcement_channel": announcement_channel,
                 "dm_announcements": dm_announcements,
+                "chat_enabled": chat_enabled,
+                "chat_channel": chat_channel,
+                "chat_webhook_url": chat_webhook_url,
             }
             save_data(int(guild_id), "mc_link", settings)
 
@@ -3008,6 +3056,161 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     pass
 
         return quart.jsonify({"success": True, "removed": removed}), 200
+
+    @app.route("/dg/chat-out", methods=["POST"])
+    async def mc_chat_out():
+        auth_h = quart.request.headers.get("Authorization", "")
+        if not auth_h.startswith("Bearer "):
+            return quart.jsonify({"error": "Unauthorized"}), 401
+        provided_secret = auth_h[len("Bearer "):]
+
+        body = await quart.request.get_json(silent=True)
+        if not body:
+            return quart.jsonify({"error": "Invalid body"}), 400
+        sender_uuid: str = (body.get("uuid") or "").strip()
+        sender_mc_name: str = (body.get("mc_name") or "Unknown").strip() or "Unknown"
+        message: str = (body.get("message") or "").strip()
+        if not message:
+            return quart.jsonify({"error": "Empty message"}), 400
+
+        # Strip mass mentions (defense-in-depth; AllowedMentions.none() also blocks)
+        safe_message = message.replace("@everyone", "@​everyone").replace("@here", "@​here")
+
+        import os as _os, json as _json
+        matched = []
+        for entry in _os.listdir("data"):
+            if not entry.isdigit():
+                continue
+            conf_path = _os.path.join("data", entry, "conf.json")
+            if not _os.path.exists(conf_path):
+                continue
+            try:
+                with open(conf_path) as f:
+                    conf = _json.load(f)
+                mcl = conf.get("mc_link", {})
+                if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
+                    matched.append((int(entry), mcl))
+            except Exception:
+                continue
+
+        if not matched:
+            return quart.jsonify({"error": "Unauthorized"}), 401
+
+        from assets.mc_link import _links
+
+        delivered = 0
+        for guild_id_int, mcl_conf in matched:
+            if not mcl_conf.get("chat_enabled", False):
+                continue
+            webhook_url = (mcl_conf.get("chat_webhook_url") or "").strip()
+            if not webhook_url:
+                continue
+
+            # Resolve linked Discord user via UUID → discord_id
+            sender_discord_id: str | None = None
+            for dc_id, link_data in _links.get(str(guild_id_int), {}).items():
+                if link_data.get("uuid") == sender_uuid:
+                    sender_discord_id = dc_id
+                    break
+
+            display_name = sender_mc_name
+            avatar_url: str | None = None
+            if sender_discord_id:
+                guild = bot.get_guild(guild_id_int)
+                if guild:
+                    member = guild.get_member(int(sender_discord_id))
+                    if member:
+                        display_name = member.display_name
+                        avatar_url = member.display_avatar.url
+
+            # Suffix makes it obvious the message came from Minecraft, not from a
+            # Discord client posing as the user. Discord caps webhook usernames at
+            # 80 chars so trim if needed.
+            webhook_name = f"{display_name} · MC ({sender_mc_name})"
+            if len(webhook_name) > 80:
+                webhook_name = (display_name[:60] + "…") + " · MC"
+
+            try:
+                async with aiohttp.ClientSession() as session:
+                    webhook = discord.Webhook.from_url(webhook_url, session=session)
+                    await webhook.send(
+                        content=safe_message,
+                        username=webhook_name,
+                        avatar_url=avatar_url,
+                        allowed_mentions=discord.AllowedMentions.none(),
+                    )
+                delivered += 1
+            except Exception as e:
+                print(f"[dg chat-out] webhook send failed for guild {guild_id_int}: {e}")
+
+        return quart.jsonify({"success": True, "delivered": delivered}), 200
+
+    @app.route("/dg/event", methods=["POST"])
+    async def mc_event():
+        auth_h = quart.request.headers.get("Authorization", "")
+        if not auth_h.startswith("Bearer "):
+            return quart.jsonify({"error": "Unauthorized"}), 401
+        provided_secret = auth_h[len("Bearer "):]
+
+        body = await quart.request.get_json(silent=True)
+        if not body:
+            return quart.jsonify({"error": "Invalid body"}), 400
+        ev_type: str = (body.get("type") or "").strip().lower()
+        text: str = (body.get("text") or "").strip()
+        if ev_type not in ("join", "quit", "death") or not text:
+            return quart.jsonify({"error": "Invalid type or empty text"}), 400
+
+        # Defense-in-depth: AllowedMentions.none() also blocks pings
+        safe_text = text.replace("@everyone", "@​everyone").replace("@here", "@​here")
+
+        # Replace any leading shortcode emoji (e.g. :inbox_tray:, :skull:) coming from
+        # the plugin with our guild's custom emoji so the bridge channel feels native.
+        import re as _re
+        type_icon = {"join": config.Icons.enter, "quit": config.Icons.leave, "death": config.Icons.skull}.get(ev_type, "")
+        safe_text = _re.sub(r"^\s*:[a-z0-9_+\-]+:\s*", "", safe_text)
+        if type_icon:
+            safe_text = f"{type_icon} {safe_text}"
+
+        import os as _os, json as _json
+        matched = []
+        for entry in _os.listdir("data"):
+            if not entry.isdigit():
+                continue
+            conf_path = _os.path.join("data", entry, "conf.json")
+            if not _os.path.exists(conf_path):
+                continue
+            try:
+                with open(conf_path) as f:
+                    conf = _json.load(f)
+                mcl = conf.get("mc_link", {})
+                if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
+                    matched.append((int(entry), mcl))
+            except Exception:
+                continue
+
+        if not matched:
+            return quart.jsonify({"error": "Unauthorized"}), 401
+
+        delivered = 0
+        for guild_id_int, mcl_conf in matched:
+            if not mcl_conf.get("chat_enabled", False):
+                continue
+            chat_channel_id = str(mcl_conf.get("chat_channel", "")).strip()
+            if not chat_channel_id:
+                continue
+            try:
+                guild = bot.get_guild(guild_id_int)
+                if not guild:
+                    continue
+                channel = guild.get_channel(int(chat_channel_id))
+                if not channel:
+                    continue
+                await channel.send(content=safe_text, allowed_mentions=discord.AllowedMentions.none())
+                delivered += 1
+            except Exception as e:
+                print(f"[dg event] send failed for guild {guild_id_int}: {e}")
+
+        return quart.jsonify({"success": True, "delivered": delivered}), 200
 
     @app.route("/check/channel/perms/", methods=["POST"])
     async def check_channel_perms():

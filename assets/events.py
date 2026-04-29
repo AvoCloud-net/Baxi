@@ -384,6 +384,7 @@ def events(bot: commands.AutoShardedBot, web):
         asyncio.create_task(process_message(message, bot))
         asyncio.create_task(handle_sticky_message(message, bot))
         asyncio.create_task(handle_auto_release(message))
+        asyncio.create_task(_mc_chat_bridge(message))
 
     @bot.event
     async def on_message_delete(message: discord.Message):
@@ -1059,3 +1060,54 @@ async def del_chatfilter(
                 user=message.author.mention
             )
         )
+
+
+async def _mc_chat_bridge(message):
+    """Relay Discord messages from the bridge channel to MC. Drops unlinked authors silently."""
+    try:
+        import discord as _discord
+        if message.guild is None or message.author.bot:
+            return
+        if not isinstance(message.channel, (_discord.TextChannel, _discord.Thread)):
+            return
+        conf = dict(datasys.load_data(message.guild.id, "conf")) if False else None
+        # conf.json is read directly
+        import json as _json, os as _os
+        conf_path = _os.path.join("data", str(message.guild.id), "conf.json")
+        if not _os.path.exists(conf_path):
+            return
+        with open(conf_path) as f:
+            conf = _json.load(f)
+        mcl = conf.get("mc_link", {})
+        if not mcl.get("enabled") or not mcl.get("chat_enabled", False):
+            return
+        chat_channel_id = str(mcl.get("chat_channel", "")).strip()
+        if not chat_channel_id or str(message.channel.id) != chat_channel_id:
+            return
+
+        api_url = (mcl.get("api_url") or "").strip()
+        api_secret = (mcl.get("api_secret") or "").strip()
+        if not api_url or not api_secret:
+            return
+
+        from assets.mc_link import get_link, send_chat_in
+        link = get_link(message.guild.id, message.author.id)
+        if not link:
+            return  # unlinked: drop silently per design
+
+        content = (message.clean_content or "").strip()
+        if not content:
+            return
+        await send_chat_in(
+            api_url=api_url,
+            secret=api_secret,
+            discord_id=message.author.id,
+            discord_name=message.author.display_name,
+            mc_name=link.get("name", "?"),
+            content=content,
+        )
+    except Exception as e:
+        try:
+            logger.error(f"[mc-chat-bridge] error: {e}")
+        except Exception:
+            pass

@@ -1022,41 +1022,42 @@ class YouTubeVideoTask:
                     logger.error(f"[YouTubeVideos] Error processing guild {guild.id}: {e}")
 
     async def _check_guild(self, session: aiohttp.ClientSession, guild, video_cache: dict, channel_list: list, yv_config: dict) -> bool:
-        alert_channel_id = str(yv_config.get("alert_channel", "")).strip()
-        if not alert_channel_id:
-            return False
-
-        try:
-            alert_channel = guild.get_channel(int(alert_channel_id))
-        except (ValueError, TypeError):
-            return False
-
-        # Fallback: try fetching from API if not in cache
-        if not alert_channel:
-            try:
-                alert_channel = await self.bot.fetch_channel(int(alert_channel_id))
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                return False
-
-        if not alert_channel:
-            return False
-
-        if not isinstance(alert_channel, discord.TextChannel):
-            return False
-
-        # Check bot permissions
-        if not alert_channel.permissions_for(guild.me).send_messages:
-            logger.error(f"[YouTubeVideos] Bot lacks 'Send Messages' permission in alert channel {alert_channel.name} ({alert_channel_id}) in {guild.name}")
-            return False
-
+        global_alert_channel_id = str(yv_config.get("alert_channel", "")).strip()
         ping_role_id = str(yv_config.get("ping_role", "")).strip()
         changed = False
 
         lang = datasys.load_lang_file(guild.id)
         yv_lang = lang.get("systems", {}).get("youtube_videos", {})
 
+        # Cache resolved Discord channel objects to avoid duplicate fetches
+        resolved_channels: dict = {}
+
         for ch_entry, channel_id in channel_list:
             try:
+                # Resolve per-channel alert channel, fall back to global
+                per_alert = str(ch_entry.get("alert_channel", "")).strip()
+                alert_channel_id = per_alert or global_alert_channel_id
+                if not alert_channel_id:
+                    logger.warning(f"[YouTubeVideos] No alert channel for {channel_id} in {guild.name}, skipping")
+                    continue
+
+                if alert_channel_id not in resolved_channels:
+                    try:
+                        alert_ch = guild.get_channel(int(alert_channel_id))
+                        if not alert_ch:
+                            alert_ch = await self.bot.fetch_channel(int(alert_channel_id))
+                    except (ValueError, TypeError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        alert_ch = None
+                    resolved_channels[alert_channel_id] = alert_ch
+
+                alert_channel = resolved_channels[alert_channel_id]
+                if not alert_channel or not isinstance(alert_channel, discord.TextChannel):
+                    logger.error(f"[YouTubeVideos] Alert channel {alert_channel_id} not found or not a text channel in {guild.name}")
+                    continue
+                if not alert_channel.permissions_for(guild.me).send_messages:
+                    logger.error(f"[YouTubeVideos] Bot lacks 'Send Messages' permission in alert channel {alert_channel.name} ({alert_channel_id}) in {guild.name}")
+                    continue
+
                 # Use cached video instead of fetching again
                 video = video_cache.get(channel_id)
                 if video is None:
@@ -1155,7 +1156,6 @@ class YouTubeVideoTask:
                         f"[YouTubeVideos] Unexpected error sending to {alert_channel.name} ({alert_channel_id}) "
                         f"in guild {guild.id}: {type(e).__name__}: {e}"
                     )
-
 
             except Exception as e:
                 logger.error(

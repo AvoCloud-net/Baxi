@@ -84,6 +84,74 @@
             0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
             40% { opacity: 1; transform: scale(1); }
         }
+
+        /* Nav search */
+        .nav-search {
+            position: relative;
+            flex: 1;
+            max-width: 260px;
+        }
+        .nav-search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: color-mix(in srgb, currentColor 7%, transparent);
+            border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
+            border-radius: var(--radius-md, 0.5rem);
+            padding: 0.3rem 0.7rem;
+            transition: border-color 0.15s;
+        }
+        .nav-search-wrap:focus-within {
+            border-color: var(--color-primary, #6F83AA);
+        }
+        .nav-search-ico {
+            width: 14px; height: 14px;
+            opacity: 0.45; flex-shrink: 0;
+            stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        #nav-search-input {
+            background: transparent; border: none; outline: none;
+            font-size: 0.8rem; color: inherit; width: 100%; min-width: 0;
+        }
+        #nav-search-input::placeholder { opacity: 0.4; }
+        .nav-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0; right: 0;
+            background: var(--card, var(--background, canvas));
+            border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
+            border-radius: var(--radius-md, 0.5rem);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+            z-index: 9999;
+            list-style: none; margin: 0; padding: 0.3rem;
+            max-height: 340px; overflow-y: auto;
+        }
+        .nav-search-results.hidden { display: none; }
+        .nav-search-item {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.45rem 0.7rem;
+            border-radius: calc(var(--radius-md, 0.5rem) - 2px);
+            cursor: pointer; font-size: 0.82rem; color: inherit;
+            transition: background 0.1s;
+        }
+        .nav-search-item:hover,
+        .nav-search-item.ns-active {
+            background: color-mix(in srgb, currentColor 8%, transparent);
+        }
+        .nav-search-item svg {
+            width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6;
+            stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .nav-search-group {
+            font-size: 0.68rem; opacity: 0.4; text-transform: uppercase;
+            letter-spacing: 0.07em; padding: 0.4rem 0.7rem 0.15rem;
+        }
+        .nav-search-empty {
+            padding: 0.6rem 0.7rem; font-size: 0.82rem; opacity: 0.45; text-align: center;
+        }
+        @media (max-width: 700px) { .nav-search { display: none; } }
     </style>
 </head>
 
@@ -132,6 +200,13 @@
             <span id="dash-nav-current">Navigate</span>
             <svg class="dash-nav-toggle__chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
         </button>
+        <div class="nav-search" id="nav-search">
+            <div class="nav-search-wrap">
+                <svg class="nav-search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="nav-search-input" placeholder="Search settings…" autocomplete="off" aria-label="Search settings" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+            </div>
+            <ul class="nav-search-results hidden" id="nav-search-results" role="listbox"></ul>
+        </div>
         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
             <svg id="theme-icon" viewBox="0 0 24 24"></svg>
         </button>
@@ -2205,6 +2280,34 @@
                                 <p class="text-muted text-xs mt-1">DM every linked Discord user when an admin runs <code>/mcannounce</code>.</p>
                             </div>
 
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">CROSS-CHAT</div>
+                            <p class="text-muted text-xs">Bridge in-game chat with a Discord channel. Linked players appear under their Discord display name (via webhook). Discord messages from linked users show in MC as <code>[DC] &lt;mc_name&gt; (&lt;discord_name&gt;): …</code>. Messages from unlinked Discord users are dropped.</p>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-chat-enabled" role="switch">
+                                    <span class="font-medium">Enable MC ↔ Discord cross-chat</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Bridge channel <span class="text-muted">(required for chat)</span></label>
+                                <p class="text-muted text-xs">The Discord channel where chat is mirrored. The webhook below must target this channel.</p>
+                                <select id="mcl-chat-channel" class="input">
+                                    <option value="">— None —</option>
+                                    {% for channel_id, channel_name in channels.items() %}
+                                    <option value="{{ channel_id }}">#{{ channel_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium" for="mcl-chat-webhook-url">Channel webhook URL</label>
+                                <p class="text-muted text-xs">Create a webhook in the bridge channel (Edit Channel → Integrations → Webhooks → New Webhook → Copy URL). Used so MC players appear under their own Discord display name + avatar.</p>
+                                <input type="text" id="mcl-chat-webhook-url" class="input" placeholder="https://discord.com/api/webhooks/...">
+                            </div>
+
                             <button type="submit" class="btn-primary submit-btn w-full">
                                 <span class="btn-text">
                                     <svg class="lucide" viewBox="0 0 24 24">
@@ -2379,11 +2482,23 @@
 
                         <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
                             <h4 class="text-sm font-semibold">Add Channel</h4>
+                            <div class="grid gap-2">
+                                <label for="yvid-add-alert-channel">Alert channel:</label>
+                                <select id="yvid-add-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="flex gap-2">
-                                <input type="text" id="yvid-add-login" placeholder="@handle or UCxxx channel ID" class="flex-1" maxlength="64">
+                                <input type="text" id="yvid-add-login" placeholder="@handle or UCxxx channel ID" class="input flex-1" maxlength="64">
                                 <button type="button" class="btn-primary" id="yvid-add-btn" onclick="yvidAddChannel()">
-                                    <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    Add
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                 </button>
                             </div>
                             <p class="text-muted text-xs">Enter a channel handle (e.g. "@mkbhd") or channel ID (UCxxx). The first check will seed the latest video without sending a notification.</p>
@@ -3132,6 +3247,7 @@
         const data = {{ data | tojson }};
         const nick = {{ nick | tojson }};
         const rolePositions = {{ roles_positions | tojson }};
+        const DISCORD_CHANNELS = { {% for id, name in channels.items() %}"{{ id }}": "#{{ name }}"{% if not loop.last %}, {% endif %}{% endfor %} };
         const botTopRolePos = {{ bot_top_role_pos }};
 
         const parseWords = input => input.split(',').map(w => w.trim()).filter(w => w.length > 0);
@@ -3450,6 +3566,9 @@
                 document.getElementById('mcl-allow-self-unlink').checked = data.mc_link.allow_self_unlink !== false;
                 document.getElementById('mcl-announcement-channel').value = data.mc_link.announcement_channel || '';
                 document.getElementById('mcl-dm-announcements').checked = data.mc_link.dm_announcements === true;
+                document.getElementById('mcl-chat-enabled').checked = data.mc_link.chat_enabled === true;
+                document.getElementById('mcl-chat-channel').value = data.mc_link.chat_channel || '';
+                document.getElementById('mcl-chat-webhook-url').value = data.mc_link.chat_webhook_url ? '••••••••' : '';
             }
 
             // Sticky Messages
@@ -3705,6 +3824,15 @@
                 const profileUrl = ch.handle
                     ? 'https://www.youtube.com/@' + ch.handle
                     : 'https://www.youtube.com/channel/' + ch.channel_id;
+                const safeId = ch.channel_id.replace(/'/g, "\\'");
+
+                // Build channel dropdown options
+                let channelOptions = '<option value="">-- Select a channel --</option>';
+                Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
+                    const selected = (ch.alert_channel === cid) ? ' selected' : '';
+                    channelOptions += '<option value="' + cid + '"' + selected + '>' + DISCORD_CHANNELS[cid] + '</option>';
+                });
+
                 const card = document.createElement('div');
                 card.className = 'card yvid-card';
                 card.innerHTML = '<header class="flex items-center justify-between">'
@@ -3717,10 +3845,20 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">' + profileUrl.replace('https://', '') + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="yvidRemoveChannel(\'' + ch.channel_id.replace(/'/g, "\\'") + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
-                    + '</header>';
+                    + '</header>'
+                    + '<div class="grid gap-2 mt-3 px-4 pb-4">'
+                    + '<label class="text-sm">Alert channel:</label>'
+                    + '<div class="flex items-center gap-2">'
+                    + '<select class="select flex-1 yvid-channel-select" data-id="' + safeId + '">' + channelOptions + '</select>'
+                    + '<button type="button" class="btn-primary yvid-save-btn" data-id="' + safeId + '" onclick="yvidUpdateChannel(\'' + safeId + '\')">'
+                    + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
+                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>';
                 list.appendChild(card);
             });
         }
@@ -3729,10 +3867,14 @@
             const input = document.getElementById('yvid-add-login');
             const login = input.value.trim();
             if (!login) return;
+            const alertChannelSel = document.getElementById('yvid-add-alert-channel');
+            const alertChannel = alertChannelSel ? alertChannelSel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel first.'); return; }
             const btn = document.getElementById('yvid-add-btn');
             btn.disabled = true;
-            btn.textContent = 'Adding...';
-            const payload = { youtube_videos: { action: 'add', login: login } };
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            const payload = { youtube_videos: { action: 'add', login: login, alert_channel: alertChannel } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=youtube_videos&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -3740,15 +3882,17 @@
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     btn.disabled = false;
-                    btn.innerHTML = '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add';
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
                     try {
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
                         if (resp.success && resp.channel) {
                             if (!data.youtube_videos) data.youtube_videos = { enabled: false, alert_channel: '', ping_role: '', channels: [] };
                             if (!Array.isArray(data.youtube_videos.channels)) data.youtube_videos.channels = [];
-                            data.youtube_videos.channels.push(Object.assign({}, resp.channel, { last_video_id: '' }));
+                            data.youtube_videos.channels.push(Object.assign({}, resp.channel, { last_video_id: '', alert_channel: alertChannel }));
                             input.value = '';
+                            if (alertChannelSel) alertChannelSel.value = '';
                             yvidRenderChannels();
                         }
                     } catch (e) {
@@ -3787,6 +3931,42 @@
                                 function (c) { return c.channel_id !== channelId; }
                             );
                             yvidRenderChannels();
+                        }
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        }
+
+        function yvidUpdateChannel(channelId) {
+            const sel = document.querySelector('.yvid-channel-select[data-id="' + channelId + '"]');
+            const btn = document.querySelector('.yvid-save-btn[data-id="' + channelId + '"]');
+            const alertChannel = sel ? sel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel.'); return; }
+            if (btn) {
+                btn.disabled = true;
+                btn.querySelector('.spinner')?.classList.remove('hidden');
+                btn.querySelector('.btn-text')?.classList.add('hidden');
+            }
+            const payload = { youtube_videos: { action: 'update_channel', channel_id: channelId, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=youtube_videos&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.querySelector('.spinner')?.classList.add('hidden');
+                        btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.youtube_videos) {
+                            const entry = data.youtube_videos.channels.find(function (c) { return c.channel_id === channelId; });
+                            if (entry) entry.alert_channel = alertChannel;
                         }
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
@@ -4371,7 +4551,19 @@
             const allow_self_unlink = document.getElementById('mcl-allow-self-unlink').checked;
             const announcement_channel = document.getElementById('mcl-announcement-channel').value;
             const dm_announcements = document.getElementById('mcl-dm-announcements').checked;
-            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink, announcement_channel, dm_announcements } };
+            const chat_enabled = document.getElementById('mcl-chat-enabled').checked;
+            const chat_channel = document.getElementById('mcl-chat-channel').value;
+            const chat_webhook_raw = document.getElementById('mcl-chat-webhook-url').value;
+            const chat_webhook_url = chat_webhook_raw === '••••••••' ? null : chat_webhook_raw.trim();
+            if (chat_enabled && !chat_channel) {
+                showSaveToast(false, 'Pick a bridge channel before enabling cross-chat.');
+                return;
+            }
+            if (chat_enabled && chat_webhook_url !== null && chat_webhook_url && !/^https:\/\/(?:canary\.|ptb\.)?discord\.com\/api\/webhooks\//i.test(chat_webhook_url)) {
+                showSaveToast(false, 'Webhook URL must start with https://discord.com/api/webhooks/');
+                return;
+            }
+            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink, announcement_channel, dm_announcements, chat_enabled, chat_channel, chat_webhook_url: chat_webhook_url !== null ? chat_webhook_url : '' } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mc_link&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -6079,6 +6271,122 @@
             const loader = document.getElementById('page-loader');
             if (loader) loader.classList.add('hidden');
         });
+    </script>
+
+    <script>
+        (function () {
+            // Build index from nav items (internal #anchor links only)
+            const NAV_INDEX = [];
+            let currentGroup = '';
+            document.querySelectorAll('#dash-nav .dash-nav-group-label, #dash-nav .dash-nav-item').forEach(function (el) {
+                if (el.classList.contains('dash-nav-group-label')) {
+                    currentGroup = el.textContent.trim();
+                } else {
+                    const href = el.getAttribute('href') || '';
+                    if (!href.startsWith('#')) return;
+                    const svg = el.querySelector('svg') ? el.querySelector('svg').outerHTML : '';
+                    const label = el.textContent.trim();
+                    NAV_INDEX.push({ label: label, href: href, group: currentGroup, svg: svg });
+                }
+            });
+
+            const input   = document.getElementById('nav-search-input');
+            const results = document.getElementById('nav-search-results');
+            let activeIdx = -1;
+            let filtered  = [];
+
+            function renderResults(query) {
+                results.innerHTML = '';
+                activeIdx = -1;
+                const q = query.trim().toLowerCase();
+                if (!q) { results.classList.add('hidden'); return; }
+
+                filtered = NAV_INDEX.filter(function (item) {
+                    return item.label.toLowerCase().includes(q) || item.group.toLowerCase().includes(q);
+                });
+
+                if (filtered.length === 0) {
+                    results.innerHTML = '<li class="nav-search-empty">No results for "' + escHtml(query) + '"</li>';
+                    results.classList.remove('hidden');
+                    return;
+                }
+
+                let lastGroup = null;
+                filtered.forEach(function (item, i) {
+                    if (item.group && item.group !== lastGroup) {
+                        const g = document.createElement('li');
+                        g.className = 'nav-search-group';
+                        g.textContent = item.group;
+                        results.appendChild(g);
+                        lastGroup = item.group;
+                    }
+                    const li = document.createElement('li');
+                    li.className = 'nav-search-item';
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('data-idx', i);
+                    li.innerHTML = item.svg + '<span>' + escHtml(item.label) + '</span>';
+                    li.addEventListener('mousedown', function (e) {
+                        e.preventDefault();
+                        navigateTo(item.href);
+                    });
+                    results.appendChild(li);
+                });
+                results.classList.remove('hidden');
+            }
+
+            function escHtml(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+
+            function setActive(idx) {
+                results.querySelectorAll('.nav-search-item').forEach(function (el) { el.classList.remove('ns-active'); });
+                activeIdx = idx;
+                if (idx < 0 || idx >= filtered.length) return;
+                const items = results.querySelectorAll('.nav-search-item');
+                if (items[idx]) {
+                    items[idx].classList.add('ns-active');
+                    items[idx].scrollIntoView({ block: 'nearest' });
+                }
+            }
+
+            function navigateTo(href) {
+                close();
+                const target = document.querySelector(href);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function close() {
+                results.classList.add('hidden');
+                results.innerHTML = '';
+                input.value = '';
+                activeIdx = -1;
+                filtered = [];
+            }
+
+            input.addEventListener('input', function () { renderResults(input.value); });
+            input.addEventListener('focus', function () { if (input.value.trim()) renderResults(input.value); });
+
+            input.addEventListener('keydown', function (e) {
+                const items = results.querySelectorAll('.nav-search-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActive(Math.min(activeIdx + 1, filtered.length - 1));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActive(Math.max(activeIdx - 1, 0));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIdx >= 0 && filtered[activeIdx]) navigateTo(filtered[activeIdx].href);
+                    else if (filtered.length === 1) navigateTo(filtered[0].href);
+                } else if (e.key === 'Escape') {
+                    close();
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!document.getElementById('nav-search').contains(e.target)) close();
+            });
+        })();
     </script>
 
 <dialog id="remove-yvid-dialog" class="dialog" aria-labelledby="remove-yvid-dialog-title" aria-describedby="remove-yvid-dialog-description">
