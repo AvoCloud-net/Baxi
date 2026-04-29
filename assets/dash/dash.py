@@ -1794,11 +1794,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(m_data, dict):
                 return quart.jsonify({"success": False, "message": "Invalid data format: 'music' must be an object."}), 400
 
+            existing_music = dict(load_data(int(guild_id), "music") or {})
+
             try:
-                queue_limit = int(m_data.get("queue_limit", 50))
-                default_volume = int(m_data.get("default_volume", 100))
-                max_song_duration = int(m_data.get("max_song_duration", 600))
-                disconnect_timeout = int(m_data.get("disconnect_timeout", 300))
+                queue_limit = int(m_data.get("queue_limit", existing_music.get("queue_limit", 50)))
+                default_volume = int(m_data.get("default_volume", existing_music.get("default_volume", 100)))
+                max_song_duration = int(m_data.get("max_song_duration", existing_music.get("max_song_duration", 600)))
+                disconnect_timeout = int(m_data.get("disconnect_timeout", existing_music.get("disconnect_timeout", 300)))
             except (TypeError, ValueError):
                 return quart.jsonify({"success": False, "message": "Numeric fields must be integers."}), 400
 
@@ -1807,13 +1809,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             max_song_duration = max(0, min(36000, max_song_duration))
             disconnect_timeout = max(30, min(7200, disconnect_timeout))
 
-            allowed_sources_in = m_data.get("allowed_sources", ["youtube", "soundcloud", "radio"])
+            allowed_sources_in = m_data.get("allowed_sources", existing_music.get("allowed_sources", ["youtube", "soundcloud", "radio"]))
             if not isinstance(allowed_sources_in, list):
                 return quart.jsonify({"success": False, "message": "'allowed_sources' must be a list."}), 400
             valid_sources = {"youtube", "soundcloud", "radio"}
             allowed_sources = [s for s in allowed_sources_in if isinstance(s, str) and s in valid_sources]
 
-            radio_whitelist_in = m_data.get("radio_whitelist", [])
+            radio_whitelist_in = m_data.get("radio_whitelist", existing_music.get("radio_whitelist", []))
             if not isinstance(radio_whitelist_in, list):
                 return quart.jsonify({"success": False, "message": "'radio_whitelist' must be a list."}), 400
             radio_whitelist: list = []
@@ -1821,7 +1823,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if isinstance(u, str) and u.startswith(("http://", "https://")) and len(u) <= 500:
                     radio_whitelist.append(u.strip())
 
-            allow_all_radios = bool(m_data.get("allow_all_radios", False))
+            allow_all_radios = bool(m_data.get("allow_all_radios", existing_music.get("allow_all_radios", False)))
+
+            radio_247_enabled = bool(m_data.get("radio_247_enabled", existing_music.get("radio_247_enabled", False)))
+            radio_247_channel_id = str(m_data.get("radio_247_channel_id", existing_music.get("radio_247_channel_id", "")) or "").strip()
+            radio_247_text_channel_id = str(m_data.get("radio_247_text_channel_id", existing_music.get("radio_247_text_channel_id", "")) or "").strip()
+            radio_247_url = str(m_data.get("radio_247_url", existing_music.get("radio_247_url", "")) or "").strip()
+            if radio_247_url and not radio_247_url.startswith(("http://", "https://")) and radio_247_url not in {"oe3", "kronehit", "fm4"}:
+                radio_247_url = ""
 
             m_config = {
                 "enabled": True,
@@ -1832,6 +1841,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "allowed_sources": allowed_sources,
                 "radio_whitelist": radio_whitelist,
                 "allow_all_radios": allow_all_radios,
+                "radio_247_enabled": radio_247_enabled,
+                "radio_247_channel_id": radio_247_channel_id,
+                "radio_247_text_channel_id": radio_247_text_channel_id,
+                "radio_247_url": radio_247_url,
             }
             save_data(int(guild_id), "music", m_config)
 

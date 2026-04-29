@@ -55,6 +55,7 @@ from assets.tasks import (
     GarbageCollectorTask,
     YouTubeVideoTask,
     MusicIdleTask,
+    Radio247Task,
 )
 from assets.giveaway import GiveawayTask
 from assets.poll import PollTask
@@ -233,6 +234,12 @@ def events(bot: commands.AutoShardedBot, web):
             music_idle_task.watch.start()
             share.task_instances["MusicIdle"] = music_idle_task
             logger.debug.success("Music idle watcher task started.")
+
+            logger.working("Starting Radio247 task...")
+            radio_247_task = Radio247Task(bot)
+            radio_247_task.watch.start()
+            share.task_instances["Radio247"] = radio_247_task
+            logger.debug.success("Radio 24/7 task started.")
 
             # Music: enable discord.py voice debug logging
             import logging as _logging

@@ -1223,6 +1223,9 @@ class MusicIdleTask:
                         logger.debug.info(f"[MusicIdle:{gid}] Voice client disconnected (idle {idle:.0f}s/{self.DISCONNECT_GRACE}s) — will retry")
                     continue
                 conf = dict(datasys.load_data(gid, "music") or {})
+                if conf.get("radio_247_enabled", False):
+                    logger.debug.info(f"[MusicIdle:{gid}] 24/7 radio mode — skip idle/empty disconnect")
+                    continue
                 timeout = int(conf.get("disconnect_timeout", 300) or 300)
                 channel_humans = [m for m in vc.channel.members if not m.bot] if vc.channel else []
                 idle = (now - player.last_activity).total_seconds()
@@ -1246,6 +1249,102 @@ class MusicIdleTask:
         except Exception as e:
             logger.error(f"[MusicIdle] Error: {e}")
             set_task_status("MusicIdle", "error", f"Error: {e}")
+
+    @watch.before_loop
+    async def before_watch(self):
+        await self.bot.wait_until_ready()
+
+
+class Radio247Task:
+    """Auto-joins and plays 24/7 radio for guilds that have it configured. Runs every 30s."""
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=30)
+    async def watch(self):
+        import assets.share as share
+        from assets.music.player import MusicPlayer, Track
+        from assets.music.sources import RADIO_PRESETS, is_safe_radio_url
+
+        for guild in self.bot.guilds:
+            gid = guild.id
+            try:
+                conf = dict(datasys.load_data(gid, "music") or {})
+                if not conf.get("radio_247_enabled", False):
+                    continue
+
+                channel_id_str = str(conf.get("radio_247_channel_id", "") or "")
+                stream_url = str(conf.get("radio_247_url", "") or "").strip()
+                text_channel_id_str = str(conf.get("radio_247_text_channel_id", "") or "")
+
+                if not channel_id_str or not stream_url:
+                    continue
+
+                try:
+                    channel_id = int(channel_id_str)
+                except (ValueError, TypeError):
+                    continue
+
+                channel = guild.get_channel(channel_id)
+                if not isinstance(channel, discord.VoiceChannel):
+                    continue
+
+                player = share.music_players.get(gid)
+                vc = player.voice_client if player else None
+
+                already_playing = (
+                    vc
+                    and vc.is_connected()
+                    and vc.channel
+                    and vc.channel.id == channel_id
+                    and (vc.is_playing() or vc.is_paused())
+                )
+                if already_playing:
+                    continue
+
+                # Resolve stream URL (preset key or raw URL)
+                if stream_url in RADIO_PRESETS:
+                    label, resolved_url = RADIO_PRESETS[stream_url]
+                else:
+                    if not is_safe_radio_url(stream_url):
+                        logger.warning(f"[Radio247:{gid}] unsafe URL, skipping")
+                        continue
+                    label, resolved_url = stream_url, stream_url
+
+                logger.info(f"[Radio247:{gid}] Starting 24/7 radio '{label}' in channel {channel_id}")
+
+                try:
+                    text_channel_id = int(text_channel_id_str) if text_channel_id_str else 0
+                except (ValueError, TypeError):
+                    text_channel_id = 0
+
+                if player is None:
+                    player = MusicPlayer(guild_id=gid, text_channel_id=text_channel_id, volume=1.0)
+                    player._bot = self.bot
+                    share.music_players[gid] = player
+
+                track = Track(
+                    title=label,
+                    stream_url=resolved_url,
+                    webpage_url=resolved_url,
+                    duration=0,
+                    requester_id=self.bot.user.id if self.bot.user else 0,
+                    thumbnail=None,
+                    source_type="radio",
+                )
+
+                async with player.lock:
+                    await player.connect(channel)
+                    player.queue.clear()
+                    if player.is_playing() or player.is_paused():
+                        player.skip()
+                        await asyncio.sleep(0.3)
+                    player.queue.append(track)
+                    await player.play_next()
+
+            except Exception as e:
+                logger.error(f"[Radio247:{gid}] Error: {type(e).__name__}: {e}")
 
     @watch.before_loop
     async def before_watch(self):

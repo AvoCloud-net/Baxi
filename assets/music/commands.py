@@ -77,6 +77,9 @@ def register_music_commands(bot: commands.AutoShardedBot):
         if not conf.get("enabled", True):
             await interaction.followup.send(embed=_err_embed(t.get("disabled", "Music is disabled on this server.")), ephemeral=True)
             return None
+        if conf.get("radio_247_enabled", False):
+            await interaction.followup.send(embed=_err_embed(t.get("radio_247_locked", "24/7 radio mode is active — music commands are disabled.")), ephemeral=True)
+            return None
         channel = await _ensure_voice(interaction, t)
         if channel is None:
             return None

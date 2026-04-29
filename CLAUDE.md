@@ -69,6 +69,11 @@ All user-facing strings. Loaded per-guild via `datasys.load_lang_file(guild_id)`
 ### PRISM / Trust System (`assets/trust.py`)
 Network-wide user behavior scoring. Only fully functional on the official hosted network.
 
+## Dashboard Design Rules
+
+- **Toggles (`role="switch"`)**: only for enable/disable of an entire system or feature (e.g. "Enable Music", "Enable Welcomer"). One per card header area.
+- **Checkboxes**: everything else that is boolean — source selection, permission flags, optional sub-features, multi-select options. Never use `role="switch"` for these.
+
 ## Dashboard Integration Rules
 
 When adding or modifying any bot system that has dashboard settings:

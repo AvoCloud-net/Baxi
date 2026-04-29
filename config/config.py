@@ -292,6 +292,10 @@ class datasys:
         "allowed_sources": ["youtube", "soundcloud", "radio"],
         "radio_whitelist": [],
         "allow_all_radios": False,
+        "radio_247_enabled": False,
+        "radio_247_channel_id": "",
+        "radio_247_text_channel_id": "",
+        "radio_247_url": "",
     },
     "donations": {
         "enabled": False,

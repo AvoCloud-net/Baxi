@@ -2247,7 +2247,7 @@
 
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="mcl-dm-on-link" role="switch">
+                                    <input type="checkbox" id="mcl-dm-on-link">
                                     <span class="font-medium">DM users on successful link</span>
                                 </label>
                                 <p class="text-muted text-xs mt-1">Send the user a private message confirming their account was linked.</p>
@@ -2255,7 +2255,7 @@
 
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="mcl-allow-self-unlink" role="switch">
+                                    <input type="checkbox" id="mcl-allow-self-unlink">
                                     <span class="font-medium">Allow self-unlink</span>
                                 </label>
                                 <p class="text-muted text-xs mt-1">Let users unlink their own account via <code>/mc unlink</code>. Disable to require admin action.</p>
@@ -2274,7 +2274,7 @@
 
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="mcl-dm-announcements" role="switch">
+                                    <input type="checkbox" id="mcl-dm-announcements">
                                     <span class="font-medium">Send announcements to DMs</span>
                                 </label>
                                 <p class="text-muted text-xs mt-1">DM every linked Discord user when an admin runs <code>/mcannounce</code>.</p>
@@ -2814,7 +2814,7 @@
 
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="music-allow-all-radios" role="switch">
+                                    <input type="checkbox" id="music-allow-all-radios">
                                     <span class="font-medium">Allow all radio URLs (skip whitelist)</span>
                                 </label>
                                 <p class="text-xs text-muted">If enabled, any custom URL can be played via <code>/music radio custom_url:&lt;url&gt;</code> -  the whitelist below is ignored.</p>
@@ -2825,6 +2825,76 @@
                                 <input type="text" id="music-radio-whitelist-input" placeholder="Type a stream URL and press Enter (e.g. https://example.com/stream.mp3)">
                                 <div id="music-radio-whitelist_container" class="tag-input-container"></div>
                                 <p class="text-xs text-muted">Allows custom URLs for <code>/music radio custom_url:&lt;url&gt;</code>. Presets always work.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- 24/7 Radio -->
+                <div class="card mt-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+                            24/7 Radio
+                        </h2>
+                        <p class="text-muted">Baxi auto-joins a voice channel after every reboot and streams a radio station non-stop. All <code>/music</code> commands are disabled while active.</p>
+                    </header>
+                    <section>
+                        <form id="music-247-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="music-247-enabled" role="switch">
+                                    <span class="font-medium">Enable 24/7 Radio</span>
+                                </label>
+                            </div>
+
+                            <div id="music-247-settings" class="grid gap-6">
+                                <div class="grid gap-2">
+                                    <label for="music-247-channel">Voice channel:</label>
+                                    <select id="music-247-channel" class="select w-full">
+                                        <option value="">— select voice channel —</option>
+                                        {% for id, name in voice_channels.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <label for="music-247-text-channel">Text channel (for status messages):</label>
+                                    <select id="music-247-text-channel" class="select w-full">
+                                        <option value="">— none —</option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <label for="music-247-station">Radio station or custom URL:</label>
+                                    <select id="music-247-station" class="select w-full">
+                                        <option value="oe3">Hitradio Ö3</option>
+                                        <option value="kronehit">KroneHit</option>
+                                        <option value="fm4">FM4</option>
+                                        <option value="custom">Custom URL…</option>
+                                    </select>
+                                </div>
+
+                                <div class="grid gap-2" id="music-247-custom-url-group" style="display:none">
+                                    <label for="music-247-custom-url">Custom stream URL:</label>
+                                    <input type="url" id="music-247-custom-url" class="input w-full" placeholder="https://example.com/stream.mp3">
+                                </div>
                             </div>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
@@ -3306,6 +3376,12 @@
         document.getElementById('music-allow-all-radios').addEventListener('change', function () {
             document.getElementById('music-radio-whitelist-group').style.display = this.checked ? 'none' : '';
         });
+        document.getElementById('music-247-enabled').addEventListener('change', function () {
+            document.getElementById('music-247-settings').style.display = this.checked ? '' : 'none';
+        });
+        document.getElementById('music-247-station').addEventListener('change', function () {
+            document.getElementById('music-247-custom-url-group').style.display = this.value === 'custom' ? '' : 'none';
+        });
 
         function createDynamicFields() {
             const enabledInput = document.getElementById('chatfilter-enabled');
@@ -3478,6 +3554,23 @@
                 const wl = Array.isArray(data.music.radio_whitelist) ? data.music.radio_whitelist : [];
                 renderTags('music-radio-whitelist', wl);
                 document.getElementById('music-radio-whitelist-group').style.display = allowAll ? 'none' : '';
+
+                // 24/7 Radio
+                const r247 = data.music;
+                document.getElementById('music-247-enabled').checked = r247.radio_247_enabled === true;
+                document.getElementById('music-247-settings').style.display = r247.radio_247_enabled ? '' : 'none';
+                document.getElementById('music-247-channel').value = r247.radio_247_channel_id || '';
+                document.getElementById('music-247-text-channel').value = r247.radio_247_text_channel_id || '';
+                const r247url = r247.radio_247_url || 'oe3';
+                const presets = ['oe3', 'kronehit', 'fm4'];
+                if (presets.includes(r247url)) {
+                    document.getElementById('music-247-station').value = r247url;
+                    document.getElementById('music-247-custom-url-group').style.display = 'none';
+                } else {
+                    document.getElementById('music-247-station').value = 'custom';
+                    document.getElementById('music-247-custom-url').value = r247url;
+                    document.getElementById('music-247-custom-url-group').style.display = '';
+                }
             }
 
             // Custom Commands
@@ -4719,6 +4812,35 @@
                 allowed_sources: allowed,
                 radio_whitelist: wl,
                 allow_all_radios: document.getElementById('music-allow-all-radios').checked,
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=music&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        document.getElementById('music-247-form').onsubmit = function (event) {
+            event.preventDefault();
+            const stationEl = document.getElementById('music-247-station');
+            const stationVal = stationEl.value;
+            const url247 = stationVal === 'custom'
+                ? (document.getElementById('music-247-custom-url').value || '').trim()
+                : stationVal;
+            const payload = { music: {
+                radio_247_enabled: document.getElementById('music-247-enabled').checked,
+                radio_247_channel_id: document.getElementById('music-247-channel').value || '',
+                radio_247_text_channel_id: document.getElementById('music-247-text-channel').value || '',
+                radio_247_url: url247,
             } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=music&dash_login={{ data.dash_login }}');
