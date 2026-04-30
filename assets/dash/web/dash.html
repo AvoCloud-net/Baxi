@@ -152,6 +152,15 @@
             padding: 0.6rem 0.7rem; font-size: 0.82rem; opacity: 0.45; text-align: center;
         }
         @media (max-width: 700px) { .nav-search { display: none; } }
+
+        /* Add-area: dashed border with wider gap between dashes */
+        .add-area {
+            border-radius: 8px;
+            padding: 16px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' ry='8' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/Svg%3E");
+        }
+        .add-area.mt-4 { margin-top: 1rem; }
+        .add-area.mt-3 { margin-top: 0.75rem; }
     </style>
 </head>
 
@@ -741,7 +750,15 @@
                                         style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Low Risk</button>
                                 </div>
                                 <div id="prism-scores-loading" class="text-muted text-sm">Loading...</div>
-                                <div id="prism-scores-empty" class="text-muted text-sm hidden">No users with a low trust score on this server yet.</div>
+                                <div id="prism-scores-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Users Found</h3>
+                                        <p class="text-muted text-sm" id="prism-scores-empty-msg">No users with a low trust score on this server yet.</p>
+                                    </div>
+                                </div>
                                 <div id="prism-scores-list" class="hidden" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;"></div>
                             </section>
                         </div>
@@ -867,14 +884,15 @@
                                     <label class="font-medium text-sm">Channel whitelist <span class="text-muted font-normal" id="cf-bypass-count">(0)</span></label>
                                     <div id="cf-bypass-list" class="flex flex-wrap gap-2"></div>
                                     <p id="cf-bypass-empty" class="text-muted text-xs">No channels whitelisted. Chatfilter runs in all channels.</p>
-                                    <div class="flex gap-2 mt-1">
+                                    <hr class="my-3">
+                                    <div class="flex gap-2 add-area">
                                         <select id="cf-bypass-add" class="select flex-1">
                                             <option value="">-  Select a channel to whitelist - </option>
                                             {% for id, name in channels.items() %}
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
-                                        <button type="button" class="btn-secondary" onclick="cfBypassAdd()" style="flex-shrink:0;">
+                                        <button type="button" class="btn-primary" onclick="cfBypassAdd()" style="flex-shrink:0;">
                                             <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             Add
                                         </button>
@@ -952,11 +970,20 @@
                             <div class="grid gap-2">
                                 <label class="font-medium text-sm">Suggestion channels <span class="text-muted font-normal" id="suggestions-ch-count">(0)</span></label>
                                 <div id="suggestions-channels-list" class="grid gap-2"></div>
-                                <p id="suggestions-channels-empty" class="text-muted text-xs">No suggestion channels added yet.</p>
+                                <div id="suggestions-channels-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Suggestion Channels</h3>
+                                        <p class="text-muted text-sm">No channels configured for suggestions yet.</p>
+                                    </div>
+                                </div>
                                 <p class="text-muted text-xs">Each channel has its own vote setting.</p>
 
                                 <!-- Add new channel -->
-                                <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;" class="mt-1">
+                                <hr class="my-3">
+                                <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end;" class="add-area">
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Channel</label>
                                         <select id="suggestions-add-channel" class="select w-full">
@@ -973,7 +1000,7 @@
                                             <span class="text-sm">👍/👎</span>
                                         </label>
                                     </div>
-                                    <button type="button" class="btn-secondary" onclick="suggestionsAddChannel()" style="flex-shrink:0;align-self:end;">
+                                    <button type="button" class="btn-primary" onclick="suggestionsAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1039,13 +1066,21 @@
                             <div>
                                 <label class="font-medium text-sm">Active sticky messages <span class="text-muted font-normal" id="sticky-count">(0)</span></label>
                                 <div id="sticky-list" class="grid gap-2 mt-2"></div>
-                                <p id="sticky-empty" class="text-muted text-xs mt-2">No sticky messages configured yet.</p>
+                                <div id="sticky-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden mt-2">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Sticky Messages</h3>
+                                        <p class="text-muted text-sm">No sticky messages configured yet.</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <hr class="my-2">
 
                             <!-- Add new sticky message -->
-                            <div class="grid gap-4">
+                            <div class="grid gap-4 add-area">
                                 <label class="font-medium text-sm">Add sticky message</label>
                                 <div class="grid gap-2">
                                     <label for="sticky-add-channel">Channel:</label>
@@ -1062,7 +1097,7 @@
                                     <label for="sticky-add-message">Message:</label>
                                     <textarea id="sticky-add-message" class="w-full min-h-[80px]" maxlength="2000" placeholder="Enter the sticky message text…"></textarea>
                                 </div>
-                                <button type="button" class="btn-secondary flex items-center gap-2" style="align-self:start;" onclick="stickyAdd()">
+                                <button type="button" class="btn-primary flex items-center gap-2" style="align-self:start;" onclick="stickyAdd()">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     Add Sticky Message
                                 </button>
@@ -1236,9 +1271,18 @@
                                 <label class="font-medium text-sm">Ticket buttons <span class="text-muted font-normal" id="ticket-buttons-count">(0)</span></label>
                                 <p class="text-muted text-xs">Define the buttons members can click to open a ticket. Each button creates a ticket named after its label (e.g. "Support", "Apply", "Report").</p>
                                 <div id="ticket-buttons-list" class="grid gap-2"></div>
-                                <p id="ticket-buttons-empty" class="text-muted text-xs">No buttons yet. Add at least one.</p>
+                                <div id="ticket-buttons-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Ticket Buttons</h3>
+                                        <p class="text-muted text-sm">Add at least one button so users can open tickets.</p>
+                                    </div>
+                                </div>
 
-                                <div style="display:grid;grid-template-columns:80px 1fr 1fr auto;gap:8px;align-items:end;" class="mt-1">
+                                <hr class="my-3">
+                                <div style="display:grid;grid-template-columns:80px 1fr 1fr auto;gap:8px;align-items:end;" class="add-area">
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Emoji</label>
                                         <input type="text" id="ticket-btn-add-emoji" placeholder="🛠️" maxlength="50" class="w-full">
@@ -1256,7 +1300,7 @@
                                             <option value="danger">Danger (red)</option>
                                         </select>
                                     </div>
-                                    <button type="button" class="btn-secondary" onclick="ticketButtonAdd()">
+                                    <button type="button" class="btn-primary" onclick="ticketButtonAdd()">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1340,14 +1384,15 @@
                                 <label class="font-medium text-sm">Whitelisted channels <span class="text-muted font-normal" id="antispam-wl-ch-count">(0)</span></label>
                                 <div id="antispam-wl-channels-list" class="flex flex-wrap gap-2"></div>
                                 <p id="antispam-wl-channels-empty" class="text-muted text-xs">No whitelisted channels.</p>
-                                <div class="flex gap-2 mt-1">
+                                <hr class="my-3">
+                                <div class="flex gap-2 add-area">
                                     <select id="antispam-add-wl-channel" class="select flex-1">
                                         <option value="">-  Select a channel - </option>
                                         {% for id, name in channels.items() %}
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button type="button" class="btn-secondary" onclick="antispamAddWlChannel()" style="flex-shrink:0;">
+                                    <button type="button" class="btn-primary" onclick="antispamAddWlChannel()" style="flex-shrink:0;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1359,14 +1404,15 @@
                                 <label class="font-medium text-sm">Whitelisted roles <span class="text-muted font-normal" id="antispam-wl-ro-count">(0)</span></label>
                                 <div id="antispam-wl-roles-list" class="flex flex-wrap gap-2"></div>
                                 <p id="antispam-wl-roles-empty" class="text-muted text-xs">No whitelisted roles.</p>
-                                <div class="flex gap-2 mt-1">
+                                <hr class="my-3">
+                                <div class="flex gap-2 add-area">
                                     <select id="antispam-add-wl-role" class="select flex-1">
                                         <option value="">-  Select a role - </option>
                                         {% for id, name in roles.items() %}
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button type="button" class="btn-secondary" onclick="antispamAddWlRole()" style="flex-shrink:0;">
+                                    <button type="button" class="btn-primary" onclick="antispamAddWlRole()" style="flex-shrink:0;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1655,9 +1701,15 @@
                                 Your panels -  add emoji → role entries
                             </h3>
                             <div id="rr-panels-list">
-                                <p id="rr-panels-empty" class="text-muted text-sm {% if data.reaction_roles and data.reaction_roles.panels %}hidden{% endif %}">
-                                    No panels yet. Create one above first, then come back here to add emoji-role entries.
-                                </p>
+                                <div id="rr-panels-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center {% if data.reaction_roles and data.reaction_roles.panels %}hidden{% endif %}">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Panels Yet</h3>
+                                        <p class="text-muted text-sm">Create a panel in step 1 first, then add emoji-role entries here.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -2141,10 +2193,19 @@
                             <div class="grid gap-2">
                                 <label class="font-medium text-sm">Announcement channels <span class="text-muted font-normal" id="auto-release-ch-count">(0)</span></label>
                                 <div id="auto-release-channels-list" class="grid gap-2"></div>
-                                <p id="auto-release-channels-empty" class="text-muted text-xs">No announcement channels added yet.</p>
+                                <div id="auto-release-channels-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Announcement Channels</h3>
+                                        <p class="text-muted text-sm">No announcement channels configured yet.</p>
+                                    </div>
+                                </div>
                                 <p class="text-muted text-xs">Only Discord <strong>announcement (news)</strong> channels can be published. Convert a normal channel to an announcement channel in Discord channel settings.</p>
 
-                                <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;" class="mt-1">
+                                <hr class="my-3">
+                                <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;" class="add-area">
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Channel</label>
                                         <select id="auto-release-add-channel" class="select w-full">
@@ -2154,7 +2215,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <button type="button" class="btn-secondary" onclick="autoReleaseAddChannel()" style="flex-shrink:0;align-self:end;">
+                                    <button type="button" class="btn-primary" onclick="autoReleaseAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Hinzufügen
                                     </button>
@@ -2407,9 +2468,18 @@
                         <h3 class="text-lg font-semibold mb-4">Tracked Streamers <span class="text-muted text-sm font-normal" id="livestream-count">(0/10)</span></h3>
 
                         <div id="livestream-list" class="grid gap-3 mb-4"></div>
-                        <p id="livestream-empty" class="text-muted text-sm hidden">No streamers are being tracked yet.</p>
+                        <div id="livestream-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden mb-4">
+                            <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No Streamers Tracked</h3>
+                                <p class="text-muted text-sm">No streamers are being tracked yet. Add one below.</p>
+                            </div>
+                        </div>
 
-                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                        <hr class="my-4">
+                        <div class="grid gap-3 add-area">
                             <h4 class="text-sm font-semibold">Add Streamer</h4>
                             <div class="flex gap-2">
                                 <select id="livestream-add-platform" class="select" style="width:130px;" onchange="updateStreamerPlaceholder()">
@@ -2488,9 +2558,18 @@
                         <h3 class="text-lg font-semibold mb-4">Tracked Channels <span class="text-muted text-sm font-normal" id="yvid-count">(0/10)</span></h3>
 
                         <div id="yvid-list" class="grid gap-3 mb-4"></div>
-                        <p id="yvid-empty" class="text-muted text-sm hidden">No YouTube channels are being tracked yet.</p>
+                        <div id="yvid-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden mb-4">
+                            <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No YouTube Channels</h3>
+                                <p class="text-muted text-sm">No YouTube channels are being tracked yet. Add one below.</p>
+                            </div>
+                        </div>
 
-                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                        <hr class="my-4">
+                        <div class="grid gap-3 add-area">
                             <h4 class="text-sm font-semibold">Add Channel</h4>
                             <div class="grid gap-2">
                                 <label for="yvid-add-alert-channel">Alert channel:</label>
@@ -2573,9 +2652,18 @@
                         <h3 class="text-lg font-semibold mb-4">Tracked Accounts <span class="text-muted text-sm font-normal" id="tt-count">(0/10)</span></h3>
 
                         <div id="tt-list" class="grid gap-3 mb-4"></div>
-                        <p id="tt-empty" class="text-muted text-sm hidden">No TikTok accounts are being tracked yet.</p>
+                        <div id="tt-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden mb-4">
+                            <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No TikTok Accounts</h3>
+                                <p class="text-muted text-sm">No TikTok accounts are being tracked yet. Add one below.</p>
+                            </div>
+                        </div>
 
-                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                        <hr class="my-4">
+                        <div class="grid gap-3 add-area">
                             <h4 class="text-sm font-semibold">Add Account</h4>
                             <div class="grid gap-2">
                                 <label for="tt-add-alert-channel">Alert channel:</label>
@@ -2657,9 +2745,18 @@
                         <h3 class="text-lg font-semibold mb-4">Tracked Accounts <span class="text-muted text-sm font-normal" id="ig-count">(0/10)</span></h3>
 
                         <div id="ig-list" class="grid gap-3 mb-4"></div>
-                        <p id="ig-empty" class="text-muted text-sm hidden">No Instagram accounts are being tracked yet.</p>
+                        <div id="ig-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden mb-4">
+                            <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No Instagram Accounts</h3>
+                                <p class="text-muted text-sm">No Instagram accounts are being tracked yet. Add one below.</p>
+                            </div>
+                        </div>
 
-                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                        <hr class="my-4">
+                        <div class="grid gap-3 add-area">
                             <h4 class="text-sm font-semibold">Add Account</h4>
                             <div class="grid gap-2">
                                 <label for="ig-add-alert-channel">Alert channel:</label>
@@ -2872,7 +2969,15 @@
 
                         <!-- Command list -->
                         <div id="customcmd-list" class="grid gap-3">
-                            <p class="text-muted text-sm" id="customcmd-empty">No custom commands yet.</p>
+                            <div id="customcmd-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center">
+                                <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10.5 8 13l2 2.5" /><path d="m14 10.5 2 2.5-2 2.5" /><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" /></svg>
+                                </div>
+                                <div class="flex max-w-xs flex-col gap-1">
+                                    <h3 class="text-base font-semibold tracking-tight">No Custom Commands</h3>
+                                    <p class="text-muted text-sm">No custom commands configured yet.</p>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -3287,7 +3392,7 @@
                                 <label class="label">Role Rewards</label>
                                 <p class="text-muted text-xs">When the server reaches a level, a role is automatically assigned to all members.</p>
                                 <div id="leveling-role-rewards-list" class="grid gap-2"></div>
-                                <button type="button" id="leveling-add-reward-btn" class="btn-secondary" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
+                                <button type="button" id="leveling-add-reward-btn" class="btn-primary" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
                                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     Add reward
                                 </button>
@@ -4726,7 +4831,7 @@
             const empty = document.getElementById('prism-scores-empty');
             if (filtered.length === 0) {
                 empty.classList.remove('hidden');
-                empty.textContent = _prismFilter === 'all'
+                document.getElementById('prism-scores-empty-msg').textContent = _prismFilter === 'all'
                     ? 'No users with a low trust score on this server yet.'
                     : 'No users match this filter.';
                 list.style.display = 'none';
@@ -4958,25 +5063,24 @@
             if (_ticketButtons.length === 0) { empty.classList.remove('hidden'); return; }
             empty.classList.add('hidden');
             _ticketButtons.forEach((b, idx) => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:flex;gap:10px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
-                const preview = document.createElement('span');
-                preview.style.cssText = `padding:4px 10px;border-radius:5px;font-weight:500;white-space:nowrap;${_TICKET_STYLE_CSS[b.style] || _TICKET_STYLE_CSS.primary}`;
-                preview.textContent = `${b.emoji || ''} ${b.label || ''}`.trim();
-                row.appendChild(preview);
-                const styleLabel = document.createElement('span');
-                styleLabel.className = 'text-muted text-xs';
-                styleLabel.style.cssText = 'flex:1;';
-                styleLabel.textContent = _TICKET_STYLE_LABEL[b.style] || 'Primary';
-                row.appendChild(styleLabel);
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;';
-                removeBtn.title = 'Remove';
-                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                removeBtn.onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
-                row.appendChild(removeBtn);
-                list.appendChild(row);
+                const card = document.createElement('div');
+                card.className = 'card';
+                const label = `${b.emoji || ''} ${b.label || ''}`.trim();
+                const styleLabel = _TICKET_STYLE_LABEL[b.style] || 'Primary';
+                const previewCss = _TICKET_STYLE_CSS[b.style] || _TICKET_STYLE_CSS.primary;
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <div style="min-width:0;flex:1;">
+                            <h3 class="text-base font-semibold"><span style="padding:3px 10px;border-radius:5px;${previewCss}">${label}</span></h3>
+                            <p class="text-muted text-xs" style="margin-top:4px;">${styleLabel}</p>
+                        </div>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;margin-left:12px;">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            <span class="btn-label">Remove</span>
+                        </button>
+                    </header>`;
+                card.querySelector('button').onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
+                list.appendChild(card);
             });
         }
 
@@ -5732,21 +5836,25 @@
             const nameMap = {};
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             _suggestionChannels.forEach((ch, idx) => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                const card = document.createElement('div');
+                card.className = 'card';
                 const chName = nameMap[ch.id] || ('#' + ch.id);
-                const votesLabel = ch.votes_enabled ? '👍/👎 on' : '👍/👎 off';
-                row.innerHTML = `
-                    <span style="font-weight:500;">${chName}</span>
-                    <label style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer;font-size:12px;">
-                        <input type="checkbox" ${ch.votes_enabled ? 'checked' : ''}
-                            onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
-                        <span>${votesLabel}</span>
-                    </label>
-                    <button type="button" onclick="suggestionsRemoveChannel('${ch.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>`;
-                list.appendChild(row);
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold">${chName}</h3>
+                        <div class="flex gap-2 items-center" style="flex-shrink:0;margin-left:12px;">
+                            <label class="flex items-center gap-2 text-sm text-muted" style="cursor:pointer;white-space:nowrap;">
+                                <input type="checkbox" ${ch.votes_enabled ? 'checked' : ''}
+                                    onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
+                                👍/👎 votes
+                            </label>
+                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="suggestionsRemoveChannel('${ch.id}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                <span class="btn-label">Remove</span>
+                            </button>
+                        </div>
+                    </header>`;
+                list.appendChild(card);
             });
         }
 
@@ -5811,15 +5919,18 @@
             const nameMap = {};
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             _autoReleaseChannels.forEach(cid => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 12px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                const card = document.createElement('div');
+                card.className = 'card';
                 const chName = nameMap[cid] || ('#' + cid);
-                row.innerHTML = `
-                    <span style="font-weight:500;">${chName}</span>
-                    <button type="button" onclick="autoReleaseRemoveChannel('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>`;
-                list.appendChild(row);
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold">${chName}</h3>
+                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            <span class="btn-label">Remove</span>
+                        </button>
+                    </header>`;
+                list.appendChild(card);
             });
         }
 

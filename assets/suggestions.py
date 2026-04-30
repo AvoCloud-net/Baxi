@@ -441,18 +441,18 @@ async def _process_decision(
         embed.color = cfg.Discord.success_color
         if reason:
             status_value = str(t["status_accepted_reason"]).format(
-                user=interaction.user.display_name, reason=reason
+                user=interaction.user.mention, reason=reason
             )
         else:
-            status_value = str(t["status_accepted"]).format(user=interaction.user.display_name)
+            status_value = str(t["status_accepted"]).format(user=interaction.user.mention)
     else:
         embed.color = cfg.Discord.danger_color
         if reason:
             status_value = str(t["status_declined_reason"]).format(
-                user=interaction.user.display_name, reason=reason
+                user=interaction.user.mention, reason=reason
             )
         else:
-            status_value = str(t["status_declined"]).format(user=interaction.user.display_name)
+            status_value = str(t["status_declined"]).format(user=interaction.user.mention)
 
     embed.add_field(name=t["status_field"], value=status_value, inline=False)
 
@@ -474,21 +474,21 @@ async def _process_decision(
             icon = cfg.Icons.check
             if reason:
                 thread_msg = f"{icon} " + str(t.get("thread_update_accepted_reason", "Suggestion **accepted** by {user}\n**Reason:** {reason}")).format(
-                    user=interaction.user.display_name, reason=reason
+                    user=interaction.user.mention, reason=reason
                 )
             else:
                 thread_msg = f"{icon} " + str(t.get("thread_update_accepted", "Suggestion **accepted** by {user}")).format(
-                    user=interaction.user.display_name
+                    user=interaction.user.mention
                 )
         else:
             icon = cfg.Icons.cross
             if reason:
                 thread_msg = f"{icon} " + str(t.get("thread_update_declined_reason", "Suggestion **declined** by {user}\n**Reason:** {reason}")).format(
-                    user=interaction.user.display_name, reason=reason
+                    user=interaction.user.mention, reason=reason
                 )
             else:
                 thread_msg = f"{icon} " + str(t.get("thread_update_declined", "Suggestion **declined** by {user}")).format(
-                    user=interaction.user.display_name
+                    user=interaction.user.mention
                 )
         try:
             await thread.send(thread_msg)

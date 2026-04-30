@@ -73,6 +73,9 @@ Network-wide user behavior scoring. Only fully functional on the official hosted
 
 - **Toggles (`role="switch"`)**: only for enable/disable of an entire system or feature (e.g. "Enable Music", "Enable Welcomer"). One per card header area.
 - **Checkboxes**: everything else that is boolean — source selection, permission flags, optional sub-features, multi-select options. Never use `role="switch"` for these.
+- **Channel/item cards in lists**: always use `<div class="card">` with `<header class="flex items-center justify-between">`. Channel name as `<h3 class="text-base font-semibold">`. Optional subtitle as `<p class="text-muted text-xs">`. Remove button: `<button class="btn-outline" style="color:#ef4444;border-color:#ef4444;">` with trash SVG + `<span class="btn-label">Remove</span>`. Never use raw `div` with inline `style.cssText` or bare X-icon buttons for list items.
+- **Add-area (input + add button)**: wrap all add-form sections in `<div class="add-area mt-3">` (or `mt-4`). This applies the custom SVG dashed border with wider dash gaps (6px dash / 12px gap) and rounded corners. The class is defined in the `<style>` block. Always use `class="btn-primary"` for add buttons — never `btn-secondary`.
+- **Empty states**: use `<div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">` with icon box (`bg-muted size-10 rounded-lg`), `<h3 class="text-base font-semibold tracking-tight">`, and `<p class="text-muted text-sm">`. For full-width sections add `md:p-10`.
 
 ## Dashboard Integration Rules
 
