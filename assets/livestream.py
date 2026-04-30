@@ -290,58 +290,70 @@ class YouTubeAPI:
                 return None
             channel_id = resolved["channel_id"]
 
-        url = f"https://www.youtube.com/channel/{channel_id}/videos"
+        urls_to_try = [
+            f"https://www.youtube.com/channel/{channel_id}/videos",
+            f"https://www.youtube.com/channel/{channel_id}/shorts",
+        ]
 
         def _extract():
-            # Step 1: Get the video ID quickly with flat extraction
             ydl_opts_flat = {
                 **self._YDL_OPTS,
                 "extract_flat": "in_playlist",
                 "playlistend": 1,
             }
+            info = None
+            last_error = None
+            for url in urls_to_try:
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts_flat) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                    if info:
+                        break
+                except yt_dlp.utils.DownloadError as e:
+                    last_error = e
+                    logger.debug.info(f"[YouTubeVideos] Tab unavailable for {channel_id} ({url}): {e}")
+                    continue
+
+            if info is None:
+                if last_error:
+                    logger.error(f"[YouTubeVideos] yt-dlp error for {channel_id}: {last_error}")
+                return None
+
             try:
-                with yt_dlp.YoutubeDL(ydl_opts_flat) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    if not info:
-                        return None
-                    
-                    entries = info.get("entries") or []
-                    if not entries:
-                        return None
-                    
-                    # Get the first valid entry
-                    first_entry = None
-                    for entry in entries:
-                        if entry and entry.get("id"):
-                            first_entry = entry
-                            break
-                    
-                    if not first_entry:
-                        return None
-                    
-                    video_id = first_entry["id"]
-                    video_url = first_entry.get("url", f"https://www.youtube.com/watch?v={video_id}")
-                    title = first_entry.get("title", "")
-                    
-                    # Get thumbnail from thumbnails list
-                    thumbnail_url = ""
-                    thumbnails = first_entry.get("thumbnails") or []
-                    if thumbnails:
-                        thumbnail_url = thumbnails[-1].get("url", "")
-                    if not thumbnail_url:
-                        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
-                    
-                # Step 2: Get full metadata for this specific video (including upload date)
+                entries = info.get("entries") or []
+                if not entries:
+                    return None
+
+                first_entry = None
+                for entry in entries:
+                    if entry and entry.get("id"):
+                        first_entry = entry
+                        break
+
+                if not first_entry:
+                    return None
+
+                video_id = first_entry["id"]
+                video_url = first_entry.get("url", f"https://www.youtube.com/watch?v={video_id}")
+                title = first_entry.get("title", "")
+
+                thumbnail_url = ""
+                thumbnails = first_entry.get("thumbnails") or []
+                if thumbnails:
+                    thumbnail_url = thumbnails[-1].get("url", "")
+                if not thumbnail_url:
+                    thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+                # Step 2: full metadata for upload date
                 ydl_opts_video = {
                     **self._YDL_OPTS,
                     "extract_flat": False,
                 }
                 video_full_url = f"https://www.youtube.com/watch?v={video_id}"
-                
+
                 with yt_dlp.YoutubeDL(ydl_opts_video) as ydl:
                     video_info = ydl.extract_info(video_full_url, download=False)
                     if not video_info:
-                        # Fallback: return with no timestamp
                         return {
                             "video_id": video_id,
                             "title": title,
@@ -349,15 +361,11 @@ class YouTubeAPI:
                             "thumbnail_url": thumbnail_url,
                             "url": video_url,
                         }
-                    
-                    # Get upload timestamp from full video info
-                    # PRIORITY: Use 'timestamp' (Unix timestamp with exact time) over 'upload_date' (date only, defaults to midnight)
-                    timestamp = video_info.get("timestamp")
-                    upload_date = video_info.get("upload_date")  # Format: YYYYMMDD (string)
 
+                    timestamp = video_info.get("timestamp")
+                    upload_date = video_info.get("upload_date")
                     published = ""
-                    
-                    # Best: Use Unix timestamp (has exact upload time)
+
                     if timestamp:
                         try:
                             from datetime import datetime, timezone
@@ -365,8 +373,7 @@ class YouTubeAPI:
                             published = dt.isoformat()
                         except (ValueError, OSError) as e:
                             logger.debug.info(f"[YouTubeVideos] Failed to convert timestamp {timestamp}: {e}")
-                    
-                    # Fallback: Use upload_date (date only, will be midnight UTC)
+
                     if not published and upload_date:
                         try:
                             upload_str = str(upload_date)
@@ -379,12 +386,11 @@ class YouTubeAPI:
                                 published = dt.isoformat()
                         except (ValueError, TypeError) as e:
                             logger.debug.info(f"[YouTubeVideos] Failed to convert upload_date {upload_date}: {e}")
-                    
-                    # Use better thumbnail if available
+
                     final_thumbnail = thumbnail_url
                     if video_info.get("thumbnail"):
                         final_thumbnail = video_info["thumbnail"]
-                    
+
                     return {
                         "video_id": video_id,
                         "title": video_info.get("title", title),
@@ -392,7 +398,7 @@ class YouTubeAPI:
                         "thumbnail_url": final_thumbnail,
                         "url": video_full_url,
                     }
-                    
+
             except yt_dlp.utils.DownloadError as e:
                 logger.error(f"[YouTubeVideos] yt-dlp error for {channel_id}: {e}")
                 return None
