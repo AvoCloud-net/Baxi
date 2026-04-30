@@ -538,6 +538,181 @@ class TikTokAPI:
             "thumbnail_url": thumbnail,
         }
 
+    async def get_latest_video(self, username: str) -> Optional[dict]:
+        """Fetch the latest TikTok post for a user via yt-dlp.
+
+        Returns dict with video_id, title, published, thumbnail_url, url, or None on failure.
+        """
+        import asyncio
+        import yt_dlp
+
+        handle = username.lstrip("@")
+        url = f"https://www.tiktok.com/@{handle}"
+
+        def _extract():
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "skip_download": True,
+                "extract_flat": "in_playlist",
+                "playlistend": 5,
+                "socket_timeout": 20,
+                "logger": _SilentLogger(),
+                "http_headers": {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    ),
+                },
+            }
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                if not info:
+                    return None
+                entries = info.get("entries") or []
+                first = next((e for e in entries if e and e.get("id")), None)
+                if not first:
+                    return None
+
+                video_id = first["id"]
+                title = first.get("title") or first.get("description") or ""
+                thumbnail = ""
+                thumbnails = first.get("thumbnails") or []
+                if thumbnails:
+                    thumbnail = thumbnails[-1].get("url", "")
+                if not thumbnail:
+                    thumbnail = first.get("thumbnail", "")
+
+                published = ""
+                timestamp = first.get("timestamp")
+                if timestamp:
+                    try:
+                        from datetime import datetime, timezone
+                        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                        published = dt.isoformat()
+                    except (ValueError, OSError):
+                        pass
+
+                return {
+                    "video_id": video_id,
+                    "title": title,
+                    "published": published,
+                    "thumbnail_url": thumbnail,
+                    "url": f"https://www.tiktok.com/@{handle}/video/{video_id}",
+                }
+            except yt_dlp.utils.DownloadError as e:
+                logger.error(f"[TikTokVideos] yt-dlp error for @{handle}: {e}")
+                return None
+            except Exception as e:
+                logger.error(f"[TikTokVideos] Unexpected error for @{handle}: {e}")
+                return None
+
+        return await asyncio.get_event_loop().run_in_executor(None, _extract)
+
+
+class InstagramAPI:
+    """Instagram public profile tracking via Instagram's private mobile API."""
+
+    _HEADERS = {
+        "User-Agent": (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+        ),
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "X-IG-App-ID": "936619743392459",
+        "Referer": "https://www.instagram.com/",
+    }
+    _BASE = "https://i.instagram.com/api/v1/users/web_profile_info/"
+
+    async def _fetch_user_data(self, username: str) -> Optional[dict]:
+        handle = username.lstrip("@")
+        url = f"{self._BASE}?username={handle}"
+        async with aiohttp.ClientSession(headers=self._HEADERS) as session:
+            async with session.get(url, allow_redirects=True) as resp:
+                if resp.status != 200:
+                    logger.warning(f"[InstagramAPI] HTTP {resp.status} for @{handle}")
+                    return None
+                payload = await resp.json(content_type=None)
+        return payload.get("data", {}).get("user")
+
+    async def get_profile(self, username: str) -> Optional[dict]:
+        handle = username.lstrip("@")
+        try:
+            user = await self._fetch_user_data(handle)
+            if not user:
+                return None
+            return {
+                "username": user.get("username", handle),
+                "display_name": user.get("full_name") or user.get("username", handle),
+                "profile_image_url": user.get("profile_pic_url", ""),
+            }
+        except Exception as e:
+            logger.error(f"[InstagramAPI] Error fetching profile @{handle}: {e}")
+            return None
+
+    async def get_latest_reel_and_post(self, username: str) -> dict:
+        """Return {latest_post, latest_reel} from the profile's recent media.
+
+        GraphVideo items are treated as reels (Instagram deprecated standalone
+        video posts; all feed videos are Reels in practice).
+        GraphImage / GraphSidecar items are treated as regular posts.
+        """
+        from datetime import timezone, datetime
+        handle = username.lstrip("@")
+        empty = {"latest_post": None, "latest_reel": None}
+        try:
+            user = await self._fetch_user_data(handle)
+            if not user:
+                return empty
+
+            edges = (
+                user.get("edge_owner_to_timeline_media", {}).get("edges") or []
+            )
+
+            latest_post = None
+            latest_reel = None
+
+            for edge in edges:
+                node = edge.get("node", {})
+                is_video = node.get("is_video", False)
+                shortcode = node.get("shortcode", "")
+                post_id = str(node.get("id", ""))
+                timestamp = node.get("taken_at_timestamp", 0)
+                published = datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+                caption_edges = node.get("edge_media_to_caption", {}).get("edges", [])
+                caption = caption_edges[0]["node"]["text"] if caption_edges else ""
+                if len(caption) > 200:
+                    caption = caption[:197] + "..."
+                thumbnail_url = node.get("display_url", "")
+                url = f"https://www.instagram.com/p/{shortcode}/"
+
+                entry = {
+                    "post_id": post_id,
+                    "shortcode": shortcode,
+                    "caption": caption,
+                    "published": published,
+                    "thumbnail_url": thumbnail_url,
+                    "url": url,
+                    "is_reel": is_video,
+                }
+
+                if is_video and latest_reel is None:
+                    latest_reel = entry
+                elif not is_video and latest_post is None:
+                    latest_post = entry
+
+                if latest_post is not None and latest_reel is not None:
+                    break
+
+            return {"latest_post": latest_post, "latest_reel": latest_reel}
+        except Exception as e:
+            logger.error(f"[InstagramAPI] Error fetching content for @{handle}: {e}")
+            return empty
+
 
 youtube_api = YouTubeAPI()
 tiktok_api = TikTokAPI()
+instagram_api = InstagramAPI()

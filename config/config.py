@@ -102,6 +102,14 @@ class TikTok:
     check_interval_seconds = 300
 
 
+class TikTokVideos:
+    check_interval_seconds = 600
+
+
+class Instagram:
+    check_interval_seconds = 900
+
+
 class Globalchat:
     attachments_dir = "attachments"
     attachments_url = "http://solyra.avocloud.net:1600/attachments/"
@@ -178,6 +186,18 @@ class datasys:
         "category_id": ""
     },
     "youtube_videos": {
+        "enabled": False,
+        "alert_channel": "",
+        "ping_role": "",
+        "channels": []
+    },
+    "tiktok": {
+        "enabled": False,
+        "alert_channel": "",
+        "ping_role": "",
+        "channels": []
+    },
+    "instagram": {
         "enabled": False,
         "alert_channel": "",
         "ping_role": "",

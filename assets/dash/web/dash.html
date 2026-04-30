@@ -405,6 +405,24 @@
                 DiscordGate
             </a>
 
+            <span class="dash-nav-group-label">Social Media</span>
+            <a href="#livestream" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Livestream
+            </a>
+            <a href="#youtube-videos" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+                YouTube Videos
+            </a>
+            <a href="#tiktok" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                TikTok
+            </a>
+            <a href="#instagram" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                Instagram
+            </a>
+
             <span class="dash-nav-group-label">Automation</span>
             <a href="#welcomer" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -413,14 +431,6 @@
             <a href="#auto-roles" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-4"/><path d="M20 9v4"/></svg>
                 Auto-Roles
-            </a>
-            <a href="#livestream" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                Livestream
-            </a>
-            <a href="#youtube-videos" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
-                YouTube Videos
             </a>
             <a href="#stats-channels" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -2507,6 +2517,175 @@
                 </div>
             </section>
 
+            <!-- TikTok Video Tracking -->
+            <section class="pb-16 dash-section" id="tiktok">
+                <div class="section-label">TIKTOK VIDEO TRACKING</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                            TikTok Video Tracking
+                        </h2>
+                        <p class="text-muted">Get notified when tracked TikTok accounts post new videos. Checks every 10 minutes via yt-dlp — no API key required.</p>
+                    </header>
+                    <section>
+                        <form id="tiktok-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="tt-enabled" role="switch">
+                                    <span class="font-medium">Enable TikTok Video Tracking</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tt-alert-channel">Alert channel:</label>
+                                <select id="tt-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">New post notifications will be sent here.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tt-ping-role">Ping role (optional):</label>
+                                <select id="tt-ping-role" class="select w-full">
+                                    <option value="">-- No ping --</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">This role will be mentioned with each new post notification.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            </button>
+                        </form>
+
+                        <hr class="my-6">
+
+                        <h3 class="text-lg font-semibold mb-4">Tracked Accounts <span class="text-muted text-sm font-normal" id="tt-count">(0/10)</span></h3>
+
+                        <div id="tt-list" class="grid gap-3 mb-4"></div>
+                        <p id="tt-empty" class="text-muted text-sm hidden">No TikTok accounts are being tracked yet.</p>
+
+                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                            <h4 class="text-sm font-semibold">Add Account</h4>
+                            <div class="grid gap-2">
+                                <label for="tt-add-alert-channel">Alert channel:</label>
+                                <select id="tt-add-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="tt-add-login" placeholder="TikTok username (e.g. charlidamelio)" class="input flex-1" maxlength="64">
+                                <button type="button" class="btn-primary" id="tt-add-btn" onclick="ttAddAccount()">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-muted text-xs">Enter a TikTok username without @ (e.g. "charlidamelio"). The first check seeds the latest post without sending a notification.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Instagram Tracking -->
+            <section class="pb-16 dash-section" id="instagram">
+                <div class="section-label">INSTAGRAM TRACKING</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                            Instagram Tracking
+                        </h2>
+                        <p class="text-muted">Get notified when tracked Instagram accounts post new photos or reels. Checks every 15 minutes. Only public accounts are supported.</p>
+                    </header>
+                    <section>
+                        <form id="instagram-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="ig-enabled" role="switch">
+                                    <span class="font-medium">Enable Instagram Tracking</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ig-alert-channel">Alert channel:</label>
+                                <select id="ig-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Notifications will be sent here unless overridden per account.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ig-ping-role">Ping role (optional):</label>
+                                <select id="ig-ping-role" class="select w-full">
+                                    <option value="">-- No ping --</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            </button>
+                        </form>
+
+                        <hr class="my-6">
+
+                        <h3 class="text-lg font-semibold mb-4">Tracked Accounts <span class="text-muted text-sm font-normal" id="ig-count">(0/10)</span></h3>
+
+                        <div id="ig-list" class="grid gap-3 mb-4"></div>
+                        <p id="ig-empty" class="text-muted text-sm hidden">No Instagram accounts are being tracked yet.</p>
+
+                        <div class="grid gap-3 mt-4 p-4 border border-dashed rounded-lg">
+                            <h4 class="text-sm font-semibold">Add Account</h4>
+                            <div class="grid gap-2">
+                                <label for="ig-add-alert-channel">Alert channel:</label>
+                                <select id="ig-add-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="ig-add-login" placeholder="Instagram username (e.g. natgeo)" class="input flex-1" maxlength="30">
+                                <button type="button" class="btn-primary" id="ig-add-btn" onclick="igAddAccount()">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-muted text-xs">Only public Instagram profiles are supported. Enter the username without @ (e.g. "natgeo").</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
             <!-- Server Stats Channels -->
             <section class="pb-16 dash-section" id="stats-channels">
                 <div class="section-label">SERVER STATS CHANNELS</div>
@@ -3290,7 +3469,7 @@
                 '__Community',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 '__Automation',
-                'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'stats-channels', 'customcmds', 'auto-release'
+                'welcomer', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
             var sectionMap = {};
@@ -3518,6 +3697,22 @@
                 document.getElementById('yvid-ping-role').value = data.youtube_videos.ping_role || '';
             }
             yvidRenderChannels();
+
+            // TikTok Video Tracking
+            if (data.tiktok) {
+                document.getElementById('tt-enabled').checked = data.tiktok.enabled === true;
+                document.getElementById('tt-alert-channel').value = data.tiktok.alert_channel || '';
+                document.getElementById('tt-ping-role').value = data.tiktok.ping_role || '';
+            }
+            ttRenderAccounts();
+
+            // Instagram Tracking
+            if (data.instagram) {
+                document.getElementById('ig-enabled').checked = data.instagram.enabled === true;
+                document.getElementById('ig-alert-channel').value = data.instagram.alert_channel || '';
+                document.getElementById('ig-ping-role').value = data.instagram.ping_role || '';
+            }
+            igRenderAccounts();
 
             // Stats Channels
             if (data.stats_channels) {
@@ -4064,6 +4259,313 @@
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
                     }
+                }
+            };
+        }
+
+        // --- TikTok ---
+        function ttRenderAccounts() {
+            const list    = document.getElementById('tt-list');
+            const empty   = document.getElementById('tt-empty');
+            const count   = document.getElementById('tt-count');
+            const accounts = (data.tiktok && Array.isArray(data.tiktok.channels)) ? data.tiktok.channels : [];
+
+            list.querySelectorAll('.tt-card').forEach(function (el) { el.remove(); });
+            count.textContent = '(' + accounts.length + '/10)';
+
+            if (accounts.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            accounts.forEach(function (acc) {
+                const profileUrl = 'https://www.tiktok.com/@' + acc.username;
+                const safeUser = acc.username.replace(/'/g, "\\'");
+                let channelOptions = '<option value="">-- Select a channel --</option>';
+                Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
+                    const selected = (acc.alert_channel === cid) ? ' selected' : '';
+                    channelOptions += '<option value="' + cid + '"' + selected + '>' + DISCORD_CHANNELS[cid] + '</option>';
+                });
+                const card = document.createElement('div');
+                card.className = 'card tt-card';
+                card.innerHTML = '<header class="flex items-center justify-between">'
+                    + '<div class="flex items-center gap-3">'
+                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#010101,#ff0050);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                    + (acc.display_name || acc.username).charAt(0).toUpperCase()
+                    + '</div>'
+                    + '<div>'
+                    + '<h3 class="text-base font-semibold flex items-center gap-2">'
+                    + (acc.display_name || acc.username)
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#010101;color:#fff;font-weight:600;">TikTok</span>'
+                    + '</h3>'
+                    + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
+                    + '</div></div>'
+                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
+                    + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+                    + '<span class="btn-label">Remove</span></button>'
+                    + '</header>'
+                    + '<div class="grid gap-2 mt-3 px-4 pb-4">'
+                    + '<label class="text-sm">Alert channel:</label>'
+                    + '<div class="flex items-center gap-2">'
+                    + '<select class="select flex-1 tt-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
+                    + '<button type="button" class="btn-primary tt-save-btn" data-user="' + safeUser + '" onclick="ttUpdateChannel(\'' + safeUser + '\')">'
+                    + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
+                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>';
+                list.appendChild(card);
+            });
+        }
+
+        function ttAddAccount() {
+            const input = document.getElementById('tt-add-login');
+            const login = input.value.trim().replace(/^@/, '');
+            if (!login) return;
+            const alertChannelSel = document.getElementById('tt-add-alert-channel');
+            const alertChannel = alertChannelSel ? alertChannelSel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel first.'); return; }
+            const btn = document.getElementById('tt-add-btn');
+            btn.disabled = true;
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            const payload = { tiktok: { action: 'add', login: login, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=tiktok&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && resp.account) {
+                            if (!data.tiktok) data.tiktok = { enabled: false, alert_channel: '', ping_role: '', channels: [] };
+                            if (!Array.isArray(data.tiktok.channels)) data.tiktok.channels = [];
+                            data.tiktok.channels.push(Object.assign({}, resp.account, { last_video_id: '', alert_channel: alertChannel }));
+                            input.value = '';
+                            if (alertChannelSel) alertChannelSel.value = '';
+                            ttRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        let _ttPendingRemove = null;
+
+        function ttRemoveAccount(username) {
+            _ttPendingRemove = username;
+            document.getElementById('remove-tt-dialog-description').textContent =
+                '@' + username + ' will be removed from tracking. This cannot be undone.';
+            document.getElementById('remove-tt-dialog').showModal();
+        }
+
+        function ttConfirmRemove() {
+            const username = _ttPendingRemove;
+            _ttPendingRemove = null;
+            document.getElementById('remove-tt-dialog').close();
+            if (!username) return;
+            const payload = { tiktok: { action: 'remove', username: username } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=tiktok&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.tiktok) {
+                            data.tiktok.channels = data.tiktok.channels.filter(function (c) { return c.username !== username; });
+                            ttRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        function ttUpdateChannel(username) {
+            const sel = document.querySelector('.tt-channel-select[data-user="' + username + '"]');
+            const btn = document.querySelector('.tt-save-btn[data-user="' + username + '"]');
+            const alertChannel = sel ? sel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel.'); return; }
+            if (btn) { btn.disabled = true; btn.querySelector('.spinner')?.classList.remove('hidden'); btn.querySelector('.btn-text')?.classList.add('hidden'); }
+            const payload = { tiktok: { action: 'update_channel', username: username, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=tiktok&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.disabled = false; btn.querySelector('.spinner')?.classList.add('hidden'); btn.querySelector('.btn-text')?.classList.remove('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.tiktok) {
+                            const entry = data.tiktok.channels.find(function (c) { return c.username === username; });
+                            if (entry) entry.alert_channel = alertChannel;
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        // --- Instagram ---
+        function igRenderAccounts() {
+            const list     = document.getElementById('ig-list');
+            const empty    = document.getElementById('ig-empty');
+            const count    = document.getElementById('ig-count');
+            const accounts = (data.instagram && Array.isArray(data.instagram.channels)) ? data.instagram.channels : [];
+
+            list.querySelectorAll('.ig-card').forEach(function (el) { el.remove(); });
+            count.textContent = '(' + accounts.length + '/10)';
+
+            if (accounts.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            accounts.forEach(function (acc) {
+                const profileUrl = 'https://www.instagram.com/' + acc.username + '/';
+                const safeUser = acc.username.replace(/'/g, "\\'");
+                let channelOptions = '<option value="">-- Select a channel --</option>';
+                Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
+                    const selected = (acc.alert_channel === cid) ? ' selected' : '';
+                    channelOptions += '<option value="' + cid + '"' + selected + '>' + DISCORD_CHANNELS[cid] + '</option>';
+                });
+                const card = document.createElement('div');
+                card.className = 'card ig-card';
+                card.innerHTML = '<header class="flex items-center justify-between">'
+                    + '<div class="flex items-center gap-3">'
+                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                    + (acc.display_name || acc.username).charAt(0).toUpperCase()
+                    + '</div>'
+                    + '<div>'
+                    + '<h3 class="text-base font-semibold flex items-center gap-2">'
+                    + (acc.display_name || acc.username)
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#e1306c;color:#fff;font-weight:600;">Instagram</span>'
+                    + '</h3>'
+                    + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
+                    + '</div></div>'
+                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="igRemoveAccount(\'' + safeUser + '\')">'
+                    + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+                    + '<span class="btn-label">Remove</span></button>'
+                    + '</header>'
+                    + '<div class="grid gap-3 mt-3 px-4 pb-4">'
+                    + '<label class="text-sm font-medium">Alert channel:</label>'
+                    + '<select class="select w-full ig-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
+                    + '<label class="text-sm font-medium">Alert types:</label>'
+                    + '<label class="flex items-center gap-2 text-sm" style="cursor:pointer">'
+                    + '<input type="checkbox" class="input ig-posts-cb" data-user="' + safeUser + '"' + (acc.alert_posts !== false ? ' checked' : '') + '>'
+                    + '<span>Posts (photos, carousels)</span></label>'
+                    + '<label class="flex items-center gap-2 text-sm" style="cursor:pointer">'
+                    + '<input type="checkbox" class="input ig-reels-cb" data-user="' + safeUser + '"' + (acc.alert_reels !== false ? ' checked' : '') + '>'
+                    + '<span>Reels</span></label>'
+                    + '<button type="button" class="btn-primary ig-save-btn" data-user="' + safeUser + '" onclick="igUpdateSettings(\'' + safeUser + '\')">'
+                    + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
+                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '</button>'
+                    + '</div>';
+                list.appendChild(card);
+            });
+        }
+
+        function igAddAccount() {
+            const input = document.getElementById('ig-add-login');
+            const login = input.value.trim().replace(/^@/, '');
+            if (!login) return;
+            const alertChannelSel = document.getElementById('ig-add-alert-channel');
+            const alertChannel = alertChannelSel ? alertChannelSel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel first.'); return; }
+            const btn = document.getElementById('ig-add-btn');
+            btn.disabled = true;
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            const payload = { instagram: { action: 'add', login: login, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && resp.account) {
+                            if (!data.instagram) data.instagram = { enabled: false, alert_channel: '', ping_role: '', channels: [] };
+                            if (!Array.isArray(data.instagram.channels)) data.instagram.channels = [];
+                            data.instagram.channels.push(Object.assign({}, resp.account, { last_post_id: '', last_reel_id: '', alert_channel: alertChannel, alert_posts: true, alert_reels: true }));
+                            input.value = '';
+                            if (alertChannelSel) alertChannelSel.value = '';
+                            igRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        let _igPendingRemove = null;
+
+        function igRemoveAccount(username) {
+            _igPendingRemove = username;
+            document.getElementById('remove-ig-dialog-description').textContent =
+                '@' + username + ' will be removed from tracking. This cannot be undone.';
+            document.getElementById('remove-ig-dialog').showModal();
+        }
+
+        function igConfirmRemove() {
+            const username = _igPendingRemove;
+            _igPendingRemove = null;
+            document.getElementById('remove-ig-dialog').close();
+            if (!username) return;
+            const payload = { instagram: { action: 'remove', username: username } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.instagram) {
+                            data.instagram.channels = data.instagram.channels.filter(function (c) { return c.username !== username; });
+                            igRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        function igUpdateSettings(username) {
+            const sel      = document.querySelector('.ig-channel-select[data-user="' + username + '"]');
+            const btn      = document.querySelector('.ig-save-btn[data-user="' + username + '"]');
+            const postsCb  = document.querySelector('.ig-posts-cb[data-user="' + username + '"]');
+            const reelsCb  = document.querySelector('.ig-reels-cb[data-user="' + username + '"]');
+            const alertChannel = sel ? sel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel.'); return; }
+            const alertPosts = postsCb ? postsCb.checked : true;
+            const alertReels = reelsCb ? reelsCb.checked : true;
+            if (btn) { btn.disabled = true; btn.querySelector('.spinner')?.classList.remove('hidden'); btn.querySelector('.btn-text')?.classList.add('hidden'); }
+            const payload = { instagram: { action: 'update_settings', username: username, alert_channel: alertChannel, alert_posts: alertPosts, alert_reels: alertReels } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.disabled = false; btn.querySelector('.spinner')?.classList.add('hidden'); btn.querySelector('.btn-text')?.classList.remove('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.instagram) {
+                            const entry = data.instagram.channels.find(function (c) { return c.username === username; });
+                            if (entry) { entry.alert_channel = alertChannel; entry.alert_posts = alertPosts; entry.alert_reels = alertReels; }
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
                 }
             };
         }
@@ -4738,6 +5240,72 @@
 
         document.getElementById('yvid-add-login').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); yvidAddChannel(); }
+        });
+
+        document.getElementById('tiktok-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled       = document.getElementById('tt-enabled').checked;
+            const alert_channel = document.getElementById('tt-alert-channel').value;
+            const ping_role     = document.getElementById('tt-ping-role').value;
+            const payload = { tiktok: { action: 'save', enabled: enabled, alert_channel: alert_channel, ping_role: ping_role } };
+            const btn = this.querySelector('.submit-btn');
+            if (btn) { btn.querySelector('.btn-text')?.classList.add('hidden'); btn.querySelector('.spinner')?.classList.remove('hidden'); }
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=tiktok&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.querySelector('.btn-text')?.classList.remove('hidden'); btn.querySelector('.spinner')?.classList.add('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (!data.tiktok) data.tiktok = {};
+                            data.tiktok.enabled       = enabled;
+                            data.tiktok.alert_channel = alert_channel;
+                            data.tiktok.ping_role     = ping_role;
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('tt-add-login').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); ttAddAccount(); }
+        });
+
+        document.getElementById('instagram-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled       = document.getElementById('ig-enabled').checked;
+            const alert_channel = document.getElementById('ig-alert-channel').value;
+            const ping_role     = document.getElementById('ig-ping-role').value;
+            const payload = { instagram: { action: 'save', enabled: enabled, alert_channel: alert_channel, ping_role: ping_role } };
+            const btn = this.querySelector('.submit-btn');
+            if (btn) { btn.querySelector('.btn-text')?.classList.add('hidden'); btn.querySelector('.spinner')?.classList.remove('hidden'); }
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.querySelector('.btn-text')?.classList.remove('hidden'); btn.querySelector('.spinner')?.classList.add('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (!data.instagram) data.instagram = {};
+                            data.instagram.enabled       = enabled;
+                            data.instagram.alert_channel = alert_channel;
+                            data.instagram.ping_role     = ping_role;
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('ig-add-login').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); igAddAccount(); }
         });
 
         document.getElementById('stats-channels-form').onsubmit = function (event) {
@@ -6510,6 +7078,32 @@
             });
         })();
     </script>
+
+<dialog id="remove-tt-dialog" class="dialog" aria-labelledby="remove-tt-dialog-title" aria-describedby="remove-tt-dialog-description">
+    <div>
+        <header>
+            <h2 id="remove-tt-dialog-title">Remove TikTok account?</h2>
+            <p id="remove-tt-dialog-description"></p>
+        </header>
+        <footer>
+            <button class="btn-outline" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
+            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="ttConfirmRemove()">Remove</button>
+        </footer>
+    </div>
+</dialog>
+
+<dialog id="remove-ig-dialog" class="dialog" aria-labelledby="remove-ig-dialog-title" aria-describedby="remove-ig-dialog-description">
+    <div>
+        <header>
+            <h2 id="remove-ig-dialog-title">Remove Instagram account?</h2>
+            <p id="remove-ig-dialog-description"></p>
+        </header>
+        <footer>
+            <button class="btn-outline" onclick="document.getElementById('remove-ig-dialog').close()">Cancel</button>
+            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="igConfirmRemove()">Remove</button>
+        </footer>
+    </div>
+</dialog>
 
 <dialog id="remove-yvid-dialog" class="dialog" aria-labelledby="remove-yvid-dialog-title" aria-describedby="remove-yvid-dialog-description">
     <div>

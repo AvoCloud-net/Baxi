@@ -54,6 +54,8 @@ from assets.tasks import (
     TrustScoreTask,
     GarbageCollectorTask,
     YouTubeVideoTask,
+    TikTokVideoTask,
+    InstagramTask,
     MusicIdleTask,
     Radio247Task,
 )
@@ -216,6 +218,18 @@ def events(bot: commands.AutoShardedBot, web):
             yt_video_task.check_videos.start()
             share.task_instances["YouTubeVideos"] = yt_video_task
             logger.debug.success("YouTube video tracking task started.")
+
+            logger.working("Starting TikTokVideos task...")
+            tt_video_task = TikTokVideoTask(bot)
+            tt_video_task.check_videos.start()
+            share.task_instances["TikTokVideos"] = tt_video_task
+            logger.debug.success("TikTok video tracking task started.")
+
+            logger.working("Starting Instagram task...")
+            ig_task = InstagramTask(bot)
+            ig_task.check_posts.start()
+            share.task_instances["Instagram"] = ig_task
+            logger.debug.success("Instagram tracking task started.")
 
             logger.working("Starting Giveaway task...")
             giveaway_task = GiveawayTask(bot)

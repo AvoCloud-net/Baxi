@@ -8,7 +8,7 @@ import discord
 import aiohttp
 import config.auth as auth
 from typing import Optional
-from assets.livestream import twitch_api, youtube_api, tiktok_api
+from assets.livestream import twitch_api, youtube_api, tiktok_api, instagram_api
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -1631,6 +1631,309 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "success": True,
                     "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                     "sys": "youtube_videos",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+
+            return quart.jsonify({"success": True, "message": "Settings saved."})
+
+        elif system == "tiktok":
+            data: dict = await quart.request.get_json()
+            tt_data = data.get("tiktok")
+
+            if not isinstance(tt_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            action = tt_data.get("action", "save")
+
+            if action == "add":
+                login = str(tt_data.get("login", "")).strip().lstrip("@")
+                if not login:
+                    return quart.jsonify({"success": False, "message": "TikTok username is required."}), 400
+                if not re.fullmatch(r"[a-zA-Z0-9_.]{1,64}", login):
+                    return quart.jsonify({"success": False, "message": "Invalid TikTok username."}), 400
+
+                alert_channel_id = str(tt_data.get("alert_channel", "")).strip()
+                if not alert_channel_id or not re.fullmatch(r"\d{17,19}", alert_channel_id):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel is required."}), 400
+
+                tt_config = dict(load_data(int(guild_id), "tiktok"))
+                channels = tt_config.get("channels", [])
+
+                if len(channels) >= 10:
+                    return quart.jsonify({"success": False, "message": "Maximum of 10 tracked accounts reached."}), 400
+
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+                    user_info = await tiktok_api.get_user_info(session, login)
+
+                if not user_info:
+                    return quart.jsonify({"success": False, "message": f"TikTok user '@{login}' not found or profile is private."}), 404
+
+                if any(c.get("username") == login for c in channels):
+                    return quart.jsonify({"success": False, "message": f"'@{login}' is already being tracked."}), 400
+
+                channels.append({
+                    "username":          login,
+                    "display_name":      user_info.get("display_name", login),
+                    "profile_image_url": user_info.get("profile_image_url", ""),
+                    "last_video_id":     "",
+                    "last_video_published": "",
+                    "alert_channel":     alert_channel_id,
+                })
+                tt_config["channels"] = channels
+                save_data(int(guild_id), "tiktok", tt_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "tiktok",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({
+                    "success": True,
+                    "message": f"Now tracking '@{login}'.",
+                    "account": {
+                        "username":          login,
+                        "display_name":      user_info.get("display_name", login),
+                        "profile_image_url": user_info.get("profile_image_url", ""),
+                        "alert_channel":     alert_channel_id,
+                    },
+                })
+
+            elif action == "remove":
+                username_to_remove = str(tt_data.get("username", "")).strip().lstrip("@")
+                if not username_to_remove:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+
+                tt_config = dict(load_data(int(guild_id), "tiktok"))
+                channels = tt_config.get("channels", [])
+                before_count = len(channels)
+                channels = [c for c in channels if c.get("username") != username_to_remove]
+
+                if len(channels) == before_count:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                tt_config["channels"] = channels
+                save_data(int(guild_id), "tiktok", tt_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "tiktok",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Account removed."})
+
+            elif action == "update_channel":
+                username_to_update = str(tt_data.get("username", "")).strip().lstrip("@")
+                new_alert_channel  = str(tt_data.get("alert_channel", "")).strip()
+                if not username_to_update:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+                if not new_alert_channel or not re.fullmatch(r"\d{17,19}", new_alert_channel):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel ID is required."}), 400
+
+                tt_config = dict(load_data(int(guild_id), "tiktok"))
+                entry = next((c for c in tt_config.get("channels", []) if c.get("username") == username_to_update), None)
+                if not entry:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                entry["alert_channel"] = new_alert_channel
+                save_data(int(guild_id), "tiktok", tt_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "tiktok",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Alert channel updated."})
+
+            elif action == "save":
+                if not isinstance(tt_data.get("enabled"), bool):
+                    return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+                alert_channel = str(tt_data.get("alert_channel", "")).strip()
+                if alert_channel and not re.fullmatch(r"\d{17,19}", alert_channel):
+                    return quart.jsonify({"success": False, "message": "Invalid alert channel ID."}), 400
+
+                ping_role = str(tt_data.get("ping_role", "")).strip()
+                if ping_role and not re.fullmatch(r"\d{17,19}", ping_role):
+                    return quart.jsonify({"success": False, "message": "Invalid ping role ID."}), 400
+
+                tt_config = dict(load_data(int(guild_id), "tiktok"))
+                tt_config["enabled"]       = tt_data["enabled"]
+                tt_config["alert_channel"] = alert_channel
+                tt_config["ping_role"]     = ping_role
+                save_data(int(guild_id), "tiktok", tt_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "tiktok",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+
+            return quart.jsonify({"success": True, "message": "Settings saved."})
+
+        elif system == "instagram":
+            data: dict = await quart.request.get_json()
+            ig_data = data.get("instagram")
+
+            if not isinstance(ig_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            action = ig_data.get("action", "save")
+
+            if action == "add":
+                login = str(ig_data.get("login", "")).strip().lstrip("@")
+                if not login:
+                    return quart.jsonify({"success": False, "message": "Instagram username is required."}), 400
+                if not re.fullmatch(r"[a-zA-Z0-9_.]{1,30}", login):
+                    return quart.jsonify({"success": False, "message": "Invalid Instagram username."}), 400
+
+                alert_channel_id = str(ig_data.get("alert_channel", "")).strip()
+                if not alert_channel_id or not re.fullmatch(r"\d{17,19}", alert_channel_id):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel is required."}), 400
+
+                ig_config = dict(load_data(int(guild_id), "instagram"))
+                channels = ig_config.get("channels", [])
+
+                if len(channels) >= 10:
+                    return quart.jsonify({"success": False, "message": "Maximum of 10 tracked accounts reached."}), 400
+
+                profile_info = await instagram_api.get_profile(login)
+
+                if not profile_info:
+                    return quart.jsonify({"success": False, "message": f"Instagram profile '@{login}' not found or is private."}), 404
+
+                if any(c.get("username") == login for c in channels):
+                    return quart.jsonify({"success": False, "message": f"'@{login}' is already being tracked."}), 400
+
+                channels.append({
+                    "username":             login,
+                    "display_name":         profile_info.get("display_name", login),
+                    "profile_image_url":    profile_info.get("profile_image_url", ""),
+                    "last_post_id":         "",
+                    "last_post_published":  "",
+                    "last_reel_id":         "",
+                    "last_reel_published":  "",
+                    "alert_channel":        alert_channel_id,
+                    "alert_posts":          True,
+                    "alert_reels":          True,
+                })
+                ig_config["channels"] = channels
+                save_data(int(guild_id), "instagram", ig_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "instagram",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({
+                    "success": True,
+                    "message": f"Now tracking '@{login}'.",
+                    "account": {
+                        "username":          login,
+                        "display_name":      profile_info.get("display_name", login),
+                        "profile_image_url": profile_info.get("profile_image_url", ""),
+                        "alert_channel":     alert_channel_id,
+                    },
+                })
+
+            elif action == "remove":
+                username_to_remove = str(ig_data.get("username", "")).strip().lstrip("@")
+                if not username_to_remove:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+
+                ig_config = dict(load_data(int(guild_id), "instagram"))
+                channels = ig_config.get("channels", [])
+                before_count = len(channels)
+                channels = [c for c in channels if c.get("username") != username_to_remove]
+
+                if len(channels) == before_count:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                ig_config["channels"] = channels
+                save_data(int(guild_id), "instagram", ig_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "instagram",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Account removed."})
+
+            elif action == "update_settings":
+                username_to_update = str(ig_data.get("username", "")).strip().lstrip("@")
+                new_alert_channel  = str(ig_data.get("alert_channel", "")).strip()
+                if not username_to_update:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+                if not new_alert_channel or not re.fullmatch(r"\d{17,19}", new_alert_channel):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel ID is required."}), 400
+
+                ig_config = dict(load_data(int(guild_id), "instagram"))
+                entry = next((c for c in ig_config.get("channels", []) if c.get("username") == username_to_update), None)
+                if not entry:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                entry["alert_channel"] = new_alert_channel
+                entry["alert_posts"]   = bool(ig_data.get("alert_posts", True))
+                entry["alert_reels"]   = bool(ig_data.get("alert_reels", True))
+                save_data(int(guild_id), "instagram", ig_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "instagram",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Settings updated."})
+
+            elif action == "save":
+                if not isinstance(ig_data.get("enabled"), bool):
+                    return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+                alert_channel = str(ig_data.get("alert_channel", "")).strip()
+                if alert_channel and not re.fullmatch(r"\d{17,19}", alert_channel):
+                    return quart.jsonify({"success": False, "message": "Invalid alert channel ID."}), 400
+
+                ping_role = str(ig_data.get("ping_role", "")).strip()
+                if ping_role and not re.fullmatch(r"\d{17,19}", ping_role):
+                    return quart.jsonify({"success": False, "message": "Invalid ping role ID."}), 400
+
+                ig_config = dict(load_data(int(guild_id), "instagram"))
+                ig_config["enabled"]       = ig_data["enabled"]
+                ig_config["alert_channel"] = alert_channel
+                ig_config["ping_role"]     = ping_role
+                save_data(int(guild_id), "instagram", ig_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "instagram",
                 }
                 audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
                 audit_log.append(audit_log_new)
@@ -4243,6 +4546,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "TrustScore":    "recalculate_scores",
                 "GarbageCollector": "collect",
                 "YouTubeVideos":    "check_videos",
+                "TikTokVideos":     "check_videos",
+                "Instagram":        "check_posts",
             }
             task_key = str(data.get("task_key", "")).strip()
             if task_key not in _TASK_METHODS:

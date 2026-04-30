@@ -274,6 +274,17 @@
                 "embed_field_published": "Veröffentlicht",
                 "embed_footer": "Baxi YouTube Videos · avocloud.net"
             },
+            "tiktok": {
+                "embed_description": "**{name}** hat ein neues TikTok gepostet!",
+                "embed_field_published": "Veröffentlicht",
+                "embed_footer": "Baxi TikTok · avocloud.net"
+            },
+            "instagram": {
+                "embed_description_post": "**{name}** hat einen neuen Post geteilt!",
+                "embed_description_reel": "**{name}** hat einen neuen Reel geteilt!",
+                "embed_field_published": "Veröffentlicht",
+                "embed_footer": "Baxi Instagram · avocloud.net"
+            },
             "button_roles": {
                 "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
                 "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
@@ -738,6 +749,17 @@
                 "embed_description": "**{name}** just uploaded a new video!",
                 "embed_field_published": "Published",
                 "embed_footer": "Baxi YouTube Videos · avocloud.net"
+            },
+            "tiktok": {
+                "embed_description": "**{name}** posted a new TikTok!",
+                "embed_field_published": "Published",
+                "embed_footer": "Baxi TikTok · avocloud.net"
+            },
+            "instagram": {
+                "embed_description_post": "**{name}** shared a new post on Instagram!",
+                "embed_description_reel": "**{name}** shared a new Reel on Instagram!",
+                "embed_field_published": "Published",
+                "embed_footer": "Baxi Instagram · avocloud.net"
             },
             "button_roles": {
                 "applied": "The **{role}** role has been applied to your profile.",

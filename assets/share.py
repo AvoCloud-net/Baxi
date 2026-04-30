@@ -80,6 +80,18 @@ task_status: dict = {
         "last_run": None,
         "detail": "Checks YouTube channels for new video uploads every 10 min",
     },
+    "TikTokVideos": {
+        "name": "TikTok Video Tracker",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Checks TikTok accounts for new posts every 10 min",
+    },
+    "Instagram": {
+        "name": "Instagram Tracker",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Checks Instagram accounts for new posts/reels every 15 min",
+    },
     "MusicIdle": {
         "name": "Music Idle Watcher",
         "status": "idle",

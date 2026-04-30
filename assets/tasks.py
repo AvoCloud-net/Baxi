@@ -8,7 +8,7 @@ from discord.ext import tasks, commands
 
 from reds_simple_logger import Logger
 from assets.share import globalchat_message_data, phishing_url_list, set_task_status, admin_log
-from assets.livestream import twitch_api, youtube_api, tiktok_api
+from assets.livestream import twitch_api, youtube_api, tiktok_api, instagram_api
 import assets.data as datasys
 import assets.trust as sentinel
 import config.config as config
@@ -1191,6 +1191,428 @@ class YouTubeVideoTask:
                 pass
 
         footer = yv_lang.get("embed_footer", "Baxi YouTube Videos · avocloud.net")
+        embed.set_footer(text=footer)
+        return embed
+
+
+class TikTokVideoTask:
+    """Background task that polls TikTok accounts for new posts via yt-dlp.
+
+    Every 10 minutes, for each guild with tiktok enabled:
+    - Fetches the latest video for each tracked account
+    - Compares video_id to stored last_video_id
+    - On first check (last_video_id == ""): seeds silently without notifying
+    - On new video: sends embed to alert_channel, pings role if configured
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=config.TikTokVideos.check_interval_seconds)
+    async def check_videos(self):
+        try:
+            set_task_status("TikTokVideos", "running", "Checking TikTok accounts for new posts...")
+            await self._do_check()
+            set_task_status("TikTokVideos", "ok", "TikTok video check complete")
+        except Exception as e:
+            logger.error(f"[TikTokVideos] Unexpected error: {e}")
+            set_task_status("TikTokVideos", "error", f"Unexpected error: {e}")
+
+    @check_videos.before_loop
+    async def before_check_videos(self):
+        await self.bot.wait_until_ready()
+        await self._do_check()
+
+    async def _do_check(self):
+        all_usernames: set = set()
+        guild_data: dict = {}
+
+        for guild in self.bot.guilds:
+            tt_config = dict(datasys.load_data(guild.id, "tiktok"))
+            if not tt_config.get("enabled", False):
+                continue
+            channels = tt_config.get("channels", [])
+            guild_data[guild.id] = (tt_config, [])
+            for ch_entry in channels:
+                username = ch_entry.get("username", "")
+                if username:
+                    all_usernames.add(username)
+                    guild_data[guild.id][1].append((ch_entry, username))
+
+        if not all_usernames:
+            return
+
+        video_cache: dict = {}
+        logger.info(f"[TikTokVideos] Checking {len(all_usernames)} unique accounts across {len(guild_data)} guilds")
+        for username in all_usernames:
+            try:
+                video = await tiktok_api.get_latest_video(username)
+                video_cache[username] = video
+                logger.debug.info(f"[TikTokVideos] @{username}: video={video['video_id'] if video else None}")
+            except Exception as e:
+                logger.error(f"[TikTokVideos] Failed to fetch @{username}: {e}")
+                video_cache[username] = None
+
+        for guild in self.bot.guilds:
+            if guild.id not in guild_data:
+                continue
+            try:
+                tt_config, channel_list = guild_data[guild.id]
+                changed = await self._check_guild(guild, video_cache, channel_list, tt_config)
+                if changed:
+                    datasys.save_data(guild.id, "tiktok", tt_config)
+            except Exception as e:
+                logger.error(f"[TikTokVideos] Error processing guild {guild.id}: {e}")
+
+    async def _check_guild(self, guild, video_cache: dict, channel_list: list, tt_config: dict) -> bool:
+        global_alert_channel_id = str(tt_config.get("alert_channel", "")).strip()
+        ping_role_id = str(tt_config.get("ping_role", "")).strip()
+        changed = False
+
+        lang = datasys.load_lang_file(guild.id)
+        tt_lang = lang.get("systems", {}).get("tiktok", {})
+
+        resolved_channels: dict = {}
+
+        for ch_entry, username in channel_list:
+            try:
+                per_alert = str(ch_entry.get("alert_channel", "")).strip()
+                alert_channel_id = per_alert or global_alert_channel_id
+                if not alert_channel_id:
+                    logger.warning(f"[TikTokVideos] No alert channel for @{username} in {guild.name}, skipping")
+                    continue
+
+                if alert_channel_id not in resolved_channels:
+                    try:
+                        alert_ch = guild.get_channel(int(alert_channel_id))
+                        if not alert_ch:
+                            alert_ch = await self.bot.fetch_channel(int(alert_channel_id))
+                    except (ValueError, TypeError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        alert_ch = None
+                    resolved_channels[alert_channel_id] = alert_ch
+
+                alert_channel = resolved_channels[alert_channel_id]
+                if not alert_channel or not isinstance(alert_channel, discord.TextChannel):
+                    logger.error(f"[TikTokVideos] Alert channel {alert_channel_id} not found or not text channel in {guild.name}")
+                    continue
+                if not alert_channel.permissions_for(guild.me).send_messages:
+                    logger.error(f"[TikTokVideos] No send permission in {alert_channel.name} in {guild.name}")
+                    continue
+
+                video = video_cache.get(username)
+                if video is None:
+                    continue
+
+                last_video_id = ch_entry.get("last_video_id", "")
+                last_video_published = ch_entry.get("last_video_published", "")
+
+                if not last_video_id:
+                    ch_entry["last_video_id"] = video["video_id"]
+                    ch_entry["last_video_published"] = video.get("published", "")
+                    changed = True
+                    admin_log("info", f"[TikTokVideos] Seeded @{username} @ {guild.name}: {video['video_id']}", source="TikTokVideos")
+                    continue
+
+                if video["video_id"] == last_video_id:
+                    continue
+
+                video_published = video.get("published", "")
+                if video_published and last_video_published:
+                    try:
+                        from datetime import datetime
+                        dt_new = datetime.fromisoformat(video_published.replace("Z", "+00:00"))
+                        dt_last = datetime.fromisoformat(last_video_published.replace("Z", "+00:00"))
+                        if dt_new <= dt_last:
+                            ch_entry["last_video_id"] = video["video_id"]
+                            ch_entry["last_video_published"] = video_published
+                            changed = True
+                            continue
+                    except (ValueError, AttributeError):
+                        pass
+
+                ch_entry["last_video_id"] = video["video_id"]
+                ch_entry["last_video_published"] = video_published
+                changed = True
+
+                display_name = ch_entry.get("display_name", username)
+                profile_img = ch_entry.get("profile_image_url", "")
+
+                try:
+                    embed = self._build_embed(video, display_name, profile_img, tt_lang)
+                except Exception as e:
+                    logger.error(f"[TikTokVideos] Error building embed for @{username}: {e}")
+                    embed = discord.Embed(
+                        title=video.get("title", "New TikTok"),
+                        url=video.get("url", ""),
+                        color=discord.Color.from_rgb(1, 1, 1),
+                    )
+
+                ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
+
+                try:
+                    logger.info(f"[TikTokVideos] Sending alert to {alert_channel.name} in {guild.name}: \"{video['title']}\"")
+                    sent_msg = await alert_channel.send(content=ping_content, embed=embed)
+                    logger.info(f"[TikTokVideos] Message sent: {sent_msg.id}")
+                    admin_log("success", f"[TikTokVideos] New post by @{display_name} @ {guild.name}: \"{video['title']}\"", source="TikTokVideos")
+                except discord.Forbidden as e:
+                    logger.error(f"[TikTokVideos] Permission denied in {alert_channel.name}: {e}")
+                    admin_log("error", f"[TikTokVideos] Permission error: {e}", source="TikTokVideos")
+                except discord.HTTPException as e:
+                    logger.error(f"[TikTokVideos] HTTP error in {alert_channel.name}: {e}")
+                    admin_log("error", f"[TikTokVideos] HTTP error: {e}", source="TikTokVideos")
+                except Exception as e:
+                    logger.error(f"[TikTokVideos] Unexpected send error: {type(e).__name__}: {e}")
+
+            except Exception as e:
+                logger.error(f"[TikTokVideos] Error checking @{username} in guild {guild.id}: {e}")
+
+        return changed
+
+    @staticmethod
+    def _build_embed(video: dict, display_name: str, profile_image_url: str, tt_lang: dict) -> discord.Embed:
+        description = tt_lang.get("embed_description", "**{name}** posted a new TikTok!").format(name=display_name)
+        embed = discord.Embed(
+            title=video.get("title", "New TikTok"),
+            url=video.get("url", ""),
+            color=discord.Color.from_rgb(1, 1, 1),
+            description=description,
+        )
+        thumbnail = video.get("thumbnail_url", "")
+        if thumbnail:
+            embed.set_image(url=thumbnail)
+        if profile_image_url:
+            embed.set_thumbnail(url=profile_image_url)
+
+        published = video.get("published", "")
+        if published:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+                field_name = tt_lang.get("embed_field_published", "Published")
+                embed.add_field(name=field_name, value=f"<t:{int(dt.timestamp())}:R>", inline=True)
+            except (ValueError, AttributeError):
+                pass
+
+        footer = tt_lang.get("embed_footer", "Baxi TikTok · avocloud.net")
+        embed.set_footer(text=footer)
+        return embed
+
+
+class InstagramTask:
+    """Background task that polls Instagram accounts for new posts and reels via instaloader.
+
+    Every 15 minutes, for each guild with instagram enabled:
+    - Fetches the latest post and reel for each tracked account
+    - Sends separate alerts for new posts and new reels based on guild settings
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=config.Instagram.check_interval_seconds)
+    async def check_posts(self):
+        try:
+            set_task_status("Instagram", "running", "Checking Instagram accounts for new content...")
+            await self._do_check()
+            set_task_status("Instagram", "ok", "Instagram check complete")
+        except Exception as e:
+            logger.error(f"[Instagram] Unexpected error: {e}")
+            set_task_status("Instagram", "error", f"Unexpected error: {e}")
+
+    @check_posts.before_loop
+    async def before_check_posts(self):
+        await self.bot.wait_until_ready()
+        await self._do_check()
+
+    async def _do_check(self):
+        all_usernames: set = set()
+        guild_data: dict = {}
+
+        for guild in self.bot.guilds:
+            ig_config = dict(datasys.load_data(guild.id, "instagram"))
+            if not ig_config.get("enabled", False):
+                continue
+            channels = ig_config.get("channels", [])
+            guild_data[guild.id] = (ig_config, [])
+            for ch_entry in channels:
+                username = ch_entry.get("username", "")
+                if username:
+                    all_usernames.add(username)
+                    guild_data[guild.id][1].append((ch_entry, username))
+
+        if not all_usernames:
+            return
+
+        content_cache: dict = {}
+        logger.info(f"[Instagram] Checking {len(all_usernames)} unique accounts across {len(guild_data)} guilds")
+        for username in all_usernames:
+            try:
+                result = await instagram_api.get_latest_reel_and_post(username)
+                content_cache[username] = result
+            except Exception as e:
+                logger.error(f"[Instagram] Failed to fetch @{username}: {e}")
+                content_cache[username] = {"latest_post": None, "latest_reel": None}
+            await asyncio.sleep(2)  # gentle on Instagram rate limits
+
+        for guild in self.bot.guilds:
+            if guild.id not in guild_data:
+                continue
+            try:
+                ig_config, channel_list = guild_data[guild.id]
+                changed = await self._check_guild(guild, content_cache, channel_list, ig_config)
+                if changed:
+                    datasys.save_data(guild.id, "instagram", ig_config)
+            except Exception as e:
+                logger.error(f"[Instagram] Error processing guild {guild.id}: {e}")
+
+    async def _check_guild(self, guild, content_cache: dict, channel_list: list, ig_config: dict) -> bool:
+        global_alert_channel_id = str(ig_config.get("alert_channel", "")).strip()
+        ping_role_id = str(ig_config.get("ping_role", "")).strip()
+        changed = False
+
+        lang = datasys.load_lang_file(guild.id)
+        ig_lang = lang.get("systems", {}).get("instagram", {})
+
+        resolved_channels: dict = {}
+
+        for ch_entry, username in channel_list:
+            try:
+                per_alert = str(ch_entry.get("alert_channel", "")).strip()
+                alert_channel_id = per_alert or global_alert_channel_id
+                if not alert_channel_id:
+                    logger.warning(f"[Instagram] No alert channel for @{username} in {guild.name}, skipping")
+                    continue
+
+                if alert_channel_id not in resolved_channels:
+                    try:
+                        alert_ch = guild.get_channel(int(alert_channel_id))
+                        if not alert_ch:
+                            alert_ch = await self.bot.fetch_channel(int(alert_channel_id))
+                    except (ValueError, TypeError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        alert_ch = None
+                    resolved_channels[alert_channel_id] = alert_ch
+
+                alert_channel = resolved_channels[alert_channel_id]
+                if not alert_channel or not isinstance(alert_channel, discord.TextChannel):
+                    logger.error(f"[Instagram] Alert channel {alert_channel_id} not found in {guild.name}")
+                    continue
+                if not alert_channel.permissions_for(guild.me).send_messages:
+                    logger.error(f"[Instagram] No send permission in {alert_channel.name} in {guild.name}")
+                    continue
+
+                content = content_cache.get(username, {})
+                display_name = ch_entry.get("display_name", username)
+                profile_img = ch_entry.get("profile_image_url", "")
+                ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
+                alert_posts = ch_entry.get("alert_posts", True)
+                alert_reels = ch_entry.get("alert_reels", True)
+
+                if alert_posts:
+                    post = content.get("latest_post")
+                    if post:
+                        last_post_id = ch_entry.get("last_post_id", "")
+                        post_published = post.get("published", "")
+                        last_post_published = ch_entry.get("last_post_published", "")
+
+                        if not last_post_id:
+                            ch_entry["last_post_id"] = post["post_id"]
+                            ch_entry["last_post_published"] = post_published
+                            changed = True
+                            admin_log("info", f"[Instagram] Seeded post for @{username} @ {guild.name}", source="Instagram")
+                        elif post["post_id"] != last_post_id:
+                            send_alert = True
+                            if post_published and last_post_published:
+                                try:
+                                    from datetime import datetime
+                                    dt_new = datetime.fromisoformat(post_published.replace("Z", "+00:00"))
+                                    dt_last = datetime.fromisoformat(last_post_published.replace("Z", "+00:00"))
+                                    if dt_new <= dt_last:
+                                        send_alert = False
+                                except (ValueError, AttributeError):
+                                    pass
+                            ch_entry["last_post_id"] = post["post_id"]
+                            ch_entry["last_post_published"] = post_published
+                            changed = True
+                            if send_alert:
+                                try:
+                                    embed = self._build_embed(post, display_name, profile_img, ig_lang, is_reel=False)
+                                    await alert_channel.send(content=ping_content, embed=embed)
+                                    admin_log("success", f"[Instagram] New post by @{display_name} @ {guild.name}", source="Instagram")
+                                except Exception as e:
+                                    logger.error(f"[Instagram] Send error (post) @{username}: {e}")
+
+                if alert_reels:
+                    reel = content.get("latest_reel")
+                    if reel:
+                        last_reel_id = ch_entry.get("last_reel_id", "")
+                        reel_published = reel.get("published", "")
+                        last_reel_published = ch_entry.get("last_reel_published", "")
+
+                        if not last_reel_id:
+                            ch_entry["last_reel_id"] = reel["post_id"]
+                            ch_entry["last_reel_published"] = reel_published
+                            changed = True
+                            admin_log("info", f"[Instagram] Seeded reel for @{username} @ {guild.name}", source="Instagram")
+                        elif reel["post_id"] != last_reel_id:
+                            send_alert = True
+                            if reel_published and last_reel_published:
+                                try:
+                                    from datetime import datetime
+                                    dt_new = datetime.fromisoformat(reel_published.replace("Z", "+00:00"))
+                                    dt_last = datetime.fromisoformat(last_reel_published.replace("Z", "+00:00"))
+                                    if dt_new <= dt_last:
+                                        send_alert = False
+                                except (ValueError, AttributeError):
+                                    pass
+                            ch_entry["last_reel_id"] = reel["post_id"]
+                            ch_entry["last_reel_published"] = reel_published
+                            changed = True
+                            if send_alert:
+                                try:
+                                    embed = self._build_embed(reel, display_name, profile_img, ig_lang, is_reel=True)
+                                    await alert_channel.send(content=ping_content, embed=embed)
+                                    admin_log("success", f"[Instagram] New reel by @{display_name} @ {guild.name}", source="Instagram")
+                                except Exception as e:
+                                    logger.error(f"[Instagram] Send error (reel) @{username}: {e}")
+
+            except Exception as e:
+                logger.error(f"[Instagram] Error checking @{username} in guild {guild.id}: {e}")
+
+        return changed
+
+    @staticmethod
+    def _build_embed(post: dict, display_name: str, profile_image_url: str, ig_lang: dict, is_reel: bool = False) -> discord.Embed:
+        desc_key = "embed_description_reel" if is_reel else "embed_description_post"
+        default_desc = f"**{{name}}** shared a new {'Reel' if is_reel else 'post'} on Instagram!"
+        description = ig_lang.get(desc_key, default_desc).format(name=display_name)
+
+        caption = post.get("caption", "")
+        if caption:
+            description += f"\n\n> {caption}"
+
+        embed = discord.Embed(
+            title=("🎬 New Reel" if is_reel else "📸 New Post") + f" — {display_name}",
+            url=post.get("url", ""),
+            color=discord.Color.from_rgb(225, 48, 108),
+            description=description,
+        )
+        thumbnail = post.get("thumbnail_url", "")
+        if thumbnail:
+            embed.set_image(url=thumbnail)
+        if profile_image_url:
+            embed.set_thumbnail(url=profile_image_url)
+
+        published = post.get("published", "")
+        if published:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+                field_name = ig_lang.get("embed_field_published", "Published")
+                embed.add_field(name=field_name, value=f"<t:{int(dt.timestamp())}:R>", inline=True)
+            except (ValueError, AttributeError):
+                pass
+
+        footer = ig_lang.get("embed_footer", "Baxi Instagram · avocloud.net")
         embed.set_footer(text=footer)
         return embed
 
