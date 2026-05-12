@@ -26,6 +26,16 @@ class TopGG:
     vote_channel_id: int = 0           # Channel on avocloud.net Discord to post vote announcements
     avocloud_guild_id: int = 0         # avocloud.net Discord server ID
 
+class Meta:
+    # Meta (Facebook/Instagram) app credentials.
+    # Create app at developers.facebook.com → Add product: Instagram
+    # Use case: "Manage messaging & content on Instagram"
+    # Add OAuth redirect URI: https://baxi.avocloud.net/oauth/instagram/callback
+    app_id: str = "YOUR-META-APP-ID"
+    app_secret: str = "YOUR-META-APP-SECRET"
+    redirect_uri: str = "https://baxi.avocloud.net/oauth/instagram/callback"
+
+
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED
 

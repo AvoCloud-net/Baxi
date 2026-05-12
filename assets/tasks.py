@@ -8,12 +8,16 @@ from discord.ext import tasks, commands
 
 from reds_simple_logger import Logger
 from assets.share import globalchat_message_data, phishing_url_list, set_task_status, admin_log
-from assets.livestream import twitch_api, youtube_api, tiktok_api, instagram_api
+from assets.livestream import (
+    twitch_api, youtube_api, tiktok_api, instagram_api,
+    IGNotFound, IGRateLimited, IGBlocked, IGTransient,
+)
 import assets.data as datasys
 import assets.trust as sentinel
 import config.config as config
 import config.auth as auth
 import copy
+import random
 
 logger = Logger()
 
@@ -1425,47 +1429,27 @@ class InstagramTask:
         await self._do_check()
 
     async def _do_check(self):
-        all_usernames: set = set()
-        guild_data: dict = {}
+        import time
 
         for guild in self.bot.guilds:
             ig_config = dict(datasys.load_data(guild.id, "instagram"))
             if not ig_config.get("enabled", False):
                 continue
             channels = ig_config.get("channels", [])
-            guild_data[guild.id] = (ig_config, [])
-            for ch_entry in channels:
-                username = ch_entry.get("username", "")
-                if username:
-                    all_usernames.add(username)
-                    guild_data[guild.id][1].append((ch_entry, username))
-
-        if not all_usernames:
-            return
-
-        content_cache: dict = {}
-        logger.info(f"[Instagram] Checking {len(all_usernames)} unique accounts across {len(guild_data)} guilds")
-        for username in all_usernames:
-            try:
-                result = await instagram_api.get_latest_reel_and_post(username)
-                content_cache[username] = result
-            except Exception as e:
-                logger.error(f"[Instagram] Failed to fetch @{username}: {e}")
-                content_cache[username] = {"latest_post": None, "latest_reel": None}
-            await asyncio.sleep(2)  # gentle on Instagram rate limits
-
-        for guild in self.bot.guilds:
-            if guild.id not in guild_data:
+            if not channels:
                 continue
+
+            changed = False
             try:
-                ig_config, channel_list = guild_data[guild.id]
-                changed = await self._check_guild(guild, content_cache, channel_list, ig_config)
-                if changed:
-                    datasys.save_data(guild.id, "instagram", ig_config)
+                changed = await self._check_guild(guild, ig_config, channels)
             except Exception as e:
                 logger.error(f"[Instagram] Error processing guild {guild.id}: {e}")
 
-    async def _check_guild(self, guild, content_cache: dict, channel_list: list, ig_config: dict) -> bool:
+            if changed:
+                datasys.save_data(guild.id, "instagram", ig_config)
+
+    async def _check_guild(self, guild, ig_config: dict, channels: list) -> bool:
+        import time
         global_alert_channel_id = str(ig_config.get("alert_channel", "")).strip()
         ping_role_id = str(ig_config.get("ping_role", "")).strip()
         changed = False
@@ -1475,7 +1459,61 @@ class InstagramTask:
 
         resolved_channels: dict = {}
 
-        for ch_entry, username in channel_list:
+        logger.info(f"[Instagram] Checking {len(channels)} accounts in {guild.name}")
+
+        for ch_entry in channels:
+            ig_user_id   = ch_entry.get("ig_user_id", "")
+            access_token = ch_entry.get("access_token", "")
+            username     = ch_entry.get("username", ig_user_id)
+
+            if not ig_user_id or not access_token:
+                logger.warning(f"[Instagram] Channel entry missing ig_user_id/access_token in {guild.name}, skipping")
+                continue
+
+            if ch_entry.get("token_expired", False):
+                logger.warning(f"[Instagram] Token expired for @{username} in {guild.name}, skipping")
+                continue
+
+            try:
+                # Refresh token if expiring within 7 days
+                token_expires = ch_entry.get("token_expires", 0)
+                if token_expires and token_expires < time.time() + 7 * 86400:
+                    try:
+                        new_token, new_expires = await instagram_api.refresh_token(access_token)
+                        ch_entry["access_token"]   = new_token
+                        ch_entry["token_expires"]  = new_expires
+                        access_token = new_token
+                        changed = True
+                        logger.info(f"[Instagram] Refreshed token for @{username} in {guild.name}")
+                    except IGBlocked:
+                        logger.warning(f"[Instagram] Token refresh failed (expired) for @{username} in {guild.name}")
+                        ch_entry["token_expired"] = True
+                        changed = True
+                        continue
+                    except Exception as e:
+                        logger.error(f"[Instagram] Token refresh error for @{username}: {e}")
+
+                content = await instagram_api.get_user_media(ig_user_id, access_token)
+
+            except IGBlocked:
+                logger.warning(f"[Instagram] Token invalid for @{username} in {guild.name}, marking expired")
+                ch_entry["token_expired"] = True
+                changed = True
+                continue
+            except IGRateLimited as e:
+                logger.warning(f"[Instagram] Rate-limited for @{username}: {e}, skipping rest of cycle")
+                set_task_status("Instagram", "warn", "Rate-limited; backing off until next cycle")
+                break
+            except IGNotFound:
+                logger.warning(f"[Instagram] @{username} not found (ig_user_id={ig_user_id}), skipping")
+                continue
+            except IGTransient as e:
+                logger.error(f"[Instagram] Transient error for @{username}: {e}")
+                continue
+            except Exception as e:
+                logger.error(f"[Instagram] Failed to fetch @{username}: {e}")
+                continue
+
             try:
                 per_alert = str(ch_entry.get("alert_channel", "")).strip()
                 alert_channel_id = per_alert or global_alert_channel_id
@@ -1500,22 +1538,21 @@ class InstagramTask:
                     logger.error(f"[Instagram] No send permission in {alert_channel.name} in {guild.name}")
                     continue
 
-                content = content_cache.get(username, {})
                 display_name = ch_entry.get("display_name", username)
-                profile_img = ch_entry.get("profile_image_url", "")
+                profile_img  = ch_entry.get("profile_image_url", "")
                 ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
-                alert_posts = ch_entry.get("alert_posts", True)
-                alert_reels = ch_entry.get("alert_reels", True)
+                alert_posts  = ch_entry.get("alert_posts", True)
+                alert_reels  = ch_entry.get("alert_reels", True)
 
                 if alert_posts:
                     post = content.get("latest_post")
                     if post:
-                        last_post_id = ch_entry.get("last_post_id", "")
-                        post_published = post.get("published", "")
+                        last_post_id        = ch_entry.get("last_post_id", "")
+                        post_published      = post.get("published", "")
                         last_post_published = ch_entry.get("last_post_published", "")
 
                         if not last_post_id:
-                            ch_entry["last_post_id"] = post["post_id"]
+                            ch_entry["last_post_id"]        = post["post_id"]
                             ch_entry["last_post_published"] = post_published
                             changed = True
                             admin_log("info", f"[Instagram] Seeded post for @{username} @ {guild.name}", source="Instagram")
@@ -1524,13 +1561,13 @@ class InstagramTask:
                             if post_published and last_post_published:
                                 try:
                                     from datetime import datetime
-                                    dt_new = datetime.fromisoformat(post_published.replace("Z", "+00:00"))
+                                    dt_new  = datetime.fromisoformat(post_published.replace("Z", "+00:00"))
                                     dt_last = datetime.fromisoformat(last_post_published.replace("Z", "+00:00"))
                                     if dt_new <= dt_last:
                                         send_alert = False
                                 except (ValueError, AttributeError):
                                     pass
-                            ch_entry["last_post_id"] = post["post_id"]
+                            ch_entry["last_post_id"]        = post["post_id"]
                             ch_entry["last_post_published"] = post_published
                             changed = True
                             if send_alert:
@@ -1544,12 +1581,12 @@ class InstagramTask:
                 if alert_reels:
                     reel = content.get("latest_reel")
                     if reel:
-                        last_reel_id = ch_entry.get("last_reel_id", "")
-                        reel_published = reel.get("published", "")
+                        last_reel_id        = ch_entry.get("last_reel_id", "")
+                        reel_published      = reel.get("published", "")
                         last_reel_published = ch_entry.get("last_reel_published", "")
 
                         if not last_reel_id:
-                            ch_entry["last_reel_id"] = reel["post_id"]
+                            ch_entry["last_reel_id"]        = reel["post_id"]
                             ch_entry["last_reel_published"] = reel_published
                             changed = True
                             admin_log("info", f"[Instagram] Seeded reel for @{username} @ {guild.name}", source="Instagram")
@@ -1558,13 +1595,13 @@ class InstagramTask:
                             if reel_published and last_reel_published:
                                 try:
                                     from datetime import datetime
-                                    dt_new = datetime.fromisoformat(reel_published.replace("Z", "+00:00"))
+                                    dt_new  = datetime.fromisoformat(reel_published.replace("Z", "+00:00"))
                                     dt_last = datetime.fromisoformat(last_reel_published.replace("Z", "+00:00"))
                                     if dt_new <= dt_last:
                                         send_alert = False
                                 except (ValueError, AttributeError):
                                     pass
-                            ch_entry["last_reel_id"] = reel["post_id"]
+                            ch_entry["last_reel_id"]        = reel["post_id"]
                             ch_entry["last_reel_published"] = reel_published
                             changed = True
                             if send_alert:
@@ -1576,7 +1613,9 @@ class InstagramTask:
                                     logger.error(f"[Instagram] Send error (reel) @{username}: {e}")
 
             except Exception as e:
-                logger.error(f"[Instagram] Error checking @{username} in guild {guild.id}: {e}")
+                logger.error(f"[Instagram] Error processing @{username} in guild {guild.id}: {e}")
+
+            await asyncio.sleep(1 + random.uniform(0, 1))
 
         return changed
 

@@ -15,8 +15,8 @@ class AntiSpam:
     def __init__(self):
         # {guild_id: {user_id: [timestamps]}}
         self.message_timestamps: dict[int, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
-        # {guild_id: {user_id: [message_contents]}}
-        self.message_contents: dict[int, dict[int, list[str]]] = defaultdict(lambda: defaultdict(list))
+        # {guild_id: {user_id: [(content, timestamp)]}}
+        self.message_contents: dict[int, dict[int, list[tuple[str, float]]]] = defaultdict(lambda: defaultdict(list))
 
     async def check(self, message: discord.Message, bot: commands.AutoShardedBot) -> bool:
         """Check a message for spam. Returns True if the message is spam."""
@@ -45,6 +45,7 @@ class AntiSpam:
         max_messages = int(antispam_config.get("max_messages", 5))
         interval = int(antispam_config.get("interval", 5))
         max_duplicates = int(antispam_config.get("max_duplicates", 3))
+        duplicate_window = int(antispam_config.get("duplicate_window", 60))
         action = str(antispam_config.get("action", "mute"))
 
         # Clean old timestamps
@@ -54,8 +55,12 @@ class AntiSpam:
         ]
         self.message_timestamps[guild_id][user_id].append(now)
 
-        # Clean old message contents (keep last max_duplicates + 1)
-        self.message_contents[guild_id][user_id].append(message.clean_content)
+        # Drop entries older than duplicate_window, then append current
+        self.message_contents[guild_id][user_id] = [
+            (c, t) for c, t in self.message_contents[guild_id][user_id]
+            if now - t < duplicate_window
+        ]
+        self.message_contents[guild_id][user_id].append((message.clean_content, now))
         if len(self.message_contents[guild_id][user_id]) > max_duplicates + 2:
             self.message_contents[guild_id][user_id] = self.message_contents[guild_id][user_id][-(max_duplicates + 2):]
 
@@ -72,10 +77,10 @@ class AntiSpam:
             )
             await message.channel.send(embed=embed)
 
-        # Duplicate check
+        # Duplicate check (only msgs within duplicate_window)
         recent = self.message_contents[guild_id][user_id]
         if len(recent) >= max_duplicates:
-            last_msgs = recent[-max_duplicates:]
+            last_msgs = [c for c, _ in recent[-max_duplicates:]]
             if len(set(last_msgs)) == 1 and last_msgs[0] != "":
                 is_spam = True
                 embed = discord.Embed(

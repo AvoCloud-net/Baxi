@@ -110,6 +110,14 @@ class Instagram:
     check_interval_seconds = 900
 
 
+class Meta:
+    oauth_url    = "https://www.facebook.com/v21.0/dialog/oauth"
+    token_url    = "https://graph.facebook.com/v21.0/oauth/access_token"
+    exchange_url = "https://graph.instagram.com/access_token"    # short-lived → long-lived
+    refresh_url  = "https://graph.instagram.com/refresh_access_token"
+    api_base     = "https://graph.instagram.com/v21.0"
+
+
 class Globalchat:
     attachments_dir = "attachments"
     attachments_url = "http://solyra.avocloud.net:1600/attachments/"
@@ -162,6 +170,7 @@ class datasys:
         "max_messages": 5,
         "interval": 5,
         "max_duplicates": 3,
+        "duplicate_window": 60,
         "action": "mute",
         "whitelisted_channels": [],
         "whitelisted_roles": [],

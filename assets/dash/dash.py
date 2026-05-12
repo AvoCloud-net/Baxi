@@ -8,7 +8,10 @@ import discord
 import aiohttp
 import config.auth as auth
 from typing import Optional
-from assets.livestream import twitch_api, youtube_api, tiktok_api, instagram_api
+from assets.livestream import (
+    twitch_api, youtube_api, tiktok_api, instagram_api,
+    IGNotFound, IGRateLimited, IGBlocked, IGTransient,
+)
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -24,6 +27,8 @@ import json
 import os
 import asyncio
 import uuid
+import secrets
+import urllib.parse
 import assets.share as share
 
 # In-memory store for notification broadcast jobs { job_id: {...} }
@@ -178,6 +183,96 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return await render_template(
                 "error.html", message="An unexpected error occurred during login. Please try again."
             )
+
+    @app.route("/oauth/instagram/start")
+    @requires_authorization
+    async def ig_oauth_start():
+        guild_id = quart.request.args.get("guild", "")
+        if not guild_id:
+            return await render_template("error.html", message="Missing guild parameter.")
+        # Verify user has access to this guild
+        try:
+            guilds = await discord_auth.fetch_guilds()
+            user = await discord_auth.fetch_user()
+        except Exception:
+            return redirect(url_for("login"))
+        guild_ids = [str(g.id) for g in guilds]
+        if guild_id not in guild_ids:
+            return await render_template("error.html", message="You don't have access to this server.")
+
+        state = f"{guild_id}:{secrets.token_urlsafe(16)}"
+        session["ig_oauth_state"] = state
+
+        params = urllib.parse.urlencode({
+            "client_id": auth.Meta.app_id,
+            "redirect_uri": auth.Meta.redirect_uri,
+            "scope": "instagram_business_basic",
+            "response_type": "code",
+            "state": state,
+        })
+        return redirect(f"{config.Meta.oauth_url}?{params}")
+
+    @app.route("/oauth/instagram/callback")
+    async def ig_oauth_callback():
+        code = quart.request.args.get("code", "")
+        state = quart.request.args.get("state", "")
+        error = quart.request.args.get("error", "")
+
+        if error:
+            return await render_template("error.html", message=f"Instagram authorization denied: {error}")
+
+        saved_state = session.pop("ig_oauth_state", None)
+        if not saved_state or saved_state != state:
+            return await render_template("error.html", message="Invalid OAuth state. Please try again.")
+
+        guild_id_str = state.split(":")[0]
+        if not guild_id_str.isdigit():
+            return await render_template("error.html", message="Invalid guild in OAuth state.")
+        guild_id = int(guild_id_str)
+
+        try:
+            access_token, expires_ts, ig_user_id = await instagram_api.exchange_code(code)
+        except Exception as e:
+            return await render_template("error.html", message=f"Instagram authorization failed: {e}")
+
+        try:
+            profile = await instagram_api.get_profile(ig_user_id, access_token)
+        except Exception as e:
+            return await render_template("error.html", message=f"Could not fetch Instagram profile: {e}")
+
+        ig_config = dict(load_data(guild_id, "instagram"))
+        channels = ig_config.get("channels", [])
+
+        # Update existing entry or append new one
+        existing = next((c for c in channels if c.get("ig_user_id") == ig_user_id), None)
+        if existing:
+            existing["access_token"] = access_token
+            existing["token_expires"] = expires_ts
+            existing["display_name"] = profile["display_name"]
+            existing["profile_image_url"] = profile["profile_image_url"]
+        else:
+            if len(channels) >= 10:
+                return await render_template("error.html", message="Maximum of 10 tracked Instagram accounts reached.")
+            channels.append({
+                "ig_user_id": ig_user_id,
+                "username": profile["username"],
+                "display_name": profile["display_name"],
+                "profile_image_url": profile["profile_image_url"],
+                "access_token": access_token,
+                "token_expires": expires_ts,
+                "alert_channel": "",
+                "alert_posts": True,
+                "alert_reels": True,
+                "last_post_id": "",
+                "last_post_published": "",
+                "last_reel_id": "",
+                "last_reel_published": "",
+            })
+
+        ig_config["channels"] = channels
+        save_data(guild_id, "instagram", ig_config)
+
+        return redirect(f"/guild/?id={guild_id_str}#instagram")
 
     @app.errorhandler(Unauthorized)
     async def redirect_unauthorized(e):
@@ -1039,6 +1134,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "max_messages": max(2, min(20, int(antispam.get("max_messages", 5)))),
                 "interval": max(2, min(30, int(antispam.get("interval", 5)))),
                 "max_duplicates": max(2, min(10, int(antispam.get("max_duplicates", 3)))),
+                "duplicate_window": max(5, min(86400, int(antispam.get("duplicate_window", 60)))),
                 "action": antispam.get("action", "mute") if antispam.get("action") in ["mute", "warn", "kick", "ban"] else "mute",
                 "whitelisted_channels": whitelisted_channels,
                 "whitelisted_roles": whitelisted_roles,
@@ -1799,74 +1895,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             action = ig_data.get("action", "save")
 
-            if action == "add":
-                login = str(ig_data.get("login", "")).strip().lstrip("@")
-                if not login:
-                    return quart.jsonify({"success": False, "message": "Instagram username is required."}), 400
-                if not re.fullmatch(r"[a-zA-Z0-9_.]{1,30}", login):
-                    return quart.jsonify({"success": False, "message": "Invalid Instagram username."}), 400
-
-                alert_channel_id = str(ig_data.get("alert_channel", "")).strip()
-                if not alert_channel_id or not re.fullmatch(r"\d{17,19}", alert_channel_id):
-                    return quart.jsonify({"success": False, "message": "A valid alert channel is required."}), 400
-
-                ig_config = dict(load_data(int(guild_id), "instagram"))
-                channels = ig_config.get("channels", [])
-
-                if len(channels) >= 10:
-                    return quart.jsonify({"success": False, "message": "Maximum of 10 tracked accounts reached."}), 400
-
-                profile_info = await instagram_api.get_profile(login)
-
-                if not profile_info:
-                    return quart.jsonify({"success": False, "message": f"Instagram profile '@{login}' not found or is private."}), 404
-
-                if any(c.get("username") == login for c in channels):
-                    return quart.jsonify({"success": False, "message": f"'@{login}' is already being tracked."}), 400
-
-                channels.append({
-                    "username":             login,
-                    "display_name":         profile_info.get("display_name", login),
-                    "profile_image_url":    profile_info.get("profile_image_url", ""),
-                    "last_post_id":         "",
-                    "last_post_published":  "",
-                    "last_reel_id":         "",
-                    "last_reel_published":  "",
-                    "alert_channel":        alert_channel_id,
-                    "alert_posts":          True,
-                    "alert_reels":          True,
-                })
-                ig_config["channels"] = channels
-                save_data(int(guild_id), "instagram", ig_config)
-
-                user = await discord_auth.fetch_user()
-                audit_log_new: dict = {
-                    "type": "save", "user": user.name, "success": True,
-                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "instagram",
-                }
-                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
-                audit_log.append(audit_log_new)
-                save_data(int(guild_id), "audit_log", audit_log)
-                return quart.jsonify({
-                    "success": True,
-                    "message": f"Now tracking '@{login}'.",
-                    "account": {
-                        "username":          login,
-                        "display_name":      profile_info.get("display_name", login),
-                        "profile_image_url": profile_info.get("profile_image_url", ""),
-                        "alert_channel":     alert_channel_id,
-                    },
-                })
-
-            elif action == "remove":
-                username_to_remove = str(ig_data.get("username", "")).strip().lstrip("@")
-                if not username_to_remove:
-                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+            if action == "remove":
+                ig_user_id_to_remove = str(ig_data.get("ig_user_id", "")).strip()
+                if not ig_user_id_to_remove:
+                    return quart.jsonify({"success": False, "message": "ig_user_id is required."}), 400
 
                 ig_config = dict(load_data(int(guild_id), "instagram"))
                 channels = ig_config.get("channels", [])
                 before_count = len(channels)
-                channels = [c for c in channels if c.get("username") != username_to_remove]
+                channels = [c for c in channels if c.get("ig_user_id") != ig_user_id_to_remove]
 
                 if len(channels) == before_count:
                     return quart.jsonify({"success": False, "message": "Account not found."}), 404
@@ -1885,15 +1922,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": True, "message": "Account removed."})
 
             elif action == "update_settings":
-                username_to_update = str(ig_data.get("username", "")).strip().lstrip("@")
-                new_alert_channel  = str(ig_data.get("alert_channel", "")).strip()
-                if not username_to_update:
-                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+                ig_user_id_to_update = str(ig_data.get("ig_user_id", "")).strip()
+                new_alert_channel    = str(ig_data.get("alert_channel", "")).strip()
+                if not ig_user_id_to_update:
+                    return quart.jsonify({"success": False, "message": "ig_user_id is required."}), 400
                 if not new_alert_channel or not re.fullmatch(r"\d{17,19}", new_alert_channel):
                     return quart.jsonify({"success": False, "message": "A valid alert channel ID is required."}), 400
 
                 ig_config = dict(load_data(int(guild_id), "instagram"))
-                entry = next((c for c in ig_config.get("channels", []) if c.get("username") == username_to_update), None)
+                entry = next((c for c in ig_config.get("channels", []) if c.get("ig_user_id") == ig_user_id_to_update), None)
                 if not entry:
                     return quart.jsonify({"success": False, "message": "Account not found."}), 404
 

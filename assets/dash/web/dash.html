@@ -427,9 +427,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
                 TikTok
             </a>
-            <a href="#instagram" class="dash-nav-item">
+            <a href="#instagram" class="dash-nav-item" style="opacity:0.5;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 Instagram
+                <span style="font-size:0.6rem;padding:1px 5px;border-radius:3px;background:var(--muted);color:var(--muted-foreground);margin-left:2px;font-weight:600;">UNAVAILABLE</span>
             </a>
 
             <span class="dash-nav-group-label">Automation</span>
@@ -1366,6 +1367,12 @@
                                 <label for="antispam-max-duplicates">Max duplicate messages:</label>
                                 <input type="number" id="antispam-max-duplicates" min="2" max="10" value="3" class="w-full">
                                 <p class="text-muted text-xs">How many identical messages in a row trigger anti-spam.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antispam-duplicate-window">Duplicate window (seconds):</label>
+                                <input type="number" id="antispam-duplicate-window" min="5" max="86400" value="60" class="w-full">
+                                <p class="text-muted text-xs">Only messages sent within this time window count as duplicates. Older messages are ignored (e.g. "moin" yesterday vs "moin" today).</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -2699,9 +2706,24 @@
                             <svg class="lucide" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                             Instagram Tracking
                         </h2>
-                        <p class="text-muted">Get notified when tracked Instagram accounts post new photos or reels. Checks every 15 minutes. Only public accounts are supported.</p>
+                            <p class="text-muted">Get notified when tracked Instagram accounts post new photos or reels. Checks every 15 minutes. Only public accounts are supported.</p>
                     </header>
-                    <section>
+
+                    <!-- Instagram unavailable notice -->
+                    <div style="border:1px solid #f59e0b;background:rgba(245,158,11,0.08);border-radius:10px;display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        <div>
+                            <p style="font-weight:600;color:#f59e0b;margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
+                            <p style="font-size:0.875rem;color:var(--muted-foreground);line-height:1.55;">
+                                Instagram blocks all automated access from server infrastructure — including authenticated API requests.
+                                The official Meta Graph API requires a verified Business Portfolio, App Review, and approved permissions, which are gated behind a review process
+                                that Meta does not grant to third-party bots. All known workarounds (scraping, mirror sites, unofficial APIs) are either blocked or unreliable.
+                                This feature is preserved in the codebase and will be re-enabled if Meta makes access feasible in future.
+                            </p>
+                        </div>
+                    </div>
+
+                    <section style="display:none;">
                         <form id="instagram-form" class="form grid gap-6 settings-form">
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
@@ -2751,33 +2773,8 @@
                             </div>
                             <div class="flex max-w-xs flex-col gap-1">
                                 <h3 class="text-base font-semibold tracking-tight">No Instagram Accounts</h3>
-                                <p class="text-muted text-sm">No Instagram accounts are being tracked yet. Add one below.</p>
+                                <p class="text-muted text-sm">No Instagram accounts are being tracked yet.</p>
                             </div>
-                        </div>
-
-                        <hr class="my-4">
-                        <div class="grid gap-3 add-area">
-                            <h4 class="text-sm font-semibold">Add Account</h4>
-                            <div class="grid gap-2">
-                                <label for="ig-add-alert-channel">Alert channel:</label>
-                                <select id="ig-add-alert-channel" class="select w-full">
-                                    <option value="">-- Select a channel --</option>
-                                    {% for id, name in channels.items() %}
-                                    <option value="{{ id }}">#{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="flex gap-2">
-                                <input type="text" id="ig-add-login" placeholder="Instagram username (e.g. natgeo)" class="input flex-1" maxlength="30">
-                                <button type="button" class="btn-primary" id="ig-add-btn" onclick="igAddAccount()">
-                                    <span class="btn-text flex items-center gap-2">
-                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        Add
-                                    </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                                </button>
-                            </div>
-                            <p class="text-muted text-xs">Only public Instagram profiles are supported. Enter the username without @ (e.g. "natgeo").</p>
                         </div>
                     </section>
                 </div>
@@ -3735,6 +3732,7 @@
                 document.getElementById('antispam-max-messages').value = data.antispam.max_messages || 5;
                 document.getElementById('antispam-interval').value = data.antispam.interval || 5;
                 document.getElementById('antispam-max-duplicates').value = data.antispam.max_duplicates || 3;
+                document.getElementById('antispam-duplicate-window').value = data.antispam.duplicate_window || 60;
                 document.getElementById('antispam-action').value = data.antispam.action || 'mute';
                 _antispamWlChannels = Array.isArray(data.antispam.whitelisted_channels) ? data.antispam.whitelisted_channels.map(String) : [];
                 _antispamWlRoles = Array.isArray(data.antispam.whitelisted_roles) ? data.antispam.whitelisted_roles.map(String) : [];
@@ -4531,8 +4529,16 @@
             empty.classList.add('hidden');
 
             accounts.forEach(function (acc) {
-                const profileUrl = 'https://www.instagram.com/' + acc.username + '/';
-                const safeUser = acc.username.replace(/'/g, "\\'");
+                const igUserId   = acc.ig_user_id || '';
+                const safeId     = igUserId.replace(/'/g, "\\'");
+                const profileUrl = 'https://www.instagram.com/' + (acc.username || igUserId) + '/';
+                const tokenExpiresTs = acc.token_expires || 0;
+                const sevenDays = Math.floor(Date.now() / 1000) + 7 * 86400;
+                const tokenWarn = acc.token_expired
+                    ? '<span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#ef4444;color:#fff;font-weight:600;margin-left:4px;">TOKEN EXPIRED</span>'
+                    : (tokenExpiresTs && tokenExpiresTs < sevenDays
+                        ? '<span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#f59e0b;color:#fff;font-weight:600;margin-left:4px;">EXPIRING SOON</span>'
+                        : '');
                 let channelOptions = '<option value="">-- Select a channel --</option>';
                 Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
                     const selected = (acc.alert_channel === cid) ? ' selected' : '';
@@ -4542,91 +4548,60 @@
                 card.className = 'card ig-card';
                 card.innerHTML = '<header class="flex items-center justify-between">'
                     + '<div class="flex items-center gap-3">'
-                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
-                    + (acc.display_name || acc.username).charAt(0).toUpperCase()
-                    + '</div>'
+                    + (acc.profile_image_url
+                        ? '<img src="' + acc.profile_image_url + '" alt="" style="width:2.5rem;height:2.5rem;border-radius:9999px;object-fit:cover;border:2px solid #e1306c;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+                        : '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                          + (acc.display_name || acc.username || '?').charAt(0).toUpperCase() + '</div>')
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
-                    + (acc.display_name || acc.username)
+                    + (acc.display_name || acc.username || igUserId)
                     + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#e1306c;color:#fff;font-weight:600;">Instagram</span>'
+                    + tokenWarn
                     + '</h3>'
-                    + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
+                    + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + (acc.username || igUserId) + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="igRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="igRemoveAccount(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
                     + '<div class="grid gap-3 mt-3 px-4 pb-4">'
                     + '<label class="text-sm font-medium">Alert channel:</label>'
-                    + '<select class="select w-full ig-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
+                    + '<select class="select w-full ig-channel-select" data-igid="' + safeId + '">' + channelOptions + '</select>'
                     + '<label class="text-sm font-medium">Alert types:</label>'
                     + '<label class="flex items-center gap-2 text-sm" style="cursor:pointer">'
-                    + '<input type="checkbox" class="input ig-posts-cb" data-user="' + safeUser + '"' + (acc.alert_posts !== false ? ' checked' : '') + '>'
+                    + '<input type="checkbox" class="input ig-posts-cb" data-igid="' + safeId + '"' + (acc.alert_posts !== false ? ' checked' : '') + '>'
                     + '<span>Posts (photos, carousels)</span></label>'
                     + '<label class="flex items-center gap-2 text-sm" style="cursor:pointer">'
-                    + '<input type="checkbox" class="input ig-reels-cb" data-user="' + safeUser + '"' + (acc.alert_reels !== false ? ' checked' : '') + '>'
+                    + '<input type="checkbox" class="input ig-reels-cb" data-igid="' + safeId + '"' + (acc.alert_reels !== false ? ' checked' : '') + '>'
                     + '<span>Reels</span></label>'
-                    + '<button type="button" class="btn-primary ig-save-btn" data-user="' + safeUser + '" onclick="igUpdateSettings(\'' + safeUser + '\')">'
-                    + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
-                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
-                    + '</button>'
+                    + (acc.token_expired
+                        ? '<a href="/oauth/instagram/start?guild={{ guild.id }}" class="btn-primary inline-flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Reconnect Account</a>'
+                        : '<button type="button" class="btn-primary ig-save-btn" data-igid="' + safeId + '" onclick="igUpdateSettings(\'' + safeId + '\')">'
+                          + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
+                          + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                          + '</button>')
                     + '</div>';
                 list.appendChild(card);
             });
         }
 
-        function igAddAccount() {
-            const input = document.getElementById('ig-add-login');
-            const login = input.value.trim().replace(/^@/, '');
-            if (!login) return;
-            const alertChannelSel = document.getElementById('ig-add-alert-channel');
-            const alertChannel = alertChannelSel ? alertChannelSel.value : '';
-            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel first.'); return; }
-            const btn = document.getElementById('ig-add-btn');
-            btn.disabled = true;
-            btn.querySelector('.spinner')?.classList.remove('hidden');
-            btn.querySelector('.btn-text')?.classList.add('hidden');
-            const payload = { instagram: { action: 'add', login: login, alert_channel: alertChannel } };
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.send(JSON.stringify(payload));
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    btn.disabled = false;
-                    btn.querySelector('.spinner')?.classList.add('hidden');
-                    btn.querySelector('.btn-text')?.classList.remove('hidden');
-                    try {
-                        const resp = JSON.parse(xhr.responseText);
-                        showSaveToast(resp.success, resp.message);
-                        if (resp.success && resp.account) {
-                            if (!data.instagram) data.instagram = { enabled: false, alert_channel: '', ping_role: '', channels: [] };
-                            if (!Array.isArray(data.instagram.channels)) data.instagram.channels = [];
-                            data.instagram.channels.push(Object.assign({}, resp.account, { last_post_id: '', last_reel_id: '', alert_channel: alertChannel, alert_posts: true, alert_reels: true }));
-                            input.value = '';
-                            if (alertChannelSel) alertChannelSel.value = '';
-                            igRenderAccounts();
-                        }
-                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
-                }
-            };
-        }
-
         let _igPendingRemove = null;
 
-        function igRemoveAccount(username) {
-            _igPendingRemove = username;
+        function igRemoveAccount(igUserId) {
+            _igPendingRemove = igUserId;
+            const acc = (data.instagram && data.instagram.channels || []).find(function (c) { return c.ig_user_id === igUserId; });
+            const label = acc ? ('@' + (acc.username || igUserId)) : igUserId;
             document.getElementById('remove-ig-dialog-description').textContent =
-                '@' + username + ' will be removed from tracking. This cannot be undone.';
+                label + ' will be removed from tracking. This cannot be undone.';
             document.getElementById('remove-ig-dialog').showModal();
         }
 
         function igConfirmRemove() {
-            const username = _igPendingRemove;
+            const igUserId = _igPendingRemove;
             _igPendingRemove = null;
             document.getElementById('remove-ig-dialog').close();
-            if (!username) return;
-            const payload = { instagram: { action: 'remove', username: username } };
+            if (!igUserId) return;
+            const payload = { instagram: { action: 'remove', ig_user_id: igUserId } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -4637,7 +4612,7 @@
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
                         if (resp.success && data.instagram) {
-                            data.instagram.channels = data.instagram.channels.filter(function (c) { return c.username !== username; });
+                            data.instagram.channels = data.instagram.channels.filter(function (c) { return c.ig_user_id !== igUserId; });
                             igRenderAccounts();
                         }
                     } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
@@ -4645,17 +4620,17 @@
             };
         }
 
-        function igUpdateSettings(username) {
-            const sel      = document.querySelector('.ig-channel-select[data-user="' + username + '"]');
-            const btn      = document.querySelector('.ig-save-btn[data-user="' + username + '"]');
-            const postsCb  = document.querySelector('.ig-posts-cb[data-user="' + username + '"]');
-            const reelsCb  = document.querySelector('.ig-reels-cb[data-user="' + username + '"]');
+        function igUpdateSettings(igUserId) {
+            const sel      = document.querySelector('.ig-channel-select[data-igid="' + igUserId + '"]');
+            const btn      = document.querySelector('.ig-save-btn[data-igid="' + igUserId + '"]');
+            const postsCb  = document.querySelector('.ig-posts-cb[data-igid="' + igUserId + '"]');
+            const reelsCb  = document.querySelector('.ig-reels-cb[data-igid="' + igUserId + '"]');
             const alertChannel = sel ? sel.value : '';
             if (!alertChannel) { showSaveToast(false, 'Please select an alert channel.'); return; }
             const alertPosts = postsCb ? postsCb.checked : true;
             const alertReels = reelsCb ? reelsCb.checked : true;
             if (btn) { btn.disabled = true; btn.querySelector('.spinner')?.classList.remove('hidden'); btn.querySelector('.btn-text')?.classList.add('hidden'); }
-            const payload = { instagram: { action: 'update_settings', username: username, alert_channel: alertChannel, alert_posts: alertPosts, alert_reels: alertReels } };
+            const payload = { instagram: { action: 'update_settings', ig_user_id: igUserId, alert_channel: alertChannel, alert_posts: alertPosts, alert_reels: alertReels } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=instagram&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -4667,7 +4642,7 @@
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
                         if (resp.success && data.instagram) {
-                            const entry = data.instagram.channels.find(function (c) { return c.username === username; });
+                            const entry = data.instagram.channels.find(function (c) { return c.ig_user_id === igUserId; });
                             if (entry) { entry.alert_channel = alertChannel; entry.alert_posts = alertPosts; entry.alert_reels = alertReels; }
                         }
                     } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
@@ -5134,8 +5109,9 @@
             const max_messages = parseInt(document.getElementById('antispam-max-messages').value);
             const interval = parseInt(document.getElementById('antispam-interval').value);
             const max_duplicates = parseInt(document.getElementById('antispam-max-duplicates').value);
+            const duplicate_window = parseInt(document.getElementById('antispam-duplicate-window').value);
             const action = document.getElementById('antispam-action').value;
-            const payload = { antispam: { enabled, max_messages, interval, max_duplicates, action, whitelisted_channels: [..._antispamWlChannels], whitelisted_roles: [..._antispamWlRoles] } };
+            const payload = { antispam: { enabled, max_messages, interval, max_duplicates, duplicate_window, action, whitelisted_channels: [..._antispamWlChannels], whitelisted_roles: [..._antispamWlRoles] } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=antispam&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -5407,10 +5383,6 @@
                 }
             };
         };
-
-        document.getElementById('ig-add-login').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); igAddAccount(); }
-        });
 
         document.getElementById('stats-channels-form').onsubmit = function (event) {
             event.preventDefault();
@@ -6995,7 +6967,7 @@
     </script>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-    <script src="https://avocloud.net/assets/js/main.js"></script>
+    
 
     <script>
         /* Highlight active nav item based on scroll position */
