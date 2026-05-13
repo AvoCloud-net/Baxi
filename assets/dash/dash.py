@@ -1088,7 +1088,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     color=discord.Color.from_str(color_raw),
                 )
 
-                panel_msg = await channel.send(embed=embed, view=build_ticket_panel_view(cleaned_buttons))
+                panel_view = build_ticket_panel_view(cleaned_buttons)
+                existing_msg_id = str(settings.get("panel_message_id", "")).strip()
+                panel_msg = None
+                if existing_msg_id:
+                    try:
+                        panel_msg = await channel.fetch_message(int(existing_msg_id))
+                        await panel_msg.edit(embed=embed, view=panel_view)
+                    except (discord.NotFound, discord.HTTPException, ValueError):
+                        panel_msg = None
+                if panel_msg is None:
+                    panel_msg = await channel.send(embed=embed, view=panel_view)
                 settings["panel_message_id"] = str(panel_msg.id)
 
                 save_data(guild.id, "ticket", settings)

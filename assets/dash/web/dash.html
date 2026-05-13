@@ -5043,18 +5043,38 @@
                 const label = `${b.emoji || ''} ${b.label || ''}`.trim();
                 const styleLabel = _TICKET_STYLE_LABEL[b.style] || 'Primary';
                 const previewCss = _TICKET_STYLE_CSS[b.style] || _TICKET_STYLE_CSS.primary;
+                const isFirst = idx === 0;
+                const isLast = idx === _ticketButtons.length - 1;
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <div style="min-width:0;flex:1;">
                             <h3 class="text-base font-semibold"><span style="padding:3px 10px;border-radius:5px;${previewCss}">${label}</span></h3>
                             <p class="text-muted text-xs" style="margin-top:4px;">${styleLabel}</p>
                         </div>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;margin-left:12px;">
-                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            <span class="btn-label">Remove</span>
-                        </button>
+                        <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;align-items:center;">
+                            <button type="button" class="btn-outline btn-move-up" title="Move up" style="padding:4px 8px;${isFirst ? 'opacity:0.35;cursor:not-allowed;' : ''}">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                            </button>
+                            <button type="button" class="btn-outline btn-move-down" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <button type="button" class="btn-outline btn-remove" style="color:#ef4444;border-color:#ef4444;">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                <span class="btn-label">Remove</span>
+                            </button>
+                        </div>
                     </header>`;
-                card.querySelector('button').onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
+                card.querySelector('.btn-move-up').onclick = () => {
+                    if (idx === 0) return;
+                    [_ticketButtons[idx - 1], _ticketButtons[idx]] = [_ticketButtons[idx], _ticketButtons[idx - 1]];
+                    renderTicketButtons();
+                };
+                card.querySelector('.btn-move-down').onclick = () => {
+                    if (idx === _ticketButtons.length - 1) return;
+                    [_ticketButtons[idx], _ticketButtons[idx + 1]] = [_ticketButtons[idx + 1], _ticketButtons[idx]];
+                    renderTicketButtons();
+                };
+                card.querySelector('.btn-remove').onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
                 list.appendChild(card);
             });
         }

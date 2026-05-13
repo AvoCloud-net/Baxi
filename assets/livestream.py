@@ -612,8 +612,23 @@ class TikTokAPI:
         return await asyncio.get_event_loop().run_in_executor(None, _extract)
 
 
+class IGNotFound(Exception):
+    """Raised when an Instagram user / resource is not found (404)."""
+
+class IGRateLimited(Exception):
+    """Raised when Instagram Graph API returns 429 or rate-limit error code."""
+
+class IGBlocked(Exception):
+    """Raised when the access token is invalid, expired, or the app is blocked."""
+
+class IGTransient(Exception):
+    """Raised on transient server-side errors (5xx) from Instagram Graph API."""
+
+
 class InstagramAPI:
-    """Instagram public profile tracking via Instagram's private mobile API."""
+    """Instagram profile tracking and media fetching via the Instagram Graph API."""
+
+    _GRAPH = "https://graph.instagram.com"
 
     _HEADERS = {
         "User-Agent": (
@@ -711,6 +726,81 @@ class InstagramAPI:
         except Exception as e:
             logger.error(f"[InstagramAPI] Error fetching content for @{handle}: {e}")
             return empty
+
+    async def refresh_token(self, access_token: str) -> tuple[str, int]:
+        """Refresh a long-lived Instagram access token. Returns (new_token, expires_unix)."""
+        url = (
+            f"{self._GRAPH}/refresh_access_token"
+            f"?grant_type=ig_refresh_token&access_token={access_token}"
+        )
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                data = await resp.json(content_type=None)
+        error = data.get("error", {})
+        if error:
+            code = error.get("code", 0)
+            subcode = error.get("error_subcode", 0)
+            if code in (190, 102) or subcode in (460, 463, 467):
+                raise IGBlocked(error.get("message", "token invalid"))
+            raise IGTransient(error.get("message", "unknown error"))
+        new_token = data["access_token"]
+        expires_in = data.get("expires_in", 5184000)
+        return new_token, int(time.time()) + expires_in
+
+    async def get_user_media(self, ig_user_id: str, access_token: str) -> dict:
+        """Fetch latest post and reel for a user via Graph API. Returns {latest_post, latest_reel}."""
+        from datetime import timezone, datetime
+        fields = "id,media_type,timestamp,caption,media_url,thumbnail_url,permalink"
+        url = (
+            f"{self._GRAPH}/{ig_user_id}/media"
+            f"?fields={fields}&limit=20&access_token={access_token}"
+        )
+        empty = {"latest_post": None, "latest_reel": None}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status == 429:
+                    raise IGRateLimited(f"HTTP 429 for user {ig_user_id}")
+                if resp.status == 404:
+                    raise IGNotFound(f"User {ig_user_id} not found")
+                if resp.status >= 500:
+                    raise IGTransient(f"HTTP {resp.status} for user {ig_user_id}")
+                data = await resp.json(content_type=None)
+        error = data.get("error", {})
+        if error:
+            code = error.get("code", 0)
+            subcode = error.get("error_subcode", 0)
+            msg = error.get("message", "")
+            if code in (190, 102) or subcode in (460, 463, 467):
+                raise IGBlocked(msg)
+            if code == 4 or code == 32 or code == 17:
+                raise IGRateLimited(msg)
+            raise IGTransient(msg)
+
+        items = data.get("data", [])
+        latest_post = None
+        latest_reel = None
+        for item in items:
+            media_type = item.get("media_type", "")
+            post_id = str(item.get("id", ""))
+            timestamp = item.get("timestamp", "")
+            caption = (item.get("caption") or "")[:200]
+            thumbnail_url = item.get("thumbnail_url") or item.get("media_url", "")
+            permalink = item.get("permalink", "")
+            entry = {
+                "post_id": post_id,
+                "caption": caption,
+                "published": timestamp,
+                "thumbnail_url": thumbnail_url,
+                "url": permalink,
+                "is_reel": media_type == "VIDEO",
+            }
+            if media_type == "VIDEO" and latest_reel is None:
+                latest_reel = entry
+            elif media_type in ("IMAGE", "CAROUSEL_ALBUM") and latest_post is None:
+                latest_post = entry
+            if latest_post is not None and latest_reel is not None:
+                break
+        return {"latest_post": latest_post, "latest_reel": latest_reel}
 
 
 youtube_api = YouTubeAPI()
