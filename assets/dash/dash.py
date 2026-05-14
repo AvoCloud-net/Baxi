@@ -302,6 +302,81 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def terms():
         return await render_template("terms.html")
 
+    @app.route("/mc/link/<token>")
+    async def mc_link_confirm(token: str):
+        from assets.mc_link import get_link_session
+        sess = get_link_session(token)
+        if not sess:
+            return await render_template("error.html", message="This link is invalid or has expired."), 404
+        guild = bot.get_guild(sess["guild_id"])
+        return await render_template(
+            "mc_link_confirm.html",
+            token=token,
+            kind=sess["kind"],
+            discord_name=sess["discord_name"],
+            discord_avatar=sess["discord_avatar_url"],
+            mc_name=sess["mc_name"],
+            mc_uuid=sess["uuid"],
+            guild_name=guild.name if guild else "Unknown server",
+            guild_icon=(guild.icon.url if guild and guild.icon else None),
+        )
+
+    @app.route("/mc/link/<token>/cancel", methods=["POST"])
+    async def mc_link_cancel(token: str):
+        from assets.mc_link import consume_link_session
+        consume_link_session(token)
+        return quart.jsonify({"ok": True})
+
+    @app.route("/mc/link/<token>/accept", methods=["POST"])
+    async def mc_link_accept(token: str):
+        from assets.mc_link import (
+            get_link_session, consume_link_session,
+            whitelist_player, store_link, add_bedrock_link,
+            announce_link, dm_user,
+        )
+        sess = get_link_session(token)
+        if not sess:
+            return quart.jsonify({"ok": False, "error": "expired"}), 410
+
+        kind = sess["kind"]
+        if kind == "already_linked":
+            consume_link_session(token)
+            return quart.jsonify({"ok": True, "status": "already_linked"})
+
+        success = await whitelist_player(
+            sess["api_url"], sess["api_secret"],
+            sess["uuid"], sess["mc_name"],
+            sess["discord_id"], sess["discord_name"],
+        )
+        if not success:
+            return quart.jsonify({"ok": False, "error": "mc_unreachable"}), 502
+
+        guild_id = sess["guild_id"]
+        discord_id = sess["discord_id"]
+        mc_name = sess["mc_name"]
+        guild_conf = datasys.load_data(guild_id, "mc_link")
+        lang = datasys.load_lang_file(guild_id)
+
+        if kind == "bedrock_add":
+            await add_bedrock_link(guild_id, discord_id, sess["uuid"], mc_name)
+        else:
+            await store_link(guild_id, discord_id, sess["uuid"], mc_name)
+            guild = bot.get_guild(guild_id)
+            role_id_str = guild_conf.get("role_id", "")
+            if guild and role_id_str:
+                try:
+                    role = guild.get_role(int(role_id_str))
+                    member = guild.get_member(discord_id)
+                    if role and member:
+                        await member.add_roles(role, reason="MC account linked")
+                except Exception:
+                    pass
+            await announce_link(bot, guild_id, discord_id, mc_name, guild_conf, lang)
+            await dm_user(bot, guild_id, discord_id, mc_name, guild_conf, lang)
+
+        consume_link_session(token)
+        return quart.jsonify({"ok": True, "status": kind})
+
     def get_time_based_greeting(username):
         hour = datetime.now(_VIENNA).hour
 

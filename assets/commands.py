@@ -1056,77 +1056,83 @@ def mc_link_commands(bot: commands.AutoShardedBot):
     async def mc_link_cmd(interaction: Interaction, code: str):
         await interaction.response.defer(ephemeral=True)
 
-        if interaction.guild is None:
-            lang = datasys.load_lang_file(1001)
+        try:
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                t = lang["systems"]["mc_link"]
+                return await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                    ephemeral=True,
+                )
+
+            guild_id = interaction.guild.id
+            lang = datasys.load_lang_file(guild_id)
             t = lang["systems"]["mc_link"]
-            return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
-                ephemeral=True,
+            guild_conf = _get_conf(guild_id)
+
+            err = _check_enabled(guild_conf, t)
+            if err:
+                return await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                    ephemeral=True,
+                )
+
+            api_url: str = guild_conf["api_url"].strip()
+            secret: str = guild_conf["api_secret"].strip()
+
+            from assets.mc_link import is_linked, get_link, resolve_token, is_bedrock_uuid, create_link_session
+
+            token_data = await resolve_token(api_url, secret, code.strip().upper())
+            if token_data is None:
+                return await interaction.followup.send(
+                    embed=discord.Embed(title=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
+                    ephemeral=True,
+                )
+
+            uuid: str = token_data["uuid"]
+            mc_name: str = token_data.get("name", "Unknown")
+            discord_name: str = interaction.user.name
+
+            kind = "new"
+            if is_linked(guild_id, interaction.user.id):
+                existing = get_link(guild_id, interaction.user.id) or {}
+                if is_bedrock_uuid(uuid) and not is_bedrock_uuid(existing.get("uuid", "")):
+                    kind = "bedrock_add"
+                else:
+                    kind = "already_linked"
+
+            session_token = create_link_session({
+                "guild_id": guild_id,
+                "discord_id": interaction.user.id,
+                "discord_name": discord_name,
+                "discord_avatar_url": str(interaction.user.display_avatar.url),
+                "uuid": uuid,
+                "mc_name": mc_name,
+                "api_url": api_url,
+                "api_secret": secret,
+                "kind": kind,
+            })
+
+            url = f"https://{config.Web.url}/mc/link/{session_token}"
+            confirm_title = t.get("confirm_title", "Confirm your link")
+            confirm_desc_tpl = t.get("confirm_desc", "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.")
+            embed = discord.Embed(
+                title=f"{config.Icons.check} {confirm_title}",
+                description=confirm_desc_tpl.format(url=url),
+                color=config.Discord.color,
             )
-
-        guild_id = interaction.guild.id
-        lang = datasys.load_lang_file(guild_id)
-        t = lang["systems"]["mc_link"]
-        guild_conf = _get_conf(guild_id)
-
-        err = _check_enabled(guild_conf, t)
-        if err:
-            return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
-                ephemeral=True,
-            )
-
-        api_url: str = guild_conf["api_url"].strip()
-        secret: str = guild_conf["api_secret"].strip()
-
-        from assets.mc_link import is_linked, resolve_token, whitelist_player, store_link
-
-        if is_linked(guild_id, interaction.user.id):
-            return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.check} {t['already_linked']}", color=config.Discord.success_color),
-                ephemeral=True,
-            )
-
-        token_data = await resolve_token(api_url, secret, code.strip().upper())
-        if token_data is None:
-            return await interaction.followup.send(
-                embed=discord.Embed(title=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
-                ephemeral=True,
-            )
-
-        uuid: str = token_data["uuid"]
-        mc_name: str = token_data.get("name", "Unknown")
-        discord_name: str = interaction.user.name
-
-        success = await whitelist_player(api_url, secret, uuid, mc_name, interaction.user.id, discord_name)
-        if not success:
-            return await interaction.followup.send(
-                embed=discord.Embed(title=f"{config.Icons.cross} {t['link_failed']}", color=config.Discord.danger_color),
-                ephemeral=True,
-            )
-
-        await store_link(guild_id, interaction.user.id, uuid, mc_name)
-
-        role_id_str: str = guild_conf.get("role_id", "")
-        if role_id_str:
+            embed.set_footer(text=t["footer"])
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            import traceback
+            logger.error(f"[mc_link_cmd] crashed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
             try:
-                role = interaction.guild.get_role(int(role_id_str))
-                if role:
-                    await cast(discord.Member, interaction.user).add_roles(role, reason="MC account linked")
+                await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} Internal error: `{type(e).__name__}: {e}`", color=config.Discord.danger_color),
+                    ephemeral=True,
+                )
             except Exception:
                 pass
-
-        desc = t["success_desc"].format(mc_name=mc_name, mention=interaction.user.mention)
-        embed = discord.Embed(
-            title=f"{config.Icons.check} {t['success_title']}",
-            description=desc,
-            color=config.Discord.success_color,
-        )
-        embed.set_footer(text=t["footer"])
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-        await _announce_link(interaction, guild_conf, mc_name, lang)
-        await _dm_user(interaction, guild_conf, mc_name, lang)
 
     @mc_group.command(name="unlink", description="Unlink your Minecraft account.")
     async def mc_unlink_cmd(interaction: Interaction):
@@ -1169,12 +1175,15 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         link = get_link(guild_id, interaction.user.id)
         uuid = link["uuid"]
         mc_name = link.get("name", "Unknown")
+        bedrock_uuid = link.get("bedrock_uuid")
 
         api_url: str = guild_conf["api_url"].strip()
         secret: str = guild_conf["api_secret"].strip()
 
         # Always clean up Baxi side. MC-side failure (unreachable) = warn but still unlink locally.
         mc_success = await unlink_player(api_url, secret, uuid)
+        if bedrock_uuid:
+            await unlink_player(api_url, secret, bedrock_uuid)
         await remove_link(guild_id, interaction.user.id)
 
         role_id_str: str = guild_conf.get("role_id", "")
@@ -1233,6 +1242,9 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             description=t["status_desc"].format(mc_name=mc_name, mention=interaction.user.mention, linked_at=linked_dt),
             color=config.Discord.info_color,
         )
+        bedrock_name = link.get("bedrock_name")
+        if bedrock_name:
+            embed.add_field(name="Bedrock account", value=bedrock_name, inline=True)
         embed.set_footer(text=t["footer"])
         await interaction.followup.send(embed=embed, ephemeral=True)
 

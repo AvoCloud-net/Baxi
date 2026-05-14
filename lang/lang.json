@@ -357,6 +357,8 @@
                 "admin_unlink_success": "{mention} wurde entverknüpft. Minecraft-Account: `{mc_name}`.",
                 "lookup_title": "MC Account Lookup",
                 "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Verknüpft:** {linked_at}",
+                "confirm_title": "Bestätige deine Verknüpfung",
+                "confirm_desc": "Öffne diesen Link, um deine Verknüpfung abzuschließen:\n{url}\n\nDer Link läuft in 10 Minuten ab.",
                 "footer": "Baxi · avocloud.net"
             },
             "giveaway": {
@@ -833,6 +835,8 @@
                 "admin_unlink_success": "{mention} has been unlinked. Minecraft account: `{mc_name}`.",
                 "lookup_title": "MC Account Lookup",
                 "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Linked:** {linked_at}",
+                "confirm_title": "Confirm your link",
+                "confirm_desc": "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.",
                 "footer": "Baxi · avocloud.net"
             },
             "giveaway": {

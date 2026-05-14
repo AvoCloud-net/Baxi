@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxi -  Confirm Minecraft Link</title>
+    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta property="og:title" content="Confirm Minecraft Link">
+    <meta property="og:description" content="Confirm linking your Minecraft account on Baxi.">
+    <meta property="og:url" content="https://baxi.avocloud.net/">
+    <meta property="og:color" content="#6F83AA">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <script src="https://avocloud.net/assets/js/theme.js"></script>
+
+    <style>
+        @media (min-width: 900px) { body { padding-left: 0 !important; } }
+        .mc-link-wrap {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 1rem 3rem;
+        }
+        .mc-link-card {
+            width: 100%;
+            max-width: 540px;
+            background: var(--color-card, #fff);
+            border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+            border-radius: 1rem;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 12px 40px -16px rgba(0,0,0,0.18);
+        }
+        .mc-link-card h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin: 0.5rem 0 0.4rem;
+        }
+        .mc-link-card .lede {
+            opacity: 0.65;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            max-width: 380px;
+            margin: 0 auto 2rem;
+        }
+        .guild-context {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+        }
+        .guild-context img {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatars {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 1.25rem;
+            margin: 1.5rem 0 2rem;
+        }
+        .avatars::before {
+            content: "";
+            position: absolute;
+            top: 55px;
+            left: 25%;
+            right: 25%;
+            height: 1px;
+            background: color-mix(in srgb, currentColor 18%, transparent);
+            z-index: 0;
+        }
+        .avatar-block {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.65rem;
+            flex: 1;
+            min-width: 0;
+            z-index: 1;
+        }
+        .avatar-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 1rem;
+            object-fit: cover;
+            border: 2px solid color-mix(in srgb, var(--color-primary, #6F83AA) 35%, transparent);
+            background: color-mix(in srgb, var(--color-primary, #6F83AA) 8%, transparent);
+            image-rendering: pixelated;
+        }
+        .avatar-img.discord {
+            border-radius: 50%;
+            image-rendering: auto;
+        }
+        .avatar-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.5;
+        }
+        .avatar-name {
+            font-size: 1rem;
+            font-weight: 700;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .link-chain {
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            width: 2.75rem;
+            height: 2.75rem;
+            margin-top: 33px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--color-primary, #6F83AA) 18%, var(--color-card, #18181b));
+            color: var(--color-primary, #6F83AA);
+            border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+        }
+        .link-chain svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .action-row {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .action-row .btn, .action-row .btn-outline { gap: 0.5rem; }
+        .state-success, .state-error, .state-cancelled { display: none; }
+        .state-success.active, .state-error.active, .state-cancelled.active { display: block; }
+        .state-success .check-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: color-mix(in srgb, #22c55e 18%, transparent);
+            color: #22c55e;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .state-error .err-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: color-mix(in srgb, #ef4444 18%, transparent);
+            color: #ef4444;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .state-cancelled .cancel-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: color-mix(in srgb, currentColor 12%, transparent);
+            color: color-mix(in srgb, currentColor 70%, transparent);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .state-cancelled .cancel-icon svg {
+            width: 32px; height: 32px; stroke: currentColor; fill: none;
+            stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .state-success .check-icon svg, .state-error .err-icon svg {
+            width: 32px; height: 32px; stroke: currentColor; fill: none;
+            stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gradientbar"></div>
+
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 100 75" fill="none">
+                        <path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12"
+                            stroke="currentColor" stroke-width="8.5"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            pathLength="200"/>
+                    </svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap">
+                <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+            </span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        </button>
+    </nav>
+
+    <div class="mc-link-wrap">
+        <div class="mc-link-card" id="card">
+
+            <div class="state-initial" id="state-initial">
+                <div class="guild-context">
+                    {% if guild_icon %}<img src="{{ guild_icon }}" alt="">{% endif %}
+                    <span>{{ guild_name }}</span>
+                </div>
+
+                {% if kind == "already_linked" %}
+                <h1>Already linked</h1>
+                <p class="lede">Your Discord account is already linked to a Minecraft account on this server. No further action needed.</p>
+                {% elif kind == "bedrock_add" %}
+                <h1>Add Bedrock account</h1>
+                <p class="lede">You're already linked with a Java account. Confirm to also add this Bedrock account.</p>
+                {% else %}
+                <h1>Confirm your link</h1>
+                <p class="lede">You're about to link this Minecraft account to your Discord. Make sure both names look correct.</p>
+                {% endif %}
+
+                <div class="avatars">
+                    <div class="avatar-block">
+                        <img class="avatar-img discord" src="{{ discord_avatar }}" alt="Discord avatar">
+                        <div>
+                            <div class="avatar-label">Discord</div>
+                            <div class="avatar-name">{{ discord_name }}</div>
+                        </div>
+                    </div>
+                    <div class="link-chain" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </div>
+                    <div class="avatar-block">
+                        <img class="avatar-img" src="https://mc-heads.net/avatar/{{ mc_uuid }}/128" alt="Minecraft head">
+                        <div>
+                            <div class="avatar-label">Minecraft</div>
+                            <div class="avatar-name">{{ mc_name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    {% if kind == "already_linked" %}
+                    <button class="btn-outline" id="btn-cancel">Back to dashboard</button>
+                    <button class="btn btn-primary" id="btn-accept">OK</button>
+                    {% else %}
+                    <button class="btn-outline" id="btn-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="btn-accept">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Accept Link
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="state-success" id="state-success">
+                <div class="check-icon">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h1>All done!</h1>
+                <p class="lede" id="success-msg">Your Minecraft account is now linked. You can close this tab and return to Discord.</p>
+                <div class="action-row">
+                    <a href="/" class="btn-outline">Back to dashboard</a>
+                </div>
+            </div>
+
+            <div class="state-error" id="state-error">
+                <div class="err-icon">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <h1>Something went wrong</h1>
+                <p class="lede" id="error-msg">Couldn't complete the link. Try again in a moment.</p>
+                <div class="action-row">
+                    <a href="/" class="btn-outline">Back to dashboard</a>
+                </div>
+            </div>
+
+            <div class="state-cancelled" id="state-cancelled">
+                <div class="cancel-icon">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <h1>Cancelled</h1>
+                <p class="lede">The link request was cancelled. You can close this tab or run <code>/mc link</code> again in Discord to start over.</p>
+                <div class="action-row">
+                    <a href="/" class="btn-outline">Back to dashboard</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = "{{ token }}";
+        const KIND = "{{ kind }}";
+        const btn = document.getElementById('btn-accept');
+        const cancelBtn = document.getElementById('btn-cancel');
+        const initial = document.getElementById('state-initial');
+        const success = document.getElementById('state-success');
+        const error = document.getElementById('state-error');
+        const cancelled = document.getElementById('state-cancelled');
+        const successMsg = document.getElementById('success-msg');
+        const errorMsg = document.getElementById('error-msg');
+
+        function show(el) {
+            initial.style.display = 'none';
+            [success, error, cancelled].forEach(s => {
+                s.classList.remove('active');
+                s.style.display = 'none';
+            });
+            el.style.display = 'block';
+            el.classList.add('active');
+        }
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Working…';
+            try {
+                const res = await fetch(`/mc/link/${TOKEN}/accept`, { method: 'POST' });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.ok) {
+                    if (data.status === 'already_linked') {
+                        successMsg.textContent = 'Your account is already linked. No changes were made.';
+                    } else if (data.status === 'bedrock_add') {
+                        successMsg.textContent = 'Bedrock account added. You can now join with both Java and Bedrock.';
+                    }
+                    show(success);
+                } else {
+                    if (data.error === 'expired') {
+                        errorMsg.textContent = 'This link has expired. Run /mc link again in Discord to get a new one.';
+                    } else if (data.error === 'mc_unreachable') {
+                        errorMsg.textContent = 'The Minecraft server could not be reached. Please try again later.';
+                    }
+                    show(error);
+                }
+            } catch (e) {
+                errorMsg.textContent = 'Network error. Please try again.';
+                show(error);
+            }
+        });
+
+        cancelBtn.addEventListener('click', async () => {
+            cancelBtn.disabled = true;
+            btn.disabled = true;
+            try {
+                await fetch(`/mc/link/${TOKEN}/cancel`, { method: 'POST' });
+            } catch (e) { /* ignore — invalidating on backend is best-effort */ }
+            show(cancelled);
+        });
+    </script>
+</body>
+</html>

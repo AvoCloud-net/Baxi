@@ -2,6 +2,8 @@ import aiohttp
 import asyncio
 import json
 import os
+import secrets as _secrets
+import time
 from reds_simple_logger import Logger
 
 logger = Logger()
@@ -12,6 +14,39 @@ _LINKS_FILE = os.path.join(_DATA_DIR, "mc_links.json")
 _links: dict = {}  # guild_id_str → {discord_id: {uuid, name, linked_at}}
 
 _lock = asyncio.Lock()
+
+_LINK_SESSION_TTL = 600  # 10 min
+# token → {guild_id, discord_id, discord_name, discord_avatar_url,
+#          uuid, mc_name, api_url, api_secret, kind, expires_at}
+# kind: "new" | "bedrock_add" | "already_linked"
+_link_sessions: dict[str, dict] = {}
+
+
+def create_link_session(payload: dict) -> str:
+    token = _secrets.token_urlsafe(24)
+    payload["expires_at"] = time.time() + _LINK_SESSION_TTL
+    _link_sessions[token] = payload
+    return token
+
+
+def get_link_session(token: str) -> dict | None:
+    sess = _link_sessions.get(token)
+    if not sess:
+        return None
+    if sess["expires_at"] < time.time():
+        _link_sessions.pop(token, None)
+        return None
+    return sess
+
+
+def consume_link_session(token: str) -> dict | None:
+    return _link_sessions.pop(token, None)
+
+
+def cleanup_link_sessions():
+    now = time.time()
+    for tok in [t for t, s in _link_sessions.items() if s["expires_at"] < now]:
+        _link_sessions.pop(tok, None)
 
 
 def _load():
@@ -127,6 +162,10 @@ async def remove_link(guild_id: int, discord_id: int):
         _save()
 
 
+def is_bedrock_uuid(uuid: str) -> bool:
+    return uuid.startswith("00000000-0000-0000")
+
+
 async def store_link(guild_id: int, discord_id: int, uuid: str, name: str):
     import time
     async with _lock:
@@ -139,3 +178,61 @@ async def store_link(guild_id: int, discord_id: int, uuid: str, name: str):
             "linked_at": int(time.time()),
         }
         _save()
+
+
+async def add_bedrock_link(guild_id: int, discord_id: int, bedrock_uuid: str, bedrock_name: str):
+    async with _lock:
+        gid = str(guild_id)
+        entry = _links.get(gid, {}).get(str(discord_id))
+        if entry is None:
+            return
+        entry["bedrock_uuid"] = bedrock_uuid
+        entry["bedrock_name"] = bedrock_name
+        _save()
+
+
+async def announce_link(bot, guild_id: int, discord_id: int, mc_name: str, guild_conf: dict, lang: dict):
+    import discord as _discord
+    import config.config as _cfg
+    channel_id_str: str = guild_conf.get("announce_channel", "")
+    if not channel_id_str:
+        return
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return
+        channel = guild.get_channel(int(channel_id_str))
+        if channel is None:
+            return
+        t = lang["systems"]["mc_link"]
+        embed = _discord.Embed(
+            description=t["announce"].format(mention=f"<@{discord_id}>", mc_name=mc_name),
+            color=_cfg.Discord.success_color,
+        )
+        embed.set_footer(text=t["footer"])
+        await channel.send(embed=embed)
+    except Exception as e:
+        logger.error(f"[mc_link] announce_link failed: {e}")
+
+
+async def dm_user(bot, guild_id: int, discord_id: int, mc_name: str, guild_conf: dict, lang: dict):
+    import discord as _discord
+    import config.config as _cfg
+    if not guild_conf.get("dm_on_link", False):
+        return
+    try:
+        guild = bot.get_guild(guild_id)
+        guild_name = guild.name if guild else "Unknown server"
+        user = bot.get_user(discord_id) or await bot.fetch_user(discord_id)
+        if user is None:
+            return
+        t = lang["systems"]["mc_link"]
+        embed = _discord.Embed(
+            title=f"{_cfg.Icons.check} {t['success_title']}",
+            description=t["dm_desc"].format(mc_name=mc_name, guild=guild_name),
+            color=_cfg.Discord.success_color,
+        )
+        embed.set_footer(text=t["footer"])
+        await user.send(embed=embed)
+    except Exception as e:
+        logger.error(f"[mc_link] dm_user failed: {e}")
