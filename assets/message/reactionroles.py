@@ -103,11 +103,11 @@ async def _toggle_role(interaction: discord.Interaction, role_id: int) -> None:
 
 def build_panel_embed(panel: dict) -> discord.Embed:
     """Build the Discord embed for a button-role panel."""
-    color_str = panel.get("color", "#9333ea")
+    color_str = panel.get("color", "#FF6B4A")
     try:
         color = discord.Color.from_str(color_str)
     except Exception:
-        color = discord.Color.from_rgb(147, 51, 234)
+        color = discord.Color.from_rgb(255, 107, 74)
 
     embed = discord.Embed(
         title=panel.get("title", "Role Selection"),

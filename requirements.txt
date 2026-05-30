@@ -6,6 +6,7 @@ quart
 quart_cors
 quart_discord
 pillow
+cairosvg
 yt-dlp
 gTTS
 stripe

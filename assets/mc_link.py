@@ -96,6 +96,25 @@ async def resolve_token(api_url: str, secret: str, token: str) -> dict | None:
         return None
 
 
+async def fetch_online_players(api_url: str, secret: str) -> tuple[dict | None, str | None]:
+    """GET /dg/players → (data, None) on success, (None, error) on failure.
+
+    error: "outdated" if plugin lacks the endpoint (404), else "unreachable".
+    """
+    url = f"{api_url.rstrip('/')}/dg/players"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status == 200:
+                    return await resp.json(), None
+                if resp.status == 404:
+                    return None, "outdated"
+                return None, "unreachable"
+    except Exception as e:
+        logger.error(f"[mc_link] fetch_online_players failed: {e}")
+        return None, "unreachable"
+
+
 async def whitelist_player(api_url: str, secret: str, uuid: str, name: str, discord_id: int, discord_name: str = "") -> bool:
     """POST /dg/whitelist → bool success."""
     url = f"{api_url.rstrip('/')}/dg/whitelist"
@@ -191,6 +210,27 @@ async def add_bedrock_link(guild_id: int, discord_id: int, bedrock_uuid: str, be
         _save()
 
 
+async def _render_link_attachment(bot, guild_id: int, discord_id: int, mc_name: str, mc_uuid: str | None):
+    """Render the avatar pair card. Returns (discord.File, embed_image_url) or (None, None)."""
+    import discord as _discord
+    from assets import mc_link_card
+    try:
+        user = bot.get_user(discord_id) or await bot.fetch_user(discord_id)
+        if user is None or not mc_uuid:
+            return None, None
+        buf = await mc_link_card.render_confirm(
+            discord_name=user.name,
+            discord_avatar_url=str(user.display_avatar.url),
+            mc_name=mc_name,
+            mc_uuid=mc_uuid,
+        )
+        filename = "mc_link_card.png"
+        return _discord.File(buf, filename=filename), f"attachment://{filename}"
+    except Exception as e:
+        logger.error(f"[mc_link] card render failed: {e}")
+        return None, None
+
+
 async def announce_link(bot, guild_id: int, discord_id: int, mc_name: str, guild_conf: dict, lang: dict):
     import discord as _discord
     import config.config as _cfg
@@ -205,12 +245,18 @@ async def announce_link(bot, guild_id: int, discord_id: int, mc_name: str, guild
         if channel is None:
             return
         t = lang["systems"]["mc_link"]
+        link = get_link(guild_id, discord_id) or {}
+        file, img_url = await _render_link_attachment(bot, guild_id, discord_id, mc_name, link.get("uuid"))
         embed = _discord.Embed(
             description=t["announce"].format(mention=f"<@{discord_id}>", mc_name=mc_name),
             color=_cfg.Discord.success_color,
         )
         embed.set_footer(text=t["footer"])
-        await channel.send(embed=embed)
+        if img_url:
+            embed.set_image(url=img_url)
+            await channel.send(embed=embed, file=file)
+        else:
+            await channel.send(embed=embed)
     except Exception as e:
         logger.error(f"[mc_link] announce_link failed: {e}")
 
@@ -227,12 +273,18 @@ async def dm_user(bot, guild_id: int, discord_id: int, mc_name: str, guild_conf:
         if user is None:
             return
         t = lang["systems"]["mc_link"]
+        link = get_link(guild_id, discord_id) or {}
+        file, img_url = await _render_link_attachment(bot, guild_id, discord_id, mc_name, link.get("uuid"))
         embed = _discord.Embed(
             title=f"{_cfg.Icons.check} {t['success_title']}",
             description=t["dm_desc"].format(mc_name=mc_name, guild=guild_name),
             color=_cfg.Discord.success_color,
         )
         embed.set_footer(text=t["footer"])
-        await user.send(embed=embed)
+        if img_url:
+            embed.set_image(url=img_url)
+            await user.send(embed=embed, file=file)
+        else:
+            await user.send(embed=embed)
     except Exception as e:
         logger.error(f"[mc_link] dm_user failed: {e}")

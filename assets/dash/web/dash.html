@@ -190,11 +190,12 @@
         <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
             <span class="avocloud-logo__slot">
                 <span class="avocloud-logo__icon">
-                    <svg viewBox="0 0 100 75" fill="none">
-                        <path d="M 43 65 L 11 65 L 33 10 L 67 65 L 91 12"
-                            stroke="currentColor" stroke-width="8.5"
+                    <svg viewBox="0 0 72 72" fill="none">
+                        <path d="M22 18 L12 18 L12 54 L22 54 M50 18 L60 18 L60 54 L50 54 M26 30 L33 36 L26 42"
+                            stroke="currentColor" stroke-width="6"
                             stroke-linecap="round" stroke-linejoin="round"
                             pathLength="200"/>
+                        <rect class="logo-cursor" x="40" y="28" width="4" height="16" rx="2"/>
                     </svg>
                 </span>
                 <span class="avocloud-logo__av">AVO</span>
@@ -261,11 +262,11 @@
         </div>
 
         <!-- Top.gg Vote Banner -  avocloud.net styled -->
-        <div style="position:relative; background:rgba(147,51,234,0.06); border:1px solid rgba(147,51,234,0.25); border-radius:10px; backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
-            <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,#9333ea,#ec4899,#eab308,#9333ea); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
+        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); border-radius:10px; backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
+            <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,var(--color-primary, #FF6B4A),#FF9379,#FF6B4A,var(--color-primary, #FF6B4A)); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
-                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:9px; background:rgba(236,72,153,0.12); border:1px solid rgba(236,72,153,0.3); color:#ec4899;">
+                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:9px; background:rgba(255,147,121,0.12); border:1px solid rgba(255,147,121,0.3); color:#FF9379;">
                         <!-- Lucide: heart -->
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -277,7 +278,7 @@
                     </div>
                 </div>
                 {% if user_on_avocloud %}
-                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(147,51,234,0.5); background:rgba(147,51,234,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(147,51,234,0.22)';this.style.borderColor='rgba(236,72,153,0.7)';" onmouseout="this.style.background='rgba(147,51,234,0.12)';this.style.borderColor='rgba(147,51,234,0.5)';">
+                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
                     <!-- Lucide: thumbs-up -->
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M7 10v12"/>
@@ -295,7 +296,7 @@
                         </svg>
                         Vote on Top.gg
                     </span>
-                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(147,51,234,0.5); background:rgba(147,51,234,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(147,51,234,0.22)';this.style.borderColor='rgba(236,72,153,0.7)';" onmouseout="this.style.background='rgba(147,51,234,0.12)';this.style.borderColor='rgba(147,51,234,0.5)';">
+                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
                         <!-- Lucide: users -->
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -349,11 +350,11 @@
                 Chatfilter
             </a>
             <a href="#warn-config" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/><path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                 Warnings
             </a>
             <a href="#prism" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M6.376 18.91a6 6 0 0 1 11.249.003"/><circle cx="12" cy="11" r="4"/></svg>
                 PRISM
             </a>
             <a href="#verify" class="dash-nav-item">
@@ -663,11 +664,11 @@
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
-                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
-                                <path d="M12 9v4"/><path d="M12 17h.01"/>
+                                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                <path d="M6.376 18.91a6 6 0 0 1 11.249.003"/><circle cx="12" cy="11" r="4"/>
                             </svg>
                             PRISM -  Trust Scoring
-                            <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#9333ea) 15%,transparent);color:var(--color-primary,#9333ea);vertical-align:middle;">BETA</span>
+                            <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#FF6B4A) 15%,transparent);color:var(--color-primary,#FF6B4A);vertical-align:middle;">BETA</span>
                         </h2>
                         <p class="text-muted">Prism analyzes user behavior across all Baxi servers and generates a network-wide trust score per user.</p>
                     </header>
@@ -876,6 +877,16 @@
                                     <p class="text-xs text-muted mt-1">
                                         Detects and blocks known Discord phishing &amp; scam links. Updated every 12 hours from
                                         <a href="https://github.com/Discord-AntiScam/scam-links" target="_blank" rel="noopener noreferrer" class="underline">Discord-AntiScam/scam-links</a> on GitHub.
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="flex items-center gap-3" style="cursor:pointer">
+                                        <input type="checkbox" id="chatfilter-warn-on-violation">
+                                        <span class="font-medium">Issue a warning on violation</span>
+                                    </label>
+                                    <p class="text-xs text-muted mt-1">
+                                        When enabled, the user automatically receives a warning for every detected chatfilter violation. This counts toward auto-escalation.
                                     </p>
                                 </div>
 
@@ -1589,8 +1600,8 @@
                             <div class="grid gap-2">
                                 <label for="verify-color">Embed color:</label>
                                 <div class="flex items-center gap-2">
-                                    <input type="color" id="verify-color" value="#9333ea" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('verify-color-hex').value=this.value">
-                                    <input type="text" id="verify-color-hex" value="#9333ea" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('verify-color').value=this.value">
+                                    <input type="color" id="verify-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('verify-color-hex').value=this.value">
+                                    <input type="text" id="verify-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('verify-color').value=this.value">
                                 </div>
                             </div>
 
@@ -1637,15 +1648,15 @@
                     </header>
                     <section>
                         <!-- How it works -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#9333ea) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#9333ea) 25%,transparent);border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;">
-                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#9333ea);">How it works -  2 steps</p>
+                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#FF6B4A) 25%,transparent);border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;">
+                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#FF6B4A);">How it works -  2 steps</p>
                             <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
                                 <li class="text-sm flex gap-3 items-start">
-                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
+                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
                                     <span><strong>Create a panel</strong>: choose a channel, give it a title and description. Baxi posts an embed message with buttons there.</span>
                                 </li>
                                 <li class="text-sm flex gap-3 items-start">
-                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">2</span>
+                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">2</span>
                                     <span><strong>Add buttons</strong>: pick a role (and optionally an emoji and label) for each button. Members click a button to get the role, and click again to remove it.</span>
                                 </li>
                             </ol>
@@ -1655,7 +1666,7 @@
                         <div class="card mb-6">
                             <header>
                                 <h3 class="text-base font-semibold flex items-center gap-2">
-                                    <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">1</span>
+                                    <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">1</span>
                                     Create a new panel
                                 </h3>
                                 <p class="text-muted text-sm">Each panel is a separate embed message. You can have multiple panels in different channels.</p>
@@ -1684,8 +1695,8 @@
                                     <div class="grid gap-2">
                                         <label for="rr-color">Embed color:</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="color" id="rr-color" value="#9333ea" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('rr-color-hex').value=this.value">
-                                            <input type="text" id="rr-color-hex" value="#9333ea" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('rr-color').value=this.value">
+                                            <input type="color" id="rr-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('rr-color-hex').value=this.value">
+                                            <input type="text" id="rr-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('rr-color').value=this.value">
                                         </div>
                                     </div>
                                     <div class="grid gap-2">
@@ -1704,7 +1715,7 @@
                         <!-- Step 2: Existing panels / add entries -->
                         <div>
                             <h3 class="text-base font-semibold flex items-center gap-2 mb-3">
-                                <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#9333ea);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
+                                <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
                                 Your panels -  add emoji → role entries
                             </h3>
                             <div id="rr-panels-list">
@@ -1730,37 +1741,50 @@
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
-                                <path d="m14.5 12.5-5 5"/><path d="m9.5 12.5 5 5"/>
-                                <path d="M14.622 4.644A2 2 0 0 0 13.018 4h-2.036a2 2 0 0 0-1.604.644L2.62 13.35a2 2 0 0 0 .128 2.777l4.14 3.863a2 2 0 0 0 2.74-.064l7.55-7.994a2 2 0 0 0 .49-1.712z"/>
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                                <path d="M12 9v4"/><path d="M12 17h.01"/>
                             </svg>
                             Auto-Escalation Settings
                         </h2>
-                        <p class="text-muted">Configure when warnings automatically escalate to mute, kick or ban.</p>
+                        <p class="text-muted">Define steps: how many warnings trigger which action automatically.</p>
                     </header>
                     <section>
                         <form id="warn-config-form" class="form grid gap-6 settings-form">
-                            <div class="grid gap-2">
-                                <label for="wc-mute-at">Mute at X warnings:</label>
-                                <input type="number" id="wc-mute-at" min="1" max="20" value="3" class="w-full">
-                                <p class="text-muted text-xs">User gets muted after this many warnings.</p>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="wc-enabled" role="switch">
+                                    <span class="font-medium">Enable auto-escalation</span>
+                                </label>
                             </div>
 
                             <div class="grid gap-2">
-                                <label for="wc-kick-at">Kick at X warnings:</label>
-                                <input type="number" id="wc-kick-at" min="1" max="30" value="5" class="w-full">
-                                <p class="text-muted text-xs">User gets kicked after this many warnings.</p>
+                                <label for="wc-expiry-days">Warnings expire after … days <span class="text-muted font-normal">(0 = never)</span></label>
+                                <input type="number" id="wc-expiry-days" min="0" max="365" value="0" class="w-full">
+                                <p class="text-muted text-xs">After this many days warnings stop counting. 0 = warnings never expire.</p>
                             </div>
 
                             <div class="grid gap-2">
-                                <label for="wc-ban-at">Ban at X warnings:</label>
-                                <input type="number" id="wc-ban-at" min="1" max="50" value="7" class="w-full">
-                                <p class="text-muted text-xs">User gets permanently banned after this many warnings.</p>
-                            </div>
+                                <label class="font-medium text-sm">Escalation steps <span class="text-muted font-normal" id="wc-steps-count">(0)</span></label>
 
-                            <div class="grid gap-2">
-                                <label for="wc-mute-duration">Mute duration (seconds):</label>
-                                <input type="number" id="wc-mute-duration" min="60" max="604800" value="600" class="w-full">
-                                <p class="text-muted text-xs">How long the auto-mute lasts. 600 = 10 min, 3600 = 1 h, 86400 = 1 day.</p>
+                                <div id="wc-steps-list"></div>
+
+                                <div id="wc-steps-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
+                                    <div class="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No steps defined</h3>
+                                        <p class="text-muted text-sm">Add a step to trigger automatic actions at a certain number of warnings.</p>
+                                    </div>
+                                </div>
+
+                                <div class="add-area mt-3">
+                                    <button type="button" class="btn-primary" id="wc-add-step">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add step
+                                    </button>
+                                </div>
                             </div>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
@@ -2275,17 +2299,22 @@
                                     <input type="checkbox" id="mcl-enabled" role="switch">
                                     <span class="font-medium">Enable DiscordGate</span>
                                 </label>
+                                <p class="text-muted text-xs mt-1">Master switch. While off, all <code>/mc</code> commands are disabled.</p>
                             </div>
 
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">CONNECTION</div>
+                            <p class="text-muted text-xs">How BaxiBot talks to the Minecraft server.</p>
+
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium" for="mcl-api-url">MC Plugin API URL</label>
-                                <p class="text-muted text-xs">Address of the DiscordGate HTTP API, e.g. <code>http://localhost:4321</code></p>
+                                <label class="text-sm font-medium" for="mcl-api-url">Plugin API URL</label>
+                                <p class="text-muted text-xs">HTTP address of the DiscordGate plugin, e.g. <code>http://localhost:4321</code>. Set the same port in <code>plugins/DiscordGate/config.yml</code>.</p>
                                 <input type="text" id="mcl-api-url" class="input" placeholder="http://localhost:4321">
                             </div>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium" for="mcl-api-secret">API Secret</label>
-                                <p class="text-muted text-xs">Shared secret between BaxiBot and the plugin. Must match <code>secret</code> in <code>plugins/DiscordGate/config.yml</code>.</p>
+                                <label class="text-sm font-medium" for="mcl-api-secret">Shared secret</label>
+                                <p class="text-muted text-xs">Required for the bot to authenticate against the plugin. Must match <code>secret</code> in <code>plugins/DiscordGate/config.yml</code>.</p>
                                 <div class="mcl-secret-row" style="display:flex;gap:0.5rem;align-items:center;">
                                     <input type="password" id="mcl-api-secret" class="input" placeholder="••••••••" style="flex:1;" oninput="mclCheckSecret()">
                                     <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
@@ -2299,9 +2328,13 @@
                                 </div>
                             </div>
 
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">LINKING BEHAVIOR</div>
+                            <p class="text-muted text-xs">What happens when a player runs <code>/mc link</code>.</p>
+
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Role to assign on link (optional):</label>
-                                <p class="text-muted text-xs">Members receive this role after successfully linking, and lose it on unlink.</p>
+                                <label class="text-sm font-medium">Linked role <span class="text-muted">(optional)</span></label>
+                                <p class="text-muted text-xs">Given after successful linking, removed on unlink.</p>
                                 <select id="mcl-role" class="input">
                                     <option value="">— None —</option>
                                     {% for role_id, role_name in roles.items() %}
@@ -2312,9 +2345,21 @@
                                 </select>
                             </div>
 
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mcl-allow-self-unlink">
+                                    <span class="font-medium">Allow self-unlink</span>
+                                </label>
+                                <p class="text-muted text-xs mt-1">Let users run <code>/mc unlink</code> themselves. Off = only admins can unlink.</p>
+                            </div>
+
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">LINK NOTIFICATIONS</div>
+                            <p class="text-muted text-xs">Triggered when a single user successfully links their account.</p>
+
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Link notification channel <span class="text-muted">(optional)</span></label>
-                                <p class="text-muted text-xs">Post a public message in this channel when a member links their account.</p>
+                                <label class="text-sm font-medium">Public link channel <span class="text-muted">(optional)</span></label>
+                                <p class="text-muted text-xs">Posts a message like <em>"@user linked Minecraft account X"</em> when somebody links.</p>
                                 <select id="mcl-announce-channel" class="input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
@@ -2326,22 +2371,18 @@
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
                                     <input type="checkbox" id="mcl-dm-on-link">
-                                    <span class="font-medium">DM users on successful link</span>
+                                    <span class="font-medium">DM the user after linking</span>
                                 </label>
-                                <p class="text-muted text-xs mt-1">Send the user a private message confirming their account was linked.</p>
+                                <p class="text-muted text-xs mt-1">Send the linked user a private confirmation including their MC head + Discord avatar.</p>
                             </div>
 
-                            <div class="form-group">
-                                <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="mcl-allow-self-unlink">
-                                    <span class="font-medium">Allow self-unlink</span>
-                                </label>
-                                <p class="text-muted text-xs mt-1">Let users unlink their own account via <code>/mc unlink</code>. Disable to require admin action.</p>
-                            </div>
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">SERVER BROADCASTS</div>
+                            <p class="text-muted text-xs">Triggered by the in-game <code>/dg announce &lt;msg&gt;</code> command — relays MC broadcasts into Discord.</p>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Server announcement channel <span class="text-muted">(optional)</span></label>
-                                <p class="text-muted text-xs">Relay in-game announcements from <code>/mcannounce</code> to this Discord channel.</p>
+                                <label class="text-sm font-medium">Broadcast channel <span class="text-muted">(optional)</span></label>
+                                <p class="text-muted text-xs">Where to post the broadcast message. Leave empty to disable channel relay.</p>
                                 <select id="mcl-announcement-channel" class="input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
@@ -2353,25 +2394,25 @@
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
                                     <input type="checkbox" id="mcl-dm-announcements">
-                                    <span class="font-medium">Send announcements to DMs</span>
+                                    <span class="font-medium">Also DM every linked member</span>
                                 </label>
-                                <p class="text-muted text-xs mt-1">DM every linked Discord user when an admin runs <code>/mcannounce</code>.</p>
+                                <p class="text-muted text-xs mt-1">Sends the broadcast as a DM to <strong>every</strong> linked Discord user. Use sparingly — high spam risk.</p>
                             </div>
 
                             <hr class="my-2">
                             <div class="section-label" style="margin:0;">CROSS-CHAT</div>
-                            <p class="text-muted text-xs">Bridge in-game chat with a Discord channel. Linked players appear under their Discord display name (via webhook). Discord messages from linked users show in MC as <code>[DC] &lt;mc_name&gt; (&lt;discord_name&gt;): …</code>. Messages from unlinked Discord users are dropped.</p>
+                            <p class="text-muted text-xs">Two-way bridge between a Discord channel and in-game chat. Linked players post under their Discord display name (via webhook); MC messages from linked users appear in Discord as <code>[DC] &lt;mc_name&gt;: …</code>. Unlinked Discord users are filtered out.</p>
 
                             <div class="form-group">
                                 <label class="flex items-center gap-3" style="cursor:pointer">
                                     <input type="checkbox" id="mcl-chat-enabled" role="switch">
-                                    <span class="font-medium">Enable MC ↔ Discord cross-chat</span>
+                                    <span class="font-medium">Enable cross-chat</span>
                                 </label>
                             </div>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium">Bridge channel <span class="text-muted">(required for chat)</span></label>
-                                <p class="text-muted text-xs">The Discord channel where chat is mirrored. The webhook below must target this channel.</p>
+                                <label class="text-sm font-medium">Bridge channel <span class="text-muted">(required when enabled)</span></label>
+                                <p class="text-muted text-xs">The Discord channel that mirrors in-game chat. Must match the webhook below.</p>
                                 <select id="mcl-chat-channel" class="input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
@@ -2381,8 +2422,8 @@
                             </div>
 
                             <div class="grid gap-2">
-                                <label class="text-sm font-medium" for="mcl-chat-webhook-url">Channel webhook URL</label>
-                                <p class="text-muted text-xs">Create a webhook in the bridge channel (Edit Channel → Integrations → Webhooks → New Webhook → Copy URL). Used so MC players appear under their own Discord display name + avatar.</p>
+                                <label class="text-sm font-medium" for="mcl-chat-webhook-url">Channel webhook URL <span class="text-muted">(required when enabled)</span></label>
+                                <p class="text-muted text-xs">Create one in the bridge channel: Edit Channel → Integrations → Webhooks → New Webhook → Copy URL. Lets MC players appear under their own Discord display name.</p>
                                 <input type="text" id="mcl-chat-webhook-url" class="input" placeholder="https://discord.com/api/webhooks/...">
                             </div>
 
@@ -3438,7 +3479,7 @@
                         <div id="logContainer">
                             {% for log in data.audit_log %}
                             <div class="log-entry card mt-4" data-type="{{ log.type }}" style="position: relative;">
-                                <div style="position: absolute; top: -12px; left: -12px; background: #9333ea; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600;">
+                                <div style="position: absolute; top: -12px; left: -12px; background: var(--color-primary, #FF6B4A); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600;">
                                     {{ data.audit_log|length - loop.index0 }}
                                 </div>
 
@@ -3675,6 +3716,7 @@
                 renderTags('c_goodwords', data.chatfilter.c_goodwords || []);
                 renderTags('c_badwords', data.chatfilter.c_badwords || []);
                 document.getElementById('chatfilter-phishing').checked = data.chatfilter.phishing_filter === true;
+                document.getElementById('chatfilter-warn-on-violation').checked = data.chatfilter.warn_on_violation === true;
                 // Populate AI category checkboxes
                 const cats = data.chatfilter.ai_categories || {};
                 for (let i = 1; i <= 5; i++) {
@@ -3740,12 +3782,30 @@
                 renderAntispamWlRoles();
             }
 
-            // Warn Config (auto-escalation)
-            if (data.warn_config) {
-                document.getElementById('wc-mute-at').value = data.warn_config.mute_at ?? 3;
-                document.getElementById('wc-kick-at').value = data.warn_config.kick_at ?? 5;
-                document.getElementById('wc-ban-at').value = data.warn_config.ban_at ?? 7;
-                document.getElementById('wc-mute-duration').value = data.warn_config.mute_duration ?? 600;
+            // Warn Config (auto-escalation step-ladder)
+            {
+                const wc = data.warn_config || {};
+                document.getElementById('wc-enabled').checked = wc.enabled !== false;
+                document.getElementById('wc-expiry-days').value = wc.expiry_days ?? 0;
+                if (Array.isArray(wc.steps)) {
+                    _escalationSteps = wc.steps.map(s => ({
+                        warns: parseInt(s.warns) || 1,
+                        action: ['notify','timeout','kick','ban'].includes(s.action) ? s.action : 'timeout',
+                        duration: parseInt(s.duration) || 600,
+                        dm: s.dm !== false,
+                    }));
+                } else if (wc.mute_at || wc.kick_at || wc.ban_at) {
+                    // Legacy guild: synthesize ladder from old thresholds so the
+                    // existing config is shown (and not wiped on save).
+                    _escalationSteps = [
+                        { warns: parseInt(wc.mute_at) || 3, action: 'timeout', duration: parseInt(wc.mute_duration) || 600, dm: true },
+                        { warns: parseInt(wc.kick_at) || 5, action: 'kick', duration: 0, dm: true },
+                        { warns: parseInt(wc.ban_at) || 7, action: 'ban', duration: 0, dm: true },
+                    ];
+                } else {
+                    _escalationSteps = [];
+                }
+                renderEscalationSteps();
             }
 
             // Welcomer
@@ -4950,12 +5010,13 @@
             const goodWords = getTags('c_goodwords');
             const badWords = getTags('c_badwords');
             const phishing = document.getElementById('chatfilter-phishing').checked;
+            const warn_on_violation = document.getElementById('chatfilter-warn-on-violation').checked;
             const ai_categories = {};
             for (let i = 1; i <= 5; i++) {
                 const cb = document.getElementById(`ai-cat-${i}`);
                 ai_categories[String(i)] = cb ? cb.checked : true;
             }
-            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [..._cfBypassChannels], phishing_filter: phishing, ai_categories } };
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [..._cfBypassChannels], phishing_filter: phishing, warn_on_violation, ai_categories } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -5152,10 +5213,14 @@
             event.preventDefault();
             const payload = {
                 warn_config: {
-                    mute_at: parseInt(document.getElementById('wc-mute-at').value),
-                    kick_at: parseInt(document.getElementById('wc-kick-at').value),
-                    ban_at: parseInt(document.getElementById('wc-ban-at').value),
-                    mute_duration: parseInt(document.getElementById('wc-mute-duration').value),
+                    enabled: document.getElementById('wc-enabled').checked,
+                    expiry_days: parseInt(document.getElementById('wc-expiry-days').value) || 0,
+                    steps: _escalationSteps.map(s => ({
+                        warns: parseInt(s.warns) || 1,
+                        action: s.action,
+                        duration: parseInt(s.duration) || 0,
+                        dm: s.dm === true,
+                    })),
                 }
             };
             const xhr = new XMLHttpRequest();
@@ -5812,6 +5877,97 @@
         function antispamRemoveWlChannel(id) { _antispamWlChannels = _antispamWlChannels.filter(c => c !== id); renderAntispamWlChannels(); }
         function antispamRemoveWlRole(id) { _antispamWlRoles = _antispamWlRoles.filter(r => r !== id); renderAntispamWlRoles(); }
 
+        // ── Escalation Steps (Warn Config) ────────────────────────────────────
+        let _escalationSteps = [];
+
+        const _WC_ACTION_LABELS = { notify: 'Notify only', timeout: 'Timeout', kick: 'Kick', ban: 'Ban' };
+
+        function renderEscalationSteps() {
+            const list = document.getElementById('wc-steps-list');
+            const empty = document.getElementById('wc-steps-empty');
+            const count = document.getElementById('wc-steps-count');
+            list.innerHTML = '';
+            count.textContent = `(${_escalationSteps.length})`;
+            if (_escalationSteps.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            _escalationSteps.forEach(function (step, idx) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'margin-bottom:12px;padding:16px 18px;';
+                const actionLabel = _WC_ACTION_LABELS[step.action] || step.action;
+                const durationMin = Math.round((step.duration || 0) / 60);
+                card.innerHTML = `
+                    <header class="flex items-center justify-between" style="gap:12px;">
+                        <div style="min-width:0;flex:1;">
+                            <h3 class="text-base font-semibold">Step ${idx + 1}: At ${step.warns} warning${step.warns !== 1 ? 's' : ''} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" style="display:inline-block;vertical-align:-3px;"><path d="m9 18 6-6-6-6"/></svg> ${actionLabel}</h3>
+                            <p class="text-muted text-xs">${step.action === 'timeout' ? `Timeout: ${durationMin} min &nbsp;&middot;&nbsp;` : ''}DM: ${step.dm ? 'Yes' : 'No'}</p>
+                        </div>
+                        <button type="button" class="btn-outline btn-wc-remove" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            <span class="btn-label">Remove</span>
+                        </button>
+                    </header>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:14px;">
+                        <div class="grid gap-1">
+                            <label style="font-size:12px;opacity:.7;">At X warnings</label>
+                            <input type="number" class="wc-step-warns" min="1" max="100" value="${step.warns}" style="width:100%;">
+                        </div>
+                        <div class="grid gap-1">
+                            <label style="font-size:12px;opacity:.7;">Action</label>
+                            <select class="select wc-step-action" style="width:100%;">
+                                <option value="notify"${step.action === 'notify' ? ' selected' : ''}>Notify only</option>
+                                <option value="timeout"${step.action === 'timeout' ? ' selected' : ''}>Timeout</option>
+                                <option value="kick"${step.action === 'kick' ? ' selected' : ''}>Kick</option>
+                                <option value="ban"${step.action === 'ban' ? ' selected' : ''}>Ban</option>
+                            </select>
+                        </div>
+                        <div class="grid gap-1 wc-step-duration-group"${step.action !== 'timeout' ? ' style="display:none;"' : ''}>
+                            <label style="font-size:12px;opacity:.7;">Duration (min)</label>
+                            <input type="number" class="wc-step-duration" min="1" max="40320" value="${durationMin}" style="width:100%;">
+                        </div>
+                        <div class="grid gap-1" style="align-self:end;">
+                            <label style="font-size:12px;opacity:.7;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                <input type="checkbox" class="wc-step-dm"${step.dm ? ' checked' : ''}>
+                                DM the user
+                            </label>
+                        </div>
+                    </div>`;
+                card.querySelector('.wc-step-warns').addEventListener('input', function () {
+                    _escalationSteps[idx].warns = parseInt(this.value) || 1;
+                    document.querySelector(`#wc-steps-list .card:nth-child(${idx + 1}) header h3`).innerHTML =
+                        `Step ${idx + 1}: At ${_escalationSteps[idx].warns} warning${_escalationSteps[idx].warns !== 1 ? 's' : ''} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" style="display:inline-block;vertical-align:-3px;"><path d="m9 18 6-6-6-6"/></svg> ${_WC_ACTION_LABELS[_escalationSteps[idx].action] || _escalationSteps[idx].action}`;
+                });
+                card.querySelector('.wc-step-action').addEventListener('change', function () {
+                    _escalationSteps[idx].action = this.value;
+                    const durGroup = card.querySelector('.wc-step-duration-group');
+                    durGroup.style.display = this.value === 'timeout' ? '' : 'none';
+                    renderEscalationSteps();
+                });
+                card.querySelector('.wc-step-duration').addEventListener('input', function () {
+                    _escalationSteps[idx].duration = (parseInt(this.value) || 1) * 60;
+                });
+                card.querySelector('.wc-step-dm').addEventListener('change', function () {
+                    _escalationSteps[idx].dm = this.checked;
+                });
+                card.querySelector('.btn-wc-remove').addEventListener('click', function () {
+                    _escalationSteps.splice(idx, 1);
+                    renderEscalationSteps();
+                });
+                list.appendChild(card);
+            });
+        }
+
+        document.getElementById('wc-add-step').addEventListener('click', function () {
+            const nextWarns = _escalationSteps.length > 0
+                ? (_escalationSteps[_escalationSteps.length - 1].warns + 1)
+                : 3;
+            _escalationSteps.push({ warns: nextWarns, action: 'timeout', duration: 600, dm: true });
+            renderEscalationSteps();
+        });
+
         // ── Suggestions ────────────────────────────────────────────────────────
         // Each entry: { id, votes_enabled }
         let _suggestionChannels = [];
@@ -6167,7 +6323,7 @@
                     </header>
                     <section>
                         <!-- Editable panel settings -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#9333ea) 5%,transparent);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:1rem;">
+                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 5%,transparent);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:1rem;">
                             <p class="text-sm font-medium mb-3">Panel settings</p>
                             <div class="grid gap-3">
                                 <div class="grid gap-1">
@@ -6182,9 +6338,9 @@
                                     <div class="grid gap-1" style="flex:1;min-width:150px;">
                                         <label class="form-label text-xs">Color</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="color" class="rr-edit-color h-9 w-12 rounded cursor-pointer" data-msgid="${mid}" value="${_rrEscape(panel.color) || '#9333ea'}"
+                                            <input type="color" class="rr-edit-color h-9 w-12 rounded cursor-pointer" data-msgid="${mid}" value="${_rrEscape(panel.color) || '#FF6B4A'}"
                                                 oninput="document.querySelector('.rr-edit-color-hex[data-msgid=&quot;${mid}&quot;]').value=this.value">
-                                            <input type="text" class="input rr-edit-color-hex w-28 font-mono" data-msgid="${mid}" maxlength="7" value="${_rrEscape(panel.color) || '#9333ea'}"
+                                            <input type="text" class="input rr-edit-color-hex w-28 font-mono" data-msgid="${mid}" maxlength="7" value="${_rrEscape(panel.color) || '#FF6B4A'}"
                                                 oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) this.parentNode.querySelector('.rr-edit-color').value=this.value">
                                         </div>
                                     </div>
@@ -6317,7 +6473,7 @@
             const maxInput = document.querySelector(`.rr-edit-max[data-msgid="${messageId}"]`);
             const title = titleInput ? titleInput.value.trim() : '';
             const description = descInput ? descInput.value.trim() : '';
-            const color = colorInput ? colorInput.value.trim() : '#9333ea';
+            const color = colorInput ? colorInput.value.trim() : '#FF6B4A';
             const maxRaw = maxInput ? maxInput.value.trim() : '';
             const max_roles = maxRaw === '' ? 0 : (parseInt(maxRaw) || 0);
             if (!title) { showSaveToast(false, 'Title cannot be empty.'); return; }

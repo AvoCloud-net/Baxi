@@ -4,7 +4,7 @@ import discord
 class Discord:
     shard_count = 1  # Single shard for development/testing; use None for production auto-detect
     prefix = "b?"
-    color         = discord.Color.from_rgb(147, 51, 234)   # #9333ea -  Purple (avocloud primary)
+    color         = discord.Color.from_rgb(255, 107, 74)   # #FF6B4A -  Coral (avocloud primary)
     danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 -  Red
     warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b -  Amber
     success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e -  Green
@@ -135,6 +135,7 @@ class datasys:
         "enabled": False,
         "system": "AI",
         "phishing_filter": False,
+        "warn_on_violation": False,
         "ai_categories": {
             "1": True,
             "2": True,
@@ -149,7 +150,7 @@ class datasys:
         "transcript": "",
         "catid": "",
         "role": "",
-        "color": "#9333ea",
+        "color": "#FF6B4A",
         "message": "Click a button below to open a ticket.",
         "channel_name_template": "{button}-{user}",
         "panel_message_id": "",
@@ -160,10 +161,13 @@ class datasys:
     "audit_log": [],
     "warnings": {},
     "warn_config": {
-        "mute_at": 3,
-        "kick_at": 5,
-        "ban_at": 7,
-        "mute_duration": 600
+        "enabled": True,
+        "expiry_days": 0,
+        "steps": [
+            {"warns": 3, "action": "timeout", "duration": 600, "dm": True},
+            {"warns": 5, "action": "kick", "duration": 0, "dm": True},
+            {"warns": 7, "action": "ban", "duration": 0, "dm": True},
+        ],
     },
     "antispam": {
         "enabled": False,
@@ -182,7 +186,7 @@ class datasys:
         "leave_enabled": False,
         "leave_channel": 0,
         "leave_message": "{user} has left {server}.",
-        "color": "#9333ea",
+        "color": "#FF6B4A",
         "image_mode": "none",
         "card_color": "#1a1a2e",
         "has_custom_bg": False,
@@ -244,7 +248,7 @@ class datasys:
         "panel_message_id": "",
         "title": "Verification",
         "description": "Click the button below to verify yourself and gain access to the server.",
-        "color": "#9333ea"
+        "color": "#FF6B4A"
     },
     "reaction_roles": {
         "panels": []

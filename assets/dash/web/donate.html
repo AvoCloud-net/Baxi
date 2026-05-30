@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="{{ guild.icon.url if guild.icon else 'https://avocloud.net/assets/images/logo.png' }}" type="image/x-icon">
     <meta property="og:title" content="Support {{ guild.name }}">
     <meta property="og:description" content="{{ donations.page_text[:200] }}">
-    <meta property="og:color" content="#9333ea">
+    <meta property="og:color" content="#FF6B4A">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
@@ -46,13 +46,13 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: color-mix(in srgb, var(--color-primary, #9333ea) 20%, transparent);
+            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 20%, transparent);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
             font-weight: 700;
-            color: var(--color-primary, #9333ea);
+            color: var(--color-primary, #FF6B4A);
         }
         .server-name {
             font-size: 1.5rem;
@@ -81,7 +81,7 @@
             background: var(--color-card, transparent);
             transition: border-color 0.15s;
         }
-        .tier-card:hover { border-color: var(--color-primary, #9333ea); }
+        .tier-card:hover { border-color: var(--color-primary, #FF6B4A); }
         .tier-badge {
             display: flex;
             flex-direction: column;
@@ -90,8 +90,8 @@
             min-width: 70px;
             padding: 0.4rem 0.6rem;
             border-radius: 0.5rem;
-            background: color-mix(in srgb, var(--color-primary, #9333ea) 15%, transparent);
-            color: var(--color-primary, #9333ea);
+            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 15%, transparent);
+            color: var(--color-primary, #FF6B4A);
             font-weight: 700;
             font-size: 1rem;
             line-height: 1.2;

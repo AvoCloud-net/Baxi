@@ -40,6 +40,13 @@ async def add_warning(
     }
 
     warnings[user_key].append(warn_entry)
+
+    # Decay: drop expired warnings so they no longer count toward escalation.
+    # The just-added entry has today's date, so the list is never emptied.
+    expiry_days = int(warn_config.get("expiry_days", 0) or 0)
+    if expiry_days > 0:
+        warnings[user_key] = _active_warnings(warnings[user_key], expiry_days)
+
     datasys.save_data(guild_id, "warnings", warnings)
 
     # Log mod event for BaxiInsights
@@ -113,6 +120,86 @@ def get_warnings(guild_id: int, user_id: int) -> list:
     return warnings.get(str(user_id), [])
 
 
+def _active_warnings(warn_list: list, expiry_days: int) -> list:
+    """Return only warnings whose ``date`` falls within ``expiry_days``.
+
+    ``expiry_days <= 0`` disables decay and returns the list unchanged.
+    Entries with a missing/unparseable date are treated as active.
+    """
+    if expiry_days <= 0:
+        return list(warn_list)
+
+    cutoff = datetime.date.today() - datetime.timedelta(days=expiry_days)
+    active = []
+    for w in warn_list:
+        raw = w.get("date")
+        try:
+            wdate = datetime.date.fromisoformat(str(raw))
+        except (ValueError, TypeError):
+            active.append(w)
+            continue
+        if wdate >= cutoff:
+            active.append(w)
+    return active
+
+
+def _normalize_steps(warn_config: dict) -> list[dict]:
+    """Return escalation steps as a sorted list of normalized dicts.
+
+    New shape stores ``steps`` directly. Old guilds only have
+    ``mute_at``/``kick_at``/``ban_at``/``mute_duration`` — synthesise an
+    equivalent ladder so escalation keeps working without a data migration.
+    """
+    steps = warn_config.get("steps")
+    if not isinstance(steps, list):
+        mute_at = int(warn_config.get("mute_at", 3))
+        kick_at = int(warn_config.get("kick_at", 5))
+        ban_at = int(warn_config.get("ban_at", 7))
+        mute_duration = int(warn_config.get("mute_duration", 600))
+        steps = [
+            {"warns": mute_at, "action": "timeout", "duration": mute_duration},
+            {"warns": kick_at, "action": "kick"},
+            {"warns": ban_at, "action": "ban"},
+        ]
+
+    normalized = []
+    for s in steps:
+        if not isinstance(s, dict):
+            continue
+        try:
+            warns = int(s.get("warns", 0))
+        except (ValueError, TypeError):
+            continue
+        if warns < 1:
+            continue
+        action = str(s.get("action", "notify"))
+        if action not in ("notify", "timeout", "kick", "ban"):
+            action = "notify"
+        try:
+            duration = int(s.get("duration", 0) or 0)
+        except (ValueError, TypeError):
+            duration = 0
+        normalized.append({
+            "warns": warns,
+            "action": action,
+            "duration": duration,
+            "dm": bool(s.get("dm", False)),
+        })
+
+    normalized.sort(key=lambda s: s["warns"])
+    return normalized
+
+
+async def _dm_user(user: discord.Member, embed: discord.Embed) -> None:
+    """Best-effort DM to the user. Silently ignores closed DMs."""
+    try:
+        await user.send(embed=embed)
+    except (discord.Forbidden, discord.HTTPException):
+        pass
+    except Exception as e:
+        logger.error(f"Warning escalation DM error: {e}")
+
+
 async def _check_escalation(
     user: discord.Member,
     warn_count: int,
@@ -121,53 +208,57 @@ async def _check_escalation(
     channel: Optional[Union[discord.TextChannel, discord.abc.Messageable]],
     bot: commands.AutoShardedBot,
 ):
-    mute_at = int(warn_config.get("mute_at", 3))
-    kick_at = int(warn_config.get("kick_at", 5))
-    ban_at = int(warn_config.get("ban_at", 7))
-    mute_duration = int(warn_config.get("mute_duration", 600))
+    if not warn_config.get("enabled", True):
+        return
+
+    steps = _normalize_steps(warn_config)
+    # Fire the step whose threshold matches the current warn count exactly.
+    # Warns always increment by 1, so every configured step is reachable.
+    step = next((s for s in steps if s["warns"] == warn_count), None)
+    if step is None:
+        return
+
+    action = step["action"]
+    warn_strings = lang["commands"]["admin"]["warn"]
 
     try:
-        if warn_count >= ban_at:
+        if action == "ban":
             await user.ban(reason=f"Auto-ban: {warn_count} warnings reached")
-            if channel:
-                embed = discord.Embed(
-                    title=f"{config.Icons.people_crossed} AUTO BAN // {user.name} // {warn_count} WARNINGS",
-                    description=str(lang["commands"]["admin"]["warn"]["escalation_ban"]).format(
-                        user=user.mention, count=warn_count
-                    ),
-                    color=config.Discord.danger_color,
-                )
-                embed.set_footer(text="Baxi · avocloud.net")
-                await channel.send(embed=embed)
+            title = f"{config.Icons.people_crossed} AUTO BAN // {user.name} // {warn_count} WARNINGS"
+            desc = str(warn_strings["escalation_ban"]).format(user=user.mention, count=warn_count)
+            color = config.Discord.danger_color
 
-        elif warn_count >= kick_at:
+        elif action == "kick":
             await user.kick(reason=f"Auto-kick: {warn_count} warnings reached")
-            if channel:
-                embed = discord.Embed(
-                    title=f"{config.Icons.people_crossed} AUTO KICK // {user.name} // {warn_count} WARNINGS",
-                    description=str(lang["commands"]["admin"]["warn"]["escalation_kick"]).format(
-                        user=user.mention, count=warn_count
-                    ),
-                    color=config.Discord.danger_color,
-                )
-                embed.set_footer(text="Baxi · avocloud.net")
-                await channel.send(embed=embed)
+            title = f"{config.Icons.people_crossed} AUTO KICK // {user.name} // {warn_count} WARNINGS"
+            desc = str(warn_strings["escalation_kick"]).format(user=user.mention, count=warn_count)
+            color = config.Discord.danger_color
 
-        elif warn_count >= mute_at:
-            duration_minutes = mute_duration // 60
+        elif action == "timeout":
+            duration = step["duration"] or 600
+            duration_minutes = duration // 60
             await user.timeout(
-                discord.utils.utcnow() + datetime.timedelta(seconds=mute_duration)
+                discord.utils.utcnow() + datetime.timedelta(seconds=duration)
             )
-            if channel:
-                embed = discord.Embed(
-                    title=f"{config.Icons.alert} AUTO MUTE // {user.name} // {warn_count} WARNINGS",
-                    description=str(lang["commands"]["admin"]["warn"]["escalation_mute"]).format(
-                        user=user.mention, duration=duration_minutes, count=warn_count
-                    ),
-                    color=config.Discord.warn_color,
-                )
-                embed.set_footer(text="Baxi · avocloud.net")
-                await channel.send(embed=embed)
+            title = f"{config.Icons.alert} AUTO MUTE // {user.name} // {warn_count} WARNINGS"
+            desc = str(warn_strings["escalation_mute"]).format(
+                user=user.mention, duration=duration_minutes, count=warn_count
+            )
+            color = config.Discord.warn_color
+
+        else:  # notify — no punishment, just inform
+            title = f"{config.Icons.alert} {user.name} // {warn_count} WARNINGS"
+            desc = str(warn_strings.get("escalation_notify", warn_strings["escalation_mute"])).format(
+                user=user.mention, count=warn_count, duration=0
+            )
+            color = config.Discord.warn_color
+
+        embed = discord.Embed(title=title, description=desc, color=color)
+        embed.set_footer(text="Baxi · avocloud.net")
+        if channel:
+            await channel.send(embed=embed)
+        if step["dm"]:
+            await _dm_user(user, embed)
 
     except discord.Forbidden:
         logger.error(f"Warning escalation: Missing permissions for {user.name} in {user.guild.name}")

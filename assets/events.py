@@ -426,11 +426,11 @@ def events(bot: commands.AutoShardedBot, web):
                 from assets.buttons import VerifyView
                 channel = message.guild.get_channel(int(verify_config["channel"]))
                 if isinstance(channel, discord.TextChannel):
-                    color_str = verify_config.get("color", "#9333ea")
+                    color_str = verify_config.get("color", "#FF6B4A")
                     try:
                         color = discord.Color.from_str(color_str)
                     except Exception:
-                        color = discord.Color.from_rgb(147, 51, 234)
+                        color = discord.Color.from_rgb(255, 107, 74)
                     embed = discord.Embed(
                         title=verify_config.get("title", "Verification"),
                         description=verify_config.get("description", "Click the button below to verify."),
@@ -854,6 +854,19 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         message=message, reason=chatfilter_req["reason"], bot=bot,
                         cf_system=chatfilter_data.get("system", "SafeText"),
                     )
+                    if chatfilter_data.get("warn_on_violation") and isinstance(message.author, discord.Member) and not message.author.bot:
+                        try:
+                            from assets.message.warnings import add_warning
+                            await add_warning(
+                                guild_id=message.guild.id,
+                                user=message.author,
+                                moderator=bot.user,
+                                reason=f"Chatfilter: {chatfilter_req['reason']}",
+                                bot=bot,
+                                channel=message.channel,
+                            )
+                        except Exception as _warn_err:
+                            logger.error(f"[Chatfilter] warn_on_violation failed: {_warn_err}")
 
         elif not bool(chatfilter_data.get("enabled", False)):
             # Chatfilter OFF → Prism silent scan.

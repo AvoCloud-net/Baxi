@@ -7,7 +7,7 @@
     <title>Baxi -  Admin Panel</title>
     <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
     <meta property="og:title" content="Avocloud.net -  Baxi Admin">
-    <meta property="og:color" content="#9333ea">
+    <meta property="og:color" content="#FF6B4A">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
@@ -49,7 +49,7 @@
             opacity: .7;
             transition: opacity .15s, background .15s;
         }
-        .admin-sidebar a:hover, .admin-sidebar a.active { opacity: 1; background: rgba(147,51,234,.15); }
+        .admin-sidebar a:hover, .admin-sidebar a.active { opacity: 1; background: rgba(255,107,74,.15); }
         .admin-sidebar a svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
         .admin-sidebar .nav-sep { height:1px; background: var(--color-border, rgba(255,255,255,.08)); margin: 0.5rem 0; }
 
@@ -128,7 +128,7 @@
         .log-error   { color:#f87171; }
 
         /* source-specific source label coloring */
-        .log-src-Chatfilter  { color:#c084fc !important; }
+        .log-src-Chatfilter  { color:#FF9379 !important; }
         .log-src-AntiSpam    { color:#fb923c !important; }
         .log-src-MemberJoin  { color:#4ade80 !important; }
         .log-src-MemberLeave { color:#94a3b8 !important; }
@@ -178,7 +178,7 @@
             transition:opacity .15s,background .15s;
         }
         .ga-tab:hover { opacity:.85; background:rgba(255,255,255,.06); }
-        .ga-tab.active { opacity:1; background:rgba(147,51,234,.2); }
+        .ga-tab.active { opacity:1; background:rgba(255,107,74,.2); }
         .ga-cnt { font-size:.68rem; font-weight:700; margin-left:.2rem; }
         .ga-bar-cell { min-width:100px; }
 
@@ -750,7 +750,7 @@
                 <div id="gc-inspect-error" class="action-result" style="display:none;"></div>
                 <div id="gc-inspect-wrap" style="display:none;">
                     <!-- Guild header -->
-                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(147,51,234,.08); border:1px solid rgba(147,51,234,.2); border-radius:8px; margin-bottom:1.25rem; flex-wrap:wrap;">
+                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); border-radius:8px; margin-bottom:1.25rem; flex-wrap:wrap;">
                         <div style="flex:1; min-width:0;">
                             <div id="gc-guild-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="gc-guild-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
@@ -811,7 +811,7 @@
                 <div id="user-search-result" class="action-result"></div>
                 <div id="user-search-wrap" style="display:none;">
                     <!-- Found user header -->
-                    <div id="user-search-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1rem; background:rgba(147,51,234,.08); border:1px solid rgba(147,51,234,.2); border-radius:8px; margin-bottom:1rem;">
+                    <div id="user-search-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); border-radius:8px; margin-bottom:1rem;">
                         <div>
                             <div id="user-search-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="user-search-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
@@ -1042,7 +1042,7 @@
                     <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:#a78bfa;" title="Request a new AI summary for this user">↻ Re-analyze</button>
                 </div>
                 <div id="pm-summary-wrap" style="display:none;">
-                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(147,51,234,.5); border-radius:4px; color:inherit; opacity:.85;"></div>
+                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(255,107,74,.5); border-radius:4px; color:inherit; opacity:.85;"></div>
                     <div id="pm-summary-ts" style="font-size:.65rem; opacity:.3; margin-top:.3rem;"></div>
                 </div>
                 <div id="pm-summary-empty" style="font-size:.78rem; opacity:.35; font-style:italic;">No summary generated yet.</div>
@@ -1304,7 +1304,7 @@ function renderAdoption() {
                 <span style="opacity:.55;">${pct}%</span>
             </div>
             <div class="score-bar">
-                <div class="score-bar-fill" style="width:${pct}%; background:#9333ea;"></div>
+                <div class="score-bar-fill" style="width:${pct}%; background:var(--color-primary, #FF6B4A);"></div>
             </div>
         </div>
     `).join('');
@@ -1522,7 +1522,7 @@ async function searchUser() {
             ? (p.risk_signals.map(s => `<span class="badge badge-auto" style="font-size:.68rem;">${escHtml(s)}</span>`).join(' '))
             : '';
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(147,51,234,.25); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(255,107,74,.25); border-radius:8px; padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Prism Profile</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center; margin-bottom:.6rem;">
                 <span>Score: ${scoreBadge(p.score)}</span>
@@ -1584,7 +1584,7 @@ async function searchUser() {
             <td style="max-width:240px; word-break:break-word; font-size:.75rem;">${escHtml(v.message||'- ')}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(192,132,252,.2); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(255,147,121,.2); border-radius:8px; padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Chatfilter Violations (${viol.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -2025,7 +2025,7 @@ document.addEventListener('keydown', e => {
 
 const CF_SYSTEM_BADGE = {
     'SafeText': '<span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;">SafeText</span>',
-    'AI':       '<span class="badge" style="background:rgba(168,85,247,.15);color:#c084fc;">AI</span>',
+    'AI':       '<span class="badge" style="background:rgba(255,107,74,.15);color:#FF9379;">AI</span>',
     'Phishing': '<span class="badge" style="background:rgba(239,68,68,.15);color:#f87171;">Phishing</span>',
 };
 
@@ -2456,12 +2456,25 @@ function renderGuildConfig(r) {
     // Warn config
     if (c.warn_config) {
         const wc = c.warn_config;
-        cards.push(gcDetailCard('Warn Config', [
-            ['Mute at', wc.mute_at ?? '- '],
-            ['Kick at', wc.kick_at ?? '- '],
-            ['Ban at', wc.ban_at ?? '- '],
-            ['Mute Duration (s)', wc.mute_duration ?? '- '],
-        ]));
+        const wcRows = [
+            ['Enabled', gcBool(wc.enabled !== false)],
+            ['Expiry (days)', wc.expiry_days != null ? (wc.expiry_days === 0 ? 'Never' : wc.expiry_days) : '- '],
+        ];
+        if (Array.isArray(wc.steps) && wc.steps.length) {
+            wc.steps.forEach(function (s, i) {
+                const actionLabel = {notify:'Notify', timeout:'Timeout', kick:'Kick', ban:'Ban'}[s.action] || s.action;
+                const durText = s.action === 'timeout' ? ` (${Math.round((s.duration||0)/60)} min)` : '';
+                wcRows.push([`Step ${i + 1} (${s.warns} warns)`, `${actionLabel}${durText}${s.dm ? ' + DM' : ''}`]);
+            });
+        } else if (wc.mute_at != null) {
+            // legacy shape fallback
+            wcRows.push(['Mute at', wc.mute_at]);
+            wcRows.push(['Kick at', wc.kick_at ?? '- ']);
+            wcRows.push(['Ban at', wc.ban_at ?? '- ']);
+        } else {
+            wcRows.push(['Steps', 'None']);
+        }
+        cards.push(gcDetailCard('Warn Config', wcRows));
     }
 
     // Sticky Messages
@@ -2611,7 +2624,7 @@ function faRenderChips(featureKey, guilds) {
     container.innerHTML = '';
     guilds.forEach((gid, idx) => {
         const chip = document.createElement('span');
-        chip.style.cssText = 'display:inline-flex; align-items:center; gap:.3rem; background:rgba(147,51,234,.15); border:1px solid rgba(147,51,234,.3); border-radius:999px; padding:.2rem .55rem; font-size:.75rem;';
+        chip.style.cssText = 'display:inline-flex; align-items:center; gap:.3rem; background:rgba(255,107,74,.15); border:1px solid rgba(255,107,74,.3); border-radius:999px; padding:.2rem .55rem; font-size:.75rem;';
         chip.innerHTML = `${gid} <button type="button" onclick="faRemoveGuild('${featureKey}',${idx})" style="background:none;border:none;cursor:pointer;opacity:.6;color:inherit;padding:0;font-size:.85rem;line-height:1;" title="Remove">×</button>`;
         container.appendChild(chip);
     });

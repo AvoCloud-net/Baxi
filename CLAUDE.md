@@ -87,6 +87,47 @@ When adding or modifying any bot system that has dashboard settings:
 4. **New system → add nav item** in the sidebar of `dash.html`.
 5. **Modified system** → keep the dashboard card, save endpoint, and JS init in sync with any new config keys.
 
+## Card Image Design Pattern (Pillow + cairosvg)
+
+Reference implementation: `assets/mc_link_card.py` (+ `assets/mc_link_view.py`, `assets/commands.py:mc_link_cmd`). Reuse this pattern for any new "card-style" interactive flow (link confirmations, profile cards, large stat panels, etc.).
+
+### Split text and graphics
+- **All copy lives in the Discord embed** (`embed.title`, `embed.description`, `embed.set_footer`). Never bake user-facing text into the PNG — Discord renders it crisper, themes adapt, copy is localizable via `lang/lang.json`, and screen readers work.
+- **PNG holds only graphic content** that cannot be expressed in an embed: avatars, icons, decorative connectors, identifiers that must be visually prominent (e.g. MC username next to Discord username).
+
+### Canvas + chrome
+- Default canvas: `640 × 320` (`CONFIRM_CANVAS`, `STATE_CANVAS`). Aspect ~2:1 keeps the embed compact on mobile.
+- Background `#18181b` matches Discord dark embed surface. Card border: `_CARD_BORDER` (`#3c3c41`) at 2px, rounded `radius=24`, inset 16px from canvas edge.
+- Palette constants live at top of `mc_link_card.py`: `_BG`, `_TEXT`, `_MUTED`, `_PRIMARY` (`#6F83AA`, brand), `_SUCCESS`, `_DANGER`, `_LINE`. Reuse these — do not introduce ad-hoc hex.
+
+### Icons → SVG via cairosvg
+- Rasterize **Lucide** icons (https://lucide.dev) at runtime with `cairosvg.svg2png`. Inline the path data into a format string with `{stroke}` placeholder so color can be themed per call. See `_LINK_SVG` + `_render_link_icon()`.
+- Do **not** approximate SVG icons with `ImageDraw` primitives — `stroke-linecap="round"` and joins are wrong, looks amateur.
+- `cairosvg` is in `requirements.txt`. System deps: cairo + pango (Fedora: `cairo pango`).
+
+### Anti-aliasing trick
+- For state icons (check, X, etc.) drawn with PIL primitives: render at **4× supersample** then `Image.LANCZOS` downsample. See `_render_state()` — `ss = 4`, draw on `icon_big_size = r * 2 * ss` canvas, resize at end. Pillow's native line drawing has jagged diagonals; supersampling fixes it without external libs.
+
+### Avatars
+- Discord user: `interaction.user.display_avatar.url` → `_fetch_image()` (aiohttp, 6s timeout) → `_circle_crop()`. Always provide `_placeholder()` fallback if fetch returns `None` — never crash the render on a flaky CDN.
+- Minecraft head: `https://mc-heads.net/avatar/{uuid}/128` → `_round_crop()` with `Image.NEAREST` resize (keeps pixelated MC look) + rounded mask `radius=16`.
+
+### Discord `View` state machine
+- `assets/mc_link_view.py` is the template: subclass `discord.ui.View`, store `bot`, `token`, `author_id`, `kind` on the view, set `timeout=600` (10 min, matching session TTL).
+- Guard with `interaction_check()` so only the original invoker can click.
+- Button callbacks: `await interaction.response.defer()` → mutate backend → render new PNG → `await interaction.edit_original_response(attachments=[file], embed=new_embed, view=self)`. Atomic swap, no message churn.
+- After action: walk `self.children` and disable each `discord.ui.Button` before the final `edit_original_response`. Set `self.stop()` is optional — the disabled state is the visual contract.
+- `on_timeout`: drop any backend session, disable buttons (best-effort, no message ref).
+
+### Resilience
+- Wrap every renderer call in `try/except` with a text-only fallback (`_fallback_text()` in `mc_link_view.py`). PNG rendering must never block the interaction response — Discord's 15-min followup window is the only hard constraint.
+- Renderers return `io.BytesIO` (not `discord.File`) so they're reusable from any context. Wrap in `discord.File(buf, filename=...)` at the send site.
+- Filename matters: `embed.set_image(url=f"attachment://{filename}")` only resolves if the filename in the `discord.File` matches exactly.
+
+### When to use this pattern vs plain embeds
+- **Use card image**: when there's a visual identity to compare (avatars side-by-side), an icon worth showing big (status, achievement, badge), or marketing-grade polish is needed.
+- **Stick to plain embeds**: for status checks, lists, errors, anything text-heavy. Don't generate a PNG just to display a name.
+
 ## Key Patterns
 
 - **Interaction responses**: Always `await interaction.response.defer()` before async work, then `await interaction.followup.send(...)`.

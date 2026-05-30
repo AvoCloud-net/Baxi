@@ -911,6 +911,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 w.strip() for w in chatfilter.get("bypass", []) if w and w.strip()
             ]
             guild_conf["phishing_filter"] = bool(chatfilter.get("phishing_filter", False))
+            guild_conf["warn_on_violation"] = bool(chatfilter.get("warn_on_violation", False))
             if raw_ai_cats is not None:
                 guild_conf["ai_categories"] = {
                     k: bool(raw_ai_cats.get(k, True)) for k in ("1", "2", "3", "4", "5")
@@ -1074,7 +1075,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             settings.setdefault("transcript", "")
             settings.setdefault("role", "")
             settings.setdefault("catid", "")
-            settings.setdefault("color", "#9333ea")
+            settings.setdefault("color", "#FF6B4A")
             settings.setdefault("message", "")
             settings.setdefault("buttons", [])
             settings.setdefault("channel_name_template", "{button}-{user}")
@@ -1093,7 +1094,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     return quart.jsonify({"success": False, "message": "Category ID does not match the Discord ID format."}), 400
                 if not isinstance(ticket.get("channel_transcript"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel_transcript"]):
                     return quart.jsonify({"success": False, "message": "Transcript channel ID does not match the Discord ID format."}), 400
-                color_raw = str(ticket.get("color", "#9333ea"))
+                color_raw = str(ticket.get("color", "#FF6B4A"))
                 if not re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", color_raw):
                     return quart.jsonify({"success": False, "message": "Color must be valid HEX."}), 400
 
@@ -1248,19 +1249,48 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(wc, dict):
                 return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
 
+            raw_steps = wc.get("steps")
+            if not isinstance(raw_steps, list):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'steps' must be a list."}), 400
+
+            _valid_actions = {"notify", "timeout", "kick", "ban"}
+            built_steps: list = []
+            seen_warns: set = set()
+            for item in raw_steps[:10]:
+                if not isinstance(item, dict):
+                    continue
+                try:
+                    w = max(1, min(100, int(item.get("warns", 1))))
+                except (ValueError, TypeError):
+                    continue
+                if w in seen_warns:
+                    continue
+                seen_warns.add(w)
+                action = item.get("action", "notify")
+                if action not in _valid_actions:
+                    action = "notify"
+                try:
+                    duration = int(item.get("duration", 0))
+                except (ValueError, TypeError):
+                    duration = 0
+                if action == "timeout":
+                    duration = max(60, min(604800, duration))
+                else:
+                    duration = 0
+                dm = bool(item.get("dm", True))
+                built_steps.append({"warns": w, "action": action, "duration": duration, "dm": dm})
+
+            built_steps.sort(key=lambda s: s["warns"])
+
             try:
-                mute_at = max(1, min(20, int(wc.get("mute_at", 3))))
-                kick_at = max(1, min(30, int(wc.get("kick_at", 5))))
-                ban_at = max(1, min(50, int(wc.get("ban_at", 7))))
-                mute_duration = max(60, min(604800, int(wc.get("mute_duration", 600))))
+                expiry_days = max(0, min(365, int(wc.get("expiry_days", 0))))
             except (ValueError, TypeError):
-                return quart.jsonify({"success": False, "message": "All fields must be integers."}), 400
+                expiry_days = 0
 
             settings = {
-                "mute_at": mute_at,
-                "kick_at": kick_at,
-                "ban_at": ban_at,
-                "mute_duration": mute_duration,
+                "enabled": bool(wc.get("enabled", True)),
+                "expiry_days": expiry_days,
+                "steps": built_steps,
             }
             save_data(int(guild_id), "warn_config", settings)
 
@@ -2353,9 +2383,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
                 return quart.jsonify({"success": False, "message": "Invalid channel ID format."}), 400
 
-            color = str(verify.get("color", "#9333ea"))[:7]
+            color = str(verify.get("color", "#FF6B4A"))[:7]
             if not re.match(r'^#[0-9a-fA-F]{6}$', color):
-                color = "#9333ea"
+                color = "#FF6B4A"
 
             current: dict = dict(load_data(int(guild_id), "verify"))
             current.update({
@@ -2379,7 +2409,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     try:
                         embed_color = discord.Color.from_str(color)
                     except Exception:
-                        embed_color = discord.Color.from_rgb(147, 51, 234)
+                        embed_color = discord.Color.from_rgb(255, 107, 74)
                     embed = discord.Embed(
                         title=current["title"],
                         description=current["description"],
@@ -2877,9 +2907,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 title = str(rr.get("title", "Button Roles"))[:100]
                 description = str(rr.get("description", "Click a button to toggle a role."))[:500]
-                color = str(rr.get("color", "#9333ea"))[:7]
+                color = str(rr.get("color", "#FF6B4A"))[:7]
                 if not re.match(r'^#[0-9a-fA-F]{6}$', color):
-                    color = "#9333ea"
+                    color = "#FF6B4A"
 
                 max_roles_raw = rr.get("max_roles")
                 max_roles = 0
@@ -2950,9 +2980,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 panel["title"] = str(rr.get("title", panel.get("title", "Button Roles")))[:100]
                 panel["description"] = str(rr.get("description", panel.get("description", "")))[:500]
-                color = str(rr.get("color", panel.get("color", "#9333ea")))[:7]
+                color = str(rr.get("color", panel.get("color", "#FF6B4A")))[:7]
                 if not re.match(r'^#[0-9a-fA-F]{6}$', color):
-                    color = "#9333ea"
+                    color = "#FF6B4A"
                 panel["color"] = color
 
                 max_roles_raw = rr.get("max_roles")
@@ -3595,7 +3625,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"error": "Invalid body"}), 400
         ev_type: str = (body.get("type") or "").strip().lower()
         text: str = (body.get("text") or "").strip()
-        if ev_type not in ("join", "quit", "death") or not text:
+        if ev_type not in ("join", "quit", "death", "advancement", "update", "start", "stop", "restart") or not text:
             return quart.jsonify({"error": "Invalid type or empty text"}), 400
 
         # Defense-in-depth: AllowedMentions.none() also blocks pings
@@ -3604,7 +3634,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         # Replace any leading shortcode emoji (e.g. :inbox_tray:, :skull:) coming from
         # the plugin with our guild's custom emoji so the bridge channel feels native.
         import re as _re
-        type_icon = {"join": config.Icons.enter, "quit": config.Icons.leave, "death": config.Icons.skull}.get(ev_type, "")
+        type_icon = {"join": config.Icons.enter, "quit": config.Icons.leave, "death": config.Icons.skull, "advancement": config.Icons.medal, "update": config.Icons.up, "start": "🟢", "stop": "🔴", "restart": "🔄"}.get(ev_type, "")
         safe_text = _re.sub(r"^\s*:[a-z0-9_+\-]+:\s*", "", safe_text)
         if type_icon:
             safe_text = f"{type_icon} {safe_text}"
@@ -5947,7 +5977,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color.from_rgb(147, 51, 234),  # avocloud purple
+            color=discord.Color.from_rgb(255, 107, 74),  # avocloud purple
         )
         if voted_guild and voted_guild.icon:
             embed.set_thumbnail(url=voted_guild.icon.url)

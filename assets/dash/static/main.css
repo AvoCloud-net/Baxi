@@ -2,6 +2,9 @@
 
 :root {
   --font-family: "Quicksand", sans-serif;
+  /* avocloud brand primary (coral) - dark-mode default */
+  --color-primary: #FF6B4A;
+  --color-primary-rgb: 255, 107, 74;
 }
 
 /* Light-mode token overrides */
@@ -9,6 +12,8 @@ html:not(.dark) {
   --card-bg: #f4f4f5;
   --border: #e4e4e7;
   --bg-secondary: #f4f4f5;
+  --color-primary: #C73D20;
+  --color-primary-rgb: 199, 61, 32;
 }
 
 /* Insights day-selector - hardcode colour; --color-primary resolves to white in dark mode */
@@ -36,7 +41,7 @@ html::-webkit-scrollbar {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #9333ea, #ec4899, #eab308, #9333ea);
+  background: linear-gradient(90deg, #C73D20, #FF6B4A, #FF9379, #FF6B4A, #C73D20);
   background-size: 300% 100%;
   animation: gradientShift 8s linear infinite;
   z-index: 9999;
@@ -111,6 +116,12 @@ html:not(.dark) .site-nav {
   opacity: 0.45;
 }
 
+/* New logo mark: coral terminal cursor */
+.logo-cursor {
+  fill: var(--color-primary, #FF6B4A);
+  stroke: none;
+}
+
 /* ── Theme toggle ─────────────────────────────────────────── */
 
 .theme-toggle {
@@ -128,8 +139,8 @@ html:not(.dark) .site-nav {
 }
 
 .theme-toggle:hover {
-  border-color: #9333ea;
-  background: rgba(147, 51, 234, 0.1);
+  border-color: var(--color-primary, #FF6B4A);
+  background: rgba(255, 107, 74, 0.1);
 }
 
 .theme-toggle svg {
@@ -213,7 +224,7 @@ html:not(.dark) .site-nav {
   display: inline-block;
   width: 2rem;
   height: 2px;
-  background: linear-gradient(90deg, #9333ea, #ec4899);
+  background: linear-gradient(90deg, #FF6B4A, #FF9379);
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -244,8 +255,8 @@ html:not(.dark) .site-nav {
 }
 
 .card-featured {
-  border-top: 2px solid #9333ea;
-  background: linear-gradient(135deg, rgba(147, 51, 234, 0.07) 0%, transparent 60%);
+  border-top: 2px solid var(--color-primary, #FF6B4A);
+  background: linear-gradient(135deg, rgba(255, 107, 74, 0.07) 0%, transparent 60%);
 }
 
 /* ── Typography helpers ───────────────────────────────────── */
@@ -255,13 +266,13 @@ html:not(.dark) .site-nav {
 }
 
 .accent-link {
-  color: #9333ea;
+  color: var(--color-primary, #FF6B4A);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .accent-link:hover {
-  color: #ec4899;
+  color: #FF9379;
   text-decoration: underline;
 }
 
@@ -363,11 +374,11 @@ html:not(.dark) .dash-nav {
   flex-shrink: 0;
 }
 
-.dash-nav-item:hover { color: #9333ea; }
+.dash-nav-item:hover { color: var(--color-primary, #FF6B4A); }
 
 .dash-nav-item.active {
-  color: #9333ea;
-  border-bottom-color: #9333ea;
+  color: var(--color-primary, #FF6B4A);
+  border-bottom-color: var(--color-primary, #FF6B4A);
 }
 
 /* offset anchor scroll targets so they don't hide under the sticky nav */
@@ -408,60 +419,60 @@ html:not(.dark) .dash-nav {
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 999px;
-  background-color: rgba(147, 51, 234, 0.15);
-  color: rgb(192, 132, 252);
-  border: 1px solid rgba(147, 51, 234, 0.25);
+  background-color: rgba(255, 107, 74, 0.15);
+  color: rgb(255, 147, 121);
+  border: 1px solid rgba(255, 107, 74, 0.25);
   white-space: nowrap;
   pointer-events: none;
 }
 
 html:not(.dark) .adoption-badge {
-  background-color: rgba(147, 51, 234, 0.1);
-  color: rgb(109, 40, 217);
-  border-color: rgba(147, 51, 234, 0.2);
+  background-color: rgba(255, 107, 74, 0.1);
+  color: rgb(199, 61, 32);
+  border-color: rgba(255, 107, 74, 0.2);
 }
 
 /* ── Highlight badges ─────────────────────────────────────── */
 
 .highlight-purple {
-  background-color: rgba(147, 51, 234, 0.2);
+  background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
-  color: rgb(216, 180, 254);
+  color: rgb(255, 147, 121);
   border-radius: 4px;
   transition: all 0.3s ease;
 }
 
 .highlight-purple:hover {
-  background-color: rgba(147, 51, 234, 0.4);
+  background-color: rgba(255, 107, 74, 0.4);
   transform: translateY(-2px);
   cursor: pointer;
 }
 
 .highlight-purple:active {
-  background-color: rgba(147, 51, 234, 0.6);
+  background-color: rgba(255, 107, 74, 0.6);
 }
 
 .highlight-yellow {
-  background-color: rgba(234, 179, 8, 0.2);
+  background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
-  color: rgb(253, 224, 71);
+  color: rgb(255, 147, 121);
   border-radius: 4px;
   transition: all 0.3s ease;
 }
 
 .highlight-yellow:hover {
-  background-color: rgba(234, 179, 8, 0.4);
+  background-color: rgba(255, 107, 74, 0.4);
   transform: translateY(-2px);
 }
 
 html:not(.dark) .highlight-yellow {
-  color: rgb(133, 77, 14);
-  background-color: rgba(234, 179, 8, 0.15);
+  color: rgb(199, 61, 32);
+  background-color: rgba(255, 107, 74, 0.15);
 }
 
 html:not(.dark) .highlight-purple {
-  color: rgb(88, 28, 135);
-  background-color: rgba(147, 51, 234, 0.15);
+  color: rgb(199, 61, 32);
+  background-color: rgba(255, 107, 74, 0.15);
 }
 
 /* ── Radio / option label ────────────────────────────────── */
@@ -554,9 +565,9 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(147, 51, 234, 0.15);
-  color: rgb(216, 180, 254);
-  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: rgba(255, 107, 74, 0.15);
+  color: rgb(255, 147, 121);
+  border: 1px solid rgba(255, 107, 74, 0.3);
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 0.8rem;
@@ -710,7 +721,7 @@ fieldset {
 
   .dash-nav-item:hover,
   .dash-nav-item.active {
-    background: rgba(147, 51, 234, 0.1);
+    background: rgba(255, 107, 74, 0.1);
   }
 
   /* Nav group labels: section dividers inside the mobile overlay */
@@ -897,7 +908,7 @@ fieldset {
   display: inline-block;
   width: 2rem;
   height: 2px;
-  background: linear-gradient(90deg, #9333ea, #ec4899);
+  background: linear-gradient(90deg, #FF6B4A, #FF9379);
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -1010,15 +1021,15 @@ fieldset {
   }
 
   .dash-nav-item:hover {
-    color: #9333ea;
-    background: rgba(147, 51, 234, 0.07);
+    color: var(--color-primary, #FF6B4A);
+    background: rgba(255, 107, 74, 0.07);
   }
 
   .dash-nav-item.active {
-    border-left-color: #9333ea;
+    border-left-color: var(--color-primary, #FF6B4A);
     border-bottom-color: transparent;
-    background: rgba(147, 51, 234, 0.08);
-    color: #9333ea;
+    background: rgba(255, 107, 74, 0.08);
+    color: var(--color-primary, #FF6B4A);
   }
 
   /* Group labels: horizontal dividers in sidebar */
@@ -1084,8 +1095,8 @@ fieldset {
   }
 
   .local-button-group button:hover {
-    background: rgba(147, 51, 234, 0.07);
-    color: #9333ea;
+    background: rgba(255, 107, 74, 0.07);
+    color: var(--color-primary, #FF6B4A);
   }
 
   .local-button-group button:first-child:hover {

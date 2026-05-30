@@ -145,6 +145,7 @@
                     "escalation_mute": "{user} wurde automatisch für {duration} Minuten stummgeschaltet. ({count} Verwarnungen)",
                     "escalation_kick": "{user} wurde automatisch vom Server entfernt. ({count} Verwarnungen)",
                     "escalation_ban": "{user} wurde automatisch gebannt. ({count} Verwarnungen)",
+                    "escalation_notify": "{user} hat {count} Verwarnungen erreicht.",
                     "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu verwarnen.",
                     "error": "Ein Fehler ist aufgetreten: {error}"
                 },
@@ -359,6 +360,16 @@
                 "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Verknüpft:** {linked_at}",
                 "confirm_title": "Bestätige deine Verknüpfung",
                 "confirm_desc": "Öffne diesen Link, um deine Verknüpfung abzuschließen:\n{url}\n\nDer Link läuft in 10 Minuten ab.",
+                "confirm_lede": "Du verknüpfst gleich diesen Minecraft-Account mit deinem Discord. Prüfe beide Namen.",
+                "already_linked_title": "Bereits verknüpft",
+                "already_linked_lede": "Dein Discord ist auf diesem Server bereits mit einem Minecraft-Account verknüpft.",
+                "already_linked_desc": "Dein Account ist bereits verknüpft. Es wurden keine Änderungen vorgenommen.",
+                "bedrock_add_title": "Bedrock-Account hinzufügen",
+                "bedrock_add_lede": "Du bist bereits mit einem Java-Account verknüpft. Bestätige, um zusätzlich diesen Bedrock-Account zu verknüpfen.",
+                "list_title": "Online-Spieler ({count}/{max})",
+                "list_empty": "Aktuell ist niemand online.",
+                "list_unreachable": "Der Minecraft-Server ist nicht erreichbar.",
+                "list_outdated_plugin": "Spielerliste kann nicht geladen werden – das Server-Plugin ist veraltet.",
                 "footer": "Baxi · avocloud.net"
             },
             "giveaway": {
@@ -623,6 +634,7 @@
                     "escalation_mute": "{user} has been automatically muted for {duration} minutes. ({count} warnings)",
                     "escalation_kick": "{user} has been automatically kicked from the server. ({count} warnings)",
                     "escalation_ban": "{user} has been automatically banned. ({count} warnings)",
+                    "escalation_notify": "{user} has reached {count} warnings.",
                     "missing_perms": "You do not have the necessary permissions to warn this user.",
                     "error": "An error occurred: {error}"
                 },
@@ -837,6 +849,16 @@
                 "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Linked:** {linked_at}",
                 "confirm_title": "Confirm your link",
                 "confirm_desc": "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.",
+                "confirm_lede": "You're about to link this Minecraft account to your Discord. Make sure both names look correct.",
+                "already_linked_title": "Already linked",
+                "already_linked_lede": "Your Discord account is already linked to a Minecraft account on this server.",
+                "already_linked_desc": "Your account is already linked. No changes were made.",
+                "bedrock_add_title": "Add Bedrock account",
+                "bedrock_add_lede": "You're already linked with a Java account. Confirm to also add this Bedrock account.",
+                "list_title": "Online players ({count}/{max})",
+                "list_empty": "Nobody is online right now.",
+                "list_unreachable": "Minecraft server unreachable.",
+                "list_outdated_plugin": "Unable to fetch player list — the server plugin is outdated.",
                 "footer": "Baxi · avocloud.net"
             },
             "giveaway": {

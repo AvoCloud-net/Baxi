@@ -1054,7 +1054,11 @@ def mc_link_commands(bot: commands.AutoShardedBot):
     @mc_group.command(name="link", description="Link your Minecraft account to Discord.")
     @app_commands.describe(code="The 8-character code shown in the Minecraft kick message.")
     async def mc_link_cmd(interaction: Interaction, code: str):
-        await interaction.response.defer(ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+        except Exception:
+            logger.error("[mc_link_cmd] defer failed", exc_info=True)
+            return
 
         try:
             if interaction.guild is None:
@@ -1077,15 +1081,15 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                     ephemeral=True,
                 )
 
-            api_url: str = guild_conf["api_url"].strip()
-            secret: str = guild_conf["api_secret"].strip()
+            api_url: str = guild_conf.get("api_url", "").strip()
+            secret: str = guild_conf.get("api_secret", "").strip()
 
             from assets.mc_link import is_linked, get_link, resolve_token, is_bedrock_uuid, create_link_session
 
             token_data = await resolve_token(api_url, secret, code.strip().upper())
-            if token_data is None:
+            if not token_data or "uuid" not in token_data:
                 return await interaction.followup.send(
-                    embed=discord.Embed(title=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
+                    embed=discord.Embed(description=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
                     ephemeral=True,
                 )
 
@@ -1113,26 +1117,62 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 "kind": kind,
             })
 
-            url = f"https://{config.Web.url}/mc/link/{session_token}"
-            confirm_title = t.get("confirm_title", "Confirm your link")
-            confirm_desc_tpl = t.get("confirm_desc", "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.")
+            from assets import mc_link_card
+            from assets.mc_link_view import MCLinkConfirmView
+
+            if kind == "already_linked":
+                card_title = t.get("already_linked_title", "Already linked")
+                card_subtitle = t.get("already_linked_lede", "Your Discord account is already linked to a Minecraft account on this server.")
+            elif kind == "bedrock_add":
+                card_title = t.get("bedrock_add_title", "Add Bedrock account")
+                card_subtitle = t.get("bedrock_add_lede", "You're already linked with a Java account. Confirm to also add this Bedrock account.")
+            else:
+                card_title = t.get("confirm_title", "Confirm your link")
+                card_subtitle = t.get("confirm_lede", "You're about to link this Minecraft account to your Discord. Make sure both names look correct.")
+
+            buf = await mc_link_card.render_confirm(
+                discord_name=discord_name,
+                discord_avatar_url=str(interaction.user.display_avatar.url),
+                mc_name=mc_name,
+                mc_uuid=uuid,
+            )
+            file = discord.File(buf, filename="mc_link_confirm.png")
             embed = discord.Embed(
-                title=f"{config.Icons.check} {confirm_title}",
-                description=confirm_desc_tpl.format(url=url),
+                title=card_title,
+                description=card_subtitle,
                 color=config.Discord.color,
             )
+            embed.set_image(url="attachment://mc_link_confirm.png")
             embed.set_footer(text=t["footer"])
-            await interaction.followup.send(embed=embed, ephemeral=True)
+
+            view = MCLinkConfirmView(
+                bot, session_token,
+                guild_id=guild_id,
+                author_id=interaction.user.id,
+                kind=kind,
+            )
+            await interaction.followup.send(
+                embed=embed, file=file, view=view, ephemeral=True
+            )
         except Exception as e:
-            import traceback
-            logger.error(f"[mc_link_cmd] crashed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+            logger.error(f"[mc_link_cmd] crashed: {type(e).__name__}: {e}", exc_info=True)
             try:
                 await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} Internal error: `{type(e).__name__}: {e}`", color=config.Discord.danger_color),
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} Internal error: `{type(e).__name__}`",
+                        color=config.Discord.danger_color,
+                    ),
                     ephemeral=True,
                 )
             except Exception:
-                pass
+                logger.exception("[mc_link_cmd] followup error-send also failed")
+                try:
+                    await interaction.followup.send(
+                        content=f"Internal error: {type(e).__name__}",
+                        ephemeral=True,
+                    )
+                except Exception:
+                    logger.exception("[mc_link_cmd] plain followup also failed")
 
     @mc_group.command(name="unlink", description="Unlink your Minecraft account.")
     async def mc_unlink_cmd(interaction: Interaction):
@@ -1206,6 +1246,85 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             ),
             ephemeral=True,
         )
+
+    @mc_group.command(name="list", description="Show players currently online on the Minecraft server.")
+    async def mc_list_cmd(interaction: Interaction):
+        try:
+            await interaction.response.defer()
+        except Exception:
+            logger.error("[mc_list_cmd] defer failed", exc_info=True)
+            return
+
+        try:
+            if interaction.guild is None:
+                lang = datasys.load_lang_file(1001)
+                t = lang["systems"]["mc_link"]
+                return await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                )
+
+            guild_id = interaction.guild.id
+            lang = datasys.load_lang_file(guild_id)
+            t = lang["systems"]["mc_link"]
+            guild_conf = _get_conf(guild_id)
+
+            err = _check_enabled(guild_conf, t)
+            if err:
+                return await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                )
+
+            api_url: str = guild_conf.get("api_url", "").strip()
+            secret: str = guild_conf.get("api_secret", "").strip()
+
+            from assets.mc_link import fetch_online_players
+
+            data, err = await fetch_online_players(api_url, secret)
+            if data is None:
+                if err == "outdated":
+                    msg = t.get("list_outdated_plugin", "Unable to fetch player list — the server plugin is outdated.")
+                else:
+                    msg = t.get("list_unreachable", "Minecraft server unreachable.")
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {msg}",
+                        color=config.Discord.danger_color,
+                    ),
+                )
+
+            count = int(data.get("count", 0))
+            max_p = int(data.get("max", 0))
+            players = data.get("players", []) or []
+            names = sorted((p.get("name", "?") for p in players), key=str.lower)
+
+            title_tpl = t.get("list_title", "Online players ({count}/{max})")
+            empty_text = t.get("list_empty", "No players online.")
+            footer_text = t.get("footer", "Baxi · avocloud.net")
+
+            desc = "\n".join(f"• `{n}`" for n in names) if names else f"_{empty_text}_"
+
+            embed = discord.Embed(
+                title=f"{config.Icons.check} {title_tpl.format(count=count, max=max_p)}",
+                description=desc,
+                color=config.Discord.color,
+            )
+            embed.set_footer(text=footer_text)
+            await interaction.followup.send(embed=embed)
+        except Exception as e:
+            logger.error(f"[mc_list_cmd] crashed: {type(e).__name__}: {e}", exc_info=True)
+            try:
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} Internal error: `{type(e).__name__}`",
+                        color=config.Discord.danger_color,
+                    ),
+                )
+            except Exception:
+                logger.exception("[mc_list_cmd] followup error-send also failed")
+                try:
+                    await interaction.followup.send(content=f"Internal error: {type(e).__name__}")
+                except Exception:
+                    logger.exception("[mc_list_cmd] plain followup also failed")
 
     @mc_group.command(name="status", description="Show your linked Minecraft account.")
     async def mc_status_cmd(interaction: Interaction):
