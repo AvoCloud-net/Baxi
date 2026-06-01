@@ -159,6 +159,18 @@ class datasys:
         ],
     },
     "audit_log": [],
+    "serverlog": {
+        "enabled": False,
+        "channel": "",
+        "events": {
+            "message_edit": True, "message_delete": True,
+            "voice_join": True, "voice_leave": True, "voice_move": True,
+            "channel_create": True, "channel_delete": True, "channel_update": True,
+            "member_join": True, "member_leave": True,
+            "member_ban": True, "member_unban": True, "member_update": True,
+            "role_create": True, "role_delete": True, "role_update": True
+        }
+    },
     "warnings": {},
     "warn_config": {
         "enabled": True,

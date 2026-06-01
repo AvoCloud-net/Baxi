@@ -33,6 +33,7 @@ import assets.message.customcmd as customcmd
 from assets.message.antispam import AntiSpam
 import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
+import assets.message.serverlog as serverlog
 import assets.games.counting as counting_game
 import assets.games.quiz as quiz_game
 import assets.leveling as leveling_sys
@@ -466,6 +467,103 @@ def events(bot: commands.AutoShardedBot, web):
             except (discord.Forbidden, discord.HTTPException, Exception):
                 pass
 
+        # Server log
+        try:
+            if not message.author.bot:
+                await serverlog.send_log(
+                    bot, message.guild.id, "message_delete",
+                    serverlog.build_message_delete(message),
+                )
+        except Exception:
+            pass
+
+    @bot.event
+    async def on_message_edit(before: discord.Message, after: discord.Message):
+        if after.guild is None:
+            return
+        if after.author.bot:
+            return
+        if before.content == after.content:
+            return
+        await serverlog.send_log(
+            bot, after.guild.id, "message_edit",
+            serverlog.build_message_edit(before, after),
+        )
+
+    @bot.event
+    async def on_guild_channel_create(channel):
+        guild = getattr(channel, "guild", None)
+        if guild is None:
+            return
+        await serverlog.send_log(
+            bot, guild.id, "channel_create",
+            serverlog.build_channel_create(channel),
+        )
+
+    @bot.event
+    async def on_guild_channel_delete(channel):
+        guild = getattr(channel, "guild", None)
+        if guild is None:
+            return
+        await serverlog.send_log(
+            bot, guild.id, "channel_delete",
+            serverlog.build_channel_delete(channel),
+        )
+
+    @bot.event
+    async def on_guild_channel_update(before, after):
+        guild = getattr(after, "guild", None)
+        if guild is None:
+            return
+        await serverlog.send_log(
+            bot, guild.id, "channel_update",
+            serverlog.build_channel_update(before, after),
+        )
+
+    @bot.event
+    async def on_guild_role_create(role: discord.Role):
+        await serverlog.send_log(
+            bot, role.guild.id, "role_create",
+            serverlog.build_role_create(role),
+        )
+
+    @bot.event
+    async def on_guild_role_delete(role: discord.Role):
+        await serverlog.send_log(
+            bot, role.guild.id, "role_delete",
+            serverlog.build_role_delete(role),
+        )
+
+    @bot.event
+    async def on_guild_role_update(before: discord.Role, after: discord.Role):
+        await serverlog.send_log(
+            bot, after.guild.id, "role_update",
+            serverlog.build_role_update(before, after),
+        )
+
+    @bot.event
+    async def on_member_ban(guild: discord.Guild, user):
+        await serverlog.send_log(
+            bot, guild.id, "member_ban",
+            serverlog.build_member_ban(user),
+        )
+
+    @bot.event
+    async def on_member_unban(guild: discord.Guild, user):
+        await serverlog.send_log(
+            bot, guild.id, "member_unban",
+            serverlog.build_member_unban(user),
+        )
+
+    @bot.event
+    async def on_member_update(before: discord.Member, after: discord.Member):
+        if before.nick == after.nick and set(before.roles) == set(after.roles):
+            return
+        await serverlog.send_log(
+            bot, after.guild.id, "member_update",
+            serverlog.build_member_update(before, after),
+        )
+
     @bot.event
     async def on_member_join(member: discord.Member):
         admin_log("info", f"Member joined: {member.name} ({member.id}) → {member.guild.name}", source="MemberJoin")
@@ -474,6 +572,14 @@ def events(bot: commands.AutoShardedBot, web):
         except Exception:
             pass
         await welcomer.on_member_join(member, bot)
+
+        try:
+            await serverlog.send_log(
+                bot, member.guild.id, "member_join",
+                serverlog.build_member_join(member),
+            )
+        except Exception:
+            pass
 
         ar_config: dict = dict(datasys.load_data(member.guild.id, "auto_roles"))
         if ar_config.get("enabled") and ar_config.get("roles"):
@@ -495,6 +601,14 @@ def events(bot: commands.AutoShardedBot, web):
             pass
         await welcomer.on_member_remove(member, bot)
 
+        try:
+            await serverlog.send_log(
+                bot, member.guild.id, "member_leave",
+                serverlog.build_member_leave(member),
+            )
+        except Exception:
+            pass
+
     @bot.event
     async def on_voice_state_update(
         member: discord.Member,
@@ -502,6 +616,30 @@ def events(bot: commands.AutoShardedBot, web):
         after: discord.VoiceState,
     ):
         guild = member.guild
+
+        # Server log: detect voice join / leave / move (before temp_voice logic)
+        try:
+            if before.channel is None and after.channel is not None:
+                await serverlog.send_log(
+                    bot, guild.id, "voice_join",
+                    serverlog.build_voice_join(member, after.channel),
+                )
+            elif after.channel is None and before.channel is not None:
+                await serverlog.send_log(
+                    bot, guild.id, "voice_leave",
+                    serverlog.build_voice_leave(member, before.channel),
+                )
+            elif (
+                before.channel is not None
+                and after.channel is not None
+                and before.channel.id != after.channel.id
+            ):
+                await serverlog.send_log(
+                    bot, guild.id, "voice_move",
+                    serverlog.build_voice_move(member, before.channel, after.channel),
+                )
+        except Exception:
+            pass
 
         # Music: log + clean up player on bot voice state transitions
         if bot.user and member.id == bot.user.id:

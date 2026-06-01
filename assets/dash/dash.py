@@ -1377,6 +1377,56 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "serverlog":
+            data: dict = await quart.request.get_json()
+            serverlog = data.get("serverlog")
+
+            if not isinstance(serverlog, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'serverlog' must be an object."}), 400
+
+            if not isinstance(serverlog.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            # Convert channel ID to string for consistency with frontend
+            channel_val = serverlog.get("channel", "")
+            channel_str = str(channel_val) if channel_val and str(channel_val).isdigit() else ""
+
+            # Validate event toggles against the known event keys
+            _valid_events = [
+                "message_edit", "message_delete",
+                "voice_join", "voice_leave", "voice_move",
+                "channel_create", "channel_delete", "channel_update",
+                "member_join", "member_leave",
+                "member_ban", "member_unban", "member_update",
+                "role_create", "role_delete", "role_update",
+            ]
+            raw_events = serverlog.get("events", {})
+            if not isinstance(raw_events, dict):
+                raw_events = {}
+            events = {key: bool(raw_events.get(key, True)) for key in _valid_events}
+
+            settings = {
+                "enabled": serverlog["enabled"],
+                "channel": channel_str,
+                "events": events,
+            }
+
+            save_data(int(guild_id), "serverlog", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "serverlog",
+            }
+            audit_log: list = cast(
+                list, load_data(sid=int(guild_id), sys="audit_log", bot=bot)
+            )
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
         elif system == "custom_commands":
             data: dict = await quart.request.get_json()
             cmd_data = data.get("custom_commands")
