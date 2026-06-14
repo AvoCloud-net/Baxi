@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 
 from reds_simple_logger import Logger
 
-from assets.message.safetext import custom, doxxing, models, suicide_words
+from assets.message.safetext import custom, doxxing, mildwords, models, suicide_words
 from assets.message.safetext.logstore import record
 from assets.share import admin_log as _admin_log, phishing_url_list
 
@@ -114,6 +114,16 @@ async def check(
         if sui := suicide_words.detect(message, lang=guild_lang):
             res = _flagged("ai-5", "5", "5", {"match": sui["match"], "lang": sui["lang"]})
             return _finalize(gid, user_id, "suicide_keyword", res, message=message)
+
+    # 5b. mild-word guard — a message that is *only* a mild expletive ("damn",
+    # "hell", "verdammt", …) is not an insult. Skip the toxic/hate model so the
+    # model's false positives don't flag it (and, via the PRISM silent scan, leak
+    # into network-wide trust scoring). "damn idiot" still has "idiot" left over,
+    # so it falls through to the model as usual.
+    if mildwords.is_only_mild(message):
+        res = _safe()
+        res["reason"] = "mild_word"
+        return _finalize(gid, user_id, "mild_word", res, message=message)
 
     # 6+7. multilingual toxic model — covers obscene (cat 1), toxic/hate (cat 2, 3)
     wants_nsfw  = "1" in enabled_categories
