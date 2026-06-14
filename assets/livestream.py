@@ -803,6 +803,313 @@ class InstagramAPI:
         return {"latest_post": latest_post, "latest_reel": latest_reel}
 
 
+class TwitterAPI:
+    """Unofficial X (Twitter) post tracking via the public guest GraphQL API.
+
+    X has no free official API. This calls the same GraphQL endpoints the website uses
+    (UserByScreenName → UserTweets) with the web app's public bearer token.
+
+    Two auth modes:
+      - Guest token (default, no config): X serves only large/popular accounts; small or
+        new accounts return an empty timeline.
+      - Cookie auth (config.auth.Twitter.auth_token + ct0): unlocks every public account.
+
+    WARNING: May break if X rotates the public bearer or changes GraphQL query IDs.
+    Alerts on original posts and reposts (retweets). Replies are ignored.
+    """
+
+    # Public bearer baked into the X web app (not a secret; same one snscrape/twikit use).
+    _BEARER = (
+        "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D"
+        "1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+    )
+    _GQL = "https://api.twitter.com/graphql"
+    _Q_USER_BY_NAME = "G3KGOASz96M-Qu0nwmGXNg"   # UserByScreenName
+    _Q_USER_TWEETS = "V7H0Ap3_Hh2FyS75OCDO3Q"    # UserTweets
+    _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+    _USER_FEATURES = {
+        "hidden_profile_likes_enabled": True, "hidden_profile_subscriptions_enabled": True,
+        "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+        "subscriptions_verification_info_is_identity_verified_enabled": True,
+        "subscriptions_verification_info_verified_since_enabled": True,
+        "highlights_tweets_tab_ui_enabled": True, "responsive_web_twitter_article_notes_tab_enabled": True,
+        "creator_subscriptions_tweet_preview_api_enabled": True,
+        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+        "responsive_web_graphql_timeline_navigation_enabled": True,
+    }
+    _TWEET_FEATURES = {
+        "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+        "creator_subscriptions_tweet_preview_api_enabled": True,
+        "responsive_web_graphql_timeline_navigation_enabled": True,
+        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+        "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+        "responsive_web_edit_tweet_api_enabled": True,
+        "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+        "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+        "responsive_web_twitter_article_tweet_consumption_enabled": True, "tweet_awards_web_tipping_enabled": False,
+        "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
+        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+        "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+        "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": False,
+    }
+
+    def __init__(self):
+        self._guest_token: Optional[str] = None
+        self._guest_token_ts: float = 0.0
+        self._rest_id_cache: dict = {}   # screen_name(lower) -> rest_id
+
+    @staticmethod
+    def _cookies() -> Optional[tuple]:
+        """Return (auth_token, ct0) if both cookies are configured, else None."""
+        at = getattr(getattr(auth, "Twitter", None), "auth_token", "") or ""
+        ct0 = getattr(getattr(auth, "Twitter", None), "ct0", "") or ""
+        return (at, ct0) if at and ct0 else None
+
+    @staticmethod
+    def has_cookies() -> bool:
+        """True if X login cookies are configured (unlocks every public timeline).
+
+        In guest mode (no cookies) X hides the timelines of small/new accounts.
+        """
+        return TwitterAPI._cookies() is not None
+
+    async def _get_guest_token(self, session: aiohttp.ClientSession, force: bool = False) -> Optional[str]:
+        # Guest tokens are valid for a few hours; reuse across checks.
+        if self._guest_token and not force and (time.time() - self._guest_token_ts) < 3 * 3600:
+            return self._guest_token
+        try:
+            async with session.post(
+                "https://api.twitter.com/1.1/guest/activate.json",
+                headers={"Authorization": f"Bearer {self._BEARER}", "User-Agent": self._UA},
+            ) as resp:
+                if resp.status != 200:
+                    logger.error(f"[TwitterPosts] guest token activate failed: {resp.status}")
+                    return None
+                data = await resp.json()
+        except Exception as e:
+            logger.error(f"[TwitterPosts] guest token error: {e}")
+            return None
+        self._guest_token = data.get("guest_token")
+        self._guest_token_ts = time.time()
+        return self._guest_token
+
+    async def _graphql(self, session: aiohttp.ClientSession, qid: str, op: str,
+                       variables: dict, features: dict) -> Optional[dict]:
+        import json
+        from urllib.parse import quote
+        cookies = self._cookies()
+        for attempt in range(2):
+            headers = {"Authorization": f"Bearer {self._BEARER}", "User-Agent": self._UA}
+            if cookies:
+                # Authenticated mode: cookies unlock every public account's timeline.
+                at, ct0 = cookies
+                headers["Cookie"] = f"auth_token={at}; ct0={ct0}"
+                headers["x-csrf-token"] = ct0
+            else:
+                # Guest mode: works for large accounts only.
+                gt = await self._get_guest_token(session, force=(attempt == 1))
+                if not gt:
+                    return None
+                headers["x-guest-token"] = gt
+            url = (f"{self._GQL}/{qid}/{op}?variables={quote(json.dumps(variables))}"
+                   f"&features={quote(json.dumps(features))}")
+            try:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status in (401, 403):
+                        if cookies:
+                            logger.error(f"[TwitterPosts] {op} auth rejected ({resp.status}) — X cookies expired/invalid")
+                            return None
+                        # guest token likely expired -> refresh and retry once
+                        self._guest_token = None
+                        continue
+                    if resp.status == 429:
+                        logger.warning(f"[TwitterPosts] rate limited on {op}")
+                        return None
+                    if resp.status != 200:
+                        logger.error(f"[TwitterPosts] {op} HTTP {resp.status}")
+                        return None
+                    return await resp.json()
+            except Exception as e:
+                logger.error(f"[TwitterPosts] {op} request error: {e}")
+                return None
+        return None
+
+    @staticmethod
+    def _avatar(legacy: dict) -> str:
+        url = legacy.get("profile_image_url_https") or ""
+        return url.replace("_normal.", "_400x400.")
+
+    @staticmethod
+    def _media_url(legacy: dict) -> str:
+        media = (legacy.get("extended_entities") or legacy.get("entities") or {}).get("media")
+        if isinstance(media, list) and media:
+            return (media[0] or {}).get("media_url_https", "") or ""
+        return ""
+
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        import re as _re
+        # drop the trailing t.co media/quote link X appends (incl. a truncated bare "https://")
+        return _re.sub(r"\s*https://(t\.co/\w*)?\s*$", "", text or "").strip()
+
+    @staticmethod
+    def _parse_created(created_at: str) -> str:
+        if not created_at:
+            return ""
+        try:
+            from email.utils import parsedate_to_datetime
+            return parsedate_to_datetime(created_at).isoformat()
+        except (ValueError, TypeError):
+            return ""
+
+    async def _resolve_user(self, session: aiohttp.ClientSession, username: str) -> Optional[dict]:
+        """Resolve a screen name to {rest_id, name, profile_image_url}."""
+        handle = username.lstrip("@")
+        data = await self._graphql(
+            session, self._Q_USER_BY_NAME, "UserByScreenName",
+            {"screen_name": handle, "withSafetyModeUserFields": True}, self._USER_FEATURES,
+        )
+        if not data:
+            return None
+        result = (((data.get("data") or {}).get("user") or {}).get("result")) or {}
+        if result.get("__typename") != "User":
+            return None
+        rest_id = result.get("rest_id")
+        legacy = result.get("legacy") or {}
+        if not rest_id:
+            return None
+        self._rest_id_cache[handle.lower()] = rest_id
+        return {
+            "rest_id": rest_id,
+            "name": legacy.get("name", handle),
+            "profile_image_url": self._avatar(legacy),
+        }
+
+    async def get_user_info(
+        self, session: aiohttp.ClientSession, username: str
+    ) -> Optional[dict]:
+        """Validate an X user. Returns {display_name, profile_image_url} or None."""
+        info = await self._resolve_user(session, username)
+        if not info:
+            return None
+        return {
+            "display_name": info["name"],
+            "profile_image_url": info["profile_image_url"],
+        }
+
+    @staticmethod
+    def _unwrap_tweet(result: dict) -> Optional[dict]:
+        """Return the tweet 'result' object, unwrapping TweetWithVisibilityResults."""
+        if not isinstance(result, dict):
+            return None
+        if result.get("__typename") == "TweetWithVisibilityResults":
+            result = result.get("tweet") or {}
+        return result if result.get("legacy") else None
+
+    def _format_entry(self, result: dict, handle: str) -> Optional[dict]:
+        tweet = self._unwrap_tweet(result)
+        if not tweet:
+            return None
+        legacy = tweet.get("legacy") or {}
+
+        # Drop replies (keep originals + reposts)
+        if legacy.get("in_reply_to_screen_name"):
+            return None
+
+        post_id = legacy.get("id_str") or tweet.get("rest_id")
+        if not post_id:
+            return None
+        post_id = str(post_id)
+        created = legacy.get("created_at", "")
+
+        rt = (legacy.get("retweeted_status_result") or {}).get("result")
+        inner = self._unwrap_tweet(rt) if rt else None
+        if inner:
+            inner_legacy = inner.get("legacy") or {}
+            orig = ((inner.get("core") or {}).get("user_results") or {}).get("result", {})
+            orig_handle = (orig.get("legacy") or {}).get("screen_name", "")
+            body = self._clean_text(inner_legacy.get("full_text") or "")
+            title = f"🔁 @{orig_handle}: {body}" if orig_handle else f"🔁 {body}"
+            inner_id = str(inner_legacy.get("id_str") or inner.get("rest_id") or post_id)
+            url = f"https://x.com/{orig_handle or handle}/status/{inner_id}"
+            thumbnail = self._media_url(inner_legacy)
+        else:
+            title = self._clean_text(legacy.get("full_text") or "")
+            url = f"https://x.com/{handle}/status/{post_id}"
+            thumbnail = self._media_url(legacy)
+
+        if not title:
+            title = f"New post by @{handle}"
+
+        return {
+            "post_id": post_id,
+            "title": title[:256],
+            "published": self._parse_created(created),
+            "thumbnail_url": thumbnail,
+            "url": url,
+            "_ts": created,
+        }
+
+    async def get_latest_post(self, username: str) -> Optional[dict]:
+        """Fetch the newest original post or repost for a user.
+
+        Returns dict with post_id, title, published, thumbnail_url, url, or None.
+        """
+        handle = username.lstrip("@")
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+            rest_id = self._rest_id_cache.get(handle.lower())
+            if not rest_id:
+                info = await self._resolve_user(session, handle)
+                if not info:
+                    return None
+                rest_id = info["rest_id"]
+
+            variables = {
+                "userId": rest_id, "count": 20, "includePromotedContent": False,
+                "withQuickPromoteEligibilityTweetFields": False, "withVoice": False,
+                "withV2Timeline": True,
+            }
+            data = await self._graphql(
+                session, self._Q_USER_TWEETS, "UserTweets", variables, self._TWEET_FEATURES,
+            )
+            if not data:
+                return None
+
+        try:
+            timeline = ((((data.get("data") or {}).get("user") or {}).get("result") or {})
+                        .get("timeline_v2") or {}).get("timeline") or {}
+            instructions = timeline.get("instructions") or []
+        except AttributeError:
+            return None
+
+        candidates: list = []
+        for instr in instructions:
+            # Skip TimelinePinEntry so a pinned tweet never re-alerts as "new".
+            if instr.get("type") != "TimelineAddEntries":
+                continue
+            for entry in instr.get("entries") or []:
+                if not str(entry.get("entryId", "")).startswith("tweet-"):
+                    continue
+                result = (((entry.get("content") or {}).get("itemContent") or {})
+                          .get("tweet_results") or {}).get("result")
+                post = self._format_entry(result, handle) if result else None
+                if post:
+                    candidates.append(post)
+
+        if not candidates:
+            return None
+
+        # Newest by created_at timestamp (fall back to list order).
+        def _key(p):
+            return self._parse_created(p.get("_ts", "")) or ""
+        candidates.sort(key=_key, reverse=True)
+        latest = candidates[0]
+        latest.pop("_ts", None)
+        return latest
+
+
 youtube_api = YouTubeAPI()
 tiktok_api = TikTokAPI()
 instagram_api = InstagramAPI()
+twitter_api = TwitterAPI()

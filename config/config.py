@@ -106,6 +106,10 @@ class TikTokVideos:
     check_interval_seconds = 600
 
 
+class TwitterPosts:
+    check_interval_seconds = 600
+
+
 class Instagram:
     check_interval_seconds = 900
 
@@ -222,6 +226,12 @@ class datasys:
         "ping_role": "",
         "channels": []
     },
+    "twitter": {
+        "enabled": False,
+        "alert_channel": "",
+        "ping_role": "",
+        "channels": []
+    },
     "instagram": {
         "enabled": False,
         "alert_channel": "",
@@ -245,9 +255,14 @@ class datasys:
     },
     "temp_voice": {
         "enabled": False,
-        "create_channel_id": "",
-        "category_id": "",
-        "name_template": "{user}'s Channel"
+        "persist_roles": [],
+        "triggers": [
+            {
+                "create_channel_id": "",
+                "category_id": "",
+                "name_template": "{user}'s Channel"
+            }
+        ]
     },
     "prism_enabled": True,
     "notification_channel": "",

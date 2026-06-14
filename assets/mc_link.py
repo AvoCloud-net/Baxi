@@ -1,15 +1,12 @@
 import aiohttp
 import asyncio
-import json
-import os
 import secrets as _secrets
 import time
 from reds_simple_logger import Logger
 
-logger = Logger()
+from assets.repo.standalone import load_mc_links as _standalone_load, save_mc_links as _standalone_save
 
-_DATA_DIR = "data"
-_LINKS_FILE = os.path.join(_DATA_DIR, "mc_links.json")
+logger = Logger()
 
 _links: dict = {}  # guild_id_str → {discord_id: {uuid, name, linked_at}}
 
@@ -51,12 +48,8 @@ def cleanup_link_sessions():
 
 def _load():
     global _links
-    if not os.path.exists(_LINKS_FILE):
-        _links = {}
-        return
     try:
-        with open(_LINKS_FILE, "r") as f:
-            _links = json.load(f)
+        _links = _standalone_load()
     except Exception as e:
         logger.error(f"[mc_link] Failed to load links: {e}")
         _links = {}
@@ -64,9 +57,7 @@ def _load():
 
 def _save():
     try:
-        os.makedirs(_DATA_DIR, exist_ok=True)
-        with open(_LINKS_FILE, "w") as f:
-            json.dump(_links, f, indent=2)
+        _standalone_save(_links)
     except Exception as e:
         logger.error(f"[mc_link] Failed to save links: {e}")
 

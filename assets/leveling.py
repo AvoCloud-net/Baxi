@@ -1,15 +1,13 @@
 """
 Per-user, per-server level system.
 Each user accumulates XP individually on each server they're active on.
-Data stored in data/<guild_id>/leveling_users.json.
+Data stored in SQLite via the repo layer (leveling_users table).
 """
-import json
-import os
-
 import discord
 from discord.ext import commands
 
 import assets.data as datasys
+from assets.repo.entities import upsert_leveling_user
 import config.config as config
 from reds_simple_logger import Logger
 
@@ -60,26 +58,16 @@ def xp_progress(total_xp: int) -> tuple[int, int, int]:
 
 
 # ---------------------------------------------------------------------------
-# Per-guild user data  (data/<guild_id>/leveling_users.json)
+# Per-guild user data  (SQLite leveling_users table via datasys)
 # { "user_id": { "xp": 150, "level": 2, "messages": 42, "name": "username" } }
 # ---------------------------------------------------------------------------
 
-def _users_path(guild_id: int) -> str:
-    return os.path.join("data", str(guild_id), "leveling_users.json")
-
-
 def _load_users(guild_id: int) -> dict:
-    path = _users_path(guild_id)
-    if not os.path.exists(path):
-        return {}
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return dict(datasys.load_data(guild_id, "leveling_users"))
 
 
 def _save_users(guild_id: int, data: dict) -> None:
-    path = _users_path(guild_id)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+    datasys.save_data(guild_id, "leveling_users", data)
 
 
 def get_user_entry(guild_id: int, user_id: int) -> dict:
@@ -132,12 +120,16 @@ async def process_xp(message: discord.Message, bot: commands.AutoShardedBot) -> 
     new_xp: int = int(entry.get("xp", 0)) + earned
     new_level: int = current_level_from_xp(new_xp)
 
-    entry["xp"] = new_xp
-    entry["level"] = new_level
-    entry["messages"] = int(entry.get("messages", 0)) + 1
-    entry["name"] = message.author.name
-    users[uid] = entry
-    _save_users(guild_id, users)
+    new_messages = int(entry.get("messages", 0)) + 1
+    new_name = message.author.name
+
+    # Targeted hot-path write — avoids a full reload/save cycle
+    upsert_leveling_user(guild_id, uid, {
+        "xp":       new_xp,
+        "level":    new_level,
+        "messages": new_messages,
+        "name":     new_name,
+    })
 
     # Level-up handling
     if new_level <= old_level:

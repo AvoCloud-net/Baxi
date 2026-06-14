@@ -9,7 +9,7 @@ import aiohttp
 import config.auth as auth
 from typing import Optional
 from assets.livestream import (
-    twitch_api, youtube_api, tiktok_api, instagram_api,
+    twitch_api, youtube_api, tiktok_api, instagram_api, twitter_api,
     IGNotFound, IGRateLimited, IGBlocked, IGTransient,
 )
 from quart_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
@@ -30,6 +30,8 @@ import uuid
 import secrets
 import urllib.parse
 import assets.share as share
+import assets.db as db
+from assets.data import load_temp_actions, save_temp_actions
 
 # In-memory store for notification broadcast jobs { job_id: {...} }
 _notif_jobs: dict = {}
@@ -37,7 +39,6 @@ _notif_jobs: dict = {}
 
 def get_feature_adoption() -> dict:
     """Calculate what percentage of all servers use each feature."""
-    data_dir = "data"
     counts = {
         "chatfilter": 0,
         "ticket": 0,
@@ -59,79 +60,86 @@ def get_feature_adoption() -> dict:
         "sticky_messages": 0,
     }
     try:
-        guild_dirs = [
-            d for d in os.listdir(data_dir)
-            if os.path.isdir(os.path.join(data_dir, d)) and d.isdigit() and d != "1001"
-        ]
-    except FileNotFoundError:
+        guild_id_list = db.guild_ids()
+    except Exception:
         return {k: 0 for k in counts}
 
-    total = len(guild_dirs)
+    total = len(guild_id_list)
     if total == 0:
         return {k: 0 for k in counts}
 
     gc_enabled_guilds: set = set()
     try:
-        with open(os.path.join(data_dir, "1001", "conf.json"), "r", encoding="utf-8") as f:
-            gc_data = json.load(f)
-        for gid, gc_conf in gc_data.get("globalchat", {}).items():
+        gc_data = load_data(1001, "globalchat")
+        for gid, gc_conf in gc_data.items():
             if gc_conf.get("enabled", False):
-                gc_enabled_guilds.add(gid)
+                gc_enabled_guilds.add(str(gid))
     except Exception:
         pass
 
-    for guild_id in guild_dirs:
-        conf_path = os.path.join(data_dir, guild_id, "conf.json")
-        if not os.path.exists(conf_path):
-            continue
+    for guild_id_int in guild_id_list:
+        guild_id = str(guild_id_int)
         try:
-            with open(conf_path, "r", encoding="utf-8") as f:
-                conf = json.load(f)
+            conf = {
+                "chatfilter":    load_data(guild_id_int, "chatfilter"),
+                "ticket":        load_data(guild_id_int, "ticket"),
+                "antispam":      load_data(guild_id_int, "antispam"),
+                "welcomer":      load_data(guild_id_int, "welcomer"),
+                "livestream":    load_data(guild_id_int, "livestream"),
+                "custom_commands": load_data(guild_id_int, "custom_commands"),
+                "stats_channels":  load_data(guild_id_int, "stats_channels"),
+                "auto_roles":    load_data(guild_id_int, "auto_roles"),
+                "reaction_roles": load_data(guild_id_int, "reaction_roles"),
+                "auto_slowmode": load_data(guild_id_int, "auto_slowmode"),
+                "counting":      load_data(guild_id_int, "counting"),
+                "flag_quiz":     load_data(guild_id_int, "flag_quiz"),
+                "suggestions":   load_data(guild_id_int, "suggestions"),
+                "temp_voice":    load_data(guild_id_int, "temp_voice"),
+                "verify":        load_data(guild_id_int, "verify"),
+                "youtube_videos": load_data(guild_id_int, "youtube_videos"),
+            }
         except Exception:
             continue
-        if conf.get("chatfilter", {}).get("enabled", False):
+        if conf["chatfilter"].get("enabled", False):
             counts["chatfilter"] += 1
-        if conf.get("ticket", {}).get("enabled", False):
+        if conf["ticket"].get("enabled", False):
             counts["ticket"] += 1
-        if conf.get("antispam", {}).get("enabled", False):
+        if conf["antispam"].get("enabled", False):
             counts["antispam"] += 1
-        if conf.get("welcomer", {}).get("enabled", False):
+        if conf["welcomer"].get("enabled", False):
             counts["welcomer"] += 1
-        if conf.get("livestream", {}).get("enabled", False):
+        if conf["livestream"].get("enabled", False):
             counts["livestream"] += 1
-        if conf.get("custom_commands"):
+        if conf["custom_commands"]:
             counts["custom_commands"] += 1
         if guild_id in gc_enabled_guilds:
             counts["globalchat"] += 1
-        if conf.get("stats_channels", {}).get("enabled", False):
+        if conf["stats_channels"].get("enabled", False):
             counts["stats_channels"] += 1
-        if conf.get("auto_roles", {}).get("enabled", False):
+        if conf["auto_roles"].get("enabled", False):
             counts["auto_roles"] += 1
-        if conf.get("reaction_roles", {}).get("panels"):
+        if conf["reaction_roles"].get("panels"):
             counts["reaction_roles"] += 1
-        if conf.get("auto_slowmode", {}).get("enabled", False):
+        if conf["auto_slowmode"].get("enabled", False):
             counts["auto_slowmode"] += 1
-        if conf.get("counting", {}).get("enabled", False):
+        if conf["counting"].get("enabled", False):
             counts["counting"] += 1
-        if conf.get("flag_quiz", {}).get("enabled", False):
+        if conf["flag_quiz"].get("enabled", False):
             counts["flag_quiz"] += 1
-        if conf.get("suggestions", {}).get("enabled", False):
+        if conf["suggestions"].get("enabled", False):
             counts["suggestions"] += 1
-        if conf.get("temp_voice", {}).get("enabled", False):
+        if conf["temp_voice"].get("enabled", False):
             counts["temp_voice"] += 1
-        if conf.get("verify", {}).get("enabled", False):
+        if conf["verify"].get("enabled", False):
             counts["verify"] += 1
-        if conf.get("youtube_videos", {}).get("enabled", False):
+        if conf["youtube_videos"].get("enabled", False):
             counts["youtube_videos"] += 1
-        sticky_path = os.path.join(data_dir, guild_id, "sticky_messages.json")
-        if os.path.exists(sticky_path):
-            try:
-                with open(sticky_path, "r", encoding="utf-8") as sf:
-                    sticky = json.load(sf)
-                if sticky:
-                    counts["sticky_messages"] += 1
-            except Exception:
-                pass
+        try:
+            sticky = load_data(guild_id_int, "sticky_messages")
+            if sticky:
+                counts["sticky_messages"] += 1
+        except Exception:
+            pass
 
     return {k: round(v / total * 100) for k, v in counts.items()}
 
@@ -663,15 +671,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
 
             # Feature access: determine which features are enabled for this guild
-            _global_conf_path = os.path.join("data", "1001", "conf.json")
-            _feature_access: dict = {}
-            if os.path.exists(_global_conf_path):
-                try:
-                    with open(_global_conf_path, "r", encoding="utf-8") as _f:
-                        _global_conf = json.load(_f)
-                    _feature_access = _global_conf.get("feature_access", {})
-                except Exception:
-                    pass
+            try:
+                _feature_access: dict = dict(load_data(1001, "feature_access"))
+            except Exception:
+                _feature_access = {}
             guild_conf["_feature_access"] = _feature_access
 
             # Never send donation provider credentials to the browser. Replace them with
@@ -2051,6 +2054,162 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Settings saved."})
 
+        elif system == "twitter":
+            data: dict = await quart.request.get_json()
+            tw_data = data.get("twitter")
+
+            if not isinstance(tw_data, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+
+            action = tw_data.get("action", "save")
+
+            if action == "add":
+                login = str(tw_data.get("login", "")).strip().lstrip("@")
+                if not login:
+                    return quart.jsonify({"success": False, "message": "X username is required."}), 400
+                if not re.fullmatch(r"[A-Za-z0-9_]{1,15}", login):
+                    return quart.jsonify({"success": False, "message": "Invalid X username."}), 400
+
+                alert_channel_id = str(tw_data.get("alert_channel", "")).strip()
+                if not alert_channel_id or not re.fullmatch(r"\d{17,19}", alert_channel_id):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel is required."}), 400
+
+                tw_config = dict(load_data(int(guild_id), "twitter"))
+                channels = tw_config.get("channels", [])
+
+                if len(channels) >= 10:
+                    return quart.jsonify({"success": False, "message": "Maximum of 10 tracked accounts reached."}), 400
+
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
+                    user_info = await twitter_api.get_user_info(session, login)
+
+                if not user_info:
+                    return quart.jsonify({"success": False, "message": f"X user '@{login}' not found, protected, or has no posts."}), 404
+
+                # Guest mode (no host cookies) hides the timelines of small/new
+                # accounts. Probe before subscribing so the user isn't silently
+                # tracking an account that can never produce a notification.
+                if not twitter_api.has_cookies():
+                    if await twitter_api.get_latest_post(login) is None:
+                        return quart.jsonify({"success": False, "message": f"'@{login}' can't be tracked without X login cookies — X hides small or new accounts from guests. Ask the bot host to configure X cookies, or track a larger account."}), 400
+
+                if any(c.get("username") == login for c in channels):
+                    return quart.jsonify({"success": False, "message": f"'@{login}' is already being tracked."}), 400
+
+                channels.append({
+                    "username":          login,
+                    "display_name":      user_info.get("display_name", login),
+                    "profile_image_url": user_info.get("profile_image_url", ""),
+                    "last_post_id":      "",
+                    "last_post_published": "",
+                    "alert_channel":     alert_channel_id,
+                })
+                tw_config["channels"] = channels
+                save_data(int(guild_id), "twitter", tw_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "twitter",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({
+                    "success": True,
+                    "message": f"Now tracking '@{login}'.",
+                    "account": {
+                        "username":          login,
+                        "display_name":      user_info.get("display_name", login),
+                        "profile_image_url": user_info.get("profile_image_url", ""),
+                        "alert_channel":     alert_channel_id,
+                    },
+                })
+
+            elif action == "remove":
+                username_to_remove = str(tw_data.get("username", "")).strip().lstrip("@")
+                if not username_to_remove:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+
+                tw_config = dict(load_data(int(guild_id), "twitter"))
+                channels = tw_config.get("channels", [])
+                before_count = len(channels)
+                channels = [c for c in channels if c.get("username") != username_to_remove]
+
+                if len(channels) == before_count:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                tw_config["channels"] = channels
+                save_data(int(guild_id), "twitter", tw_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "twitter",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Account removed."})
+
+            elif action == "update_channel":
+                username_to_update = str(tw_data.get("username", "")).strip().lstrip("@")
+                new_alert_channel  = str(tw_data.get("alert_channel", "")).strip()
+                if not username_to_update:
+                    return quart.jsonify({"success": False, "message": "username is required."}), 400
+                if not new_alert_channel or not re.fullmatch(r"\d{17,19}", new_alert_channel):
+                    return quart.jsonify({"success": False, "message": "A valid alert channel ID is required."}), 400
+
+                tw_config = dict(load_data(int(guild_id), "twitter"))
+                entry = next((c for c in tw_config.get("channels", []) if c.get("username") == username_to_update), None)
+                if not entry:
+                    return quart.jsonify({"success": False, "message": "Account not found."}), 404
+
+                entry["alert_channel"] = new_alert_channel
+                save_data(int(guild_id), "twitter", tw_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "twitter",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": "Alert channel updated."})
+
+            elif action == "save":
+                if not isinstance(tw_data.get("enabled"), bool):
+                    return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+                alert_channel = str(tw_data.get("alert_channel", "")).strip()
+                if alert_channel and not re.fullmatch(r"\d{17,19}", alert_channel):
+                    return quart.jsonify({"success": False, "message": "Invalid alert channel ID."}), 400
+
+                ping_role = str(tw_data.get("ping_role", "")).strip()
+                if ping_role and not re.fullmatch(r"\d{17,19}", ping_role):
+                    return quart.jsonify({"success": False, "message": "Invalid ping role ID."}), 400
+
+                tw_config = dict(load_data(int(guild_id), "twitter"))
+                tw_config["enabled"]       = tw_data["enabled"]
+                tw_config["alert_channel"] = alert_channel
+                tw_config["ping_role"]     = ping_role
+                save_data(int(guild_id), "twitter", tw_config)
+
+                user = await discord_auth.fetch_user()
+                audit_log_new: dict = {
+                    "type": "save", "user": user.name, "success": True,
+                    "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "twitter",
+                }
+                audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append(audit_log_new)
+                save_data(int(guild_id), "audit_log", audit_log)
+
+            else:
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+
+            return quart.jsonify({"success": True, "message": "Settings saved."})
+
         elif system == "instagram":
             data: dict = await quart.request.get_json()
             ig_data = data.get("instagram")
@@ -2377,23 +2536,52 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(tv_data.get("enabled"), bool):
                 return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
 
-            create_channel_id = str(tv_data.get("create_channel_id", "")).strip()
-            if create_channel_id and not re.fullmatch(r"\d{17,19}", create_channel_id):
-                return quart.jsonify({"success": False, "message": "Invalid create_channel_id format."}), 400
+            raw_triggers = tv_data.get("triggers")
+            if not isinstance(raw_triggers, list):
+                return quart.jsonify({"success": False, "message": "'triggers' must be a list."}), 400
 
-            category_id = str(tv_data.get("category_id", "")).strip()
-            if category_id and not re.fullmatch(r"\d{17,19}", category_id):
-                return quart.jsonify({"success": False, "message": "Invalid category_id format."}), 400
+            triggers = []
+            for trig in raw_triggers:
+                if not isinstance(trig, dict):
+                    return quart.jsonify({"success": False, "message": "Each trigger must be an object."}), 400
 
-            name_template = str(tv_data.get("name_template", "{user}'s Channel"))[:64].strip()
-            if not name_template:
-                name_template = "{user}'s Channel"
+                create_channel_id = str(trig.get("create_channel_id", "")).strip()
+                if create_channel_id and not re.fullmatch(r"\d{17,19}", create_channel_id):
+                    return quart.jsonify({"success": False, "message": "Invalid create_channel_id format."}), 400
+
+                category_id = str(trig.get("category_id", "")).strip()
+                if category_id and not re.fullmatch(r"\d{17,19}", category_id):
+                    return quart.jsonify({"success": False, "message": "Invalid category_id format."}), 400
+
+                name_template = str(trig.get("name_template", "{user}'s Channel"))[:64].strip()
+                if not name_template:
+                    name_template = "{user}'s Channel"
+
+                # Skip blank triggers (no create_channel_id) rather than saving them.
+                if not create_channel_id:
+                    continue
+
+                triggers.append({
+                    "create_channel_id": create_channel_id,
+                    "category_id": category_id,
+                    "name_template": name_template,
+                })
+
+            raw_persist_roles = tv_data.get("persist_roles", [])
+            if not isinstance(raw_persist_roles, list):
+                return quart.jsonify({"success": False, "message": "'persist_roles' must be a list."}), 400
+            persist_roles = []
+            for rid in raw_persist_roles:
+                rid = str(rid).strip()
+                if not re.fullmatch(r"\d{17,19}", rid):
+                    return quart.jsonify({"success": False, "message": "Invalid role id in persist_roles."}), 400
+                if rid not in persist_roles:
+                    persist_roles.append(rid)
 
             tv_config = {
                 "enabled": tv_data["enabled"],
-                "create_channel_id": create_channel_id,
-                "category_id": category_id,
-                "name_template": name_template,
+                "persist_roles": persist_roles,
+                "triggers": triggers,
             }
             save_data(int(guild_id), "temp_voice", tv_config)
 
@@ -3441,20 +3629,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         sender_name: str = body.get("sender_name") or "Unknown"
         sender_uuid: str = body.get("sender_uuid") or ""
 
-        import os as _os, json as _json
         matched = []
-        for entry in _os.listdir("data"):
-            if not entry.isdigit():
-                continue
-            conf_path = _os.path.join("data", entry, "conf.json")
-            if not _os.path.exists(conf_path):
-                continue
+        for _gid_int in db.guild_ids():
             try:
-                with open(conf_path) as f:
-                    conf = _json.load(f)
-                mcl = conf.get("mc_link", {})
+                mcl = load_data(_gid_int, "mc_link")
                 if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
-                    matched.append((int(entry), mcl))
+                    matched.append((_gid_int, mcl))
             except Exception:
                 continue
 
@@ -3522,20 +3702,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         uuid_str = (body.get("uuid") or "").strip() or None
         discord_id_hint = (body.get("discord_id") or "").strip() or None
 
-        import os as _os, json as _json
         matched = []
-        for entry in _os.listdir("data"):
-            if not entry.isdigit():
-                continue
-            conf_path = _os.path.join("data", entry, "conf.json")
-            if not _os.path.exists(conf_path):
-                continue
+        for _gid_int in db.guild_ids():
             try:
-                with open(conf_path) as f:
-                    conf = _json.load(f)
-                mcl = conf.get("mc_link", {})
+                mcl = load_data(_gid_int, "mc_link")
                 if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
-                    matched.append((int(entry), mcl))
+                    matched.append((_gid_int, mcl))
             except Exception:
                 continue
 
@@ -3594,20 +3766,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         # Strip mass mentions (defense-in-depth; AllowedMentions.none() also blocks)
         safe_message = message.replace("@everyone", "@​everyone").replace("@here", "@​here")
 
-        import os as _os, json as _json
         matched = []
-        for entry in _os.listdir("data"):
-            if not entry.isdigit():
-                continue
-            conf_path = _os.path.join("data", entry, "conf.json")
-            if not _os.path.exists(conf_path):
-                continue
+        for _gid_int in db.guild_ids():
             try:
-                with open(conf_path) as f:
-                    conf = _json.load(f)
-                mcl = conf.get("mc_link", {})
+                mcl = load_data(_gid_int, "mc_link")
                 if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
-                    matched.append((int(entry), mcl))
+                    matched.append((_gid_int, mcl))
             except Exception:
                 continue
 
@@ -3689,20 +3853,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if type_icon:
             safe_text = f"{type_icon} {safe_text}"
 
-        import os as _os, json as _json
         matched = []
-        for entry in _os.listdir("data"):
-            if not entry.isdigit():
-                continue
-            conf_path = _os.path.join("data", entry, "conf.json")
-            if not _os.path.exists(conf_path):
-                continue
+        for _gid_int in db.guild_ids():
             try:
-                with open(conf_path) as f:
-                    conf = _json.load(f)
-                mcl = conf.get("mc_link", {})
+                mcl = load_data(_gid_int, "mc_link")
                 if mcl.get("enabled") and mcl.get("api_secret", "") == provided_secret:
-                    matched.append((int(entry), mcl))
+                    matched.append((_gid_int, mcl))
             except Exception:
                 continue
 
@@ -4285,25 +4441,21 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if not guild_id_str.isdigit():
             return quart.jsonify({"error": "Invalid guild_id"}), 400
 
-        conf_path = os.path.join("data", guild_id_str, "conf.json")
-        if not os.path.exists(conf_path):
-            return quart.jsonify({"error": "No config found for this guild."}), 404
-
+        gid_int = int(guild_id_str)
         try:
-            with open(conf_path, "r", encoding="utf-8") as f:
-                conf = json.load(f)
+            from assets.repo import load_full_conf
+            conf = load_full_conf(gid_int)
         except Exception as e:
             return quart.jsonify({"error": f"Failed to read config: {e}"}), 500
 
-        # Add sticky messages count from separate file
-        sticky_path = os.path.join("data", guild_id_str, "sticky_messages.json")
-        conf["_sticky_messages"] = {}
-        if os.path.exists(sticky_path):
-            try:
-                with open(sticky_path, "r", encoding="utf-8") as sf:
-                    conf["_sticky_messages"] = json.load(sf)
-            except Exception:
-                pass
+        if not conf:
+            return quart.jsonify({"error": "No config found for this guild."}), 404
+
+        # Add sticky messages from the DB (previously a separate file)
+        try:
+            conf["_sticky_messages"] = load_data(gid_int, "sticky_messages")
+        except Exception:
+            conf["_sticky_messages"] = {}
 
         # Try to get guild name from Discord cache
         guild_name = conf.get("guild_name", guild_id_str)
@@ -4333,58 +4485,50 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "30d": str(today - _dt.timedelta(days=30)),
         }
 
-        data_dir = "data"
         try:
-            guild_dirs = [
-                d for d in os.listdir(data_dir)
-                if os.path.isdir(os.path.join(data_dir, d)) and d.isdigit() and d != "1001"
-            ]
-        except FileNotFoundError:
+            guild_id_ints = db.guild_ids()
+        except Exception:
             return quart.jsonify({"guilds": []})
 
         results = []
-        for gid in guild_dirs:
-            # Get guild name from Discord cache first, fallback to conf.json
+        for gid_int in guild_id_ints:
+            gid = str(gid_int)
+            # Get guild name from Discord cache first, fallback to DB scalars
             guild_name = gid
             member_count = 0
-            g = bot.get_guild(int(gid))
+            g = bot.get_guild(gid_int)
             if g:
                 guild_name = g.name
                 member_count = g.member_count or 0
             else:
-                conf_path = os.path.join(data_dir, gid, "conf.json")
-                if os.path.exists(conf_path):
-                    try:
-                        with open(conf_path, "r", encoding="utf-8") as f:
-                            _c = json.load(f)
-                        guild_name = _c.get("guild_name") or gid
-                    except Exception:
-                        pass
+                try:
+                    _c = load_data(gid_int, "guild_name")
+                    if isinstance(_c, str) and _c:
+                        guild_name = _c
+                except Exception:
+                    pass
 
-            activity_path = os.path.join(data_dir, gid, "activity.json")
             msg_7d = msg_14d = msg_30d = 0
             last_active = None
 
-            if os.path.exists(activity_path):
-                try:
-                    with open(activity_path, "r", encoding="utf-8") as f:
-                        act = json.load(f)
-                    msg_by_day = act.get("msg_by_day", {})
-                    for day, val in msg_by_day.items():
-                        count = val.get("total", 0) if isinstance(val, dict) else 0
-                        if day >= cutoffs["30d"]:
-                            msg_30d += count
-                        if day >= cutoffs["14d"]:
-                            msg_14d += count
-                        if day >= cutoffs["7d"]:
-                            msg_7d += count
-                    # Last active day (any day with messages)
-                    active_days = [d for d, v in msg_by_day.items()
-                                   if (v.get("total", 0) if isinstance(v, dict) else 0) > 0]
-                    if active_days:
-                        last_active = max(active_days)
-                except Exception:
-                    pass
+            try:
+                act = load_data(gid_int, "activity")
+                msg_by_day = act.get("msg_by_day", {})
+                for day, val in msg_by_day.items():
+                    count = val.get("total", 0) if isinstance(val, dict) else 0
+                    if day >= cutoffs["30d"]:
+                        msg_30d += count
+                    if day >= cutoffs["14d"]:
+                        msg_14d += count
+                    if day >= cutoffs["7d"]:
+                        msg_7d += count
+                # Last active day (any day with messages)
+                active_days = [day for day, v in msg_by_day.items()
+                               if (v.get("total", 0) if isinstance(v, dict) else 0) > 0]
+                if active_days:
+                    last_active = max(active_days)
+            except Exception:
+                pass
 
             # Status classification
             if msg_7d > 0:
@@ -4435,26 +4579,22 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/api/admin/feature_access", methods=["GET"])
     @requires_authorization
     async def admin_feature_access_get():
-        """Returns the feature_access config from the global conf (data/1001/conf.json)."""
+        """Returns the feature_access config from the global store."""
         user, is_admin = await _require_bot_admin(discord_auth)
         if not is_admin:
             return quart.jsonify({"error": "Access denied"}), 403
 
-        conf_path = os.path.join("data", "1001", "conf.json")
-        feature_access: dict = {}
-        if os.path.exists(conf_path):
-            try:
-                with open(conf_path, "r", encoding="utf-8") as f:
-                    feature_access = json.load(f).get("feature_access", {})
-            except Exception as e:
-                return quart.jsonify({"error": str(e)}), 500
+        try:
+            feature_access: dict = dict(load_data(1001, "feature_access"))
+        except Exception as e:
+            return quart.jsonify({"error": str(e)}), 500
 
         return quart.jsonify({"success": True, "feature_access": feature_access})
 
     @app.route("/api/admin/feature_access", methods=["POST"])
     @requires_authorization
     async def admin_feature_access_save():
-        """Saves the feature_access config into data/1001/conf.json."""
+        """Saves the feature_access config into the global store."""
         user, is_admin = await _require_bot_admin(discord_auth)
         if not is_admin:
             return quart.jsonify({"error": "Access denied"}), 403
@@ -4473,20 +4613,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if not isinstance(cfg.get("guilds", []), list):
                 return quart.jsonify({"error": f"'guilds' must be a list for '{feature}'"}), 400
 
-        conf_path = os.path.join("data", "1001", "conf.json")
-        os.makedirs(os.path.dirname(conf_path), exist_ok=True)
-        global_conf: dict = {}
-        if os.path.exists(conf_path):
-            try:
-                with open(conf_path, "r", encoding="utf-8") as f:
-                    global_conf = json.load(f)
-            except Exception:
-                pass
-
-        global_conf["feature_access"] = feature_access
         try:
-            with open(conf_path, "w", encoding="utf-8") as f:
-                json.dump(global_conf, f, indent=2, ensure_ascii=False)
+            save_data(1001, "feature_access", feature_access)
         except Exception as e:
             return quart.jsonify({"error": str(e)}), 500
 
@@ -4749,6 +4877,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "GarbageCollector": "collect",
                 "YouTubeVideos":    "check_videos",
                 "TikTokVideos":     "check_videos",
+                "TwitterPosts":     "check_posts",
                 "Instagram":        "check_posts",
             }
             task_key = str(data.get("task_key", "")).strip()
@@ -4959,27 +5088,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             # Guild warnings
             guild_warnings = []
-            _data_dir = "data"
-            try:
-                _guild_dirs = [
-                    d for d in os.listdir(_data_dir)
-                    if os.path.isdir(os.path.join(_data_dir, d)) and d.isdigit() and d != "1001"
-                ]
-            except FileNotFoundError:
-                _guild_dirs = []
+            _guild_id_ints = db.guild_ids()
 
-            for _gid in _guild_dirs:
-                _conf_path = os.path.join(_data_dir, _gid, "conf.json")
-                if not os.path.exists(_conf_path):
-                    continue
+            for _gid_int in _guild_id_ints:
+                _gid = str(_gid_int)
                 try:
-                    with open(_conf_path, "r", encoding="utf-8") as _f:
-                        _conf = json.load(_f)
-                    _warns = _conf.get("warnings", {}).get(uid_str, [])
+                    _warns_data = load_data(_gid_int, "warnings")
+                    _warns = _warns_data.get(uid_str, [])
                     if _warns:
+                        _scalars = load_data(_gid_int, "guild_name")
+                        _gname = _scalars if isinstance(_scalars, str) and _scalars else _gid
                         guild_warnings.append({
                             "guild_id": _gid,
-                            "guild_name": _conf.get("guild_name", _gid),
+                            "guild_name": _gname,
                             "count": len(_warns),
                             "entries": _warns,
                         })
@@ -4989,13 +5110,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             # Temp actions
             temp_actions_found = []
-            for _gid in _guild_dirs:
-                _ta_path = os.path.join(_data_dir, _gid, "temp_actions.json")
-                if not os.path.exists(_ta_path):
-                    continue
+            for _gid_int in _guild_id_ints:
+                _gid = str(_gid_int)
                 try:
-                    with open(_ta_path, "r", encoding="utf-8") as _f:
-                        _ta = json.load(_f)
+                    _ta = load_temp_actions(_gid_int)
                     for _atype in ["bans", "timeouts"]:
                         for _entry in _ta.get(_atype, []):
                             if str(_entry.get("user_id", "")) == uid_str:
@@ -5011,14 +5129,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             result["temp_actions"] = temp_actions_found
 
             # GC ban / BA ban (global)
-            _global_conf_path = os.path.join("data", "1001", "conf.json")
             result["gc_ban"] = None
             result["ba_ban"] = None
             try:
-                with open(_global_conf_path, "r", encoding="utf-8") as _gcf:
-                    _global_conf = json.load(_gcf)
-                _gc_ban_map = _global_conf.get("gc_ban", {})
-                _ba_ban_map = _global_conf.get("ba_ban", {})
+                _gc_ban_map = dict(load_data(1001, "gc_ban"))
+                _ba_ban_map = dict(load_data(1001, "ba_ban"))
                 if uid_str in _gc_ban_map:
                     result["gc_ban"] = _gc_ban_map[uid_str]
                 if uid_str in _ba_ban_map:
@@ -5028,20 +5143,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             # Open tickets per guild
             open_tickets_found = []
-            for _gid in _guild_dirs:
-                _tk_path = os.path.join(_data_dir, _gid, "tickets.json")
-                if not os.path.exists(_tk_path):
-                    continue
+            for _gid_int in _guild_id_ints:
+                _gid = str(_gid_int)
                 try:
-                    with open(_tk_path, "r", encoding="utf-8") as _tf:
-                        _open_tks = json.load(_tf)
+                    _open_tks = load_data(_gid_int, "open_tickets")
                     _gname_tk = None
                     for _cid, _td in _open_tks.items():
                         if str(_td.get("user", "")) == uid_str:
                             if _gname_tk is None:
                                 try:
-                                    with open(os.path.join(_data_dir, _gid, "conf.json"), encoding="utf-8") as _fcf:
-                                        _gname_tk = json.load(_fcf).get("guild_name", _gid)
+                                    _gname_tk = load_data(_gid_int, "guild_name")
+                                    if not isinstance(_gname_tk, str) or not _gname_tk:
+                                        _gname_tk = _gid
                                 except Exception:
                                     _gname_tk = _gid
                             open_tickets_found.append({
@@ -5119,30 +5232,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 deleted_items.append(f"{orig_len - len(cf_log_del)} chatfilter log entries")
 
             # 4. Guild warnings + per-guild chatfilter logs
-            _data_dir2 = "data"
-            try:
-                _guild_dirs2 = [
-                    d for d in os.listdir(_data_dir2)
-                    if os.path.isdir(os.path.join(_data_dir2, d)) and d.isdigit() and d != "1001"
-                ]
-            except FileNotFoundError:
-                _guild_dirs2 = []
+            _guild_id_ints2 = db.guild_ids()
 
             warn_guilds = 0
-            for _gid2 in _guild_dirs2:
-                _cp = os.path.join(_data_dir2, _gid2, "conf.json")
-                if not os.path.exists(_cp):
-                    continue
+            for _gid2_int in _guild_id_ints2:
                 try:
-                    with open(_cp, "r", encoding="utf-8") as _f2:
-                        _conf2 = json.load(_f2)
-                    _mod = False
-                    if user_id_str in _conf2.get("warnings", {}):
-                        del _conf2["warnings"][user_id_str]
-                        _mod = True
-                    if _mod:
-                        with open(_cp, "w", encoding="utf-8") as _f2:
-                            json.dump(_conf2, _f2, indent=2, ensure_ascii=False)
+                    _warns2 = load_data(_gid2_int, "warnings")
+                    if user_id_str in _warns2:
+                        del _warns2[user_id_str]
+                        save_data(_gid2_int, "warnings", _warns2)
                         warn_guilds += 1
                 except Exception:
                     pass
@@ -5151,13 +5249,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             # 5. Temp actions
             ta_guilds = 0
-            for _gid2 in _guild_dirs2:
-                _tp = os.path.join(_data_dir2, _gid2, "temp_actions.json")
-                if not os.path.exists(_tp):
-                    continue
+            for _gid2_int in _guild_id_ints2:
                 try:
-                    with open(_tp, "r", encoding="utf-8") as _f3:
-                        _ta2 = json.load(_f3)
+                    _ta2 = load_temp_actions(_gid2_int)
                     _mod2 = False
                     for _at in ["bans", "timeouts"]:
                         _orig = _ta2.get(_at, [])
@@ -5166,8 +5260,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                             _ta2[_at] = _filt
                             _mod2 = True
                     if _mod2:
-                        with open(_tp, "w", encoding="utf-8") as _f3:
-                            json.dump(_ta2, _f3, indent=2, ensure_ascii=False)
+                        save_temp_actions(_gid2_int, _ta2)
                         ta_guilds += 1
                 except Exception:
                     pass
@@ -5233,38 +5326,27 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 key=lambda v: v.get("timestamp", ""), reverse=True
             )
 
-            _data_dir3 = "data"
-            try:
-                _guild_dirs3 = [
-                    d for d in os.listdir(_data_dir3)
-                    if os.path.isdir(os.path.join(_data_dir3, d)) and d.isdigit() and d != "1001"
-                ]
-            except FileNotFoundError:
-                _guild_dirs3 = []
+            _guild_id_ints3 = db.guild_ids()
 
             all_warnings_rep: list[dict] = []
-            for _gid3 in _guild_dirs3:
-                _cp3 = os.path.join(_data_dir3, _gid3, "conf.json")
-                if not os.path.exists(_cp3):
-                    continue
+            for _gid3_int in _guild_id_ints3:
+                _gid3 = str(_gid3_int)
                 try:
-                    with open(_cp3, "r", encoding="utf-8") as _f4:
-                        _conf3 = json.load(_f4)
-                    _gw = _conf3.get("warnings", {}).get(user_id_str, [])
-                    _gname3 = _conf3.get("guild_name", _gid3)
+                    _warns3 = load_data(_gid3_int, "warnings")
+                    _gw = _warns3.get(user_id_str, [])
+                    _gname3 = load_data(_gid3_int, "guild_name")
+                    if not isinstance(_gname3, str) or not _gname3:
+                        _gname3 = _gid3
                     for _w in _gw:
                         all_warnings_rep.append({**_w, "guild_name": _gname3, "guild_id": _gid3})
                 except Exception:
                     pass
 
             temp_actions_rep: list[dict] = []
-            for _gid3 in _guild_dirs3:
-                _tp3 = os.path.join(_data_dir3, _gid3, "temp_actions.json")
-                if not os.path.exists(_tp3):
-                    continue
+            for _gid3_int in _guild_id_ints3:
+                _gid3 = str(_gid3_int)
                 try:
-                    with open(_tp3, "r", encoding="utf-8") as _f5:
-                        _ta3 = json.load(_f5)
+                    _ta3 = load_temp_actions(_gid3_int)
                     for _at3 in ["bans", "timeouts"]:
                         for _te3 in _ta3.get(_at3, []):
                             if str(_te3.get("user_id", "")) == user_id_str:
@@ -5281,32 +5363,29 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             gc_ban_rep = None
             ba_ban_rep = None
             try:
-                _global_conf_path3 = os.path.join("data", "1001", "conf.json")
-                with open(_global_conf_path3, "r", encoding="utf-8") as _gcf3:
-                    _global_conf3 = json.load(_gcf3)
-                if user_id_str in _global_conf3.get("gc_ban", {}):
-                    gc_ban_rep = _global_conf3["gc_ban"][user_id_str]
-                if user_id_str in _global_conf3.get("ba_ban", {}):
-                    ba_ban_rep = _global_conf3["ba_ban"][user_id_str]
+                _gc_ban_map3 = dict(load_data(1001, "gc_ban"))
+                _ba_ban_map3 = dict(load_data(1001, "ba_ban"))
+                if user_id_str in _gc_ban_map3:
+                    gc_ban_rep = _gc_ban_map3[user_id_str]
+                if user_id_str in _ba_ban_map3:
+                    ba_ban_rep = _ba_ban_map3[user_id_str]
             except Exception:
                 pass
 
             # Open tickets
             open_tickets_rep2: list[dict] = []
-            for _gid3 in _guild_dirs3:
-                _tk_path3 = os.path.join(_data_dir3, _gid3, "tickets.json")
-                if not os.path.exists(_tk_path3):
-                    continue
+            for _gid3_int in _guild_id_ints3:
+                _gid3 = str(_gid3_int)
                 try:
-                    with open(_tk_path3, "r", encoding="utf-8") as _tf3:
-                        _open_tks3 = json.load(_tf3)
+                    _open_tks3 = load_data(_gid3_int, "open_tickets")
                     _gname_tk3 = None
                     for _cid3, _td3 in _open_tks3.items():
                         if str(_td3.get("user", "")) == user_id_str:
                             if _gname_tk3 is None:
                                 try:
-                                    with open(os.path.join(_data_dir3, _gid3, "conf.json"), encoding="utf-8") as _fcf3:
-                                        _gname_tk3 = json.load(_fcf3).get("guild_name", _gid3)
+                                    _gname_tk3 = load_data(_gid3_int, "guild_name")
+                                    if not isinstance(_gname_tk3, str) or not _gname_tk3:
+                                        _gname_tk3 = _gid3
                                 except Exception:
                                     _gname_tk3 = _gid3
                             open_tickets_rep2.append({
@@ -5535,28 +5614,22 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         cutoff = datetime.now() - timedelta(days=days)
 
         # Mod events
-        mod_path = os.path.join("data", guild_id, "mod_events.json")
         mod_events = []
-        if os.path.exists(mod_path):
-            try:
-                with open(mod_path, "r", encoding="utf-8") as f:
-                    mod_events = json.load(f)
-            except Exception:
-                pass
+        try:
+            mod_events = list(load_data(int(guild_id), "mod_events"))
+        except Exception:
+            pass
         mod_events = [
             e for e in mod_events
             if datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
         ]
 
         # Filter events
-        filter_path = os.path.join("data", guild_id, "filter_events.json")
         filter_events = []
-        if os.path.exists(filter_path):
-            try:
-                with open(filter_path, "r", encoding="utf-8") as f:
-                    filter_events = json.load(f)
-            except Exception:
-                pass
+        try:
+            filter_events = list(load_data(int(guild_id), "filter_events"))
+        except Exception:
+            pass
         filter_events = [
             e for e in filter_events
             if datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
@@ -5617,14 +5690,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         top_filter_channels = sorted(filter_channels.values(), key=lambda x: x["count"], reverse=True)[:10]
 
         # Activity data (messages, members)
-        activity_path = os.path.join("data", guild_id, "activity.json")
         activity_raw = {}
-        if os.path.exists(activity_path):
-            try:
-                with open(activity_path, "r", encoding="utf-8") as f:
-                    activity_raw = json.load(f)
-            except Exception:
-                pass
+        try:
+            activity_raw = dict(load_data(int(guild_id), "activity"))
+        except Exception:
+            pass
 
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
         msg_days = {d: v for d, v in activity_raw.get("msg_by_day", {}).items() if d >= cutoff_date}

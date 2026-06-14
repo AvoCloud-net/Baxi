@@ -34,6 +34,7 @@ from assets.message.antispam import AntiSpam
 import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
 import assets.message.serverlog as serverlog
+from assets.message import tempvoice
 import assets.games.counting as counting_game
 import assets.games.quiz as quiz_game
 import assets.leveling as leveling_sys
@@ -56,6 +57,7 @@ from assets.tasks import (
     GarbageCollectorTask,
     YouTubeVideoTask,
     TikTokVideoTask,
+    TwitterPostTask,
     InstagramTask,
     MusicIdleTask,
     Radio247Task,
@@ -69,6 +71,50 @@ from assets.dash.dash import dash_web
 
 
 logger = Logger()
+
+
+def normalize_temp_voice(cfg: dict) -> dict:
+    """Normalize a temp_voice config dict into the new shape.
+
+    Returns {"enabled": bool, "triggers": [{"create_channel_id", "category_id",
+    "name_template"}]}. Supports legacy configs that stored a single trigger's
+    fields at the top level (no "triggers" key).
+    """
+    cfg = dict(cfg or {})
+    enabled = bool(cfg.get("enabled", False))
+
+    raw_triggers = cfg.get("triggers")
+    if not raw_triggers:
+        # Legacy shape: build a single trigger from top-level fields if present.
+        legacy_id = str(cfg.get("create_channel_id", "")).strip()
+        if legacy_id:
+            raw_triggers = [{
+                "create_channel_id": legacy_id,
+                "category_id": cfg.get("category_id", ""),
+                "name_template": cfg.get("name_template", "{user}'s Channel"),
+            }]
+        else:
+            raw_triggers = []
+
+    triggers: list[dict] = []
+    for trig in raw_triggers:
+        if not isinstance(trig, dict):
+            continue
+        name_template = str(trig.get("name_template", "") or "").strip() or "{user}'s Channel"
+        triggers.append({
+            "create_channel_id": str(trig.get("create_channel_id", "")).strip(),
+            "category_id": str(trig.get("category_id", "")).strip(),
+            "name_template": name_template,
+        })
+
+    persist_roles = []
+    for rid in cfg.get("persist_roles", []) or []:
+        try:
+            persist_roles.append(str(int(rid)))
+        except Exception:
+            continue
+
+    return {"enabled": enabled, "persist_roles": persist_roles, "triggers": triggers}
 
 
 antispam_instance = AntiSpam()
@@ -107,8 +153,6 @@ def events(bot: commands.AutoShardedBot, web):
 
         for guild in bot.guilds:
             guild_id = guild.id
-            guild_folder = os.path.join("data", str(guild_id))
-            config_path = os.path.join(guild_folder, "conf.json")
 
             # Resolve owner info from cache, fall back to API fetch
             owner_id: int = guild.owner_id or 0
@@ -123,33 +167,13 @@ def events(bot: commands.AutoShardedBot, web):
                 if owner_user:
                     owner_name = str(owner_user.name)
 
-            # Load or create config data
-            if not os.path.exists(guild_folder):
-                os.makedirs(guild_folder)
-                data: dict = dict(config.datasys.default_data)
-                logger.success(f"Ordner und conf.json für Guild {guild_id} erstellt.")
-            elif os.path.exists(config_path):
-                try:
-                    with open(config_path, "r") as config_file:
-                        data = json.load(config_file)
-                except (json.JSONDecodeError, Exception) as e:
-                    logger.error(f"Fehler beim Lesen der conf.json für Guild {guild_id}: {e}")
-                    data = dict(config.datasys.default_data)
-            else:
-                data = dict(config.datasys.default_data)
-
-            # Ensure required fields exist
-            if "terms" not in data:
-                data["terms"] = False
-
-            # Always update guild info on every start
-            data["guild_name"] = str(guild.name)
-            data["guild_id"] = guild_id
-            data["owner_id"] = owner_id
-            data["owner_name"] = owner_name
-
-            with open(config_path, "w") as config_file:
-                json.dump(data, config_file, indent=4)
+            # Ensure the guild row exists (idempotent) and update guild info
+            import assets.db as _db
+            _db.ensure_guild(guild_id)
+            datasys.save_data(guild_id, "guild_name", str(guild.name))
+            datasys.save_data(guild_id, "guild_id", guild_id)
+            datasys.save_data(guild_id, "owner_id", owner_id)
+            datasys.save_data(guild_id, "owner_name", owner_name)
             logger.success(f"Guild {guild_id} ({guild.name}) config aktualisiert.")
 
         try:
@@ -225,6 +249,12 @@ def events(bot: commands.AutoShardedBot, web):
             tt_video_task.check_videos.start()
             share.task_instances["TikTokVideos"] = tt_video_task
             logger.debug.success("TikTok video tracking task started.")
+
+            logger.working("Starting TwitterPosts task...")
+            tw_post_task = TwitterPostTask(bot)
+            tw_post_task.check_posts.start()
+            share.task_instances["TwitterPosts"] = tw_post_task
+            logger.debug.success("X (Twitter) post tracking task started.")
 
             logger.working("Starting Instagram task...")
             ig_task = InstagramTask(bot)
@@ -317,16 +347,13 @@ def events(bot: commands.AutoShardedBot, web):
         logger.debug.info("on_guild_join")
         admin_log("info", f"Bot joined guild: {guild.name} ({guild.id}) -  {guild.member_count} members", source="GuildJoin")
         try:
-            guild_data_dir = os.path.join("data", str(guild.id))
-            data_dir_exists: bool = os.path.exists(guild_data_dir)
+            import assets.db as _db
+            is_new_guild: bool = guild.id not in _db.guild_ids()
+            _db.ensure_guild(guild.id)
             updates_channel: dict = dict(datasys.load_data(1001, "updates"))
             lang = datasys.load_lang_file(guild.id)
-            if not data_dir_exists:
-                logger.info("New Guild joined! Config directory and file is created...")
-                os.makedirs(guild_data_dir)
-                json_file_path = os.path.join(guild_data_dir, "conf.json")
-                with open(json_file_path, "w", encoding="utf-8") as json_file:
-                    json.dump(config.datasys.default_data, json_file, indent=4)
+            if is_new_guild:
+                logger.info("New Guild joined! Guild row created in DB...")
                 data_text = lang["events"]["on_guild_join"]["saved_data"]["new_data"]
                 try:
                     channel = await guild.create_text_channel(
@@ -652,45 +679,58 @@ def events(bot: commands.AutoShardedBot, web):
                 # This allows the bot to reconnect on transient errors (Discord 4006, etc)
 
 
-        tv_config: dict = dict(datasys.load_data(guild.id, "temp_voice"))
+        tv_config: dict = normalize_temp_voice(datasys.load_data(guild.id, "temp_voice"))
 
-        # Clean up empty temp channels regardless of feature state
-        if before.channel and before.channel.id in temp_voice_channels:
-            if len(before.channel.members) == 0:
+        # Clean up empty temp channels regardless of feature state.
+        # The in-memory set is empty after a restart, so also treat any channel
+        # with persisted owner state as a temp channel — otherwise channels
+        # created before the restart would never be deleted.
+        if before.channel and (
+            before.channel.id in temp_voice_channels
+            or tempvoice.get_owner(before.channel.id) is not None
+        ):
+            if len(before.channel.members) == 0 and not tempvoice.is_permanent(before.channel.id):
                 try:
                     await before.channel.delete(reason="Temporary voice channel empty")
                     temp_voice_channels.discard(before.channel.id)
+                    tempvoice.remove_state(before.channel.id)
                 except (discord.Forbidden, discord.HTTPException):
                     pass
 
         if not tv_config.get("enabled", False):
             return
 
-        create_channel_id = str(tv_config.get("create_channel_id", ""))
-        name_template = tv_config.get("name_template", "{user}'s Channel")
-        category_id = str(tv_config.get("category_id", ""))
+        if after.channel:
+            for trigger in tv_config.get("triggers", []):
+                create_channel_id = str(trigger.get("create_channel_id", ""))
+                if not create_channel_id or str(after.channel.id) != create_channel_id:
+                    continue
 
-        if after.channel and str(after.channel.id) == create_channel_id:
-            try:
-                category = None
-                if category_id:
-                    cat = guild.get_channel(int(category_id))
-                    if isinstance(cat, discord.CategoryChannel):
-                        category = cat
-                if category is None:
-                    category = after.channel.category
+                name_template = trigger.get("name_template", "{user}'s Channel")
+                category_id = str(trigger.get("category_id", ""))
 
-                new_name = name_template.replace("{user}", member.display_name)
-                new_channel = await guild.create_voice_channel(
-                    name=new_name,
-                    category=category,
-                    reason="Baxi Temp Voice",
-                )
-                temp_voice_channels.add(new_channel.id)
-                await member.move_to(new_channel)
-                admin_log("info", f"Temp voice created: '{new_name}' for {member.name} in {guild.name}", source="TempVoice")
-            except (discord.Forbidden, discord.HTTPException) as e:
-                logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
+                try:
+                    category = None
+                    if category_id:
+                        cat = guild.get_channel(int(category_id))
+                        if isinstance(cat, discord.CategoryChannel):
+                            category = cat
+                    if category is None:
+                        category = after.channel.category
+
+                    new_name = name_template.replace("{user}", member.display_name)
+                    new_channel = await guild.create_voice_channel(
+                        name=new_name,
+                        category=category,
+                        reason="Baxi Temp Voice",
+                    )
+                    temp_voice_channels.add(new_channel.id)
+                    await member.move_to(new_channel)
+                    admin_log("info", f"Temp voice created: '{new_name}' for {member.name} in {guild.name}", source="TempVoice")
+                    await tempvoice.send_control_panel(bot, new_channel, member)
+                except (discord.Forbidden, discord.HTTPException) as e:
+                    logger.error(f"[TempVoice] Failed to create channel in {guild.id}: {e}")
+                break
 
 
 async def handle_auto_release(message: discord.Message):
@@ -1008,15 +1048,11 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
         elif not bool(chatfilter_data.get("enabled", False)):
             # Chatfilter OFF → Prism silent scan.
-            # SafeText alone is too weak on unconfigured servers, so if it came back clean
-            # we run an additional AI check specifically for Prism (no moderation action taken).
+            # The in-process pipeline already ran the full rule-based + ML AI check in
+            # `check()` above, so `chatfilter_req` IS the AI result. Reuse it directly
+            # for Prism (no moderation action taken). The old queued Ollama re-check
+            # (`_try_ai_check_queued`) was removed when SafeText went in-process.
             prism_req = chatfilter_req
-            if not chatfilter_req.get("flagged"):
-                try:
-                    prism_req = await chatfilter_instance._try_ai_check_queued(message.clean_content)
-                except Exception as _ai_err:
-                    logger.error(f"[Prism] Silent AI check error: {_ai_err}")
-                    prism_req = None
 
             if prism_req and prism_req.get("flagged"):
                 try:
@@ -1242,15 +1278,7 @@ async def _mc_chat_bridge(message):
             return
         if not isinstance(message.channel, (_discord.TextChannel, _discord.Thread)):
             return
-        conf = dict(datasys.load_data(message.guild.id, "conf")) if False else None
-        # conf.json is read directly
-        import json as _json, os as _os
-        conf_path = _os.path.join("data", str(message.guild.id), "conf.json")
-        if not _os.path.exists(conf_path):
-            return
-        with open(conf_path) as f:
-            conf = _json.load(f)
-        mcl = conf.get("mc_link", {})
+        mcl: dict = dict(datasys.load_data(message.guild.id, "mc_link"))
         if not mcl.get("enabled") or not mcl.get("chat_enabled", False):
             return
         chat_channel_id = str(mcl.get("chat_channel", "")).strip()

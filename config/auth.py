@@ -20,6 +20,20 @@ class Twitch:
     client_secret: str = "YOUR-TWITCH-CLIENT-SECRET"
 
 
+class Twitter:
+    # X (Twitter) post tracking has no free official API. Without cookies the bot uses an
+    # anonymous "guest token", which only works for large/popular accounts — X hides the
+    # timelines of small or new accounts from guests. To track ANY public account, log in
+    # to a (throwaway) X account in a browser and copy two cookies from DevTools
+    # (Application → Cookies → https://x.com):
+    #   auth_token  -> auth_token below
+    #   ct0         -> ct0 below   (also used as the x-csrf-token header)
+    # Leave both empty to stay in guest-only mode. Cookies expire periodically; refresh if
+    # tracking stops working for smaller accounts.
+    auth_token: str = ""
+    ct0: str = ""
+
+
 class TopGG:
     token: str = "YOUR-TOPGG-TOKEN"
     webhook_secret: str = "YOUR-TOPGG-WEBHOOK-SECRET"

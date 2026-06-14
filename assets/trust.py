@@ -8,10 +8,10 @@ import asyncio
 import aiohttp
 import datetime
 import json
-import os
 from typing import Optional
 
 import assets.data as datasys
+from assets.repo.standalone import load_trust as _standalone_load_trust, save_trust as _standalone_save_trust
 from assets.share import admin_log as _admin_log
 from reds_simple_logger import Logger
 
@@ -118,22 +118,15 @@ def get_event_severity(event_type: str) -> str:
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
-def _trust_path() -> str:
-    return os.path.join("data", "1001", "trust.json")
-
-
 def _load() -> dict:
-    path = _trust_path()
-    if not os.path.exists(path):
-        return {}
     try:
-        return datasys.load_json(path)
+        return _standalone_load_trust()
     except Exception:
         return {}
 
 
-def _save(data: dict):
-    datasys.save_json(_trust_path(), data)
+def _save(data: dict) -> None:
+    _standalone_save_trust(data)
 
 
 def _worst_tier(events: list) -> str:
