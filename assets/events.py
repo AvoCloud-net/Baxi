@@ -807,9 +807,10 @@ async def handle_sticky_message(message: discord.Message, bot: commands.AutoShar
         if not isinstance(channel, discord.TextChannel):
             return
 
-        # Delete previous sticky message
+        # Delete previous sticky message. Guard against non-numeric ids (legacy
+        # rows stored the string "None") so int() never raises and kills the task.
         last_id = entry.get("last_message_id")
-        if last_id:
+        if last_id and str(last_id).isdigit():
             try:
                 old_msg = await channel.fetch_message(int(last_id))
                 await old_msg.delete()

@@ -32,13 +32,18 @@ def save_sticky_messages(gid: int, data: dict) -> None:
         for ch_id, entry in data.items():
             extra = {k: v for k, v in entry.items()
                      if k not in {"message", "last_message_id"}}
+            # Keep last_message_id as NULL when absent — never store the literal
+            # string "None" (str(None)), which would later make int(last_id) raise
+            # ValueError in the sticky re-post path and silently kill the task.
+            last_mid = entry.get("last_message_id")
+            last_mid = str(last_mid) if last_mid not in (None, "", "None") else None
             cx.execute(
                 "INSERT INTO sticky_messages "
                 "(guild_id,channel_id,message,last_message_id,extra_json) VALUES (?,?,?,?,?)",
                 (
                     gid, str(ch_id),
                     str(entry.get("message", "")),
-                    str(entry.get("last_message_id", "")),
+                    last_mid,
                     json.dumps(extra),
                 ),
             )
