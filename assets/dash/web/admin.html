@@ -14,62 +14,151 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
     <style>
-        /* ── Admin-specific overrides ─────────────────────────────── */
+        /* ══ Admin design tokens ══════════════════════════════════ */
+        :root {
+            --adm-brand: #FF6B4A;
+            --adm-brand-2: #ff8a5c;
+            --adm-bg: #0e0e14;
+            --adm-surface: rgba(255,255,255,.035);
+            --adm-surface-2: rgba(255,255,255,.06);
+            --adm-border: rgba(255,255,255,.08);
+            --adm-border-soft: rgba(255,255,255,.05);
+            --adm-radius: 14px;
+            --adm-sidebar-w: 244px;
+            --adm-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+        }
+
+        html { scroll-behavior: smooth; }
+        body { background: var(--adm-bg, #0e0e14); }
+
+        /* subtle ambient glow behind everything */
+        body::before {
+            content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+            background:
+                radial-gradient(900px 500px at 12% -5%, rgba(255,107,74,.10), transparent 60%),
+                radial-gradient(800px 600px at 100% 0%, rgba(129,140,248,.07), transparent 55%);
+        }
+
+        /* ══ Sidebar ══════════════════════════════════════════════ */
         .admin-sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 220px;
+            width: var(--adm-sidebar-w);
             overflow-y: auto;
-            background: var(--color-card, rgba(30,30,40,.92));
-            border-right: 1px solid var(--color-border, rgba(255,255,255,.08));
-            padding: 1.25rem 0.75rem;
-            z-index: 100;
+            background: linear-gradient(180deg, rgba(20,20,28,.96), rgba(14,14,20,.96));
+            backdrop-filter: blur(14px);
+            border-right: 1px solid var(--adm-border);
+            padding: 1rem 0.7rem 1.5rem;
+            z-index: 200;
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.1rem;
+            transition: transform .25s cubic-bezier(.4,0,.2,1);
         }
+        .admin-sidebar::-webkit-scrollbar { width: 8px; }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 8px; }
+
         .admin-sidebar .nav-brand {
-            font-size: 0.7rem;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            opacity: .45;
-            padding: 0.25rem 0.5rem 0.75rem;
+            display:flex; align-items:center; gap:.55rem;
+            font-size: 0.95rem; font-weight: 700; letter-spacing: -.01em;
+            text-transform: none; opacity: 1;
+            padding: 0.45rem 0.55rem 1rem;
+        }
+        .admin-sidebar .nav-brand .brand-logo {
+            width: 30px; height: 30px; border-radius: 9px; flex-shrink:0;
+            display: grid; place-items: center; color: #fff; font-size: .95rem;
+            background: linear-gradient(135deg, var(--adm-brand), var(--adm-brand-2));
+            box-shadow: 0 4px 14px -4px rgba(255,107,74,.6);
+        }
+        .admin-sidebar .nav-brand small { display:block; font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; opacity:.4; margin-top:.1rem; }
+
+        .nav-group-label {
+            font-size: 0.62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+            opacity: .35; padding: 0.85rem 0.6rem 0.3rem;
         }
         .admin-sidebar a {
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.82rem;
+            gap: 0.6rem;
+            padding: 0.5rem 0.6rem;
+            border-radius: 9px;
+            font-size: 0.82rem; font-weight: 500;
             text-decoration: none;
             color: inherit;
-            opacity: .7;
-            transition: opacity .15s, background .15s;
+            opacity: .68;
+            transition: opacity .15s, background .15s, color .15s;
         }
-        .admin-sidebar a:hover, .admin-sidebar a.active { opacity: 1; background: rgba(255,107,74,.15); }
-        .admin-sidebar a svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
-        .admin-sidebar .nav-sep { height:1px; background: var(--color-border, rgba(255,255,255,.08)); margin: 0.5rem 0; }
+        .admin-sidebar a:hover { opacity: 1; background: var(--adm-surface-2); }
+        .admin-sidebar a.active {
+            opacity: 1; color: #fff;
+            background: linear-gradient(90deg, rgba(255,107,74,.20), rgba(255,107,74,.06));
+        }
+        .admin-sidebar a.active::before {
+            content:""; position:absolute; left:-.7rem; top:50%; transform:translateY(-50%);
+            width: 3px; height: 60%; border-radius: 0 3px 3px 0; background: var(--adm-brand);
+        }
+        .admin-sidebar a svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; opacity:.9; }
+        .admin-sidebar .nav-sep { height:1px; background: var(--adm-border); margin: 0.6rem 0.4rem; }
 
+        /* ══ Main + topbar ════════════════════════════════════════ */
         .admin-main {
-            margin-left: 220px;
-            padding: 1.5rem 2rem 4rem;
-            max-width: 1400px;
+            margin-left: var(--adm-sidebar-w);
+            padding: 0 2rem 4rem;
+            max-width: 1500px;
         }
+        .admin-topbar {
+            position: sticky; top: 0; z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 1rem;
+            margin: 0 -2rem 1.75rem;
+            padding: 1rem 2rem;
+            background: rgba(14,14,20,.72);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--adm-border);
+        }
+        .nav-toggle {
+            display: none;
+            align-items: center; justify-content: center;
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--adm-surface-2); border: 1px solid var(--adm-border);
+            color: inherit; cursor: pointer; flex-shrink: 0;
+        }
+        .nav-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+        .sidebar-backdrop {
+            display: none; position: fixed; inset: 0; z-index: 150;
+            background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+        }
+        .sidebar-backdrop.open { display: block; }
+
+        /* ══ View switching ═══════════════════════════════════════ */
+        .admin-view { display: none; }
+        .admin-view.active { display: block; animation: viewIn .28s cubic-bezier(.4,0,.2,1); }
+        @keyframes viewIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+        /* ══ Cards ════════════════════════════════════════════════ */
+        .card {
+            background: var(--adm-surface);
+            border: 1px solid var(--adm-border);
+            border-radius: var(--adm-radius);
+            box-shadow: var(--adm-shadow);
+            transition: border-color .18s;
+        }
+        .card:hover { border-color: rgba(255,255,255,.13); }
 
         /* ── Status badge ─────────────────────────────────────────── */
-        .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.2rem .55rem; border-radius:999px; font-weight:600; }
-        .badge-ok     { background:rgba(34,197,94,.15); color:#4ade80; }
-        .badge-running{ background:rgba(99,102,241,.15); color:#818cf8; }
-        .badge-error  { background:rgba(239,68,68,.15); color:#f87171; }
-        .badge-idle   { background:rgba(255,255,255,.06); color:#888; }
-        .badge-live   { background:rgba(34,197,94,.15); color:#4ade80; }
-        .badge-offline{ background:rgba(239,68,68,.12); color:#888; }
-        .badge-flagged{ background:rgba(239,68,68,.15); color:#f87171; }
-        .badge-auto   { background:rgba(251,146,60,.15); color:#fb923c; }
-        .badge-clean  { background:rgba(34,197,94,.12); color:#4ade80; }
+        .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.22rem .58rem; border-radius:999px; font-weight:600; border:1px solid transparent; white-space:nowrap; }
+        .badge-ok     { background:rgba(34,197,94,.14); color:#4ade80; border-color:rgba(34,197,94,.25); }
+        .badge-running{ background:rgba(99,102,241,.14); color:#818cf8; border-color:rgba(99,102,241,.25); }
+        .badge-error  { background:rgba(239,68,68,.14); color:#f87171; border-color:rgba(239,68,68,.25); }
+        .badge-idle   { background:rgba(255,255,255,.06); color:#999; border-color:rgba(255,255,255,.1); }
+        .badge-live   { background:rgba(34,197,94,.14); color:#4ade80; border-color:rgba(34,197,94,.25); }
+        .badge-offline{ background:rgba(239,68,68,.1); color:#888; border-color:rgba(255,255,255,.08); }
+        .badge-flagged{ background:rgba(239,68,68,.14); color:#f87171; border-color:rgba(239,68,68,.25); }
+        .badge-auto   { background:rgba(251,146,60,.14); color:#fb923c; border-color:rgba(251,146,60,.25); }
+        .badge-clean  { background:rgba(34,197,94,.12); color:#4ade80; border-color:rgba(34,197,94,.22); }
 
         /* ── Score bar ───────────────────────────────────────────── */
         .score-bar { height:4px; border-radius:2px; background: rgba(255,255,255,.08); overflow:hidden; }
@@ -137,24 +226,32 @@
         .log-src-TempVoice   { color:#818cf8 !important; }
         .log-src-AutoRole    { color:#34d399 !important; }
 
-        /* ── Section label ───────────────────────────────────────── */
+        /* ── Section label (now used as the per-view eyebrow heading) ── */
         .section-badge {
-            font-size:.65rem; letter-spacing:.12em; text-transform:uppercase;
-            opacity:.4; margin-bottom:.5rem; padding-left:1px;
+            display:flex; align-items:center; gap:.5rem;
+            font-size:1.15rem; font-weight:700; letter-spacing:-.01em; text-transform:none;
+            opacity:1; margin-bottom:1rem; padding-left:0;
+        }
+        .section-badge::before {
+            content:""; width:4px; height:1.05em; border-radius:3px; flex-shrink:0;
+            background: linear-gradient(180deg, var(--adm-brand), var(--adm-brand-2));
         }
 
         /* ── Stat number ─────────────────────────────────────────── */
-        .stat-num { font-size:2rem; font-weight:700; line-height:1; }
+        .stat-num { font-size:2rem; font-weight:700; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
 
         /* ── Task grid ───────────────────────────────────────────── */
         .task-card {
-            border:1px solid var(--color-border, rgba(255,255,255,.08));
-            border-radius:10px;
-            padding:.85rem 1rem;
+            border:1px solid var(--adm-border);
+            border-radius:12px;
+            padding:.9rem 1.05rem;
+            background:var(--adm-surface);
             display:flex;
             flex-direction:column;
             gap:.35rem;
+            transition:border-color .15s, transform .15s;
         }
+        .task-card:hover { border-color:rgba(255,255,255,.14); transform:translateY(-1px); }
 
         /* ── Action form ─────────────────────────────────────────── */
         .action-result {
@@ -166,10 +263,26 @@
 
         /* ── Search table ────────────────────────────────────────── */
         .admin-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-        .admin-table th { text-align:left; padding:.4rem .6rem; opacity:.45; font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid rgba(255,255,255,.07); }
-        .admin-table td { padding:.45rem .6rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+        .admin-table th { text-align:left; padding:.5rem .6rem; opacity:.5; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--adm-border); }
+        .admin-table td { padding:.5rem .6rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:middle; }
         .admin-table tr:last-child td { border-bottom:none; }
-        .admin-table tr:hover td { background:rgba(255,255,255,.03); }
+        .admin-table tbody tr { transition: background .12s; }
+        .admin-table tbody tr:hover td { background:rgba(255,255,255,.035); }
+
+        /* ── Inputs / selects polish ─────────────────────────────── */
+        .admin-main input[type=text], .admin-main input[type=number],
+        .admin-main textarea, .admin-main .select, .admin-main select {
+            background: rgba(0,0,0,.22);
+            border: 1px solid var(--adm-border);
+            border-radius: 9px;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .admin-main input[type=text]:focus, .admin-main input[type=number]:focus,
+        .admin-main textarea:focus, .admin-main .select:focus, .admin-main select:focus {
+            outline: none;
+            border-color: rgba(255,107,74,.55);
+            box-shadow: 0 0 0 3px rgba(255,107,74,.12);
+        }
 
         /* ── Guild Activity tabs ─────────────────────────────────── */
         .ga-tab {
@@ -182,9 +295,22 @@
         .ga-cnt { font-size:.68rem; font-weight:700; margin-left:.2rem; }
         .ga-bar-cell { min-width:100px; }
 
-        @media (max-width: 768px) {
-            .admin-sidebar { display:none; }
-            .admin-main { margin-left:0; padding:1rem; }
+        /* ══ Responsive: sidebar becomes an off-canvas drawer ═════ */
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                box-shadow: 0 0 40px rgba(0,0,0,.5);
+            }
+            .admin-sidebar.open { transform: translateX(0); }
+            .admin-main { margin-left: 0; padding: 0 1.25rem 4rem; }
+            .admin-topbar { margin: 0 -1.25rem 1.5rem; padding: .85rem 1.25rem; }
+            .nav-toggle { display: inline-flex; }
+        }
+        @media (max-width: 560px) {
+            .admin-main { padding: 0 .85rem 3rem; }
+            .admin-topbar { margin: 0 -.85rem 1.25rem; padding: .75rem .85rem; }
+            .stat-num { font-size: 1.6rem; }
+            .section-badge { font-size: 1.02rem; }
         }
     </style>
 </head>
@@ -193,69 +319,81 @@
 <div id="gradientbar"></div>
 
 <!-- Sidebar -->
-<aside class="admin-sidebar">
-    <div class="nav-brand">⚡ Admin Panel</div>
-    <a href="#section-status">
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+<aside class="admin-sidebar" id="admin-sidebar">
+    <div class="nav-brand">
+        <span class="brand-logo">⚡</span>
+        <span>Baxi<small>Admin Panel</small></span>
+    </div>
+
+    <div class="nav-group-label">Overview</div>
+    <a href="#section-status" data-view="section-status">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         System Status
     </a>
-    <a href="#section-logs">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Live Logs
-    </a>
-    <a href="#section-stats">
+    <a href="#section-stats" data-view="section-stats">
         <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Global Stats
     </a>
-    <a href="#section-adoption">
+    <a href="#section-adoption" data-view="section-adoption">
         <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         Feature Adoption
     </a>
-    <a href="#section-prism">
+
+    <div class="nav-group-label">Moderation</div>
+    <a href="#section-prism" data-view="section-prism">
         <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
         Prism Users
     </a>
-    <a href="#section-flagged">
+    <a href="#section-flagged" data-view="section-flagged">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
         Flagged Users
     </a>
-    <a href="#section-cf-logs">
+    <a href="#section-cf-logs" data-view="section-cf-logs">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Chatfilter Logs
     </a>
-    <a href="#section-safetext">
+    <a href="#section-safetext" data-view="section-safetext">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7z"/><path d="M9 12l2 2 4-4"/></svg>
         SafeText Model
     </a>
-    <a href="#section-streamers">
-        <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        Livestreamers
-    </a>
-    <a href="#section-guilds">
+
+    <div class="nav-group-label">Servers</div>
+    <a href="#section-guilds" data-view="section-guilds">
         <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         All Guilds
     </a>
-    <a href="#section-guild-activity">
+    <a href="#section-guild-activity" data-view="section-guild-activity">
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Guild Activity
     </a>
-    <a href="#section-guild-config">
+    <a href="#section-guild-config" data-view="section-guild-config">
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Guild Config
     </a>
-    <a href="#section-feature-access">
+    <a href="#section-feature-access" data-view="section-feature-access">
         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Feature Access
     </a>
-    <div class="nav-sep"></div>
-    <a href="#section-user-gdpr">
+    <a href="#section-streamers" data-view="section-streamers">
+        <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Livestreamers
+    </a>
+
+    <div class="nav-group-label">System</div>
+    <a href="#section-logs" data-view="section-logs">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Live Logs
+    </a>
+    <a href="#section-user-gdpr" data-view="section-user-gdpr">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         User Search
     </a>
-    <a href="#section-actions">
+    <a href="#section-actions" data-view="section-actions">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
         Admin Actions
     </a>
+
     <div class="nav-sep"></div>
     <a href="/">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
@@ -274,23 +412,46 @@
 <!-- Main content -->
 <div class="admin-main">
 
-    <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
-        <div>
-            <h1 style="font-size:1.6rem; font-weight:700; margin:0;">{{ greeting }}</h1>
-            <p style="opacity:.45; font-size:.82rem; margin:.2rem 0 0;">Baxi Admin Panel · v{{ version }} · <span id="last-updated" style="opacity:.6;">–</span></p>
+    <!-- Header / sticky topbar -->
+    <div class="admin-topbar">
+        <div style="display:flex; align-items:center; gap:.85rem; min-width:0;">
+            <button class="nav-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation">
+                <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div style="min-width:0;">
+                <h1 style="font-size:1.4rem; font-weight:700; margin:0; letter-spacing:-.02em;">{{ greeting }}</h1>
+                <p style="opacity:.45; font-size:.78rem; margin:.15rem 0 0;">Baxi Admin Panel · v{{ version }} · <span id="last-updated" style="opacity:.7;">–</span></p>
+            </div>
         </div>
-        <div style="display:flex; align-items:center; gap:.75rem;">
-            <img src="{{ user.avatar_url }}" alt="{{ user.name }}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
-            <span style="font-size:.85rem; opacity:.7;">{{ user.name }}</span>
-            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.35rem;">
+        <div style="display:flex; align-items:center; gap:.6rem;">
+            <span class="badge badge-ok" style="font-size:.68rem;"><span style="font-size:.6rem;">●</span> Online</span>
+            <div style="display:flex; align-items:center; gap:.5rem; padding:.25rem .5rem .25rem .25rem; background:var(--adm-surface-2); border:1px solid var(--adm-border); border-radius:999px;">
+                <img src="{{ user.avatar_url }}" alt="{{ user.name }}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">
+                <span style="font-size:.82rem; opacity:.8;">{{ user.name }}</span>
+            </div>
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.4rem; border-radius:9px;">
                 <svg id="theme-icon" viewBox="0 0 24 24"></svg>
             </button>
         </div>
     </div>
 
+    <!-- ── QUICK ACTIONS ──────────────────────────────────────── -->
+    <section id="section-quick-actions" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
+        <div class="card">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <h2 style="font-size:1rem; font-weight:600;">Quick Actions</h2>
+            </header>
+            <section style="display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-top:.6rem;">
+                <button id="qa-twitter-btn" onclick="runTwitterNow()" class="btn-primary">
+                    ▶ Run X (Twitter) Post Check
+                </button>
+                <span id="qa-twitter-status" style="font-size:.78rem; opacity:.55;"></span>
+            </section>
+        </div>
+    </section>
+
     <!-- ── SYSTEM STATUS ──────────────────────────────────────── -->
-    <section id="section-status" style="margin-bottom:2.5rem;">
+    <section id="section-status" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
         <div class="section-badge">System Status</div>
         <div id="task-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <!-- populated by JS -->
@@ -299,7 +460,7 @@
     </section>
 
     <!-- ── SHARDS ─────────────────────────────────────────────── -->
-    <section id="section-shards" style="margin-bottom:2.5rem;">
+    <section id="section-shards" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
         <div class="section-badge">Shards</div>
         <div class="card">
             <header><h2 style="font-size:1rem; font-weight:600;">Shard Latency</h2></header>
@@ -312,7 +473,7 @@
     </section>
 
     <!-- ── LIVE LOGS ──────────────────────────────────────────── -->
-    <section id="section-logs" style="margin-bottom:2.5rem;">
+    <section id="section-logs" class="admin-view" data-view="section-logs" style="margin-bottom:2.5rem;">
         <div class="section-badge">Live Logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
@@ -360,7 +521,7 @@
     </section>
 
     <!-- ── GLOBAL STATS ───────────────────────────────────────── -->
-    <section id="section-stats" style="margin-bottom:2.5rem;">
+    <section id="section-stats" class="admin-view" data-view="section-stats" style="margin-bottom:2.5rem;">
         <div class="section-badge">Global Stats</div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
             <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Guilds</h2></header><section><div class="stat-num" id="stat-guilds">–</div></section></div>
@@ -381,7 +542,7 @@
     </section>
 
     <!-- ── FEATURE ADOPTION ───────────────────────────────────── -->
-    <section id="section-adoption" style="margin-bottom:2.5rem;">
+    <section id="section-adoption" class="admin-view" data-view="section-adoption" style="margin-bottom:2.5rem;">
         <div class="section-badge">Feature Adoption</div>
         <div class="card">
             <header><h2 style="font-size:1rem; font-weight:600;">Feature Usage across all Guilds</h2></header>
@@ -394,7 +555,7 @@
     </section>
 
     <!-- ── PRISM USERS ────────────────────────────────────────── -->
-    <section id="section-prism" style="margin-bottom:2.5rem;">
+    <section id="section-prism" class="admin-view" data-view="section-prism" style="margin-bottom:2.5rem;">
         <div class="section-badge">Prism Trust System</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
@@ -422,7 +583,7 @@
     </section>
 
     <!-- ── FLAGGED USERS ──────────────────────────────────────── -->
-    <section id="section-flagged" style="margin-bottom:2.5rem;">
+    <section id="section-flagged" class="admin-view" data-view="section-flagged" style="margin-bottom:2.5rem;">
         <div class="section-badge">Flagged Users (users.json)</div>
         <div class="card">
             <header><h2 style="font-size:1rem; font-weight:600;">Globally Flagged Users</h2></header>
@@ -436,7 +597,7 @@
     </section>
 
     <!-- ── CHATFILTER LOGS ───────────────────────────────────── -->
-    <section id="section-cf-logs" style="margin-bottom:2.5rem;">
+    <section id="section-cf-logs" class="admin-view" data-view="section-cf-logs" style="margin-bottom:2.5rem;">
         <div class="section-badge">Chatfilter Logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
@@ -500,7 +661,7 @@
     </section>
 
     <!-- ── SAFETEXT MODEL ─────────────────────────────────────── -->
-    <section id="section-safetext" style="margin-bottom:2.5rem;">
+    <section id="section-safetext" class="admin-view" data-view="section-safetext" style="margin-bottom:2.5rem;">
         <div class="section-badge">SafeText Model</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
@@ -658,7 +819,7 @@
     </script>
 
     <!-- ── ACTIVE STREAMERS ───────────────────────────────────── -->
-    <section id="section-streamers" style="margin-bottom:2.5rem;">
+    <section id="section-streamers" class="admin-view" data-view="section-streamers" style="margin-bottom:2.5rem;">
         <div class="section-badge">Livestream Monitoring</div>
         <div class="card">
             <header><h2 style="font-size:1rem; font-weight:600;">Active Streamers being tracked</h2></header>
@@ -672,7 +833,7 @@
     </section>
 
     <!-- ── ALL GUILDS ─────────────────────────────────────────── -->
-    <section id="section-guilds" style="margin-bottom:2.5rem;">
+    <section id="section-guilds" class="admin-view" data-view="section-guilds" style="margin-bottom:2.5rem;">
         <div class="section-badge">All Guilds</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
@@ -692,7 +853,7 @@
     </section>
 
     <!-- ── GUILD ACTIVITY ────────────────────────────────────────── -->
-    <section id="section-guild-activity" style="margin-bottom:2.5rem;">
+    <section id="section-guild-activity" class="admin-view" data-view="section-guild-activity" style="margin-bottom:2.5rem;">
         <div class="section-badge">Guild Activity</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
@@ -735,7 +896,7 @@
     </section>
 
     <!-- ── GUILD CONFIG VIEWER ──────────────────────────────────── -->
-    <section id="section-guild-config" style="margin-bottom:2.5rem;">
+    <section id="section-guild-config" class="admin-view" data-view="section-guild-config" style="margin-bottom:2.5rem;">
         <div class="section-badge">Guild Config Viewer</div>
         <div class="card">
             <header>
@@ -773,7 +934,7 @@
     </section>
 
     <!-- ── FEATURE ACCESS ────────────────────────────────────── -->
-    <section id="section-feature-access" style="margin-bottom:2.5rem;">
+    <section id="section-feature-access" class="admin-view" data-view="section-feature-access" style="margin-bottom:2.5rem;">
         <div class="section-badge">Feature Access</div>
         <div class="card">
             <header>
@@ -796,7 +957,7 @@
     </section>
 
     <!-- ── USER SEARCH & DATA MANAGEMENT ───────────────────────── -->
-    <section id="section-user-gdpr" style="margin-bottom:2.5rem;">
+    <section id="section-user-gdpr" class="admin-view" data-view="section-user-gdpr" style="margin-bottom:2.5rem;">
         <div class="section-badge">User Search &amp; Data Management</div>
         <div class="card">
             <header>
@@ -835,7 +996,7 @@
     </section>
 
     <!-- ── ADMIN ACTIONS ──────────────────────────────────────── -->
-    <section id="section-actions" style="margin-bottom:2.5rem;">
+    <section id="section-actions" class="admin-view" data-view="section-actions" style="margin-bottom:2.5rem;">
         <div class="section-badge">Admin Actions</div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -1369,6 +1530,26 @@ function filterPrism() {
 async function runTask(taskKey) {
     const r = await doAction({ action: 'run_task', task_key: taskKey });
     if (!r.ok) alert('Error: ' + r.message);
+}
+
+async function runTwitterNow() {
+    const btn = document.getElementById('qa-twitter-btn');
+    const status = document.getElementById('qa-twitter-status');
+    btn.disabled = true;
+    const prevLabel = btn.textContent;
+    btn.textContent = '⏳ Triggering…';
+    status.textContent = '';
+    const r = await doAction({ action: 'run_task', task_key: 'TwitterPosts' });
+    btn.disabled = false;
+    btn.textContent = prevLabel;
+    if (r.ok) {
+        const ts = new Date().toLocaleTimeString();
+        status.style.color = '#4ade80';
+        status.textContent = `✓ Triggered at ${ts} — check the logs (grep "TwitterPosts") for the result.`;
+    } else {
+        status.style.color = '#f87171';
+        status.textContent = '✗ ' + (r.message || 'Failed to trigger task.');
+    }
 }
 
 async function quickFlag(uid, name) {
@@ -2540,16 +2721,52 @@ async function reloadTemplates() {
     }
 }
 
-// Highlight active nav link on scroll
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.admin-sidebar a[href^="#"]');
-window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
-    navLinks.forEach(a => {
-        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+// ── View switching (single-section navigation, kills the long scroll) ──────
+const DEFAULT_VIEW = 'section-status';
+const viewNavLinks = document.querySelectorAll('.admin-sidebar a[data-view]');
+
+function showView(viewKey, push) {
+    const valid = document.querySelector(`.admin-view[data-view="${viewKey}"]`);
+    if (!valid) viewKey = DEFAULT_VIEW;
+
+    document.querySelectorAll('.admin-view').forEach(el => {
+        el.classList.toggle('active', el.dataset.view === viewKey);
     });
-}, { passive:true });
+    viewNavLinks.forEach(a => {
+        a.classList.toggle('active', a.dataset.view === viewKey);
+    });
+
+    if (push !== false && location.hash !== '#' + viewKey) {
+        history.replaceState(null, '', '#' + viewKey);
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+viewNavLinks.forEach(a => {
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        showView(a.dataset.view);
+        closeSidebar();
+    });
+});
+
+// ── Mobile sidebar drawer ──────────────────────────────────────────────────
+function toggleSidebar() {
+    const sb = document.getElementById('admin-sidebar');
+    const open = sb.classList.toggle('open');
+    document.getElementById('sidebar-backdrop').classList.toggle('open', open);
+}
+function closeSidebar() {
+    document.getElementById('admin-sidebar').classList.remove('open');
+    document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+// Initial view from hash (so deep-links / refresh keep the section)
+showView((location.hash || '').replace('#', '') || DEFAULT_VIEW, false);
+window.addEventListener('hashchange', () => {
+    showView((location.hash || '').replace('#', '') || DEFAULT_VIEW, false);
+});
 
 // ── Feature Access ────────────────────────────────────────────────────────
 const FA_FEATURES = [

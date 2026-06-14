@@ -162,7 +162,7 @@ STORES = {
 # ── Fixtures: 1001 global bag (tested with sid=1001) ───────────────────────────
 
 BAG = {
-    "admins": ["111", "222"],
+    "admins": [111, 222],  # Discord IDs are ints (user.id in admins comparison)
     "ba_ban": {"7": {"reason": "x", "date": "d"}},
     "gc_ban": {"8": {"reason": "y"}},
     "globalchat": {str(GID): {"enabled": True, "channel": "1"}},

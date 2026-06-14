@@ -125,6 +125,12 @@ async def run_app():
     await web.run_task(port=config.Web.port, host=config.Web.host)
 
 
+async def run_console():
+    # Admin console on the bot's stdin (help, add_bot_admin, run_task, …).
+    from assets.console import run_console as _console
+    await _console(bot)
+
+
 _shutdown_started = False
 
 
@@ -156,6 +162,6 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     _install_signal_handlers(loop)
     try:
-        loop.run_until_complete(asyncio.gather(run_app(), run_bot()))
+        loop.run_until_complete(asyncio.gather(run_app(), run_bot(), run_console()))
     except KeyboardInterrupt:
         loop.run_until_complete(_graceful_shutdown())

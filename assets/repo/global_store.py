@@ -18,8 +18,17 @@ def _ensure_1001() -> None:
 # ── Bot admins ────────────────────────────────────────────────────────────────
 
 def load_admins() -> list:
+    # Discord IDs are stored as TEXT but the original conf.json held them as ints,
+    # and every consumer compares `user.id in admins` with an int user.id. Coerce
+    # back to int so membership checks (e.g. _require_bot_admin) work post-migration.
     rows = db.query("SELECT admin_id FROM bot_admins ORDER BY pos")
-    return [r["admin_id"] for r in rows]
+    out: list = []
+    for r in rows:
+        try:
+            out.append(int(r["admin_id"]))
+        except (TypeError, ValueError):
+            out.append(r["admin_id"])
+    return out
 
 
 def save_admins(data: list) -> None:
