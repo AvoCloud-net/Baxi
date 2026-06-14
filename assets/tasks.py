@@ -9,7 +9,7 @@ from discord.ext import tasks, commands
 from reds_simple_logger import Logger
 from assets.share import globalchat_message_data, phishing_url_list, set_task_status, admin_log
 from assets.livestream import (
-    twitch_api, youtube_api, tiktok_api, instagram_api,
+    twitch_api, youtube_api, tiktok_api, instagram_api, twitter_api,
     IGNotFound, IGRateLimited, IGBlocked, IGTransient,
 )
 import assets.data as datasys
@@ -659,8 +659,21 @@ class TempActionsTask:
             logger.error(f"[TempActions] Error in check_temp_actions: {e}")
             set_task_status("TempActions", "error", f"Error: {e}")
 
+    @staticmethod
+    def _parse_expiry(value: str) -> datetime.datetime:
+        """Parse a stored expires_at ISO string to an aware-UTC datetime.
+
+        Writers are inconsistent: buttons.py stores naive UTC (utcnow().isoformat())
+        while commands.py stores aware UTC (now(timezone.utc).isoformat()). Normalize
+        both to aware-UTC so comparisons never raise 'offset-naive vs offset-aware'.
+        """
+        dt = datetime.datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return dt
+
     async def _do_check(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
 
         for guild in self.bot.guilds:
             try:
@@ -671,7 +684,7 @@ class TempActionsTask:
                 remaining_bans = []
                 for entry in ta.get("bans", []):
                     try:
-                        expires_at = datetime.datetime.fromisoformat(entry["expires_at"])
+                        expires_at = self._parse_expiry(entry["expires_at"])
                         if now >= expires_at:
                             user_id = int(entry["user_id"])
                             try:
@@ -707,7 +720,7 @@ class TempActionsTask:
                 remaining_timeouts = []
                 for entry in ta.get("timeouts", []):
                     try:
-                        expires_at = datetime.datetime.fromisoformat(entry["expires_at"])
+                        expires_at = self._parse_expiry(entry["expires_at"])
                         if now >= expires_at:
                             user_id = int(entry["user_id"])
                             try:
@@ -915,22 +928,22 @@ class GarbageCollectorTask:
         except Exception as e:
             logger.error(f"[GC] globalchat_message_data: {e}")
 
-        # --- tickets.json per guild ---
+        # --- open_tickets per guild (via repo facade) ---
         try:
-            data_root = "data"
-            for guild_dir in os.listdir(data_root):
-                tickets_path = os.path.join(data_root, guild_dir, "tickets.json")
-                if not os.path.exists(tickets_path):
-                    continue
-                tickets: dict = datasys.load_json(tickets_path)
-                cleaned_tickets = {
-                    tid: t for tid, t in tickets.items()
-                    if not self._is_old_ticket(t, cutoff)
-                }
-                delta = len(tickets) - len(cleaned_tickets)
-                removed["tickets"] += delta
-                if delta > 0:
-                    datasys.save_json(tickets_path, cleaned_tickets)
+            import assets.db as _db
+            for guild_id in _db.guild_ids():
+                try:
+                    tickets: dict = dict(datasys.load_data(guild_id, "open_tickets"))
+                    cleaned_tickets = {
+                        tid: t for tid, t in tickets.items()
+                        if not self._is_old_ticket(t, cutoff)
+                    }
+                    delta = len(tickets) - len(cleaned_tickets)
+                    removed["tickets"] += delta
+                    if delta > 0:
+                        datasys.save_data(guild_id, "open_tickets", cleaned_tickets)
+                except Exception as _inner:
+                    logger.error(f"[GC] tickets guild {guild_id}: {_inner}")
         except Exception as e:
             logger.error(f"[GC] tickets: {e}")
 
@@ -1398,6 +1411,209 @@ class TikTokVideoTask:
                 pass
 
         footer = tt_lang.get("embed_footer", "Baxi TikTok · avocloud.net")
+        embed.set_footer(text=footer)
+        return embed
+
+
+class TwitterPostTask:
+    """Background task that polls X (Twitter) accounts for new posts via the syndication endpoint.
+
+    Every 10 minutes, for each guild with twitter enabled:
+    - Fetches the latest post (original or repost) for each tracked account
+    - Compares post_id to stored last_post_id
+    - On first check (last_post_id == ""): seeds silently without notifying
+    - On new post: sends embed to alert_channel, pings role if configured
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=config.TwitterPosts.check_interval_seconds)
+    async def check_posts(self):
+        try:
+            set_task_status("TwitterPosts", "running", "Checking X accounts for new posts...")
+            await self._do_check()
+            set_task_status("TwitterPosts", "ok", "X post check complete")
+        except Exception as e:
+            logger.error(f"[TwitterPosts] Unexpected error: {e}")
+            set_task_status("TwitterPosts", "error", f"Unexpected error: {e}")
+
+    @check_posts.before_loop
+    async def before_check_posts(self):
+        await self.bot.wait_until_ready()
+        await self._do_check()
+
+    async def _do_check(self):
+        all_usernames: set = set()
+        guild_data: dict = {}
+
+        for guild in self.bot.guilds:
+            tw_config = dict(datasys.load_data(guild.id, "twitter"))
+            if not tw_config.get("enabled", False):
+                continue
+            channels = tw_config.get("channels", [])
+            guild_data[guild.id] = (tw_config, [])
+            for ch_entry in channels:
+                username = ch_entry.get("username", "")
+                if username:
+                    all_usernames.add(username)
+                    guild_data[guild.id][1].append((ch_entry, username))
+
+        if not all_usernames:
+            return
+
+        post_cache: dict = {}
+        logger.info(f"[TwitterPosts] Checking {len(all_usernames)} unique accounts across {len(guild_data)} guilds")
+        for username in all_usernames:
+            try:
+                post = await twitter_api.get_latest_post(username)
+                post_cache[username] = post
+                logger.debug.info(f"[TwitterPosts] @{username}: post={post['post_id'] if post else None}")
+            except Exception as e:
+                logger.error(f"[TwitterPosts] Failed to fetch @{username}: {e}")
+                post_cache[username] = None
+
+        for guild in self.bot.guilds:
+            if guild.id not in guild_data:
+                continue
+            try:
+                tw_config, channel_list = guild_data[guild.id]
+                changed = await self._check_guild(guild, post_cache, channel_list, tw_config)
+                if changed:
+                    datasys.save_data(guild.id, "twitter", tw_config)
+            except Exception as e:
+                logger.error(f"[TwitterPosts] Error processing guild {guild.id}: {e}")
+
+    async def _check_guild(self, guild, post_cache: dict, channel_list: list, tw_config: dict) -> bool:
+        global_alert_channel_id = str(tw_config.get("alert_channel", "")).strip()
+        ping_role_id = str(tw_config.get("ping_role", "")).strip()
+        changed = False
+
+        lang = datasys.load_lang_file(guild.id)
+        tw_lang = lang.get("systems", {}).get("twitter", {})
+
+        resolved_channels: dict = {}
+
+        for ch_entry, username in channel_list:
+            try:
+                per_alert = str(ch_entry.get("alert_channel", "")).strip()
+                alert_channel_id = per_alert or global_alert_channel_id
+                if not alert_channel_id:
+                    logger.warning(f"[TwitterPosts] No alert channel for @{username} in {guild.name}, skipping")
+                    continue
+
+                if alert_channel_id not in resolved_channels:
+                    try:
+                        alert_ch = guild.get_channel(int(alert_channel_id))
+                        if not alert_ch:
+                            alert_ch = await self.bot.fetch_channel(int(alert_channel_id))
+                    except (ValueError, TypeError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        alert_ch = None
+                    resolved_channels[alert_channel_id] = alert_ch
+
+                alert_channel = resolved_channels[alert_channel_id]
+                if not alert_channel or not isinstance(alert_channel, discord.TextChannel):
+                    logger.error(f"[TwitterPosts] Alert channel {alert_channel_id} not found or not text channel in {guild.name}")
+                    continue
+                if not alert_channel.permissions_for(guild.me).send_messages:
+                    logger.error(f"[TwitterPosts] No send permission in {alert_channel.name} in {guild.name}")
+                    continue
+
+                post = post_cache.get(username)
+                if post is None:
+                    continue
+
+                last_post_id = ch_entry.get("last_post_id", "")
+                last_post_published = ch_entry.get("last_post_published", "")
+
+                if not last_post_id:
+                    ch_entry["last_post_id"] = post["post_id"]
+                    ch_entry["last_post_published"] = post.get("published", "")
+                    changed = True
+                    admin_log("info", f"[TwitterPosts] Seeded @{username} @ {guild.name}: {post['post_id']}", source="TwitterPosts")
+                    continue
+
+                if post["post_id"] == last_post_id:
+                    continue
+
+                post_published = post.get("published", "")
+                if post_published and last_post_published:
+                    try:
+                        from datetime import datetime
+                        dt_new = datetime.fromisoformat(post_published.replace("Z", "+00:00"))
+                        dt_last = datetime.fromisoformat(last_post_published.replace("Z", "+00:00"))
+                        if dt_new <= dt_last:
+                            ch_entry["last_post_id"] = post["post_id"]
+                            ch_entry["last_post_published"] = post_published
+                            changed = True
+                            continue
+                    except (ValueError, AttributeError):
+                        pass
+
+                ch_entry["last_post_id"] = post["post_id"]
+                ch_entry["last_post_published"] = post_published
+                changed = True
+
+                display_name = ch_entry.get("display_name", username)
+                profile_img = ch_entry.get("profile_image_url", "")
+
+                try:
+                    embed = self._build_embed(post, display_name, profile_img, tw_lang)
+                except Exception as e:
+                    logger.error(f"[TwitterPosts] Error building embed for @{username}: {e}")
+                    embed = discord.Embed(
+                        title=post.get("title", "New post"),
+                        url=post.get("url", ""),
+                        color=discord.Color.from_rgb(1, 1, 1),
+                    )
+
+                ping_content = f"<@&{ping_role_id}>" if ping_role_id else None
+
+                try:
+                    logger.info(f"[TwitterPosts] Sending alert to {alert_channel.name} in {guild.name}: \"{post['title']}\"")
+                    sent_msg = await alert_channel.send(content=ping_content, embed=embed)
+                    logger.info(f"[TwitterPosts] Message sent: {sent_msg.id}")
+                    admin_log("success", f"[TwitterPosts] New post by @{display_name} @ {guild.name}: \"{post['title']}\"", source="TwitterPosts")
+                except discord.Forbidden as e:
+                    logger.error(f"[TwitterPosts] Permission denied in {alert_channel.name}: {e}")
+                    admin_log("error", f"[TwitterPosts] Permission error: {e}", source="TwitterPosts")
+                except discord.HTTPException as e:
+                    logger.error(f"[TwitterPosts] HTTP error in {alert_channel.name}: {e}")
+                    admin_log("error", f"[TwitterPosts] HTTP error: {e}", source="TwitterPosts")
+                except Exception as e:
+                    logger.error(f"[TwitterPosts] Unexpected send error: {type(e).__name__}: {e}")
+
+            except Exception as e:
+                logger.error(f"[TwitterPosts] Error checking @{username} in guild {guild.id}: {e}")
+
+        return changed
+
+    @staticmethod
+    def _build_embed(post: dict, display_name: str, profile_image_url: str, tw_lang: dict) -> discord.Embed:
+        description = tw_lang.get("embed_description", "**{name}** posted on X!").format(name=display_name)
+        embed = discord.Embed(
+            title=post.get("title", "New post"),
+            url=post.get("url", ""),
+            color=discord.Color.from_rgb(1, 1, 1),
+            description=description,
+        )
+        thumbnail = post.get("thumbnail_url", "")
+        if thumbnail:
+            embed.set_image(url=thumbnail)
+        if profile_image_url:
+            embed.set_thumbnail(url=profile_image_url)
+
+        published = post.get("published", "")
+        if published:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+                field_name = tw_lang.get("embed_field_published", "Published")
+                embed.add_field(name=field_name, value=f"<t:{int(dt.timestamp())}:R>", inline=True)
+            except (ValueError, AttributeError):
+                pass
+
+        footer = tw_lang.get("embed_footer", "Baxi X · avocloud.net")
         embed.set_footer(text=footer)
         return embed
 

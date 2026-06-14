@@ -1,2 +1,8 @@
 graphify-out/
 CLAUDE.md
+
+# SQLite store (migrated from JSON)
+baxi_data.db
+baxi_data.db-wal
+baxi_data.db-shm
+data_backup_pre_sqlite/

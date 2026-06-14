@@ -1,4 +1,3 @@
-import os
 import datetime
 from typing import Optional, Union
 
@@ -8,6 +7,7 @@ from reds_simple_logger import Logger
 
 import assets.data as datasys
 import assets.trust as sentinel
+import assets.repo as repo
 import config.config as config
 
 logger = Logger()
@@ -21,15 +21,12 @@ async def add_warning(
     bot: commands.AutoShardedBot,
     channel: Optional[Union[discord.TextChannel, discord.abc.Messageable]] = None,
 ) -> dict:
-    warnings: dict = dict(datasys.load_data(guild_id, "warnings"))
     warn_config: dict = dict(datasys.load_data(guild_id, "warn_config"))
     lang = datasys.load_lang_file(guild_id)
 
-    warn_id = os.urandom(4).hex()
+    import os as _os
+    warn_id = _os.urandom(4).hex()
     user_key = str(user.id)
-
-    if user_key not in warnings:
-        warnings[user_key] = []
 
     warn_entry = {
         "id": warn_id,
@@ -39,15 +36,19 @@ async def add_warning(
         "date": str(datetime.date.today()),
     }
 
-    warnings[user_key].append(warn_entry)
+    # Targeted insert — no full reload needed for the add itself
+    repo.add_warning(guild_id, user_key, warn_entry)
 
-    # Decay: drop expired warnings so they no longer count toward escalation.
-    # The just-added entry has today's date, so the list is never emptied.
+    # Decay: if expiry is configured, reload the user's list, prune stale
+    # entries (the just-added entry is always within range), then save the
+    # pruned list so expired warnings are removed from the DB.
     expiry_days = int(warn_config.get("expiry_days", 0) or 0)
-    if expiry_days > 0:
-        warnings[user_key] = _active_warnings(warnings[user_key], expiry_days)
-
-    datasys.save_data(guild_id, "warnings", warnings)
+    warnings: dict = dict(datasys.load_data(guild_id, "warnings"))
+    if expiry_days > 0 and user_key in warnings:
+        active = _active_warnings(warnings[user_key], expiry_days)
+        if len(active) != len(warnings[user_key]):
+            warnings[user_key] = active
+            datasys.save_data(guild_id, "warnings", warnings)
 
     # Log mod event for BaxiInsights
     try:
@@ -98,21 +99,15 @@ async def add_warning(
 
 
 async def remove_warning(guild_id: int, user_id: int, warn_id: str) -> bool:
-    warnings: dict = dict(datasys.load_data(guild_id, "warnings"))
     user_key = str(user_id)
-
-    if user_key not in warnings:
+    # Verify the warning exists before attempting removal
+    warnings: dict = dict(datasys.load_data(guild_id, "warnings"))
+    user_warns = warnings.get(user_key, [])
+    if not any(w["id"] == warn_id for w in user_warns):
         return False
-
-    for i, warn in enumerate(warnings[user_key]):
-        if warn["id"] == warn_id:
-            warnings[user_key].pop(i)
-            if len(warnings[user_key]) == 0:
-                del warnings[user_key]
-            datasys.save_data(guild_id, "warnings", warnings)
-            return True
-
-    return False
+    # Targeted delete — no full save needed
+    repo.remove_warning(guild_id, user_key, warn_id)
+    return True
 
 
 def get_warnings(guild_id: int, user_id: int) -> list:

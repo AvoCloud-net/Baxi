@@ -428,6 +428,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
                 TikTok
             </a>
+            <a href="#twitter" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                X (Twitter)
+            </a>
             <a href="#instagram" class="dash-nav-item" style="opacity:0.5;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 Instagram
@@ -2893,6 +2897,99 @@
                 </div>
             </section>
 
+            <section class="pb-16 dash-section" id="twitter">
+                <div class="section-label">X (TWITTER) POST TRACKING</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            X (Twitter) Post Tracking
+                        </h2>
+                        <p class="text-muted">Get notified when tracked X accounts publish a new post or repost. Checks every 10 minutes. Replies are ignored. Note: tracking small or new accounts requires X login cookies to be configured by the bot host (large accounts work without).</p>
+                    </header>
+                    <section>
+                        <form id="twitter-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="tw-enabled" role="switch">
+                                    <span class="font-medium">Enable X Post Tracking</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tw-alert-channel">Alert channel:</label>
+                                <select id="tw-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">New post notifications will be sent here.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="tw-ping-role">Ping role (optional):</label>
+                                <select id="tw-ping-role" class="select w-full">
+                                    <option value="">-- No ping --</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">This role will be mentioned with each new post notification.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            </button>
+                        </form>
+
+                        <hr class="my-6">
+
+                        <h3 class="text-lg font-semibold mb-4">Tracked Accounts <span class="text-muted text-sm font-normal" id="tw-count">(0/10)</span></h3>
+
+                        <div id="tw-list" class="grid gap-3 mb-4"></div>
+                        <div id="tw-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden mb-4">
+                            <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No X Accounts</h3>
+                                <p class="text-muted text-sm">No X accounts are being tracked yet. Add one below.</p>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="grid gap-3 add-area">
+                            <h4 class="text-sm font-semibold">Add Account</h4>
+                            <div class="grid gap-2">
+                                <label for="tw-add-alert-channel">Alert channel:</label>
+                                <select id="tw-add-alert-channel" class="select w-full">
+                                    <option value="">-- Select a channel --</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="tw-add-login" placeholder="X username (e.g. nasa)" class="input flex-1" maxlength="15">
+                                <button type="button" class="btn-primary" id="tw-add-btn" onclick="twAddAccount()">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-muted text-xs">Enter an X username without @ (e.g. "nasa"). The first check seeds the latest post without sending a notification.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
             <!-- Instagram Tracking -->
             <section class="pb-16 dash-section" id="instagram">
                 <div class="section-label">INSTAGRAM TRACKING</div>
@@ -3201,33 +3298,86 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2">
-                                <label for="tv-create-channel">Trigger channel (voice channel users join to create a room):</label>
-                                <select id="tv-create-channel" class="select w-full">
-                                    <option value="">-- Please select --</option>
-                                    {% for id, name in voice_channels.items() %}
-                                    <option value="{{ id }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <div class="channel-perm-feedback hidden" id="feedback-tv-trigger"></div>
+                            <!-- Dynamic list of trigger cards -->
+                            <div id="tv-triggers-list" class="grid gap-3"></div>
+
+                            <!-- Empty state (shown when there are no triggers) -->
+                            <div id="tv-triggers-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:20px;height:20px;">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" y1="19" x2="12" y2="22"/>
+                                        <line x1="8" y1="22" x2="16" y2="22"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-base font-semibold tracking-tight">No trigger channels yet</h3>
+                                <p class="text-muted text-sm">Add a trigger channel below. When a user joins it, a private voice channel is created for them automatically.</p>
                             </div>
 
-                            <div class="grid gap-2">
-                                <label for="tv-category">Category for new channels:</label>
-                                <select id="tv-category" class="select w-full">
-                                    <option value="">-- Same category as trigger --</option>
-                                    {% for id, name in categorys.items() %}
-                                    <option value="{{ id }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <div class="channel-perm-feedback hidden" id="feedback-tv-category"></div>
+                            <!-- Add-area: append a new empty trigger card -->
+                            <div class="add-area mt-3">
+                                <button type="button" class="btn-primary" id="tv-add-trigger" onclick="addTempVoiceTrigger()">
+                                    <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                    Add trigger
+                                </button>
                             </div>
 
+                            <p class="text-xs text-muted">Variable: <code>{user}</code> -  replaced with the member's display name.</p>
+
                             <div class="grid gap-2">
-                                <label for="tv-name-template">Channel name template:</label>
-                                <input type="text" id="tv-name-template" class="input w-full" maxlength="64" placeholder="{user}'s Channel">
-                                <p class="text-xs text-muted">Variable: <code>{user}</code> -  replaced with the member's display name.</p>
+                                <label class="text-sm font-medium">Roles allowed to make channels permanent:</label>
+                                <p class="text-muted text-xs">Members with any of these roles get a "Permanent" button in the control panel that stops their channel from being deleted when empty.</p>
+                                <div id="tv-persist-roles-list" class="grid gap-2 max-h-64 overflow-y-auto border border-muted rounded p-3">
+                                    {% for role_id, role_name in roles.items() %}
+                                    {% if role_name != '@everyone' %}
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" class="tv-persist-role-cb" value="{{ role_id }}">
+                                        <span class="text-sm">{{ role_name }}</span>
+                                    </label>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
                             </div>
+
+                            <!-- Reusable trigger card markup (selects pre-populated by Jinja) -->
+                            <template id="tv-trigger-template">
+                                <div class="card tv-trigger-card">
+                                    <header class="flex items-center justify-between">
+                                        <h3 class="text-base font-semibold">Trigger channel</h3>
+                                        <button type="button" class="btn-outline tv-trigger-remove" style="color:#ef4444;border-color:#ef4444;">
+                                            <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                            <span class="btn-label">Remove</span>
+                                        </button>
+                                    </header>
+                                    <div class="grid gap-4 mt-3 px-4 pb-4">
+                                        <div class="grid gap-2">
+                                            <label class="text-sm">Trigger channel (voice channel users join to create a room):</label>
+                                            <select class="select w-full tv-trigger-channel">
+                                                <option value="">-- Please select --</option>
+                                                {% for id, name in voice_channels.items() %}
+                                                <option value="{{ id }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="grid gap-2">
+                                            <label class="text-sm">Category for new channels:</label>
+                                            <select class="select w-full tv-trigger-category">
+                                                <option value="">-- Same category as trigger --</option>
+                                                {% for id, name in categorys.items() %}
+                                                <option value="{{ id }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="grid gap-2">
+                                            <label class="text-sm">Channel name template:</label>
+                                            <input type="text" class="input w-full tv-trigger-name" maxlength="64" placeholder="{user}'s Channel">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
                                 <span class="btn-text">
@@ -3767,7 +3917,7 @@
                 '__Community',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 '__Automation',
-                'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
+                'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
             var sectionMap = {};
@@ -4034,6 +4184,14 @@
             }
             ttRenderAccounts();
 
+            // X (Twitter) Tracking
+            if (data.twitter) {
+                document.getElementById('tw-enabled').checked = data.twitter.enabled === true;
+                document.getElementById('tw-alert-channel').value = data.twitter.alert_channel || '';
+                document.getElementById('tw-ping-role').value = data.twitter.ping_role || '';
+            }
+            twRenderAccounts();
+
             // Instagram Tracking
             if (data.instagram) {
                 document.getElementById('ig-enabled').checked = data.instagram.enabled === true;
@@ -4057,9 +4215,26 @@
             // Temp Voice
             if (data.temp_voice) {
                 document.getElementById('tv-enabled').checked = data.temp_voice.enabled === true;
-                document.getElementById('tv-create-channel').value = data.temp_voice.create_channel_id || '';
-                document.getElementById('tv-category').value = data.temp_voice.category_id || '';
-                document.getElementById('tv-name-template').value = data.temp_voice.name_template || "{user}'s Channel";
+                let tvTriggers;
+                if (Array.isArray(data.temp_voice.triggers)) {
+                    tvTriggers = data.temp_voice.triggers;
+                } else if (data.temp_voice.create_channel_id) {
+                    // Legacy single-trigger schema
+                    tvTriggers = [{
+                        create_channel_id: data.temp_voice.create_channel_id,
+                        category_id: data.temp_voice.category_id || '',
+                        name_template: data.temp_voice.name_template || "{user}'s Channel"
+                    }];
+                } else {
+                    tvTriggers = [];
+                }
+                renderTempVoiceTriggers(tvTriggers);
+                const persistRoles = (data.temp_voice.persist_roles || []).map(String);
+                document.querySelectorAll('.tv-persist-role-cb').forEach(function (cb) {
+                    cb.checked = persistRoles.includes(cb.value);
+                });
+            } else {
+                renderTempVoiceTriggers([]);
             }
 
             // Music
@@ -4733,6 +4908,155 @@
                         showSaveToast(resp.success, resp.message);
                         if (resp.success && data.tiktok) {
                             const entry = data.tiktok.channels.find(function (c) { return c.username === username; });
+                            if (entry) entry.alert_channel = alertChannel;
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        // --- X (Twitter) ---
+        function twRenderAccounts() {
+            const list    = document.getElementById('tw-list');
+            const empty   = document.getElementById('tw-empty');
+            const count   = document.getElementById('tw-count');
+            const accounts = (data.twitter && Array.isArray(data.twitter.channels)) ? data.twitter.channels : [];
+
+            list.querySelectorAll('.tw-card').forEach(function (el) { el.remove(); });
+            count.textContent = '(' + accounts.length + '/10)';
+
+            if (accounts.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            accounts.forEach(function (acc) {
+                const profileUrl = 'https://x.com/' + acc.username;
+                const safeUser = acc.username.replace(/'/g, "\\'");
+                let channelOptions = '<option value="">-- Select a channel --</option>';
+                Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
+                    const selected = (acc.alert_channel === cid) ? ' selected' : '';
+                    channelOptions += '<option value="' + cid + '"' + selected + '>' + DISCORD_CHANNELS[cid] + '</option>';
+                });
+                const card = document.createElement('div');
+                card.className = 'card tw-card';
+                card.innerHTML = '<header class="flex items-center justify-between">'
+                    + '<div class="flex items-center gap-3">'
+                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                    + (acc.display_name || acc.username).charAt(0).toUpperCase()
+                    + '</div>'
+                    + '<div>'
+                    + '<h3 class="text-base font-semibold flex items-center gap-2">'
+                    + (acc.display_name || acc.username)
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#000;color:#fff;font-weight:600;">X</span>'
+                    + '</h3>'
+                    + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
+                    + '</div></div>'
+                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
+                    + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+                    + '<span class="btn-label">Remove</span></button>'
+                    + '</header>'
+                    + '<div class="grid gap-2 mt-3 px-4 pb-4">'
+                    + '<label class="text-sm">Alert channel:</label>'
+                    + '<div class="flex items-center gap-2">'
+                    + '<select class="select flex-1 tw-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
+                    + '<button type="button" class="btn-primary tw-save-btn" data-user="' + safeUser + '" onclick="twUpdateChannel(\'' + safeUser + '\')">'
+                    + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
+                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '</button>'
+                    + '</div>'
+                    + '</div>';
+                list.appendChild(card);
+            });
+        }
+
+        function twAddAccount() {
+            const input = document.getElementById('tw-add-login');
+            const login = input.value.trim().replace(/^@/, '');
+            if (!login) return;
+            const alertChannelSel = document.getElementById('tw-add-alert-channel');
+            const alertChannel = alertChannelSel ? alertChannelSel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel first.'); return; }
+            const btn = document.getElementById('tw-add-btn');
+            btn.disabled = true;
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            const payload = { twitter: { action: 'add', login: login, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=twitter&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && resp.account) {
+                            if (!data.twitter) data.twitter = { enabled: false, alert_channel: '', ping_role: '', channels: [] };
+                            if (!Array.isArray(data.twitter.channels)) data.twitter.channels = [];
+                            data.twitter.channels.push(Object.assign({}, resp.account, { last_post_id: '', alert_channel: alertChannel }));
+                            input.value = '';
+                            if (alertChannelSel) alertChannelSel.value = '';
+                            twRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        let _twPendingRemove = null;
+
+        function twRemoveAccount(username) {
+            _twPendingRemove = username;
+            document.getElementById('remove-tw-dialog-description').textContent =
+                '@' + username + ' will be removed from tracking. This cannot be undone.';
+            document.getElementById('remove-tw-dialog').showModal();
+        }
+
+        function twConfirmRemove() {
+            const username = _twPendingRemove;
+            _twPendingRemove = null;
+            document.getElementById('remove-tw-dialog').close();
+            if (!username) return;
+            const payload = { twitter: { action: 'remove', username: username } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=twitter&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.twitter) {
+                            data.twitter.channels = data.twitter.channels.filter(function (c) { return c.username !== username; });
+                            twRenderAccounts();
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        }
+
+        function twUpdateChannel(username) {
+            const sel = document.querySelector('.tw-channel-select[data-user="' + username + '"]');
+            const btn = document.querySelector('.tw-save-btn[data-user="' + username + '"]');
+            const alertChannel = sel ? sel.value : '';
+            if (!alertChannel) { showSaveToast(false, 'Please select an alert channel.'); return; }
+            if (btn) { btn.disabled = true; btn.querySelector('.spinner')?.classList.remove('hidden'); btn.querySelector('.btn-text')?.classList.add('hidden'); }
+            const payload = { twitter: { action: 'update_channel', username: username, alert_channel: alertChannel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=twitter&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.disabled = false; btn.querySelector('.spinner')?.classList.add('hidden'); btn.querySelector('.btn-text')?.classList.remove('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success && data.twitter) {
+                            const entry = data.twitter.channels.find(function (c) { return c.username === username; });
                             if (entry) entry.alert_channel = alertChannel;
                         }
                     } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
@@ -5605,6 +5929,39 @@
             if (e.key === 'Enter') { e.preventDefault(); ttAddAccount(); }
         });
 
+        document.getElementById('twitter-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled       = document.getElementById('tw-enabled').checked;
+            const alert_channel = document.getElementById('tw-alert-channel').value;
+            const ping_role     = document.getElementById('tw-ping-role').value;
+            const payload = { twitter: { action: 'save', enabled: enabled, alert_channel: alert_channel, ping_role: ping_role } };
+            const btn = this.querySelector('.submit-btn');
+            if (btn) { btn.querySelector('.btn-text')?.classList.add('hidden'); btn.querySelector('.spinner')?.classList.remove('hidden'); }
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=twitter&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) { btn.querySelector('.btn-text')?.classList.remove('hidden'); btn.querySelector('.spinner')?.classList.add('hidden'); }
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                        if (resp.success) {
+                            if (!data.twitter) data.twitter = {};
+                            data.twitter.enabled       = enabled;
+                            data.twitter.alert_channel = alert_channel;
+                            data.twitter.ping_role     = ping_role;
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('tw-add-login').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); twAddAccount(); }
+        });
+
         document.getElementById('instagram-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled       = document.getElementById('ig-enabled').checked;
@@ -5668,13 +6025,67 @@
             };
         };
 
+        // ---- Temp Voice dynamic trigger list ----
+        function tvUpdateEmptyState() {
+            const list = document.getElementById('tv-triggers-list');
+            const empty = document.getElementById('tv-triggers-empty');
+            if (!list || !empty) return;
+            const hasCards = list.querySelector('.tv-trigger-card') !== null;
+            empty.classList.toggle('hidden', hasCards);
+        }
+
+        function buildTempVoiceTriggerCard(trigger) {
+            const tpl = document.getElementById('tv-trigger-template');
+            const card = tpl.content.firstElementChild.cloneNode(true);
+            const t = trigger || {};
+            const channelSel = card.querySelector('.tv-trigger-channel');
+            const categorySel = card.querySelector('.tv-trigger-category');
+            const nameInput = card.querySelector('.tv-trigger-name');
+            if (channelSel) channelSel.value = t.create_channel_id || '';
+            if (categorySel) categorySel.value = t.category_id || '';
+            if (nameInput) nameInput.value = t.name_template || "{user}'s Channel";
+            const removeBtn = card.querySelector('.tv-trigger-remove');
+            if (removeBtn) removeBtn.addEventListener('click', function () {
+                card.remove();
+                tvUpdateEmptyState();
+            });
+            return card;
+        }
+
+        function renderTempVoiceTriggers(triggers) {
+            const list = document.getElementById('tv-triggers-list');
+            if (!list) return;
+            list.innerHTML = '';
+            (triggers || []).forEach(function (t) {
+                list.appendChild(buildTempVoiceTriggerCard(t));
+            });
+            tvUpdateEmptyState();
+        }
+
+        function addTempVoiceTrigger() {
+            const list = document.getElementById('tv-triggers-list');
+            if (!list) return;
+            list.appendChild(buildTempVoiceTriggerCard(null));
+            tvUpdateEmptyState();
+        }
+
         document.getElementById('temp-voice-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('tv-enabled').checked;
-            const create_channel_id = document.getElementById('tv-create-channel').value;
-            const category_id = document.getElementById('tv-category').value;
-            const name_template = document.getElementById('tv-name-template').value.trim() || "{user}'s Channel";
-            const payload = { temp_voice: { enabled, create_channel_id, category_id, name_template } };
+            const triggers = [];
+            document.querySelectorAll('#tv-triggers-list .tv-trigger-card').forEach(function (card) {
+                const create_channel_id = (card.querySelector('.tv-trigger-channel') || {}).value || '';
+                if (!create_channel_id) return; // skip cards without a selected channel
+                const category_id = (card.querySelector('.tv-trigger-category') || {}).value || '';
+                const nameVal = ((card.querySelector('.tv-trigger-name') || {}).value || '').trim();
+                triggers.push({
+                    create_channel_id: create_channel_id,
+                    category_id: category_id,
+                    name_template: nameVal || "{user}'s Channel"
+                });
+            });
+            const persist_roles = Array.from(document.querySelectorAll('.tv-persist-role-cb:checked')).map(cb => cb.value);
+            const payload = { temp_voice: { enabled, triggers, persist_roles } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=temp_voice&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -6955,9 +7366,7 @@
             checkChannelPermissions('livestream_category', v('livestream-category'),          'feedback-livestream-category',         'livestream-form',       'cat');
             // YouTube
             checkChannelPermissions('youtube_alert',     v('yvid-alert-channel'),             'feedback-youtube-channel',             'youtube-videos-form',   'ch');
-            // Temp Voice
-            checkChannelPermissions('temp_voice_trigger', v('tv-create-channel'),             'feedback-tv-trigger',                  'temp-voice-form',       'trigger');
-            checkChannelPermissions('temp_voice_category', v('tv-category'),                  'feedback-tv-category',                 'temp-voice-form',       'cat');
+            // Temp Voice: triggers are dynamic; per-card live permission checks are out of scope.
             // Suggestions
             checkChannelPermissions('suggestions_log',   v('suggestions-log-channel'),        'feedback-suggestions-log',             'suggestions-form',      'log_ch');
             checkChannelPermissions('suggestions_log',   v('suggestions-auto-forward-channel'),'feedback-suggestions-forward',        'suggestions-form',      'fwd_ch');
@@ -6997,8 +7406,6 @@
             on('verify-channel',                 'verify_channel',       'feedback-verify-channel',             'verify-form',          'ch');
             on('livestream-category',            'livestream_category',  'feedback-livestream-category',        'livestream-form',      'cat');
             on('yvid-alert-channel',             'youtube_alert',        'feedback-youtube-channel',            'youtube-videos-form',  'ch');
-            on('tv-create-channel',              'temp_voice_trigger',   'feedback-tv-trigger',                 'temp-voice-form',      'trigger');
-            on('tv-category',                    'temp_voice_category',  'feedback-tv-category',                'temp-voice-form',      'cat');
             on('suggestions-log-channel',        'suggestions_log',      'feedback-suggestions-log',            'suggestions-form',     'log_ch');
             on('suggestions-auto-forward-channel','suggestions_log',     'feedback-suggestions-forward',        'suggestions-form',     'fwd_ch');
             on('counting-channel',               'counting',             'feedback-counting-channel',           'counting-form',        'ch');
@@ -7538,6 +7945,19 @@
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
             <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="ttConfirmRemove()">Remove</button>
+        </footer>
+    </div>
+</dialog>
+
+<dialog id="remove-tw-dialog" class="dialog" aria-labelledby="remove-tw-dialog-title" aria-describedby="remove-tw-dialog-description">
+    <div>
+        <header>
+            <h2 id="remove-tw-dialog-title">Remove X account?</h2>
+            <p id="remove-tw-dialog-description"></p>
+        </header>
+        <footer>
+            <button class="btn-outline" onclick="document.getElementById('remove-tw-dialog').close()">Cancel</button>
+            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="twConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>

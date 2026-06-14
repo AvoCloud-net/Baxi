@@ -1,0 +1,14 @@
+[
+  {
+    "id": "task-sqlite-migration",
+    "key": "sqlite-migration",
+    "content": "Task completed: sqlite-migration",
+    "namespace": "tasks",
+    "type": "task-outcome",
+    "metadata": {
+      "success": true,
+      "quality": 0.85
+    },
+    "createdAt": 1781434139512
+  }
+]

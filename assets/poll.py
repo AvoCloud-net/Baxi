@@ -292,16 +292,9 @@ class PollTask:
 
     @tasks.loop(seconds=30)
     async def check_polls(self):
-        import os
+        import assets.db as _db
         now = time.time()
-        data_dir = "data"
-        if not os.path.exists(data_dir):
-            return
-        for guild_folder in os.listdir(data_dir):
-            try:
-                guild_id = int(guild_folder)
-            except ValueError:
-                continue
+        for guild_id in _db.guild_ids():
             try:
                 polls: dict = dict(datasys.load_data(guild_id, "polls"))
             except Exception:

@@ -14,6 +14,13 @@ import config.auth as auth
 import config.config as config
 import discord
 import reds_simple_logger
+
+# Initialize the SQLite store and run the one-shot JSON->DB migration BEFORE any
+# assets.* module is imported, so no import-time data access hits an uninitialized
+# connection. run() is idempotent (no-op once schema_meta.migration_complete is set).
+import migrate_to_sqlite as _migrate
+_migrate.run()
+
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands
 from assets.giveaway import giveaway_commands
 from assets.poll import poll_commands, PollButton, PollCloseButton
@@ -51,11 +58,14 @@ class PersistentViewBot(commands.AutoShardedBot):
         from assets.message.reactionroles import RoleButton
         from assets.suggestions import SuggestionView
         from assets.giveaway import GiveawayView
+        from assets.message.tempvoice import TempVoiceControlView, load_state as _tv_load_state
         self.add_view(TicketAdminButtons())
         self.add_view(VerifyView())
         self.add_view(SuggestionView())
         self.add_view(GiveawayView())
+        self.add_view(TempVoiceControlView(self))
         self.add_dynamic_items(RoleButton, TicketButton, PollButton, PollCloseButton)
+        _tv_load_state()
 
 
 bot = PersistentViewBot()

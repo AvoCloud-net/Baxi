@@ -1,18 +1,17 @@
 """AI chatfilter admin feedback -  local few-shot store.
 
 Bot admins can mark chatfilter log entries as false/true positives from the
-dashboard. Each correction is appended to `data/ai_feedback.json` (FIFO,
+dashboard. Each correction is appended to the ai_feedback SQLite table (FIFO,
 capped by config.Chatfilter.feedback_max_entries). The chatfilter injects the
 stored examples into the AI prompt at inference time, so future decisions are
 biased by the corrections without needing to retrain or touch a KB.
 """
 import asyncio
-import json
-from pathlib import Path
 from typing import List
 
 import assets.data as datasys
 import config.config as config
+from assets.repo.standalone import load_ai_feedback as _standalone_load, save_ai_feedback as _standalone_save
 from assets.share import admin_log as _admin_log
 from reds_simple_logger import Logger
 
@@ -21,31 +20,22 @@ logger = Logger()
 _lock = asyncio.Lock()
 
 
-def _path() -> Path:
-    return Path(config.Chatfilter.feedback_file_path)
-
-
 def load_feedback_entries() -> List[dict]:
-    """Read the feedback list. Returns [] on any error / missing file."""
+    """Read the feedback list from DB. Returns [] on any error."""
     try:
-        with _path().open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+        data = _standalone_load()
         if isinstance(data, list):
             return data
-    except FileNotFoundError:
-        return []
-    except (json.JSONDecodeError, OSError) as e:
+    except Exception as e:
         logger.warn(f"AI feedback | failed to read store: {e}")
     return []
 
 
 def _write_entries(entries: List[dict]) -> None:
-    path = _path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
-        json.dump(entries, fh, ensure_ascii=False, indent=2)
-    tmp.replace(path)
+    try:
+        _standalone_save(entries)
+    except Exception as e:
+        logger.warn(f"AI feedback | failed to write store: {e}")
 
 
 def build_fewshot_block(max_entries: int | None = None) -> str:

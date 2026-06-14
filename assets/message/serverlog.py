@@ -148,6 +148,31 @@ def build_channel_update(before, after) -> discord.Embed:
             f"**Slowmode:** `{getattr(before, 'slowmode_delay', None)}s` → `{getattr(after, 'slowmode_delay', None)}s`"
         )
 
+    # Permission overwrite diff (role/member specific perms)
+    try:
+        before_ow = getattr(before, "overwrites", {}) or {}
+        after_ow = getattr(after, "overwrites", {}) or {}
+        for target in set(before_ow) | set(after_ow):
+            b_ov = before_ow.get(target)
+            a_ov = after_ow.get(target)
+            tname = getattr(target, "mention", getattr(target, "name", str(target)))
+            if b_ov is None and a_ov is not None:
+                changes.append(f"**Perms added** for {tname}")
+            elif a_ov is None and b_ov is not None:
+                changes.append(f"**Perms removed** for {tname}")
+            elif b_ov != a_ov:
+                diffs = []
+                for perm in discord.Permissions.VALID_FLAGS:
+                    bv = getattr(b_ov, perm)
+                    av = getattr(a_ov, perm)
+                    if bv != av:
+                        state = "✅" if av is True else ("❌" if av is False else "➖")
+                        diffs.append(f"{perm} {state}")
+                if diffs:
+                    changes.append(f"**Perms** for {tname}: " + ", ".join(diffs))
+    except Exception:
+        pass
+
     embed.add_field(name="Changes", value=_trunc("\n".join(changes)) if changes else "*(no tracked changes)*", inline=False)
     return embed
 

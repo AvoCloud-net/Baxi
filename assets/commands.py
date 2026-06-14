@@ -763,35 +763,19 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
         await interaction.response.defer(ephemeral=True)
         try:
-            import json as _json
-            import os as _os
             cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=30)
             guild_id = interaction.guild.id
 
-            # Load mod events
-            mod_path = _os.path.join("data", str(guild_id), "mod_events.json")
-            mod_events = []
-            if _os.path.exists(mod_path):
-                try:
-                    with open(mod_path, "r") as f:
-                        mod_events = _json.load(f)
-                except Exception:
-                    pass
+            # Load mod events via facade
+            mod_events: list = list(datasys.load_data(guild_id, "mod_events"))
             recent_mod = [e for e in mod_events if datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
             warns  = sum(1 for e in recent_mod if e.get("type") == "warn")
             kicks  = sum(1 for e in recent_mod if e.get("type") == "kick")
             bans   = sum(1 for e in recent_mod if e.get("type") == "ban")
             mutes  = sum(1 for e in recent_mod if e.get("type") == "mute")
 
-            # Load filter events
-            filter_path = _os.path.join("data", str(guild_id), "filter_events.json")
-            filter_events = []
-            if _os.path.exists(filter_path):
-                try:
-                    with open(filter_path, "r") as f:
-                        filter_events = _json.load(f)
-                except Exception:
-                    pass
+            # Load filter events via facade
+            filter_events: list = list(datasys.load_data(guild_id, "filter_events"))
             recent_filter = [e for e in filter_events if datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
 
             # Health score
