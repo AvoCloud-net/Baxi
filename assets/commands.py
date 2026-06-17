@@ -1469,10 +1469,17 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @mc_admin_group.command(name="lookup", description="Show which Minecraft account a Discord user has linked.")
-    @app_commands.describe(user="The Discord user to look up.")
+    @mc_admin_group.command(name="lookup", description="Look up a link by Discord user or by Minecraft name.")
+    @app_commands.describe(
+        user="The Discord user to look up.",
+        mc_name="The Minecraft name to look up (to find which Discord user it belongs to).",
+    )
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def mc_admin_lookup_cmd(interaction: Interaction, user: discord.Member):
+    async def mc_admin_lookup_cmd(
+        interaction: Interaction,
+        user: discord.Member | None = None,
+        mc_name: str | None = None,
+    ):
         await interaction.response.defer(ephemeral=True)
 
         if interaction.guild is None:
@@ -1482,23 +1489,44 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         lang = datasys.load_lang_file(guild_id)
         t = lang["systems"]["mc_link"]
 
-        from assets.mc_link import is_linked, get_link
+        from assets.mc_link import is_linked, get_link, find_by_mc_name
 
-        if not is_linked(guild_id, user.id):
+        # Exactly one of the two inputs must be given.
+        if (user is None) == (mc_name is None):
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color),
                 ephemeral=True,
             )
 
-        link = get_link(guild_id, user.id)
-        mc_name = link.get("name", "Unknown")
+        if user is not None:
+            if not is_linked(guild_id, user.id):
+                return await interaction.followup.send(
+                    embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                    ephemeral=True,
+                )
+            target_id = user.id
+            link = get_link(guild_id, user.id)
+        else:
+            match = find_by_mc_name(guild_id, mc_name)
+            if match is None:
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {t['lookup_no_match'].format(mc_name=mc_name)}",
+                        color=config.Discord.danger_color,
+                    ),
+                    ephemeral=True,
+                )
+            target_id, link = match
+
+        mention = f"<@{target_id}>"
+        mc_name_resolved = link.get("name", "Unknown")
         uuid = link.get("uuid", "—")
         linked_at = link.get("linked_at", 0)
         linked_dt = f"<t:{linked_at}:R>" if linked_at else "—"
 
         embed = discord.Embed(
             title=t["lookup_title"],
-            description=t["lookup_desc"].format(mention=user.mention, mc_name=mc_name, uuid=uuid, linked_at=linked_dt),
+            description=t["lookup_desc"].format(mention=mention, mc_name=mc_name_resolved, uuid=uuid, linked_at=linked_dt),
             color=config.Discord.info_color,
         )
         embed.set_footer(text=t["footer"])

@@ -1,1078 +1,1082 @@
 {
-    "de": {
-        "commands": {
-            "guild_only": "Dieser Befehl kann nur innerhalb eines Discord-Servers ausgeführt werden, nicht über private Nachrichten (DM).",
-            "user": {
-                "help": {
-                    "title": "SYS // HILFE",
-                    "content": "Alle Befehle beginnen mit dem Präfix „/“.",
-                    "footer": "Baxi Bot - Avocloud.net",
-                    "prefix": {
-                        "title": "Prefix",
-                        "content": "Der Prefix für diesen Bot ist „/“."
-                    },
-                    "about": {
-                        "title": "SYS // ABOUT",
-                        "content": "Dieser Bot wurde von Avocloud.net erstellt. Weitere Informationen findest du auf unserer Website."
-                    },
-                    "icons": {
-                        "title": "Icons",
-                        "content": "Die von Baxi verwendeten Icons findet ihr hier: [Icons](https://discord.gg/aPvvhefmt3)"
-                    },
-                    "bugs": {
-                        "title": "Bugs",
-                        "content": "Wenn du auf Fehler stößt, würden wir dich bitten, diese mit dem Befehl </report:1227394011715735582> zu melden. Dies hilft uns sehr bei der Entwicklung und Fehlerbehebung. Vielen Dank für deine Unterstützung!"
-                    }
-                },
-                "scan_users": {
-                    "title": "SYS // SCAN REPORT",
-                    "reason": "Grund",
-                    "date": "Makiert am",
-                    "id": "Benutzer ID",
-                    "recommendation": "Empfehlung",
-                    "recommendation_description": "Überprüfe diese Benutzer und ergreife geeignete Maßnahmen.",
-                    "no_users_detected": "Es wurden keine verdächtigen oder bedrohlichen Benutzer auf diesem Server gefunden. Alles scheint in Ordnung zu sein.",
-                    "user_count": "**{users}** Mitglieder gescannt",
-                    "no_threats": "Keine Bedrohungen entdeckt",
-                    "users_found": "markierte Benutzer gefunden",
-                    "users_found_description": "Diese Benutzer wurden wegen verdächtiger Aktivitäten markiert:"
-                },
-                "my_trust": {
-                    "title": "Prism // Dein Vertrauens-Score",
-                    "score_line": "**Score: {score}/100** {trend}  ·  {count} Ereignis(se)",
-                    "recent_events_title": "Letzte Ereignisse (max. 5)",
-                    "no_events": "Keine Ereignisse aufgezeichnet -  weiter so!",
-                    "new_account_title": "Neues Konto",
-                    "new_account_value": "Dein Konto ist **{age} Tage** alt. Der volle Score wird nach **{full} Tagen** erreicht -  dein Score steigt automatisch in ca. **{days} Tagen**.",
-                    "recovery_title": "Score-Erholung",
-                    "recovery_value": "Dein Score erholt sich automatisch durch gutes Verhalten. Geschätzte vollständige Erholung: **~{days} Tage**.",
-                    "perfect_value": "Dein Score ist perfekt!",
-                    "what_is_prism_title": "Was ist Prism?",
-                    "what_is_prism_value": "Prism ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. [Mehr erfahren](https://baxi.avocloud.net/docs/user-guide/prism)",
-                    "footer": "Baxi Prism · avocloud.net  |  Diese Nachricht ist nur für dich sichtbar.",
-                    "opted_out_title": "Prism Opt-Out",
-                    "opted_out_value": "Du hast dich von Prism abgemeldet. Es wird kein Vertrauens-Score mehr über dich geführt.\n\nModeration (Chatfilter, Anti-Spam usw.) ist weiterhin aktiv.\nServer-Administratoren können sehen, dass du Opt-Out gewählt hast.",
-                    "opted_out_hint": "Nutze `/prism_optout`, um dich wieder anzumelden."
-                },
-                "prism_optout": {
-                    "title": "Prism // Opt-Out",
-                    "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv -  nur Prism führt keinen Score mehr über dich.",
-                    "opted_in": "Du hast dich wieder bei Prism angemeldet. Dein Vertrauens-Score wird ab sofort wieder geführt.",
-                    "footer": "Baxi Prism · avocloud.net"
-                },
-                "prism_profile_created_dm": {
-                    "title": "Dein PRISM-Profil wurde erstellt",
-                    "description": "Ein Moderationsereignis auf einem Server, den du mit Baxi teilst, hat die Erstellung eines **PRISM**-Profils für deinen Account ausgelöst. Diese Nachricht dient dazu, dich darüber zu informieren.",
-                    "what_is_title": "Was ist PRISM?",
-                    "what_is_value": "PRISM ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. Es berechnet einen Score von 0 bis 100 anhand deiner Moderationshistorie. Moderatoren können diesen Score als einen von mehreren Hinweisen nutzen, um fairere und konsistentere Entscheidungen zu treffen – besonders wenn du einem neuen Server beitrittst.",
-                    "why_title": "Wozu ist das gut?",
-                    "why_value": "Moderationskontext geht oft verloren, wenn jemand einem neuen Server beitritt. PRISM hilft Moderatoren, wiederholten Schaden durch regelwidrige Nutzer zu verhindern – und gibt regelkonformen Nutzern eine positive Bilanz, die sie mitnehmen können. Scores erholen sich automatisch mit der Zeit, solange keine neuen Verstöße auftreten. Ein einzelner Vorfall bestimmt dich also nicht dauerhaft.",
-                    "privacy_title": "Deine Privatsphäre",
-                    "privacy_value": "PRISM speichert ausschließlich das Minimum: Art des Moderationsereignisses, Zeitstempel und der Server, auf dem es stattfand. Kein Nachrichteninhalt, keine persönlichen Daten – nur direkt moderationsrelevante Informationen.",
-                    "actions_title": "Was kannst du tun?",
-                    "actions_value": "• `/my_trust` -  Deinen aktuellen Score und vergangene Ereignisse anzeigen\n• `/prism-optout` -  PRISM-Tracking jederzeit deaktivieren\n• [Dokumentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Alle Details zur Funktionsweise von PRISM",
-                    "footer": "Baxi PRISM · avocloud.net"
-                }
-            },
-            "admin": {
-                "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Befehl zu verwenden.",
-                "user": "Benutzer: ",
-                "mod": "Moderator: ",
-                "reason": "Grund: ",
-                "amount": "Mänge: ",
-                "channel": "Kanal: ",
-                "field_reason": "Grund",
-                "field_mod": "Moderator",
-                "field_duration": "Dauer",
-                "field_expires": "Läuft ab",
-                "duration_permanent": "Permanent",
-                "ban": {
-                    "title": "AKTION // BANN",
-                    "confirmation": "Möchtest du diesen Benutzer wirklich mit folgendem Grund bannen?",
-                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
-                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
-                    "success": "Der Benutzer wurde erfolgreich mit folgendem Grund gebannt:",
-                    "audit_reason": "Gegannt von {moderator}: {reason}",
-                    "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Bannvorgang wurde abgebrochen.",
-                    "dm_title": "AKTION // BANN // {guild}",
-                    "abort_title": "BANN ABGEBROCHEN // {user}"
-                },
-                "unban": {
-                    "title": "AKTION // ENTBANN",
-                    "confirmation": "Möchtest du diesen Benutzer wirklich entbannen?",
-                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
-                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
-                    "success": "Der Benutzer wurde erfolgreich entbannen:",
-                    "audit_reason": "Entbannung von {moderator}: {reason}",
-                    "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Entbannvorgang wurde abgebrochen.",
-                    "abort_title": "ENTBANN ABGEBROCHEN // {user}"
-                },
-                "kick": {
-                    "title": "AKTION // KICK",
-                    "confirmation": "Möchtest du diesen Benutzer wirklich aus dem Server entfernen?",
-                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
-                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
-                    "success": "Der Benutzer wurde erfolgreich aus dem Server entfernt:",
-                    "audit_reason": "Kick von {moderator}: {reason}",
-                    "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Entbannvorgang wurde abgebrochen.",
-                    "dm_title": "AKTION // KICK // {guild}",
-                    "abort_title": "KICK ABGEBROCHEN // {user}"
-                },
-                "clear": {
-                    "title": "AKTION // CLEAR",
-                    "confirmation": "Möchtest du die Nachrichten wirklich löschen?",
-                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
-                    "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
-                    "success": "Die Nachricht wurde erfolgreich gelöscht:",
-                    "error": "Ein Fehler ist aufgetreten: {error}",
-                    "abort": "Der Vorgang wurde abgebrochen.",
-                    "abort_title": "CLEAR ABGEBROCHEN // #{channel}"
-                },
-                "flag_user": {
-                    "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
-                    "success": "Der Benutzer wurde erfolgreich ins System eingetragen."
-                },
-                "deflag_user": {
-                    "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
-                    "success": "Der Benutzer wurde erfolgreich aus dem System ausgetragen."
-                },
-                "warn": {
-                    "title": "AKTION // WARN",
-                    "success": "{user} wurde verwarnt.\n**Grund:** {reason}\n**Verwarnungen:** {count}",
-                    "escalation_mute": "{user} wurde automatisch für {duration} Minuten stummgeschaltet. ({count} Verwarnungen)",
-                    "escalation_kick": "{user} wurde automatisch vom Server entfernt. ({count} Verwarnungen)",
-                    "escalation_ban": "{user} wurde automatisch gebannt. ({count} Verwarnungen)",
-                    "escalation_notify": "{user} hat {count} Verwarnungen erreicht.",
-                    "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu verwarnen.",
-                    "error": "Ein Fehler ist aufgetreten: {error}"
-                },
-                "unwarn": {
-                    "title": "AKTION // WARN ENTFERNT",
-                    "success": "Verwarnung `{id}` wurde von {user} entfernt.",
-                    "not_found": "Verwarnung mit ID `{id}` wurde nicht gefunden.",
-                    "error": "Ein Fehler ist aufgetreten: {error}"
-                },
-                "warnings": {
-                    "title": "SYS // WARN LOG",
-                    "no_warnings": "{user} hat keine Verwarnungen.",
-                    "entry": "**ID:** `{id}`\n**Grund:** {reason}\n**Moderator:** {mod}\n**Datum:** {date}"
-                },
-                "customcmd": {
-                    "title": "SYS // CUSTOM CMD",
-                    "added": "Command `{trigger}` wurde erfolgreich erstellt.",
-                    "removed": "Command `{trigger}` wurde erfolgreich entfernt.",
-                    "not_found": "Command `{trigger}` wurde nicht gefunden.",
-                    "already_exists": "Command `{trigger}` existiert bereits.",
-                    "no_commands": "Es gibt noch keine Custom Commands auf diesem Server.",
-                    "list_entry": "`{trigger}` - erstellt von {author}"
-                }
-            }
+  "de": {
+    "commands": {
+      "guild_only": "Dieser Befehl kann nur innerhalb eines Discord-Servers ausgeführt werden, nicht über private Nachrichten (DM).",
+      "user": {
+        "help": {
+          "title": "SYS // HILFE",
+          "content": "Alle Befehle beginnen mit dem Präfix „/“.",
+          "footer": "Baxi Bot - Avocloud.net",
+          "prefix": {
+            "title": "Prefix",
+            "content": "Der Prefix für diesen Bot ist „/“."
+          },
+          "about": {
+            "title": "SYS // ABOUT",
+            "content": "Dieser Bot wurde von Avocloud.net erstellt. Weitere Informationen findest du auf unserer Website."
+          },
+          "icons": {
+            "title": "Icons",
+            "content": "Die von Baxi verwendeten Icons findet ihr hier: [Icons](https://discord.gg/aPvvhefmt3)"
+          },
+          "bugs": {
+            "title": "Bugs",
+            "content": "Wenn du auf Fehler stößt, würden wir dich bitten, diese mit dem Befehl </report:1227394011715735582> zu melden. Dies hilft uns sehr bei der Entwicklung und Fehlerbehebung. Vielen Dank für deine Unterstützung!"
+          }
         },
-        "systems": {
-            "chatfilter": {
-                "title": "SYS // CHATFILTER",
-                "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
-                "description_not_deleted": "Eine Nachricht von {user} wurde als potenziell schädlich eingestuft, konnte jedoch **nicht automatisch gelöscht** werden.\n\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
-                "phishing_warning": "<:alert:1397005510409981982> **Achtung {user}!** Die obige Nachricht enthält möglicherweise einen **Scam- oder Phishing-Link**. Klicke **NICHT** darauf! Der Link könnte darauf abzielen, deine Daten zu stehlen.",
-                "footer": "Baxi Security - avocloud.net"
-            },
-            "globalchat": {
-                "title": "SYS // GLOBALCHAT",
-                "error": {
-                    "file_not_image": "Diese Datei ist kein Bild oder Video und kann daher nicht im globalen Chat versendet werden.",
-                    "to_many_files": "Du kannst maximal ein Bild anhängen und versenden.",
-                    "message_to_long": "Deine Nachricht ist zu lang. Beachte, dass die maximale Länge 1000 Zeichen beträgt.",
-                    "baned": "Du bist aus dem globalen Chat ausgeschlossen. Folgender Grund ist angegeben: {reason}",
-                    "s11-not-sent": "<:alert:1397005510409981982> Deine Nachricht konnte nicht im globalen Chat gesendet werden, da sie sensible Themen wie Selbstverletzung oder Suizid enthält.\nBitte schau in deine privaten Nachrichten, unser Bot hat dir dort eine wichtige Nachricht geschickt."
-                }
-            },
-            "verify": {
-                "title": "SYS // VERIFY",
-                "description_not_enabled": "Dieses System ist auf diesem Server nicht aktiviert. Bitte kontaktieren einen Administrator.",
-                "description_success": "Die verifizierung war erfolgreich. Willkommen auf dem Server!",
-                "role_not_found": "Rolle nicht gefunden.",
-                "user_not_found": "Benutzer nicht auf dem Server gefunden.",
-                "captcha": {
-                    "description_wrong_code": "Der eingegebene Code ist falsch. Bitte versuche es erneut."
-                },
-                "password": {
-                    "description_wrong_password": "Die eingegebene Passwort ist falsch. Bitte versuche es erneut."
-                }
-            },
-            "ticket": {
-                "title": "SYS // TICKET",
-                "channel_name": "support-{user}",
-                "description_creation_successfull": "Das Ticket wurde erfolgreich erstellt. Ein Teammitglied wird sich in Kürze bei dir melden.\nDein Ticket: {channel}",
-                "description_already_open": "Du hast bereits ein offenes Ticket. Bitte warte bis ein Teammitglied antwortet.\nDein Ticket: {channel}",
-                "description_no_permission_delete": "Du hast keine Berechtigung dieses Ticket zu löschen.",
-                "description_no_permission_claim": "Du hast keine Berechtigung dieses Ticket zu übernehmen.",
-                "description_claimed": "Der Supporter {user} übernimmt nun dieses Ticket.",
-                "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets auf {guild}:",
-                "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen.",
-                "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen.",
-                "server_only": "Nur auf Servern verfügbar.",
-                "disabled": "Das Ticket-System ist derzeit deaktiviert.",
-                "button_not_found": "Diese Ticket-Schaltfläche ist nicht mehr verfügbar.",
-                "category_not_configured": "Ticket-Kategorie ist nicht konfiguriert.",
-                "category_invalid": "Die konfigurierte Ticket-Kategorie ist ungültig.",
-                "category_no_access": "Auf die Ticket-Kategorie kann nicht zugegriffen werden.",
-                "role_not_configured": "Die Ticket-Staff-Rolle ist nicht konfiguriert.",
-                "role_not_found": "Die konfigurierte Ticket-Staff-Rolle wurde nicht gefunden.",
-                "opened_description": "{user} hat ein **{label}**-Ticket geöffnet.",
-                "error_creating": "Beim Erstellen des Tickets ist ein Fehler aufgetreten.",
-                "channel_only": "Dieser Befehl kann nur in einem Textkanal verwendet werden.",
-                "not_valid_ticket": "Dieser Kanal ist kein gültiges Ticket.",
-                "system_not_configured": "Fehler: Das Ticket-System ist nicht richtig konfiguriert.",
-                "member_not_found": "Fehler: Mitglied nicht gefunden.",
-                "error_claiming": "Beim Übernehmen des Tickets ist ein Fehler aufgetreten.",
-                "transcript_sent_dm": "Transkript per DM an {user} gesendet.",
-                "transcript_dm_failed": "Transkript konnte nicht gesendet werden: DMs geschlossen oder blockiert."
-            },
-            "ai": {
-                "title": "SYS // AI",
-                "waiting": {
-                    "content": "Baxi AI arbeitet an einer Antwort..."
-                },
-                "error": {
-                    "unknown": "Ein unbekannter Fehler ist aufgetreten. Bitte versuche es später noch einmal.",
-                    "id_not_found": "Die ConversationID deiner Unterhaltung wurde nicht gefunden. Bitte starte einen neuen chat mithilfe des `/ai` Befehls.",
-                    "model_unable_to_chat": "Mit diesem Model kannst du leider nicht chatten. Bitte versuche es mit dem anderen Model."
-                }
-            },
-            "terms": {
-                "description": "Der Inhaber dieses Servers hat den Nutzungsbedingungen der Dienste von Baxi und Avocloud.net nicht zugestimmt. Daher wurde dieser Dienst auf diesem Server gesperrt. \n\nUm die Baxi-Dienste wieder zu aktivieren, muss sich jemand aus dem Server Team beim [Baxi-Dashboard]({url}) anmelden und die Nutzungsbedingungen akzeptieren."
-            },
-            "antispam": {
-                "title": "SYS // ANTISPAM",
-                "triggered": "{user}, du sendest zu viele Nachrichten. Bitte verlangsame dich.",
-                "duplicate": "{user}, bitte sende nicht die gleiche Nachricht mehrfach.",
-                "muted": "{user} wurde wegen Spam stummgeschaltet.",
-                "warned": "{user} wurde wegen Spam verwarnt."
-            },
-            "welcomer": {
-                "title": "SYS // WILLKOMMEN",
-                "default_welcome": "Willkommen {user} auf {server}!",
-                "default_leave": "{user} hat {server} verlassen."
-            },
-            "livestream": {
-                "title": "SYS // LIVESTREAM",
-                "channel_name_online": "🔴│{name}",
-                "channel_name_offline": "⚫│{name}",
-                "embed_online_title": "LIVESTREAM // {name} // JETZT LIVE",
-                "embed_online_game": "Spiel",
-                "embed_online_viewers": "Zuschauer",
-                "embed_online_started": "Gestartet",
-                "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
-                "embed_offline_description": "{name} streamt gerade nicht. Schau später wieder vorbei!",
-                "embed_footer": "Baxi Livestream - avocloud.net",
-                "ping_message": "{role} -  **{name}** streamt jetzt **{game}** live!"
-            },
-            "youtube_videos": {
-                "embed_description": "**{name}** hat ein neues Video hochgeladen!",
-                "embed_field_published": "Veröffentlicht",
-                "embed_footer": "Baxi YouTube Videos · avocloud.net"
-            },
-            "tiktok": {
-                "embed_description": "**{name}** hat ein neues TikTok gepostet!",
-                "embed_field_published": "Veröffentlicht",
-                "embed_footer": "Baxi TikTok · avocloud.net"
-            },
-            "twitter": {
-                "embed_description": "**{name}** hat auf X gepostet!",
-                "embed_field_published": "Veröffentlicht",
-                "embed_footer": "Baxi X · avocloud.net"
-            },
-            "instagram": {
-                "embed_description_post": "**{name}** hat einen neuen Post geteilt!",
-                "embed_description_reel": "**{name}** hat einen neuen Reel geteilt!",
-                "embed_field_published": "Veröffentlicht",
-                "embed_footer": "Baxi Instagram · avocloud.net"
-            },
-            "button_roles": {
-                "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
-                "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
-                "not_found": "Rolle nicht gefunden -  sie wurde möglicherweise gelöscht.",
-                "no_permission": "Ich habe keine Berechtigung, diese Rolle zu verwalten.",
-                "server_only": "Dies kann nur innerhalb eines Servers verwendet werden.",
-                "group_limit_removed": "Die Rolle **{removed}** wurde entfernt und **{added}** hinzugefügt."
-            },
-            "stats_channels": {
-                "title": "SYS // STATS"
-            },
-            "suggestions": {
-                "embed_title": "Vorschlag",
-                "footer": "Baxi · Vorschläge",
-                "no_text": "*-  kein Text - *",
-                "no_permission": "<:x_:1492987102353166587> Nur Server-Staff kann Vorschläge annehmen oder ablehnen.",
-                "already_decided": "Dieser Vorschlag wurde bereits entschieden.",
-                "status_field": "Status",
-                "status_accepted": "<:check:1492987072250908794> Angenommen von {user}",
-                "status_accepted_reason": "<:check:1492987072250908794> Angenommen von {user}\n> {reason}",
-                "status_declined": "<:x_:1492987102353166587> Abgelehnt von {user}",
-                "status_declined_reason": "<:x_:1492987102353166587> Abgelehnt von {user}\n> {reason}",
-                "log_accepted": "<:check:1492987072250908794> Vorschlag **angenommen** von {reviewer}\n[Zur Nachricht]({link})",
-                "log_accepted_reason": "<:check:1492987072250908794> Vorschlag **angenommen** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
-                "log_declined": "<:x_:1492987102353166587> Vorschlag **abgelehnt** von {reviewer}\n[Zur Nachricht]({link})",
-                "log_declined_reason": "<:x_:1492987102353166587> Vorschlag **abgelehnt** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
-                "voting_disabled": "<:x_:1492987102353166587> Abstimmungen sind auf diesem Server deaktiviert.",
-                "btn_accept": "Annehmen",
-                "btn_decline": "Ablehnen",
-                "modal_accept_title": "Vorschlag annehmen",
-                "modal_decline_title": "Vorschlag ablehnen",
-                "modal_reason_label": "Begründung (optional)",
-                "modal_reason_placeholder": "Begründung eingeben...",
-                "auto_forward_title": "<:fire:1492987074389872660> Beliebter Vorschlag",
-                "auto_forward_footer": "Baxi · Vorschläge | {votes} Upvotes",
-                "btn_comment": "Kommentar",
-                "modal_comment_title": "Staff-Kommentar hinzufügen",
-                "modal_comment_label": "Kommentar",
-                "modal_comment_placeholder": "Kommentar oder Update eingeben...",
-                "comment_field": "Staff Update",
-                "comment_value": "{user}\n> {comment}",
-                "log_comment": "Staff-Kommentar hinzugefügt von {reviewer}\n**Kommentar:** {comment}\n[Zur Nachricht]({link})",
-                "btn_join_thread": "Diskussion beitreten",
-                "thread_joined": "Du bist der Diskussion beigetreten: {thread}",
-                "thread_not_found": "Diskussions-Thread nicht gefunden.",
-                "already_in_thread": "Du bist bereits in der Unterhaltung: {thread}",
-                "thread_update_accepted": "Vorschlag **angenommen** von {user}",
-                "thread_update_accepted_reason": "Vorschlag **angenommen** von {user}\n**Begründung:** {reason}",
-                "thread_update_declined": "Vorschlag **abgelehnt** von {user}",
-                "thread_update_declined_reason": "Vorschlag **abgelehnt** von {user}\n**Begründung:** {reason}",
-                "thread_update_comment": "**Staff Update** von {user}\n> {comment}"
-            },
-            "temp_voice": {
-                "panel_title": "Voice-Steuerung",
-                "panel_desc": "Verwalte deinen temporären Sprachkanal mit den Buttons unten.",
-                "owner_field": "Besitzer",
-                "status_field": "Status",
-                "status_public": "🔓 Öffentlich",
-                "status_private": "🔒 Privat",
-                "btn_public": "Öffentlich",
-                "btn_private": "Privat",
-                "btn_rename": "Umbenennen",
-                "btn_limit": "Userlimit",
-                "btn_permit": "Erlauben",
-                "btn_reject": "Ablehnen",
-                "not_owner": "Nur der Besitzer des Channels kann diese Steuerung verwenden.",
-                "panel_resent": "Kontrollpanel wurde unten erneut gepostet.",
-                "not_temp_channel": "Nutze das im Text-Chat deines Temp-Voice-Channels.",
-                "now_public": "Der Channel ist jetzt öffentlich – jeder kann beitreten.",
-                "now_private": "Der Channel ist jetzt privat – nur erlaubte Nutzer können beitreten.",
-                "rename_modal_title": "Channel umbenennen",
-                "rename_label": "Neuer Channel-Name",
-                "renamed": "Channel umbenannt.",
-                "limit_modal_title": "Userlimit festlegen",
-                "limit_label": "Max. Nutzer (0 = unbegrenzt)",
-                "limit_set": "Userlimit aktualisiert.",
-                "limit_invalid": "Gib eine ganze Zahl zwischen 0 und 99 ein.",
-                "permit_prompt": "Wähle Nutzer aus, die beitreten dürfen:",
-                "permitted": "{count} Nutzer erlaubt.",
-                "permitted_invited": "{count} Nutzer erlaubt und {sent} Einladung(en) gesendet.",
-                "invite_dm_title": "Du wurdest eingeladen!",
-                "invite_dm_desc": "Du kannst jetzt **{channel}** in **{guild}** beitreten.",
-                "invite_button": "Voice beitreten",
-                "reject_prompt": "Wähle Nutzer aus, die nicht beitreten dürfen:",
-                "rejected": "{count} Nutzer abgelehnt.",
-                "btn_save": "Einstellungen speichern",
-                "settings_saved": "Einstellungen gespeichert. Dein nächster Temp-Channel verwendet sie.",
-                "permitted_field": "Erlaubt",
-                "rejected_field": "Abgelehnt",
-                "none_value": "—",
-                "status_permanent": "📌 Permanent",
-                "btn_permanent": "Permanent",
-                "permanent_on": "Channel ist jetzt permanent – er wird nicht gelöscht.",
-                "permanent_off": "Channel ist wieder temporär – wird gelöscht, wenn leer.",
-                "permanent_no_perm": "Du hast keine Rolle, die Channels permanent machen darf."
-            },
-            "mc_link": {
-                "server_only": "Dieser Befehl kann nur in einem Discord-Server verwendet werden.",
-                "not_enabled": "Das MC-Account-Linking ist auf diesem Server nicht aktiviert.",
-                "not_configured": "MC-Link ist noch nicht eingerichtet. Bitte frage einen Admin.",
-                "already_linked": "Dein Account ist bereits verknüpft!",
-                "not_linked": "Dein Account ist nicht verknüpft.",
-                "invalid_code": "Ungültiger oder abgelaufener Code. Betritt den Minecraft-Server erneut, um einen neuen Code zu erhalten.",
-                "link_failed": "Der Minecraft-Server konnte nicht erreicht werden. Bitte versuche es später erneut.",
-                "unlink_disabled": "Das Entverknüpfen ist auf diesem Server deaktiviert. Wende dich an einen Admin.",
-                "success_title": "Account verknüpft!",
-                "success_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n\nDu kannst dem Server jetzt beitreten.",
-                "dm_desc": "Dein Minecraft-Account **{mc_name}** wurde erfolgreich mit deinem Discord auf **{guild}** verknüpft.",
-                "announce": "{mention} hat seinen Minecraft-Account **{mc_name}** verknüpft.",
-                "unlink_success_title": "Account entverknüpft!",
-                "unlink_success_desc": "**Minecraft:** `{mc_name}` wurde erfolgreich entverknüpft.",
-                "status_title": "MC Account Status",
-                "status_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n**Verknüpft:** {linked_at}",
-                "admin_unlink_success": "{mention} wurde entverknüpft. Minecraft-Account: `{mc_name}`.",
-                "lookup_title": "MC Account Lookup",
-                "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Verknüpft:** {linked_at}",
-                "confirm_title": "Bestätige deine Verknüpfung",
-                "confirm_desc": "Öffne diesen Link, um deine Verknüpfung abzuschließen:\n{url}\n\nDer Link läuft in 10 Minuten ab.",
-                "confirm_lede": "Du verknüpfst gleich diesen Minecraft-Account mit deinem Discord. Prüfe beide Namen.",
-                "already_linked_title": "Bereits verknüpft",
-                "already_linked_lede": "Dein Discord ist auf diesem Server bereits mit einem Minecraft-Account verknüpft.",
-                "already_linked_desc": "Dein Account ist bereits verknüpft. Es wurden keine Änderungen vorgenommen.",
-                "bedrock_add_title": "Bedrock-Account hinzufügen",
-                "bedrock_add_lede": "Du bist bereits mit einem Java-Account verknüpft. Bestätige, um zusätzlich diesen Bedrock-Account zu verknüpfen.",
-                "list_title": "Online-Spieler ({count}/{max})",
-                "list_empty": "Aktuell ist niemand online.",
-                "list_unreachable": "Der Minecraft-Server ist nicht erreichbar.",
-                "list_outdated_plugin": "Spielerliste kann nicht geladen werden – das Server-Plugin ist veraltet.",
-                "footer": "Baxi · avocloud.net"
-            },
-            "giveaway": {
-                "embed_title": "GIVEAWAY",
-                "footer": "Baxi · Giveaway",
-                "field_ends": "Endet",
-                "field_ended": "Beendet",
-                "field_winners": "Gewinner",
-                "field_host": "Veranstalter",
-                "entered": "Du nimmst jetzt am Gewinnspiel teil! Viel Erfolg!",
-                "left": "Du hast das Gewinnspiel verlassen.",
-                "not_found": "Dieses Gewinnspiel konnte nicht gefunden werden.",
-                "already_ended": "Dieses Gewinnspiel ist bereits beendet.",
-                "no_permission": "Du benötigst die Berechtigung **Server verwalten**, um ein Gewinnspiel zu starten.",
-                "invalid_duration": "Ungültige Dauer. Nutze z. B. `1h`, `30m`, `2d`, `1h30m`. Minimum sind 60 Sekunden.",
-                "channel_only": "Gewinnspiele können nur in Textkanälen gestartet werden.",
-                "send_error": "Gewinnspiel-Nachricht konnte nicht gesendet werden.",
-                "started": "Gewinnspiel in {channel} gestartet!",
-                "winner_announce_title": "GIVEAWAY // GEWINNER",
-                "winner_announce": "Herzlichen Glückwunsch {winners}!\nDu hast **{reward}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
-                "winner_message_field": "Nachricht vom Veranstalter",
-                "winner_dm_title": "GIVEAWAY // DU HAST GEWONNEN",
-                "winner_dm": "Du hast **{reward}** in **{guild}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
-                "no_winners_title": "GIVEAWAY // KEINE GEWINNER",
-                "no_winners": "Niemand hat am Gewinnspiel für **{reward}** teilgenommen.\n[Zum Gewinnspiel]({msg_link})"
-            },
-            "music": {
-                "disabled": "Das Musik-System ist auf diesem Server deaktiviert.",
-                "not_in_voice": "Du musst zuerst einem Sprachkanal beitreten.",
-                "bot_busy": "Der Bot spielt bereits in einem anderen Sprachkanal.",
-                "queue_full": "Die Warteschlange ist voll.",
-                "song_too_long": "Der Track überschreitet die maximal erlaubte Länge.",
-                "source_blocked": "Diese Quelle ist auf diesem Server nicht erlaubt.",
-                "extract_failed": "Track konnte nicht geladen werden.",
-                "url_not_whitelisted": "Diese URL steht nicht auf der Radio-Whitelist.",
-                "invalid_url": "Ungültige URL.",
-                "preset_not_found": "Unbekannter Sender.",
-                "radio_pick_one": "Wähle einen Sender oder gib eine custom_url an.",
-                "nothing_playing": "Aktuell wird nichts abgespielt.",
-                "not_paused": "Es ist nichts pausiert.",
-                "added": "Zur Warteschlange hinzugefügt",
-                "now_playing": "Spielt gerade",
-                "streaming": "Live-Stream",
-                "skipped": "Übersprungen.",
-                "stopped": "Gestoppt und Sprachkanal verlassen.",
-                "paused": "Pausiert.",
-                "resumed": "Fortgesetzt.",
-                "queue_title": "Musik-Warteschlange",
-                "queue_empty": "Die Warteschlange ist leer.",
-                "queue_upcoming": "Als nächstes",
-                "queue_more": "...und {n} weitere",
-                "duration_field": "Dauer",
-                "requester_field": "Angefordert von",
-                "source_field": "Quelle",
-                "volume_set": "Lautstärke gesetzt: {level}%",
-                "volume_invalid": "Lautstärke muss zwischen 0 und 200 liegen."
-            }
+        "scan_users": {
+          "title": "SYS // SCAN REPORT",
+          "reason": "Grund",
+          "date": "Makiert am",
+          "id": "Benutzer ID",
+          "recommendation": "Empfehlung",
+          "recommendation_description": "Überprüfe diese Benutzer und ergreife geeignete Maßnahmen.",
+          "no_users_detected": "Es wurden keine verdächtigen oder bedrohlichen Benutzer auf diesem Server gefunden. Alles scheint in Ordnung zu sein.",
+          "user_count": "**{users}** Mitglieder gescannt",
+          "no_threats": "Keine Bedrohungen entdeckt",
+          "users_found": "markierte Benutzer gefunden",
+          "users_found_description": "Diese Benutzer wurden wegen verdächtiger Aktivitäten markiert:"
         },
-        "events": {
-            "on_guild_join": {
-                "title": "SYS // INIT",
-                "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, öffne das **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
-                "saved_data": {
-                    "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard (https://baxi.avocloud.net) beliebige Systeme aktivieren und einstellen.",
-                    "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard (https://baxi.avocloud.net) ob diese Einstellungen korrekt sind."
-                }
-            }
+        "my_trust": {
+          "title": "Prism // Dein Vertrauens-Score",
+          "score_line": "**Score: {score}/100** {trend}  ·  {count} Ereignis(se)",
+          "recent_events_title": "Letzte Ereignisse (max. 5)",
+          "no_events": "Keine Ereignisse aufgezeichnet -  weiter so!",
+          "new_account_title": "Neues Konto",
+          "new_account_value": "Dein Konto ist **{age} Tage** alt. Der volle Score wird nach **{full} Tagen** erreicht -  dein Score steigt automatisch in ca. **{days} Tagen**.",
+          "recovery_title": "Score-Erholung",
+          "recovery_value": "Dein Score erholt sich automatisch durch gutes Verhalten. Geschätzte vollständige Erholung: **~{days} Tage**.",
+          "perfect_value": "Dein Score ist perfekt!",
+          "what_is_prism_title": "Was ist Prism?",
+          "what_is_prism_value": "Prism ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. [Mehr erfahren](https://baxi.avocloud.net/docs/user-guide/prism)",
+          "footer": "Baxi Prism · avocloud.net  |  Diese Nachricht ist nur für dich sichtbar.",
+          "opted_out_title": "Prism Opt-Out",
+          "opted_out_value": "Du hast dich von Prism abgemeldet. Es wird kein Vertrauens-Score mehr über dich geführt.\n\nModeration (Chatfilter, Anti-Spam usw.) ist weiterhin aktiv.\nServer-Administratoren können sehen, dass du Opt-Out gewählt hast.",
+          "opted_out_hint": "Nutze `/prism_optout`, um dich wieder anzumelden."
         },
-        "games": {
-            "counting": {
-                "title": "GAME // COUNTING",
-                "wrong_number": "<:x_:1492987102353166587> **{user}** hat die Kette gebrochen! Gesendet: **{sent}**, erwartet: **{expected}**.\nDer Zähler wurde von **{count}** auf **0** zurückgesetzt.",
-                "double_count": "<:x_:1492987102353166587> **{user}** kann nicht zweimal hintereinander zählen! Der Zähler bleibt bei **{count}**.",
-                "footer": "Baxi · Counting Game",
-                "score_title": "🔢 Counting Game",
-                "score_not_enabled": "<:x_:1492987102353166587> Das Counting Game ist auf diesem Server nicht aktiviert.",
-                "score_description": "**Aktueller Zähler:** {current}\n**Highscore:** {high}\n**Channel:** {channel}",
-                "score_no_channel": "*nicht gesetzt*",
-                "reset_done": "Der Zähler wurde von **{old}** auf **0** zurückgesetzt.",
-                "new_highscore": "<:celebrate:1492987070841491707> **Neuer Rekord!** {user} hat den Highscore auf **{count}** gesetzt!",
-                "milestone": "<:trophy:1492978643646026006> **Meilenstein erreicht!** Der Zähler hat **{count}** erreicht!"
-            },
-            "guessing": {
-                "title": "GAME // GUESS",
-                "description_correct": "{user}, du hast die Zahl richtig geraten!\nWir beginnen mit einer neuen Zahl, diese wurde zwischen 1 und {max_value} generiert.\nViel Erfolg!"
-            },
-            "flag_quiz": {
-                "title": "Flag Quiz",
-                "question": "Welchem Land gehört diese Flagge?",
-                "question_footer": "Baxi · Flag Quiz  |  Tippe deine Antwort!",
-                "correct": "<:celebrate:1492987070841491707> **{user}** hat es gewusst!\nDie Antwort war: **{country}** {flag}",
-                "hint": "**Tipp:** `{hint}` ({length} Buchstaben)",
-                "footer": "Baxi · Flag Quiz",
-                "leaderboard_title": "Flag Quiz – Rangliste",
-                "leaderboard_empty": "Noch keine Punkte vergeben. Sei der Erste!",
-                "leaderboard_pts_single": "Punkt",
-                "leaderboard_pts_plural": "Punkte"
-            }
+        "prism_optout": {
+          "title": "Prism // Opt-Out",
+          "opted_out": "Du hast dich erfolgreich von Prism abgemeldet. Dein Vertrauens-Score wird nicht mehr geführt.\n\n**Bitte beachte:**\n• Server-Administratoren können sehen, dass du Opt-Out gewählt hast.\n• Moderation (Chatfilter, Anti-Spam usw.) bleibt weiterhin aktiv -  nur Prism führt keinen Score mehr über dich.",
+          "opted_in": "Du hast dich wieder bei Prism angemeldet. Dein Vertrauens-Score wird ab sofort wieder geführt.",
+          "footer": "Baxi Prism · avocloud.net"
         },
-        "leveling": {
-            "levelup_title": "<:up:1493702235295580210> LEVEL // LEVEL UP · {level}",
-            "levelup_desc": "{user} hat **Level {level}** erreicht!",
-            "disabled_title": "LEVEL // DEAKTIVIERT",
-            "disabled_desc": "Das Level-System ist auf diesem Server nicht aktiviert. Ein Admin kann es im Dashboard einschalten.",
-            "level_title": "LEVEL // {user}",
-            "level_field": "Level",
-            "xp_field": "Gesamt-XP",
-            "progress_field": "Fortschritt zum nächsten Level",
-            "leaderboard_title": "LEVEL // BESTENLISTE · {guild}",
-            "leaderboard_empty": "Noch keine Beiträge aufgezeichnet.",
-            "messages_label": "Nachrichten",
-            "rank_title": "LEVEL // RANG · {user}",
-            "rank_xp_field": "Beigetragene XP",
-            "rank_msgs_field": "Nachrichten",
-            "rank_share_field": "Anteil am Server-XP",
-            "rank_pos_field": "Rang in der Bestenliste"
+        "prism_profile_created_dm": {
+          "title": "Dein PRISM-Profil wurde erstellt",
+          "description": "Ein Moderationsereignis auf einem Server, den du mit Baxi teilst, hat die Erstellung eines **PRISM**-Profils für deinen Account ausgelöst. Diese Nachricht dient dazu, dich darüber zu informieren.",
+          "what_is_title": "Was ist PRISM?",
+          "what_is_value": "PRISM ist Baxis serverübergreifendes Vertrauens-Bewertungssystem. Es berechnet einen Score von 0 bis 100 anhand deiner Moderationshistorie. Moderatoren können diesen Score als einen von mehreren Hinweisen nutzen, um fairere und konsistentere Entscheidungen zu treffen – besonders wenn du einem neuen Server beitrittst.",
+          "why_title": "Wozu ist das gut?",
+          "why_value": "Moderationskontext geht oft verloren, wenn jemand einem neuen Server beitritt. PRISM hilft Moderatoren, wiederholten Schaden durch regelwidrige Nutzer zu verhindern – und gibt regelkonformen Nutzern eine positive Bilanz, die sie mitnehmen können. Scores erholen sich automatisch mit der Zeit, solange keine neuen Verstöße auftreten. Ein einzelner Vorfall bestimmt dich also nicht dauerhaft.",
+          "privacy_title": "Deine Privatsphäre",
+          "privacy_value": "PRISM speichert ausschließlich das Minimum: Art des Moderationsereignisses, Zeitstempel und der Server, auf dem es stattfand. Kein Nachrichteninhalt, keine persönlichen Daten – nur direkt moderationsrelevante Informationen.",
+          "actions_title": "Was kannst du tun?",
+          "actions_value": "• `/my_trust` -  Deinen aktuellen Score und vergangene Ereignisse anzeigen\n• `/prism-optout` -  PRISM-Tracking jederzeit deaktivieren\n• [Dokumentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Alle Details zur Funktionsweise von PRISM",
+          "footer": "Baxi PRISM · avocloud.net"
         }
+      },
+      "admin": {
+        "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Befehl zu verwenden.",
+        "user": "Benutzer: ",
+        "mod": "Moderator: ",
+        "reason": "Grund: ",
+        "amount": "Mänge: ",
+        "channel": "Kanal: ",
+        "field_reason": "Grund",
+        "field_mod": "Moderator",
+        "field_duration": "Dauer",
+        "field_expires": "Läuft ab",
+        "duration_permanent": "Permanent",
+        "ban": {
+          "title": "AKTION // BANN",
+          "confirmation": "Möchtest du diesen Benutzer wirklich mit folgendem Grund bannen?",
+          "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
+          "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu bannen.",
+          "success": "Der Benutzer wurde erfolgreich mit folgendem Grund gebannt:",
+          "audit_reason": "Gegannt von {moderator}: {reason}",
+          "error": "Ein Fehler ist aufgetreten: {error}",
+          "abort": "Der Bannvorgang wurde abgebrochen.",
+          "dm_title": "AKTION // BANN // {guild}",
+          "abort_title": "BANN ABGEBROCHEN // {user}"
+        },
+        "unban": {
+          "title": "AKTION // ENTBANN",
+          "confirmation": "Möchtest du diesen Benutzer wirklich entbannen?",
+          "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+          "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+          "success": "Der Benutzer wurde erfolgreich entbannen:",
+          "audit_reason": "Entbannung von {moderator}: {reason}",
+          "error": "Ein Fehler ist aufgetreten: {error}",
+          "abort": "Der Entbannvorgang wurde abgebrochen.",
+          "abort_title": "ENTBANN ABGEBROCHEN // {user}"
+        },
+        "kick": {
+          "title": "AKTION // KICK",
+          "confirmation": "Möchtest du diesen Benutzer wirklich aus dem Server entfernen?",
+          "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+          "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um diesen Benutzer zu entbannen.",
+          "success": "Der Benutzer wurde erfolgreich aus dem Server entfernt:",
+          "audit_reason": "Kick von {moderator}: {reason}",
+          "error": "Ein Fehler ist aufgetreten: {error}",
+          "abort": "Der Entbannvorgang wurde abgebrochen.",
+          "dm_title": "AKTION // KICK // {guild}",
+          "abort_title": "KICK ABGEBROCHEN // {user}"
+        },
+        "clear": {
+          "title": "AKTION // CLEAR",
+          "confirmation": "Möchtest du die Nachrichten wirklich löschen?",
+          "missing_perms": "Du hast nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
+          "bot_missing_perms": "Ich habe nicht die nötigen Berechtigungen um Nachrichten zu löschen.",
+          "success": "Die Nachricht wurde erfolgreich gelöscht:",
+          "error": "Ein Fehler ist aufgetreten: {error}",
+          "abort": "Der Vorgang wurde abgebrochen.",
+          "abort_title": "CLEAR ABGEBROCHEN // #{channel}"
+        },
+        "flag_user": {
+          "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
+          "success": "Der Benutzer wurde erfolgreich ins System eingetragen."
+        },
+        "deflag_user": {
+          "missing_parameters": "Daten fehlen. Mindestens einer der beiden Parameter ist anzugeben: \"user\" oder \"user_id\"",
+          "success": "Der Benutzer wurde erfolgreich aus dem System ausgetragen."
+        },
+        "warn": {
+          "title": "AKTION // WARN",
+          "success": "{user} wurde verwarnt.\n**Grund:** {reason}\n**Verwarnungen:** {count}",
+          "escalation_mute": "{user} wurde automatisch für {duration} Minuten stummgeschaltet. ({count} Verwarnungen)",
+          "escalation_kick": "{user} wurde automatisch vom Server entfernt. ({count} Verwarnungen)",
+          "escalation_ban": "{user} wurde automatisch gebannt. ({count} Verwarnungen)",
+          "escalation_notify": "{user} hat {count} Verwarnungen erreicht.",
+          "missing_perms": "Du hast nicht die nötigen Berechtigungen um diesen Benutzer zu verwarnen.",
+          "error": "Ein Fehler ist aufgetreten: {error}"
+        },
+        "unwarn": {
+          "title": "AKTION // WARN ENTFERNT",
+          "success": "Verwarnung `{id}` wurde von {user} entfernt.",
+          "not_found": "Verwarnung mit ID `{id}` wurde nicht gefunden.",
+          "error": "Ein Fehler ist aufgetreten: {error}"
+        },
+        "warnings": {
+          "title": "SYS // WARN LOG",
+          "no_warnings": "{user} hat keine Verwarnungen.",
+          "entry": "**ID:** `{id}`\n**Grund:** {reason}\n**Moderator:** {mod}\n**Datum:** {date}"
+        },
+        "customcmd": {
+          "title": "SYS // CUSTOM CMD",
+          "added": "Command `{trigger}` wurde erfolgreich erstellt.",
+          "removed": "Command `{trigger}` wurde erfolgreich entfernt.",
+          "not_found": "Command `{trigger}` wurde nicht gefunden.",
+          "already_exists": "Command `{trigger}` existiert bereits.",
+          "no_commands": "Es gibt noch keine Custom Commands auf diesem Server.",
+          "list_entry": "`{trigger}` - erstellt von {author}"
+        }
+      }
     },
-    "en": {
-        "commands": {
-            "guild_only": "This command can only be used in a Discord server, not via direct message (DM).",
-            "user": {
-                "help": {
-                    "title": "SYS // HELP",
-                    "content": "All commands start with the prefix “/”.",
-                    "footer": "Baxi Bot - Avocloud.net",
-                    "prefix": {
-                        "title": "Prefix",
-                        "content": "The prefix for this bot is “/”."
-                    },
-                    "about": {
-                        "title": "SYS // ABOUT",
-                        "content": "This bot was created by Avocloud.net. For more information, please visit our website."
-                    },
-                    "icons": {
-                        "title": "Icons",
-                        "content": "The icons used by Baxi can be found here: [Icons](https://discord.gg/aPvvhefmt3)"
-                    },
-                    "bugs": {
-                        "title": "Bugs",
-                        "content": "If you encounter any errors, please report them using the command </report:1227394011715735582>. This helps us greatly in development and troubleshooting. Thank you for your support!"
-                    }
-                },
-                "scan_users": {
-                    "title": "SYS // SCAN REPORT",
-                    "reason": "Reason",
-                    "date": "Date Flagged",
-                    "id": "User ID",
-                    "recommendation": "Recommendation",
-                    "recommendation_description": "Consider reviewing these users and taking appropriate action.",
-                    "no_users_detected": "No suspicious or threatening users were found on this server. Everything appears to be in order.",
-                    "user_count": "Scanned **{users}** members",
-                    "no_threats": "No threats detected",
-                    "users_found": "Flagged Users Found",
-                    "users_found_description": "These users have been flagged for suspicious activity:"
-                },
-                "my_trust": {
-                    "title": "Prism // Your Trust Score",
-                    "score_line": "**Score: {score}/100** {trend}  ·  {count} event(s)",
-                    "recent_events_title": "Recent Events (last 5)",
-                    "no_events": "No events recorded -  keep it up!",
-                    "new_account_title": "New Account",
-                    "new_account_value": "Your account is **{age} days** old. The full score bonus kicks in after **{full} days** -  your score will rise automatically in ~**{days} days**.",
-                    "recovery_title": "Score Recovery",
-                    "recovery_value": "Your score recovers automatically through good behavior. Estimated full recovery: **~{days} days**.",
-                    "perfect_value": "Your score is perfect!",
-                    "what_is_prism_title": "What is Prism?",
-                    "what_is_prism_value": "Prism is Baxi's network-wide trust scoring system. [Learn more](https://baxi.avocloud.net/docs/user-guide/prism)",
-                    "footer": "Baxi Prism · avocloud.net  |  This message is only visible to you.",
-                    "opted_out_title": "Prism Opt-Out",
-                    "opted_out_value": "You have opted out of Prism. No trust score is being tracked for you.\n\nModeration (chat filter, anti-spam, etc.) remains active.\nServer administrators can see that you have opted out.",
-                    "opted_out_hint": "Use `/prism_optout` to opt back in."
-                },
-                "prism_optout": {
-                    "title": "Prism // Opt-Out",
-                    "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active -  only Prism will no longer track a score for you.",
-                    "opted_in": "You have opted back in to Prism. Your trust score will now be tracked again.",
-                    "footer": "Baxi Prism · avocloud.net"
-                },
-                "prism_profile_created_dm": {
-                    "title": "Your PRISM Profile Has Been Created",
-                    "description": "A moderation event on a server you share with Baxi has triggered the creation of a **PRISM** profile for your account. This message is to keep you informed.",
-                    "what_is_title": "What is PRISM?",
-                    "what_is_value": "PRISM is Baxi's cross-server trust-scoring system. It calculates a score from 0 to 100 based on your moderation history. Moderators can use this score as one signal among many to make fairer, more consistent decisions -  especially when you join a new server.",
-                    "why_title": "Why does this exist?",
-                    "why_value": "Moderation context is often lost when someone joins a new server. PRISM helps moderators avoid repeat harm from bad actors, while giving well-behaved users a positive track record that follows them. Scores recover automatically over time as long as no new violations occur -  one-off incidents don't define you permanently.",
-                    "privacy_title": "Your privacy",
-                    "privacy_value": "PRISM stores only the minimum necessary: the type of moderation event, its timestamp, and the server it occurred on. No message content, no personal information -  only data directly related to moderation actions.",
-                    "actions_title": "What can you do?",
-                    "actions_value": "• `/my_trust` -  View your current score and recent events\n• `/prism-optout` -  Opt out of PRISM tracking at any time\n• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Full details on how PRISM works",
-                    "footer": "Baxi PRISM · avocloud.net"
-                }
-            },
-            "admin": {
-                "missing_perms": "You do not have the necessary permissions to use this command.",
-                "user": ":User  ",
-                "mod": "Moderator: ",
-                "reason": "Reason: ",
-                "amount": "Amount: ",
-                "channel": "Channel: ",
-                "field_reason": "Reason",
-                "field_mod": "Moderator",
-                "field_duration": "Duration",
-                "field_expires": "Expires",
-                "duration_permanent": "Permanent",
-                "ban": {
-                    "title": "ACTION // BAN",
-                    "confirmation": "Do you really want to ban this user for the following reason?",
-                    "missing_perms": "You do not have the necessary permissions to ban this user.",
-                    "bot_missing_perms": "I do not have the necessary permissions to ban this user.",
-                    "success": "The user has been successfully banned for the following reason:",
-                    "audit_reason": "Banned by {moderator}: {reason}",
-                    "error": "An error occurred: {error}",
-                    "abort": "The ban process has been aborted.",
-                    "dm_title": "ACTION // BAN // {guild}",
-                    "abort_title": "BAN CANCELLED // {user}"
-                },
-                "unban": {
-                    "title": "ACTION // UNBAN",
-                    "confirmation": "Do you really want to unban this user?",
-                    "missing_perms": "You do not have the necessary permissions to unban this user.",
-                    "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
-                    "success": "The user has been successfully unbanned:",
-                    "audit_reason": "Unbanned by {moderator}: {reason}",
-                    "error": "An error occurred: {error}",
-                    "abort": "The unban process has been aborted.",
-                    "abort_title": "UNBAN CANCELLED // {user}"
-                },
-                "kick": {
-                    "title": "ACTION // KICK",
-                    "confirmation": "Do you really want to remove this user from the server?",
-                    "missing_perms": "You do not have the necessary permissions to unban this user.",
-                    "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
-                    "success": "The user has been successfully removed from the server:",
-                    "audit_reason": "Kicked by {moderator}: {reason}",
-                    "error": "An error occurred: {error}",
-                    "abort": "The kick process has been aborted.",
-                    "dm_title": "ACTION // KICK // {guild}",
-                    "abort_title": "KICK CANCELLED // {user}"
-                },
-                "clear": {
-                    "title": "ACTION // CLEAR",
-                    "confirmation": "Do you really want to delete the messages?",
-                    "missing_perms": "You do not have the necessary permissions to delete messages.",
-                    "bot_missing_perms": "I do not have the necessary permissions to delete messages.",
-                    "success": "The message has been successfully deleted:",
-                    "error": "An error occurred: {error}",
-                    "abort": "The process has been aborted.",
-                    "abort_title": "CLEAR CANCELLED // #{channel}"
-                },
-                "flag_user": {
-                    "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
-                    "success": "The user was successfully entered into the system."
-                },
-                "deflag_user": {
-                    "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
-                    "success": "The user was successfully removed from the system."
-                },
-                "warn": {
-                    "title": "ACTION // WARN",
-                    "success": "{user} has been warned.\n**Reason:** {reason}\n**Warnings:** {count}",
-                    "escalation_mute": "{user} has been automatically muted for {duration} minutes. ({count} warnings)",
-                    "escalation_kick": "{user} has been automatically kicked from the server. ({count} warnings)",
-                    "escalation_ban": "{user} has been automatically banned. ({count} warnings)",
-                    "escalation_notify": "{user} has reached {count} warnings.",
-                    "missing_perms": "You do not have the necessary permissions to warn this user.",
-                    "error": "An error occurred: {error}"
-                },
-                "unwarn": {
-                    "title": "ACTION // UNWARN",
-                    "success": "Warning `{id}` has been removed from {user}.",
-                    "not_found": "Warning with ID `{id}` was not found.",
-                    "error": "An error occurred: {error}"
-                },
-                "warnings": {
-                    "title": "SYS // WARN LOG",
-                    "no_warnings": "{user} has no warnings.",
-                    "entry": "**ID:** `{id}`\n**Reason:** {reason}\n**Moderator:** {mod}\n**Date:** {date}"
-                },
-                "customcmd": {
-                    "title": "SYS // CUSTOM CMD",
-                    "added": "Command `{trigger}` has been created successfully.",
-                    "removed": "Command `{trigger}` has been removed successfully.",
-                    "not_found": "Command `{trigger}` was not found.",
-                    "already_exists": "Command `{trigger}` already exists.",
-                    "no_commands": "There are no custom commands on this server yet.",
-                    "list_entry": "`{trigger}` - created by {author}"
-                }
-            }
-        },
-        "systems": {
-            "chatfilter": {
-                "title": "SYS // CHATFILTER",
-                "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
-                "description_not_deleted": "A message from {user} was flagged as potentially harmful, but could **not be deleted automatically**.\n\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
-                "phishing_warning": "<:alert:1397005510409981982> **Warning {user}!** The message above may contain a **scam or phishing link**. Do **NOT** click on it! The link may be designed to steal your data.",
-                "footer": "Baxi Security - avocloud.net"
-            },
-            "globalchat": {
-                "title": "SYS // GLOBALCHAT",
-                "error": {
-                    "file_not_image": "This file is not an image or video and cannot be sent in the global chat.",
-                    "to_many_files": "You can attach and send a maximum of one image.",
-                    "message_to_long": "Your message is too long. Please note that the maximum length is 1000 characters.",
-                    "baned": "You are banned from the global chat. The following reason is given: {reason}",
-                    "s11-not-sent": "<:alert:1397005510409981982> Your message wasn't sent in the global chat because it contains sensitive content related to self-harm or suicide.\nPlease check your private messages -  our bot has sent you an important message there."
-                }
-            },
-            "verify": {
-                "title": "SYS // VERIFY",
-                "description_not_enabled": "This system is not enabled on this server. Please contact an administrator.",
-                "description_success": "The verification was successful. Welcome to the server!",
-                "role_not_found": "Role not found.",
-                "user_not_found": "User not found in guild.",
-                "captcha": {
-                    "description_wrong_code": "The code entered is incorrect. Please try again."
-                },
-                "password": {
-                    "description_wrong_password": "The password entered is incorrect. Please try again."
-                }
-            },
-            "ticket": {
-                "title": "SYS // TICKET",
-                "channel_name": "support-{user}",
-                "description_creation_successfull": "The ticket has been successfully created. A team member will get back to you shortly.\nYour ticket: {channel}",
-                "description_already_open": "You already have an open ticket. Please wait for a team member to respond.\nYour ticket: {channel}",
-                "description_no_permission_delete": "You do not have permission to delete this ticket.",
-                "description_no_permission_claim": "You do not have permission to claim this ticket.",
-                "description_claimed": "The supporter {user} is now claiming this ticket.",
-                "link": "Here you can find a transcript of your recently closed ticket on {guild}:",
-                "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion.",
-                "close_cancel": "The ticket close process has been cancelled by {user}.",
-                "server_only": "Server only.",
-                "disabled": "The ticket system is currently disabled.",
-                "button_not_found": "This ticket button is no longer available.",
-                "category_not_configured": "Ticket category is not configured.",
-                "category_invalid": "Configured ticket category is invalid.",
-                "category_no_access": "Cannot access ticket category.",
-                "role_not_configured": "Ticket staff role is not configured.",
-                "role_not_found": "Configured ticket staff role was not found.",
-                "opened_description": "{user} opened a **{label}** ticket.",
-                "error_creating": "An error occurred creating the ticket.",
-                "channel_only": "This command can only be used in a text channel.",
-                "not_valid_ticket": "This channel is not a valid ticket.",
-                "system_not_configured": "Error: Ticket system not properly configured.",
-                "member_not_found": "Error: Member not found.",
-                "error_claiming": "An error occurred while trying to claim the ticket.",
-                "transcript_sent_dm": "Transcript sent to user {user} via DM.",
-                "transcript_dm_failed": "Unable to send transcript to user: DMs closed or blocked."
-            },
-            "ai": {
-                "title": "SYS // AI",
-                "waiting": {
-                    "content": "Baxi AI is working on a response..."
-                },
-                "error": {
-                    "unknown": "An unknown error has occurred. Please try again later.",
-                    "id_not_found": "The ConversationID of your chat was not found. Please start a new chat using the `/ai` command.",
-                    "model_unable_to_chat": "Unfortunately, you cannot chat with this model. Please try with another model."
-                }
-            },
-            "terms": {
-                "description": "The owner of this server has not agreed to the terms and conditions of Baxi and Avocloud.net services. Therefore, this service has been blocked on this server. \n\nTo reactivate Baxi services, someone from the team must log in to the [Baxi Dashboard]({url}) and accept the terms and conditions."
-            },
-            "antispam": {
-                "title": "SYS // ANTISPAM",
-                "triggered": "{user}, you are sending too many messages. Please slow down.",
-                "duplicate": "{user}, please do not send the same message multiple times.",
-                "muted": "{user} has been muted for spamming.",
-                "warned": "{user} has been warned for spamming."
-            },
-            "welcomer": {
-                "title": "SYS // WELCOME",
-                "default_welcome": "Welcome {user} to {server}!",
-                "default_leave": "{user} has left {server}."
-            },
-            "livestream": {
-                "title": "SYS // LIVESTREAM",
-                "channel_name_online": "🔴│{name}",
-                "channel_name_offline": "⚫│{name}",
-                "embed_online_title": "LIVESTREAM // {name} // NOW LIVE",
-                "embed_online_game": "Game",
-                "embed_online_viewers": "Viewers",
-                "embed_online_started": "Started",
-                "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
-                "embed_offline_description": "{name} is not streaming right now. Check back later!",
-                "embed_footer": "Baxi Livestream - avocloud.net",
-                "ping_message": "{role} -  **{name}** is now live playing **{game}**!"
-            },
-            "youtube_videos": {
-                "embed_description": "**{name}** just uploaded a new video!",
-                "embed_field_published": "Published",
-                "embed_footer": "Baxi YouTube Videos · avocloud.net"
-            },
-            "tiktok": {
-                "embed_description": "**{name}** posted a new TikTok!",
-                "embed_field_published": "Published",
-                "embed_footer": "Baxi TikTok · avocloud.net"
-            },
-            "twitter": {
-                "embed_description": "**{name}** posted on X!",
-                "embed_field_published": "Published",
-                "embed_footer": "Baxi X · avocloud.net"
-            },
-            "instagram": {
-                "embed_description_post": "**{name}** shared a new post on Instagram!",
-                "embed_description_reel": "**{name}** shared a new Reel on Instagram!",
-                "embed_field_published": "Published",
-                "embed_footer": "Baxi Instagram · avocloud.net"
-            },
-            "button_roles": {
-                "applied": "The **{role}** role has been applied to your profile.",
-                "removed": "The **{role}** role has been removed from your profile.",
-                "not_found": "Role not found -  it may have been deleted.",
-                "no_permission": "I don't have permission to manage that role.",
-                "server_only": "This can only be used inside a server.",
-                "group_limit_removed": "The **{removed}** role was removed and **{added}** was applied."
-            },
-            "stats_channels": {
-                "title": "SYS // STATS"
-            },
-            "suggestions": {
-                "embed_title": "Suggestion",
-                "footer": "Baxi · Suggestions",
-                "no_text": "*-  no text - *",
-                "no_permission": "<:x_:1492987102353166587> Only server staff can accept or decline suggestions.",
-                "already_decided": "This suggestion has already been decided.",
-                "status_field": "Status",
-                "status_accepted": "<:check:1492987072250908794> Accepted by {user}",
-                "status_accepted_reason": "<:check:1492987072250908794> Accepted by {user}\n> {reason}",
-                "status_declined": "<:x_:1492987102353166587> Declined by {user}",
-                "status_declined_reason": "<:x_:1492987102353166587> Declined by {user}\n> {reason}",
-                "log_accepted": "<:check:1492987072250908794> Suggestion **accepted** by {reviewer}\n[Jump to message]({link})",
-                "log_accepted_reason": "<:check:1492987072250908794> Suggestion **accepted** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
-                "log_declined": "<:x_:1492987102353166587> Suggestion **declined** by {reviewer}\n[Jump to message]({link})",
-                "log_declined_reason": "<:x_:1492987102353166587> Suggestion **declined** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
-                "voting_disabled": "<:x_:1492987102353166587> Voting is disabled on this server.",
-                "btn_accept": "Accept",
-                "btn_decline": "Decline",
-                "modal_accept_title": "Accept Suggestion",
-                "modal_decline_title": "Decline Suggestion",
-                "modal_reason_label": "Reason (optional)",
-                "modal_reason_placeholder": "Enter a reason...",
-                "auto_forward_title": "<:fire:1492987074389872660> Popular Suggestion",
-                "auto_forward_footer": "Baxi · Suggestions | {votes} upvotes",
-                "btn_comment": "Comment",
-                "modal_comment_title": "Add Staff Comment",
-                "modal_comment_label": "Comment",
-                "modal_comment_placeholder": "Enter your comment or update...",
-                "comment_field": "Staff Update",
-                "comment_value": "{user}\n> {comment}",
-                "log_comment": "Staff comment added by {reviewer}\n**Comment:** {comment}\n[Jump to message]({link})",
-                "btn_join_thread": "Join Discussion",
-                "thread_joined": "You joined the discussion: {thread}",
-                "thread_not_found": "Discussion thread not found.",
-                "already_in_thread": "You are already in the conversation: {thread}",
-                "thread_update_accepted": "Suggestion **accepted** by {user}",
-                "thread_update_accepted_reason": "Suggestion **accepted** by {user}\n**Reason:** {reason}",
-                "thread_update_declined": "Suggestion **declined** by {user}",
-                "thread_update_declined_reason": "Suggestion **declined** by {user}\n**Reason:** {reason}",
-                "thread_update_comment": "**Staff update** by {user}\n> {comment}"
-            },
-            "temp_voice": {
-                "panel_title": "Voice Control Panel",
-                "panel_desc": "Manage your temporary voice channel with the buttons below.",
-                "owner_field": "Owner",
-                "status_field": "Status",
-                "status_public": "🔓 Public",
-                "status_private": "🔒 Private",
-                "btn_public": "Public",
-                "btn_private": "Private",
-                "btn_rename": "Rename",
-                "btn_limit": "User Limit",
-                "btn_permit": "Permit",
-                "btn_reject": "Reject",
-                "not_owner": "Only the channel owner can use this control panel.",
-                "panel_resent": "Control panel re-posted below.",
-                "not_temp_channel": "Use this in your temporary voice channel's text chat.",
-                "now_public": "Channel is now public — anyone can join.",
-                "now_private": "Channel is now private — only permitted users can join.",
-                "rename_modal_title": "Rename Channel",
-                "rename_label": "New channel name",
-                "renamed": "Channel renamed.",
-                "limit_modal_title": "Set User Limit",
-                "limit_label": "Max users (0 = unlimited)",
-                "limit_set": "User limit updated.",
-                "limit_invalid": "Enter a whole number between 0 and 99.",
-                "permit_prompt": "Select users to permit (they can join):",
-                "permitted": "Permitted {count} user(s).",
-                "permitted_invited": "Permitted {count} user(s) and sent {sent} invite(s).",
-                "invite_dm_title": "You've been invited!",
-                "invite_dm_desc": "You can now join **{channel}** in **{guild}**.",
-                "invite_button": "Join Voice",
-                "reject_prompt": "Select users to reject (they cannot join):",
-                "rejected": "Rejected {count} user(s).",
-                "btn_save": "Save Settings",
-                "settings_saved": "Settings saved. Your next temp channel will use them.",
-                "permitted_field": "Permitted",
-                "rejected_field": "Rejected",
-                "none_value": "—",
-                "status_permanent": "📌 Permanent",
-                "btn_permanent": "Permanent",
-                "permanent_on": "Channel is now permanent — it won't be deleted.",
-                "permanent_off": "Channel is temporary again — deleted when empty.",
-                "permanent_no_perm": "You don't have a role allowed to make channels permanent."
-            },
-            "mc_link": {
-                "server_only": "This command can only be used in a Discord server.",
-                "not_enabled": "MC account linking is not enabled on this server.",
-                "not_configured": "MC Link is not configured yet. Ask an admin.",
-                "already_linked": "Your account is already linked!",
-                "not_linked": "Your account is not linked.",
-                "invalid_code": "Invalid or expired code. Rejoin the Minecraft server to get a fresh code.",
-                "link_failed": "Could not reach the Minecraft server. Please try again later.",
-                "unlink_disabled": "Self-unlinking is disabled on this server. Contact an admin.",
-                "success_title": "Account linked!",
-                "success_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n\nYou can now join the server.",
-                "dm_desc": "Your Minecraft account **{mc_name}** has been successfully linked on **{guild}**.",
-                "announce": "{mention} linked their Minecraft account **{mc_name}**.",
-                "unlink_success_title": "Account unlinked!",
-                "unlink_success_desc": "**Minecraft:** `{mc_name}` has been unlinked.",
-                "status_title": "MC Account Status",
-                "status_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n**Linked:** {linked_at}",
-                "admin_unlink_success": "{mention} has been unlinked. Minecraft account: `{mc_name}`.",
-                "lookup_title": "MC Account Lookup",
-                "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Linked:** {linked_at}",
-                "confirm_title": "Confirm your link",
-                "confirm_desc": "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.",
-                "confirm_lede": "You're about to link this Minecraft account to your Discord. Make sure both names look correct.",
-                "already_linked_title": "Already linked",
-                "already_linked_lede": "Your Discord account is already linked to a Minecraft account on this server.",
-                "already_linked_desc": "Your account is already linked. No changes were made.",
-                "bedrock_add_title": "Add Bedrock account",
-                "bedrock_add_lede": "You're already linked with a Java account. Confirm to also add this Bedrock account.",
-                "list_title": "Online players ({count}/{max})",
-                "list_empty": "Nobody is online right now.",
-                "list_unreachable": "Minecraft server unreachable.",
-                "list_outdated_plugin": "Unable to fetch player list — the server plugin is outdated.",
-                "footer": "Baxi · avocloud.net"
-            },
-            "giveaway": {
-                "embed_title": "GIVEAWAY",
-                "footer": "Baxi · Giveaway",
-                "field_ends": "Ends",
-                "field_ended": "Ended",
-                "field_winners": "Winners",
-                "field_host": "Host",
-                "entered": "You've entered the giveaway! Good luck!",
-                "left": "You've left the giveaway.",
-                "not_found": "This giveaway could not be found.",
-                "already_ended": "This giveaway has already ended.",
-                "no_permission": "You need the **Manage Server** permission to start a giveaway.",
-                "invalid_duration": "Invalid duration. Use formats like `1h`, `30m`, `2d`, `1h30m`. Minimum is 60 seconds.",
-                "channel_only": "Giveaways can only be started in text channels.",
-                "send_error": "Failed to send the giveaway message.",
-                "started": "Giveaway started in {channel}!",
-                "winner_announce_title": "GIVEAWAY // WINNER",
-                "winner_announce": "Congratulations {winners}!\nYou won **{reward}**!\n[Jump to Giveaway]({msg_link})",
-                "winner_message_field": "Message from the host",
-                "winner_dm_title": "GIVEAWAY // YOU WON",
-                "winner_dm": "You won **{reward}** in **{guild}**!\n[Jump to Giveaway]({msg_link})",
-                "no_winners_title": "GIVEAWAY // NO WINNERS",
-                "no_winners": "No one entered the giveaway for **{reward}**.\n[Jump to Giveaway]({msg_link})"
-            },
-            "music": {
-                "disabled": "The music system is disabled on this server.",
-                "not_in_voice": "Join a voice channel first.",
-                "bot_busy": "The bot is already playing in another voice channel.",
-                "queue_full": "Queue is full.",
-                "song_too_long": "Track exceeds the configured maximum duration.",
-                "source_blocked": "This source is not allowed on this server.",
-                "extract_failed": "Could not load that track.",
-                "url_not_whitelisted": "This URL is not on the radio whitelist.",
-                "invalid_url": "Invalid URL.",
-                "preset_not_found": "Unknown station.",
-                "radio_pick_one": "Pick a station or pass a custom_url.",
-                "nothing_playing": "Nothing is playing.",
-                "not_paused": "Nothing is paused.",
-                "added": "Added to queue",
-                "now_playing": "Now playing",
-                "streaming": "Live stream",
-                "skipped": "Skipped.",
-                "stopped": "Stopped and left voice channel.",
-                "paused": "Paused.",
-                "resumed": "Resumed.",
-                "queue_title": "Music Queue",
-                "queue_empty": "Queue is empty.",
-                "queue_upcoming": "Up next",
-                "queue_more": "...and {n} more",
-                "duration_field": "Duration",
-                "requester_field": "Requested by",
-                "source_field": "Source",
-                "volume_set": "Volume set: {level}%",
-                "volume_invalid": "Volume must be between 0 and 200."
-            }
-        },
-        "events": {
-            "on_guild_join": {
-                "title": "SYS // INIT",
-                "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo configure me, open the **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
-                "saved_data": {
-                    "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard at https://baxi.avocloud.net",
-                    "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard at https://baxi.avocloud.net to ensure these settings are correct."
-                }
-            }
-        },
-        "games": {
-            "counting": {
-                "title": "GAME // COUNTING",
-                "wrong_number": "<:x_:1492987102353166587> **{user}** broke the chain! Sent: **{sent}**, expected: **{expected}**.\nThe count was reset from **{count}** back to **0**.",
-                "double_count": "<:x_:1492987102353166587> **{user}** cannot count twice in a row! The count stays at **{count}**.",
-                "footer": "Baxi · Counting Game",
-                "score_title": "🔢 Counting Game",
-                "score_not_enabled": "<:x_:1492987102353166587> The Counting Game is not enabled on this server.",
-                "score_description": "**Current count:** {current}\n**High score:** {high}\n**Channel:** {channel}",
-                "score_no_channel": "*not set*",
-                "reset_done": "The count was reset from **{old}** to **0**.",
-                "new_highscore": "<:celebrate:1492987070841491707> **New record!** {user} set the high score to **{count}**!",
-                "milestone": "<:trophy:1492978643646026006> **Milestone reached!** The count has hit **{count}**!"
-            },
-            "guessing": {
-                "title": "GAME // GUESS",
-                "description_correct": "{user}, you guessed the number correctly!\nWe will start with a new number, which has been generated between 1 and {max_value}.\nGood luck!"
-            },
-            "flag_quiz": {
-                "title": "Flag Quiz",
-                "question": "Which country does this flag belong to?",
-                "question_footer": "Baxi · Flag Quiz  |  Type your answer!",
-                "correct": "<:celebrate:1492987070841491707> **{user}** got it right!\nThe answer was: **{country}** {flag}",
-                "hint": "**Hint:** `{hint}` ({length} letters)",
-                "footer": "Baxi · Flag Quiz",
-                "leaderboard_title": "Flag Quiz – Leaderboard",
-                "leaderboard_empty": "No points awarded yet. Be the first!",
-                "leaderboard_pts_single": "point",
-                "leaderboard_pts_plural": "points"
-            }
-        },
-        "leveling": {
-            "levelup_title": "<:up:1493702235295580210> LEVEL // LEVEL UP · {level}",
-            "levelup_desc": "{user} has reached **Level {level}**!",
-            "disabled_title": "LEVEL // DISABLED",
-            "disabled_desc": "The level system is not enabled on this server. An admin can enable it in the dashboard.",
-            "level_title": "LEVEL // {user}",
-            "level_field": "Level",
-            "xp_field": "Total XP",
-            "progress_field": "Progress to next level",
-            "leaderboard_title": "LEVEL // LEADERBOARD · {guild}",
-            "leaderboard_empty": "No contributions recorded yet.",
-            "messages_label": "messages",
-            "rank_title": "LEVEL // RANK · {user}",
-            "rank_xp_field": "XP contributed",
-            "rank_msgs_field": "Messages",
-            "rank_share_field": "Share of server XP",
-            "rank_pos_field": "Leaderboard rank"
+    "systems": {
+      "chatfilter": {
+        "title": "SYS // CHATFILTER",
+        "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
+        "description_not_deleted": "Eine Nachricht von {user} wurde als potenziell schädlich eingestuft, konnte jedoch **nicht automatisch gelöscht** werden.\n\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
+        "phishing_warning": "<:alert:1397005510409981982> **Achtung {user}!** Die obige Nachricht enthält möglicherweise einen **Scam- oder Phishing-Link**. Klicke **NICHT** darauf! Der Link könnte darauf abzielen, deine Daten zu stehlen.",
+        "footer": "Baxi Security - avocloud.net"
+      },
+      "globalchat": {
+        "title": "SYS // GLOBALCHAT",
+        "error": {
+          "file_not_image": "Diese Datei ist kein Bild oder Video und kann daher nicht im globalen Chat versendet werden.",
+          "to_many_files": "Du kannst maximal ein Bild anhängen und versenden.",
+          "message_to_long": "Deine Nachricht ist zu lang. Beachte, dass die maximale Länge 1000 Zeichen beträgt.",
+          "baned": "Du bist aus dem globalen Chat ausgeschlossen. Folgender Grund ist angegeben: {reason}",
+          "s11-not-sent": "<:alert:1397005510409981982> Deine Nachricht konnte nicht im globalen Chat gesendet werden, da sie sensible Themen wie Selbstverletzung oder Suizid enthält.\nBitte schau in deine privaten Nachrichten, unser Bot hat dir dort eine wichtige Nachricht geschickt."
         }
+      },
+      "verify": {
+        "title": "SYS // VERIFY",
+        "description_not_enabled": "Dieses System ist auf diesem Server nicht aktiviert. Bitte kontaktieren einen Administrator.",
+        "description_success": "Die verifizierung war erfolgreich. Willkommen auf dem Server!",
+        "role_not_found": "Rolle nicht gefunden.",
+        "user_not_found": "Benutzer nicht auf dem Server gefunden.",
+        "captcha": {
+          "description_wrong_code": "Der eingegebene Code ist falsch. Bitte versuche es erneut."
+        },
+        "password": {
+          "description_wrong_password": "Die eingegebene Passwort ist falsch. Bitte versuche es erneut."
+        }
+      },
+      "ticket": {
+        "title": "SYS // TICKET",
+        "channel_name": "support-{user}",
+        "description_creation_successfull": "Das Ticket wurde erfolgreich erstellt. Ein Teammitglied wird sich in Kürze bei dir melden.\nDein Ticket: {channel}",
+        "description_already_open": "Du hast bereits ein offenes Ticket. Bitte warte bis ein Teammitglied antwortet.\nDein Ticket: {channel}",
+        "description_no_permission_delete": "Du hast keine Berechtigung dieses Ticket zu löschen.",
+        "description_no_permission_claim": "Du hast keine Berechtigung dieses Ticket zu übernehmen.",
+        "description_claimed": "Der Supporter {user} übernimmt nun dieses Ticket.",
+        "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets auf {guild}:",
+        "wait_delete_confirm": "Bevor das Ticket gelöscht wird, müsst du im Chat \"confirm\" schreiben, um die Löschung zu bestätigen.",
+        "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen.",
+        "server_only": "Nur auf Servern verfügbar.",
+        "disabled": "Das Ticket-System ist derzeit deaktiviert.",
+        "button_not_found": "Diese Ticket-Schaltfläche ist nicht mehr verfügbar.",
+        "category_not_configured": "Ticket-Kategorie ist nicht konfiguriert.",
+        "category_invalid": "Die konfigurierte Ticket-Kategorie ist ungültig.",
+        "category_no_access": "Auf die Ticket-Kategorie kann nicht zugegriffen werden.",
+        "role_not_configured": "Die Ticket-Staff-Rolle ist nicht konfiguriert.",
+        "role_not_found": "Die konfigurierte Ticket-Staff-Rolle wurde nicht gefunden.",
+        "opened_description": "{user} hat ein **{label}**-Ticket geöffnet.",
+        "error_creating": "Beim Erstellen des Tickets ist ein Fehler aufgetreten.",
+        "channel_only": "Dieser Befehl kann nur in einem Textkanal verwendet werden.",
+        "not_valid_ticket": "Dieser Kanal ist kein gültiges Ticket.",
+        "system_not_configured": "Fehler: Das Ticket-System ist nicht richtig konfiguriert.",
+        "member_not_found": "Fehler: Mitglied nicht gefunden.",
+        "error_claiming": "Beim Übernehmen des Tickets ist ein Fehler aufgetreten.",
+        "transcript_sent_dm": "Transkript per DM an {user} gesendet.",
+        "transcript_dm_failed": "Transkript konnte nicht gesendet werden: DMs geschlossen oder blockiert."
+      },
+      "ai": {
+        "title": "SYS // AI",
+        "waiting": {
+          "content": "Baxi AI arbeitet an einer Antwort..."
+        },
+        "error": {
+          "unknown": "Ein unbekannter Fehler ist aufgetreten. Bitte versuche es später noch einmal.",
+          "id_not_found": "Die ConversationID deiner Unterhaltung wurde nicht gefunden. Bitte starte einen neuen chat mithilfe des `/ai` Befehls.",
+          "model_unable_to_chat": "Mit diesem Model kannst du leider nicht chatten. Bitte versuche es mit dem anderen Model."
+        }
+      },
+      "terms": {
+        "description": "Der Inhaber dieses Servers hat den Nutzungsbedingungen der Dienste von Baxi und Avocloud.net nicht zugestimmt. Daher wurde dieser Dienst auf diesem Server gesperrt. \n\nUm die Baxi-Dienste wieder zu aktivieren, muss sich jemand aus dem Server Team beim [Baxi-Dashboard]({url}) anmelden und die Nutzungsbedingungen akzeptieren."
+      },
+      "antispam": {
+        "title": "SYS // ANTISPAM",
+        "triggered": "{user}, du sendest zu viele Nachrichten. Bitte verlangsame dich.",
+        "duplicate": "{user}, bitte sende nicht die gleiche Nachricht mehrfach.",
+        "muted": "{user} wurde wegen Spam stummgeschaltet.",
+        "warned": "{user} wurde wegen Spam verwarnt."
+      },
+      "welcomer": {
+        "title": "SYS // WILLKOMMEN",
+        "default_welcome": "Willkommen {user} auf {server}!",
+        "default_leave": "{user} hat {server} verlassen."
+      },
+      "livestream": {
+        "title": "SYS // LIVESTREAM",
+        "channel_name_online": "🔴│{name}",
+        "channel_name_offline": "⚫│{name}",
+        "embed_online_title": "LIVESTREAM // {name} // JETZT LIVE",
+        "embed_online_game": "Spiel",
+        "embed_online_viewers": "Zuschauer",
+        "embed_online_started": "Gestartet",
+        "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
+        "embed_offline_description": "{name} streamt gerade nicht. Schau später wieder vorbei!",
+        "embed_footer": "Baxi Livestream - avocloud.net",
+        "ping_message": "{role} -  **{name}** streamt jetzt **{game}** live!"
+      },
+      "youtube_videos": {
+        "embed_description": "**{name}** hat ein neues Video hochgeladen!",
+        "embed_field_published": "Veröffentlicht",
+        "embed_footer": "Baxi YouTube Videos · avocloud.net"
+      },
+      "tiktok": {
+        "embed_description": "**{name}** hat ein neues TikTok gepostet!",
+        "embed_field_published": "Veröffentlicht",
+        "embed_footer": "Baxi TikTok · avocloud.net"
+      },
+      "twitter": {
+        "embed_description": "**{name}** hat auf X gepostet!",
+        "embed_field_published": "Veröffentlicht",
+        "embed_footer": "Baxi X · avocloud.net"
+      },
+      "instagram": {
+        "embed_description_post": "**{name}** hat einen neuen Post geteilt!",
+        "embed_description_reel": "**{name}** hat einen neuen Reel geteilt!",
+        "embed_field_published": "Veröffentlicht",
+        "embed_footer": "Baxi Instagram · avocloud.net"
+      },
+      "button_roles": {
+        "applied": "Die Rolle **{role}** wurde deinem Profil hinzugefügt.",
+        "removed": "Die Rolle **{role}** wurde von deinem Profil entfernt.",
+        "not_found": "Rolle nicht gefunden -  sie wurde möglicherweise gelöscht.",
+        "no_permission": "Ich habe keine Berechtigung, diese Rolle zu verwalten.",
+        "server_only": "Dies kann nur innerhalb eines Servers verwendet werden.",
+        "group_limit_removed": "Die Rolle **{removed}** wurde entfernt und **{added}** hinzugefügt."
+      },
+      "stats_channels": {
+        "title": "SYS // STATS"
+      },
+      "suggestions": {
+        "embed_title": "Vorschlag",
+        "footer": "Baxi · Vorschläge",
+        "no_text": "*-  kein Text - *",
+        "no_permission": "<:x_:1492987102353166587> Nur Server-Staff kann Vorschläge annehmen oder ablehnen.",
+        "already_decided": "Dieser Vorschlag wurde bereits entschieden.",
+        "status_field": "Status",
+        "status_accepted": "<:check:1492987072250908794> Angenommen von {user}",
+        "status_accepted_reason": "<:check:1492987072250908794> Angenommen von {user}\n> {reason}",
+        "status_declined": "<:x_:1492987102353166587> Abgelehnt von {user}",
+        "status_declined_reason": "<:x_:1492987102353166587> Abgelehnt von {user}\n> {reason}",
+        "log_accepted": "<:check:1492987072250908794> Vorschlag **angenommen** von {reviewer}\n[Zur Nachricht]({link})",
+        "log_accepted_reason": "<:check:1492987072250908794> Vorschlag **angenommen** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
+        "log_declined": "<:x_:1492987102353166587> Vorschlag **abgelehnt** von {reviewer}\n[Zur Nachricht]({link})",
+        "log_declined_reason": "<:x_:1492987102353166587> Vorschlag **abgelehnt** von {reviewer}\n**Begründung:** {reason}\n[Zur Nachricht]({link})",
+        "voting_disabled": "<:x_:1492987102353166587> Abstimmungen sind auf diesem Server deaktiviert.",
+        "btn_accept": "Annehmen",
+        "btn_decline": "Ablehnen",
+        "modal_accept_title": "Vorschlag annehmen",
+        "modal_decline_title": "Vorschlag ablehnen",
+        "modal_reason_label": "Begründung (optional)",
+        "modal_reason_placeholder": "Begründung eingeben...",
+        "auto_forward_title": "<:fire:1492987074389872660> Beliebter Vorschlag",
+        "auto_forward_footer": "Baxi · Vorschläge | {votes} Upvotes",
+        "btn_comment": "Kommentar",
+        "modal_comment_title": "Staff-Kommentar hinzufügen",
+        "modal_comment_label": "Kommentar",
+        "modal_comment_placeholder": "Kommentar oder Update eingeben...",
+        "comment_field": "Staff Update",
+        "comment_value": "{user}\n> {comment}",
+        "log_comment": "Staff-Kommentar hinzugefügt von {reviewer}\n**Kommentar:** {comment}\n[Zur Nachricht]({link})",
+        "btn_join_thread": "Diskussion beitreten",
+        "thread_joined": "Du bist der Diskussion beigetreten: {thread}",
+        "thread_not_found": "Diskussions-Thread nicht gefunden.",
+        "already_in_thread": "Du bist bereits in der Unterhaltung: {thread}",
+        "thread_update_accepted": "Vorschlag **angenommen** von {user}",
+        "thread_update_accepted_reason": "Vorschlag **angenommen** von {user}\n**Begründung:** {reason}",
+        "thread_update_declined": "Vorschlag **abgelehnt** von {user}",
+        "thread_update_declined_reason": "Vorschlag **abgelehnt** von {user}\n**Begründung:** {reason}",
+        "thread_update_comment": "**Staff Update** von {user}\n> {comment}"
+      },
+      "temp_voice": {
+        "panel_title": "Voice-Steuerung",
+        "panel_desc": "Verwalte deinen temporären Sprachkanal mit den Buttons unten.",
+        "owner_field": "Besitzer",
+        "status_field": "Status",
+        "status_public": "🔓 Öffentlich",
+        "status_private": "🔒 Privat",
+        "btn_public": "Öffentlich",
+        "btn_private": "Privat",
+        "btn_rename": "Umbenennen",
+        "btn_limit": "Userlimit",
+        "btn_permit": "Erlauben",
+        "btn_reject": "Ablehnen",
+        "not_owner": "Nur der Besitzer des Channels kann diese Steuerung verwenden.",
+        "panel_resent": "Kontrollpanel wurde unten erneut gepostet.",
+        "not_temp_channel": "Nutze das im Text-Chat deines Temp-Voice-Channels.",
+        "now_public": "Der Channel ist jetzt öffentlich – jeder kann beitreten.",
+        "now_private": "Der Channel ist jetzt privat – nur erlaubte Nutzer können beitreten.",
+        "rename_modal_title": "Channel umbenennen",
+        "rename_label": "Neuer Channel-Name",
+        "renamed": "Channel umbenannt.",
+        "limit_modal_title": "Userlimit festlegen",
+        "limit_label": "Max. Nutzer (0 = unbegrenzt)",
+        "limit_set": "Userlimit aktualisiert.",
+        "limit_invalid": "Gib eine ganze Zahl zwischen 0 und 99 ein.",
+        "permit_prompt": "Wähle Nutzer aus, die beitreten dürfen:",
+        "permitted": "{count} Nutzer erlaubt.",
+        "permitted_invited": "{count} Nutzer erlaubt und {sent} Einladung(en) gesendet.",
+        "invite_dm_title": "Du wurdest eingeladen!",
+        "invite_dm_desc": "Du kannst jetzt **{channel}** in **{guild}** beitreten.",
+        "invite_button": "Voice beitreten",
+        "reject_prompt": "Wähle Nutzer aus, die nicht beitreten dürfen:",
+        "rejected": "{count} Nutzer abgelehnt.",
+        "btn_save": "Einstellungen speichern",
+        "settings_saved": "Einstellungen gespeichert. Dein nächster Temp-Channel verwendet sie.",
+        "permitted_field": "Erlaubt",
+        "rejected_field": "Abgelehnt",
+        "none_value": "—",
+        "status_permanent": "📌 Permanent",
+        "btn_permanent": "Permanent",
+        "permanent_on": "Channel ist jetzt permanent – er wird nicht gelöscht.",
+        "permanent_off": "Channel ist wieder temporär – wird gelöscht, wenn leer.",
+        "permanent_no_perm": "Du hast keine Rolle, die Channels permanent machen darf."
+      },
+      "mc_link": {
+        "server_only": "Dieser Befehl kann nur in einem Discord-Server verwendet werden.",
+        "not_enabled": "Das MC-Account-Linking ist auf diesem Server nicht aktiviert.",
+        "not_configured": "MC-Link ist noch nicht eingerichtet. Bitte frage einen Admin.",
+        "already_linked": "Dein Account ist bereits verknüpft!",
+        "not_linked": "Dein Account ist nicht verknüpft.",
+        "invalid_code": "Ungültiger oder abgelaufener Code. Betritt den Minecraft-Server erneut, um einen neuen Code zu erhalten.",
+        "link_failed": "Der Minecraft-Server konnte nicht erreicht werden. Bitte versuche es später erneut.",
+        "unlink_disabled": "Das Entverknüpfen ist auf diesem Server deaktiviert. Wende dich an einen Admin.",
+        "success_title": "Account verknüpft!",
+        "success_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n\nDu kannst dem Server jetzt beitreten.",
+        "dm_desc": "Dein Minecraft-Account **{mc_name}** wurde erfolgreich mit deinem Discord auf **{guild}** verknüpft.",
+        "announce": "{mention} hat seinen Minecraft-Account **{mc_name}** verknüpft.",
+        "unlink_success_title": "Account entverknüpft!",
+        "unlink_success_desc": "**Minecraft:** `{mc_name}` wurde erfolgreich entverknüpft.",
+        "status_title": "MC Account Status",
+        "status_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n**Verknüpft:** {linked_at}",
+        "admin_unlink_success": "{mention} wurde entverknüpft. Minecraft-Account: `{mc_name}`.",
+        "lookup_title": "MC Account Lookup",
+        "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Verknüpft:** {linked_at}",
+        "lookup_specify_one": "Gib entweder einen Discord-User **oder** einen Minecraft-Namen an – nicht beides.",
+        "lookup_no_match": "Kein verknüpfter Discord-User für Minecraft-Namen `{mc_name}` gefunden.",
+        "confirm_title": "Bestätige deine Verknüpfung",
+        "confirm_desc": "Öffne diesen Link, um deine Verknüpfung abzuschließen:\n{url}\n\nDer Link läuft in 10 Minuten ab.",
+        "confirm_lede": "Du verknüpfst gleich diesen Minecraft-Account mit deinem Discord. Prüfe beide Namen.",
+        "already_linked_title": "Bereits verknüpft",
+        "already_linked_lede": "Dein Discord ist auf diesem Server bereits mit einem Minecraft-Account verknüpft.",
+        "already_linked_desc": "Dein Account ist bereits verknüpft. Es wurden keine Änderungen vorgenommen.",
+        "bedrock_add_title": "Bedrock-Account hinzufügen",
+        "bedrock_add_lede": "Du bist bereits mit einem Java-Account verknüpft. Bestätige, um zusätzlich diesen Bedrock-Account zu verknüpfen.",
+        "list_title": "Online-Spieler ({count}/{max})",
+        "list_empty": "Aktuell ist niemand online.",
+        "list_unreachable": "Der Minecraft-Server ist nicht erreichbar.",
+        "list_outdated_plugin": "Spielerliste kann nicht geladen werden – das Server-Plugin ist veraltet.",
+        "footer": "Baxi · avocloud.net"
+      },
+      "giveaway": {
+        "embed_title": "GIVEAWAY",
+        "footer": "Baxi · Giveaway",
+        "field_ends": "Endet",
+        "field_ended": "Beendet",
+        "field_winners": "Gewinner",
+        "field_host": "Veranstalter",
+        "entered": "Du nimmst jetzt am Gewinnspiel teil! Viel Erfolg!",
+        "left": "Du hast das Gewinnspiel verlassen.",
+        "not_found": "Dieses Gewinnspiel konnte nicht gefunden werden.",
+        "already_ended": "Dieses Gewinnspiel ist bereits beendet.",
+        "no_permission": "Du benötigst die Berechtigung **Server verwalten**, um ein Gewinnspiel zu starten.",
+        "invalid_duration": "Ungültige Dauer. Nutze z. B. `1h`, `30m`, `2d`, `1h30m`. Minimum sind 60 Sekunden.",
+        "channel_only": "Gewinnspiele können nur in Textkanälen gestartet werden.",
+        "send_error": "Gewinnspiel-Nachricht konnte nicht gesendet werden.",
+        "started": "Gewinnspiel in {channel} gestartet!",
+        "winner_announce_title": "GIVEAWAY // GEWINNER",
+        "winner_announce": "Herzlichen Glückwunsch {winners}!\nDu hast **{reward}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
+        "winner_message_field": "Nachricht vom Veranstalter",
+        "winner_dm_title": "GIVEAWAY // DU HAST GEWONNEN",
+        "winner_dm": "Du hast **{reward}** in **{guild}** gewonnen!\n[Zum Gewinnspiel]({msg_link})",
+        "no_winners_title": "GIVEAWAY // KEINE GEWINNER",
+        "no_winners": "Niemand hat am Gewinnspiel für **{reward}** teilgenommen.\n[Zum Gewinnspiel]({msg_link})"
+      },
+      "music": {
+        "disabled": "Das Musik-System ist auf diesem Server deaktiviert.",
+        "not_in_voice": "Du musst zuerst einem Sprachkanal beitreten.",
+        "bot_busy": "Der Bot spielt bereits in einem anderen Sprachkanal.",
+        "queue_full": "Die Warteschlange ist voll.",
+        "song_too_long": "Der Track überschreitet die maximal erlaubte Länge.",
+        "source_blocked": "Diese Quelle ist auf diesem Server nicht erlaubt.",
+        "extract_failed": "Track konnte nicht geladen werden.",
+        "url_not_whitelisted": "Diese URL steht nicht auf der Radio-Whitelist.",
+        "invalid_url": "Ungültige URL.",
+        "preset_not_found": "Unbekannter Sender.",
+        "radio_pick_one": "Wähle einen Sender oder gib eine custom_url an.",
+        "nothing_playing": "Aktuell wird nichts abgespielt.",
+        "not_paused": "Es ist nichts pausiert.",
+        "added": "Zur Warteschlange hinzugefügt",
+        "now_playing": "Spielt gerade",
+        "streaming": "Live-Stream",
+        "skipped": "Übersprungen.",
+        "stopped": "Gestoppt und Sprachkanal verlassen.",
+        "paused": "Pausiert.",
+        "resumed": "Fortgesetzt.",
+        "queue_title": "Musik-Warteschlange",
+        "queue_empty": "Die Warteschlange ist leer.",
+        "queue_upcoming": "Als nächstes",
+        "queue_more": "...und {n} weitere",
+        "duration_field": "Dauer",
+        "requester_field": "Angefordert von",
+        "source_field": "Quelle",
+        "volume_set": "Lautstärke gesetzt: {level}%",
+        "volume_invalid": "Lautstärke muss zwischen 0 und 200 liegen."
+      }
+    },
+    "events": {
+      "on_guild_join": {
+        "title": "SYS // INIT",
+        "content": "Hallo zusammen! Ich bin Baxi, ein Discord Bot der hier ist um dir zu helfen. Mein Ziel ist es, diese Community sicher und beschäftigt zu halten.\nUm Einstellungen vorzunehmen, öffne das **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
+        "saved_data": {
+          "new_data": "Standartmäßig sind alle Systeme deaktiviert. Du kannst nun über das Dashboard (https://baxi.avocloud.net) beliebige Systeme aktivieren und einstellen.",
+          "existing_data": "Da wir bereits Einstellungen von diesem Server abgespeichert haben, wurden diese wiederhergestellt. Überprüfe bitte im Dashboard (https://baxi.avocloud.net) ob diese Einstellungen korrekt sind."
+        }
+      }
+    },
+    "games": {
+      "counting": {
+        "title": "GAME // COUNTING",
+        "wrong_number": "<:x_:1492987102353166587> **{user}** hat die Kette gebrochen! Gesendet: **{sent}**, erwartet: **{expected}**.\nDer Zähler wurde von **{count}** auf **0** zurückgesetzt.",
+        "double_count": "<:x_:1492987102353166587> **{user}** kann nicht zweimal hintereinander zählen! Der Zähler bleibt bei **{count}**.",
+        "footer": "Baxi · Counting Game",
+        "score_title": "🔢 Counting Game",
+        "score_not_enabled": "<:x_:1492987102353166587> Das Counting Game ist auf diesem Server nicht aktiviert.",
+        "score_description": "**Aktueller Zähler:** {current}\n**Highscore:** {high}\n**Channel:** {channel}",
+        "score_no_channel": "*nicht gesetzt*",
+        "reset_done": "Der Zähler wurde von **{old}** auf **0** zurückgesetzt.",
+        "new_highscore": "<:celebrate:1492987070841491707> **Neuer Rekord!** {user} hat den Highscore auf **{count}** gesetzt!",
+        "milestone": "<:trophy:1492978643646026006> **Meilenstein erreicht!** Der Zähler hat **{count}** erreicht!"
+      },
+      "guessing": {
+        "title": "GAME // GUESS",
+        "description_correct": "{user}, du hast die Zahl richtig geraten!\nWir beginnen mit einer neuen Zahl, diese wurde zwischen 1 und {max_value} generiert.\nViel Erfolg!"
+      },
+      "flag_quiz": {
+        "title": "Flag Quiz",
+        "question": "Welchem Land gehört diese Flagge?",
+        "question_footer": "Baxi · Flag Quiz  |  Tippe deine Antwort!",
+        "correct": "<:celebrate:1492987070841491707> **{user}** hat es gewusst!\nDie Antwort war: **{country}** {flag}",
+        "hint": "**Tipp:** `{hint}` ({length} Buchstaben)",
+        "footer": "Baxi · Flag Quiz",
+        "leaderboard_title": "Flag Quiz – Rangliste",
+        "leaderboard_empty": "Noch keine Punkte vergeben. Sei der Erste!",
+        "leaderboard_pts_single": "Punkt",
+        "leaderboard_pts_plural": "Punkte"
+      }
+    },
+    "leveling": {
+      "levelup_title": "<:up:1493702235295580210> LEVEL // LEVEL UP · {level}",
+      "levelup_desc": "{user} hat **Level {level}** erreicht!",
+      "disabled_title": "LEVEL // DEAKTIVIERT",
+      "disabled_desc": "Das Level-System ist auf diesem Server nicht aktiviert. Ein Admin kann es im Dashboard einschalten.",
+      "level_title": "LEVEL // {user}",
+      "level_field": "Level",
+      "xp_field": "Gesamt-XP",
+      "progress_field": "Fortschritt zum nächsten Level",
+      "leaderboard_title": "LEVEL // BESTENLISTE · {guild}",
+      "leaderboard_empty": "Noch keine Beiträge aufgezeichnet.",
+      "messages_label": "Nachrichten",
+      "rank_title": "LEVEL // RANG · {user}",
+      "rank_xp_field": "Beigetragene XP",
+      "rank_msgs_field": "Nachrichten",
+      "rank_share_field": "Anteil am Server-XP",
+      "rank_pos_field": "Rang in der Bestenliste"
     }
+  },
+  "en": {
+    "commands": {
+      "guild_only": "This command can only be used in a Discord server, not via direct message (DM).",
+      "user": {
+        "help": {
+          "title": "SYS // HELP",
+          "content": "All commands start with the prefix “/”.",
+          "footer": "Baxi Bot - Avocloud.net",
+          "prefix": {
+            "title": "Prefix",
+            "content": "The prefix for this bot is “/”."
+          },
+          "about": {
+            "title": "SYS // ABOUT",
+            "content": "This bot was created by Avocloud.net. For more information, please visit our website."
+          },
+          "icons": {
+            "title": "Icons",
+            "content": "The icons used by Baxi can be found here: [Icons](https://discord.gg/aPvvhefmt3)"
+          },
+          "bugs": {
+            "title": "Bugs",
+            "content": "If you encounter any errors, please report them using the command </report:1227394011715735582>. This helps us greatly in development and troubleshooting. Thank you for your support!"
+          }
+        },
+        "scan_users": {
+          "title": "SYS // SCAN REPORT",
+          "reason": "Reason",
+          "date": "Date Flagged",
+          "id": "User ID",
+          "recommendation": "Recommendation",
+          "recommendation_description": "Consider reviewing these users and taking appropriate action.",
+          "no_users_detected": "No suspicious or threatening users were found on this server. Everything appears to be in order.",
+          "user_count": "Scanned **{users}** members",
+          "no_threats": "No threats detected",
+          "users_found": "Flagged Users Found",
+          "users_found_description": "These users have been flagged for suspicious activity:"
+        },
+        "my_trust": {
+          "title": "Prism // Your Trust Score",
+          "score_line": "**Score: {score}/100** {trend}  ·  {count} event(s)",
+          "recent_events_title": "Recent Events (last 5)",
+          "no_events": "No events recorded -  keep it up!",
+          "new_account_title": "New Account",
+          "new_account_value": "Your account is **{age} days** old. The full score bonus kicks in after **{full} days** -  your score will rise automatically in ~**{days} days**.",
+          "recovery_title": "Score Recovery",
+          "recovery_value": "Your score recovers automatically through good behavior. Estimated full recovery: **~{days} days**.",
+          "perfect_value": "Your score is perfect!",
+          "what_is_prism_title": "What is Prism?",
+          "what_is_prism_value": "Prism is Baxi's network-wide trust scoring system. [Learn more](https://baxi.avocloud.net/docs/user-guide/prism)",
+          "footer": "Baxi Prism · avocloud.net  |  This message is only visible to you.",
+          "opted_out_title": "Prism Opt-Out",
+          "opted_out_value": "You have opted out of Prism. No trust score is being tracked for you.\n\nModeration (chat filter, anti-spam, etc.) remains active.\nServer administrators can see that you have opted out.",
+          "opted_out_hint": "Use `/prism_optout` to opt back in."
+        },
+        "prism_optout": {
+          "title": "Prism // Opt-Out",
+          "opted_out": "You have successfully opted out of Prism. Your trust score will no longer be tracked.\n\n**Please note:**\n• Server administrators can see that you have opted out.\n• Moderation (chat filter, anti-spam, etc.) remains fully active -  only Prism will no longer track a score for you.",
+          "opted_in": "You have opted back in to Prism. Your trust score will now be tracked again.",
+          "footer": "Baxi Prism · avocloud.net"
+        },
+        "prism_profile_created_dm": {
+          "title": "Your PRISM Profile Has Been Created",
+          "description": "A moderation event on a server you share with Baxi has triggered the creation of a **PRISM** profile for your account. This message is to keep you informed.",
+          "what_is_title": "What is PRISM?",
+          "what_is_value": "PRISM is Baxi's cross-server trust-scoring system. It calculates a score from 0 to 100 based on your moderation history. Moderators can use this score as one signal among many to make fairer, more consistent decisions -  especially when you join a new server.",
+          "why_title": "Why does this exist?",
+          "why_value": "Moderation context is often lost when someone joins a new server. PRISM helps moderators avoid repeat harm from bad actors, while giving well-behaved users a positive track record that follows them. Scores recover automatically over time as long as no new violations occur -  one-off incidents don't define you permanently.",
+          "privacy_title": "Your privacy",
+          "privacy_value": "PRISM stores only the minimum necessary: the type of moderation event, its timestamp, and the server it occurred on. No message content, no personal information -  only data directly related to moderation actions.",
+          "actions_title": "What can you do?",
+          "actions_value": "• `/my_trust` -  View your current score and recent events\n• `/prism-optout` -  Opt out of PRISM tracking at any time\n• [Documentation](https://baxi.avocloud.net/docs/user-guide/prism) -  Full details on how PRISM works",
+          "footer": "Baxi PRISM · avocloud.net"
+        }
+      },
+      "admin": {
+        "missing_perms": "You do not have the necessary permissions to use this command.",
+        "user": ":User  ",
+        "mod": "Moderator: ",
+        "reason": "Reason: ",
+        "amount": "Amount: ",
+        "channel": "Channel: ",
+        "field_reason": "Reason",
+        "field_mod": "Moderator",
+        "field_duration": "Duration",
+        "field_expires": "Expires",
+        "duration_permanent": "Permanent",
+        "ban": {
+          "title": "ACTION // BAN",
+          "confirmation": "Do you really want to ban this user for the following reason?",
+          "missing_perms": "You do not have the necessary permissions to ban this user.",
+          "bot_missing_perms": "I do not have the necessary permissions to ban this user.",
+          "success": "The user has been successfully banned for the following reason:",
+          "audit_reason": "Banned by {moderator}: {reason}",
+          "error": "An error occurred: {error}",
+          "abort": "The ban process has been aborted.",
+          "dm_title": "ACTION // BAN // {guild}",
+          "abort_title": "BAN CANCELLED // {user}"
+        },
+        "unban": {
+          "title": "ACTION // UNBAN",
+          "confirmation": "Do you really want to unban this user?",
+          "missing_perms": "You do not have the necessary permissions to unban this user.",
+          "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
+          "success": "The user has been successfully unbanned:",
+          "audit_reason": "Unbanned by {moderator}: {reason}",
+          "error": "An error occurred: {error}",
+          "abort": "The unban process has been aborted.",
+          "abort_title": "UNBAN CANCELLED // {user}"
+        },
+        "kick": {
+          "title": "ACTION // KICK",
+          "confirmation": "Do you really want to remove this user from the server?",
+          "missing_perms": "You do not have the necessary permissions to unban this user.",
+          "bot_missing_perms": "I do not have the necessary permissions to unban this user.",
+          "success": "The user has been successfully removed from the server:",
+          "audit_reason": "Kicked by {moderator}: {reason}",
+          "error": "An error occurred: {error}",
+          "abort": "The kick process has been aborted.",
+          "dm_title": "ACTION // KICK // {guild}",
+          "abort_title": "KICK CANCELLED // {user}"
+        },
+        "clear": {
+          "title": "ACTION // CLEAR",
+          "confirmation": "Do you really want to delete the messages?",
+          "missing_perms": "You do not have the necessary permissions to delete messages.",
+          "bot_missing_perms": "I do not have the necessary permissions to delete messages.",
+          "success": "The message has been successfully deleted:",
+          "error": "An error occurred: {error}",
+          "abort": "The process has been aborted.",
+          "abort_title": "CLEAR CANCELLED // #{channel}"
+        },
+        "flag_user": {
+          "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
+          "success": "The user was successfully entered into the system."
+        },
+        "deflag_user": {
+          "missing_parameters": "Data are missing. At least one of the two parameters must be specified: \"user\" or \"user_id\"",
+          "success": "The user was successfully removed from the system."
+        },
+        "warn": {
+          "title": "ACTION // WARN",
+          "success": "{user} has been warned.\n**Reason:** {reason}\n**Warnings:** {count}",
+          "escalation_mute": "{user} has been automatically muted for {duration} minutes. ({count} warnings)",
+          "escalation_kick": "{user} has been automatically kicked from the server. ({count} warnings)",
+          "escalation_ban": "{user} has been automatically banned. ({count} warnings)",
+          "escalation_notify": "{user} has reached {count} warnings.",
+          "missing_perms": "You do not have the necessary permissions to warn this user.",
+          "error": "An error occurred: {error}"
+        },
+        "unwarn": {
+          "title": "ACTION // UNWARN",
+          "success": "Warning `{id}` has been removed from {user}.",
+          "not_found": "Warning with ID `{id}` was not found.",
+          "error": "An error occurred: {error}"
+        },
+        "warnings": {
+          "title": "SYS // WARN LOG",
+          "no_warnings": "{user} has no warnings.",
+          "entry": "**ID:** `{id}`\n**Reason:** {reason}\n**Moderator:** {mod}\n**Date:** {date}"
+        },
+        "customcmd": {
+          "title": "SYS // CUSTOM CMD",
+          "added": "Command `{trigger}` has been created successfully.",
+          "removed": "Command `{trigger}` has been removed successfully.",
+          "not_found": "Command `{trigger}` was not found.",
+          "already_exists": "Command `{trigger}` already exists.",
+          "no_commands": "There are no custom commands on this server yet.",
+          "list_entry": "`{trigger}` - created by {author}"
+        }
+      }
+    },
+    "systems": {
+      "chatfilter": {
+        "title": "SYS // CHATFILTER",
+        "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
+        "description_not_deleted": "A message from {user} was flagged as potentially harmful, but could **not be deleted automatically**.\n\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",
+        "phishing_warning": "<:alert:1397005510409981982> **Warning {user}!** The message above may contain a **scam or phishing link**. Do **NOT** click on it! The link may be designed to steal your data.",
+        "footer": "Baxi Security - avocloud.net"
+      },
+      "globalchat": {
+        "title": "SYS // GLOBALCHAT",
+        "error": {
+          "file_not_image": "This file is not an image or video and cannot be sent in the global chat.",
+          "to_many_files": "You can attach and send a maximum of one image.",
+          "message_to_long": "Your message is too long. Please note that the maximum length is 1000 characters.",
+          "baned": "You are banned from the global chat. The following reason is given: {reason}",
+          "s11-not-sent": "<:alert:1397005510409981982> Your message wasn't sent in the global chat because it contains sensitive content related to self-harm or suicide.\nPlease check your private messages -  our bot has sent you an important message there."
+        }
+      },
+      "verify": {
+        "title": "SYS // VERIFY",
+        "description_not_enabled": "This system is not enabled on this server. Please contact an administrator.",
+        "description_success": "The verification was successful. Welcome to the server!",
+        "role_not_found": "Role not found.",
+        "user_not_found": "User not found in guild.",
+        "captcha": {
+          "description_wrong_code": "The code entered is incorrect. Please try again."
+        },
+        "password": {
+          "description_wrong_password": "The password entered is incorrect. Please try again."
+        }
+      },
+      "ticket": {
+        "title": "SYS // TICKET",
+        "channel_name": "support-{user}",
+        "description_creation_successfull": "The ticket has been successfully created. A team member will get back to you shortly.\nYour ticket: {channel}",
+        "description_already_open": "You already have an open ticket. Please wait for a team member to respond.\nYour ticket: {channel}",
+        "description_no_permission_delete": "You do not have permission to delete this ticket.",
+        "description_no_permission_claim": "You do not have permission to claim this ticket.",
+        "description_claimed": "The supporter {user} is now claiming this ticket.",
+        "link": "Here you can find a transcript of your recently closed ticket on {guild}:",
+        "wait_delete_confirm": "Before the ticket is deleted, you must write \"confirm\" in the chat to confirm the deletion.",
+        "close_cancel": "The ticket close process has been cancelled by {user}.",
+        "server_only": "Server only.",
+        "disabled": "The ticket system is currently disabled.",
+        "button_not_found": "This ticket button is no longer available.",
+        "category_not_configured": "Ticket category is not configured.",
+        "category_invalid": "Configured ticket category is invalid.",
+        "category_no_access": "Cannot access ticket category.",
+        "role_not_configured": "Ticket staff role is not configured.",
+        "role_not_found": "Configured ticket staff role was not found.",
+        "opened_description": "{user} opened a **{label}** ticket.",
+        "error_creating": "An error occurred creating the ticket.",
+        "channel_only": "This command can only be used in a text channel.",
+        "not_valid_ticket": "This channel is not a valid ticket.",
+        "system_not_configured": "Error: Ticket system not properly configured.",
+        "member_not_found": "Error: Member not found.",
+        "error_claiming": "An error occurred while trying to claim the ticket.",
+        "transcript_sent_dm": "Transcript sent to user {user} via DM.",
+        "transcript_dm_failed": "Unable to send transcript to user: DMs closed or blocked."
+      },
+      "ai": {
+        "title": "SYS // AI",
+        "waiting": {
+          "content": "Baxi AI is working on a response..."
+        },
+        "error": {
+          "unknown": "An unknown error has occurred. Please try again later.",
+          "id_not_found": "The ConversationID of your chat was not found. Please start a new chat using the `/ai` command.",
+          "model_unable_to_chat": "Unfortunately, you cannot chat with this model. Please try with another model."
+        }
+      },
+      "terms": {
+        "description": "The owner of this server has not agreed to the terms and conditions of Baxi and Avocloud.net services. Therefore, this service has been blocked on this server. \n\nTo reactivate Baxi services, someone from the team must log in to the [Baxi Dashboard]({url}) and accept the terms and conditions."
+      },
+      "antispam": {
+        "title": "SYS // ANTISPAM",
+        "triggered": "{user}, you are sending too many messages. Please slow down.",
+        "duplicate": "{user}, please do not send the same message multiple times.",
+        "muted": "{user} has been muted for spamming.",
+        "warned": "{user} has been warned for spamming."
+      },
+      "welcomer": {
+        "title": "SYS // WELCOME",
+        "default_welcome": "Welcome {user} to {server}!",
+        "default_leave": "{user} has left {server}."
+      },
+      "livestream": {
+        "title": "SYS // LIVESTREAM",
+        "channel_name_online": "🔴│{name}",
+        "channel_name_offline": "⚫│{name}",
+        "embed_online_title": "LIVESTREAM // {name} // NOW LIVE",
+        "embed_online_game": "Game",
+        "embed_online_viewers": "Viewers",
+        "embed_online_started": "Started",
+        "embed_offline_title": "LIVESTREAM // {name} // OFFLINE",
+        "embed_offline_description": "{name} is not streaming right now. Check back later!",
+        "embed_footer": "Baxi Livestream - avocloud.net",
+        "ping_message": "{role} -  **{name}** is now live playing **{game}**!"
+      },
+      "youtube_videos": {
+        "embed_description": "**{name}** just uploaded a new video!",
+        "embed_field_published": "Published",
+        "embed_footer": "Baxi YouTube Videos · avocloud.net"
+      },
+      "tiktok": {
+        "embed_description": "**{name}** posted a new TikTok!",
+        "embed_field_published": "Published",
+        "embed_footer": "Baxi TikTok · avocloud.net"
+      },
+      "twitter": {
+        "embed_description": "**{name}** posted on X!",
+        "embed_field_published": "Published",
+        "embed_footer": "Baxi X · avocloud.net"
+      },
+      "instagram": {
+        "embed_description_post": "**{name}** shared a new post on Instagram!",
+        "embed_description_reel": "**{name}** shared a new Reel on Instagram!",
+        "embed_field_published": "Published",
+        "embed_footer": "Baxi Instagram · avocloud.net"
+      },
+      "button_roles": {
+        "applied": "The **{role}** role has been applied to your profile.",
+        "removed": "The **{role}** role has been removed from your profile.",
+        "not_found": "Role not found -  it may have been deleted.",
+        "no_permission": "I don't have permission to manage that role.",
+        "server_only": "This can only be used inside a server.",
+        "group_limit_removed": "The **{removed}** role was removed and **{added}** was applied."
+      },
+      "stats_channels": {
+        "title": "SYS // STATS"
+      },
+      "suggestions": {
+        "embed_title": "Suggestion",
+        "footer": "Baxi · Suggestions",
+        "no_text": "*-  no text - *",
+        "no_permission": "<:x_:1492987102353166587> Only server staff can accept or decline suggestions.",
+        "already_decided": "This suggestion has already been decided.",
+        "status_field": "Status",
+        "status_accepted": "<:check:1492987072250908794> Accepted by {user}",
+        "status_accepted_reason": "<:check:1492987072250908794> Accepted by {user}\n> {reason}",
+        "status_declined": "<:x_:1492987102353166587> Declined by {user}",
+        "status_declined_reason": "<:x_:1492987102353166587> Declined by {user}\n> {reason}",
+        "log_accepted": "<:check:1492987072250908794> Suggestion **accepted** by {reviewer}\n[Jump to message]({link})",
+        "log_accepted_reason": "<:check:1492987072250908794> Suggestion **accepted** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
+        "log_declined": "<:x_:1492987102353166587> Suggestion **declined** by {reviewer}\n[Jump to message]({link})",
+        "log_declined_reason": "<:x_:1492987102353166587> Suggestion **declined** by {reviewer}\n**Reason:** {reason}\n[Jump to message]({link})",
+        "voting_disabled": "<:x_:1492987102353166587> Voting is disabled on this server.",
+        "btn_accept": "Accept",
+        "btn_decline": "Decline",
+        "modal_accept_title": "Accept Suggestion",
+        "modal_decline_title": "Decline Suggestion",
+        "modal_reason_label": "Reason (optional)",
+        "modal_reason_placeholder": "Enter a reason...",
+        "auto_forward_title": "<:fire:1492987074389872660> Popular Suggestion",
+        "auto_forward_footer": "Baxi · Suggestions | {votes} upvotes",
+        "btn_comment": "Comment",
+        "modal_comment_title": "Add Staff Comment",
+        "modal_comment_label": "Comment",
+        "modal_comment_placeholder": "Enter your comment or update...",
+        "comment_field": "Staff Update",
+        "comment_value": "{user}\n> {comment}",
+        "log_comment": "Staff comment added by {reviewer}\n**Comment:** {comment}\n[Jump to message]({link})",
+        "btn_join_thread": "Join Discussion",
+        "thread_joined": "You joined the discussion: {thread}",
+        "thread_not_found": "Discussion thread not found.",
+        "already_in_thread": "You are already in the conversation: {thread}",
+        "thread_update_accepted": "Suggestion **accepted** by {user}",
+        "thread_update_accepted_reason": "Suggestion **accepted** by {user}\n**Reason:** {reason}",
+        "thread_update_declined": "Suggestion **declined** by {user}",
+        "thread_update_declined_reason": "Suggestion **declined** by {user}\n**Reason:** {reason}",
+        "thread_update_comment": "**Staff update** by {user}\n> {comment}"
+      },
+      "temp_voice": {
+        "panel_title": "Voice Control Panel",
+        "panel_desc": "Manage your temporary voice channel with the buttons below.",
+        "owner_field": "Owner",
+        "status_field": "Status",
+        "status_public": "🔓 Public",
+        "status_private": "🔒 Private",
+        "btn_public": "Public",
+        "btn_private": "Private",
+        "btn_rename": "Rename",
+        "btn_limit": "User Limit",
+        "btn_permit": "Permit",
+        "btn_reject": "Reject",
+        "not_owner": "Only the channel owner can use this control panel.",
+        "panel_resent": "Control panel re-posted below.",
+        "not_temp_channel": "Use this in your temporary voice channel's text chat.",
+        "now_public": "Channel is now public — anyone can join.",
+        "now_private": "Channel is now private — only permitted users can join.",
+        "rename_modal_title": "Rename Channel",
+        "rename_label": "New channel name",
+        "renamed": "Channel renamed.",
+        "limit_modal_title": "Set User Limit",
+        "limit_label": "Max users (0 = unlimited)",
+        "limit_set": "User limit updated.",
+        "limit_invalid": "Enter a whole number between 0 and 99.",
+        "permit_prompt": "Select users to permit (they can join):",
+        "permitted": "Permitted {count} user(s).",
+        "permitted_invited": "Permitted {count} user(s) and sent {sent} invite(s).",
+        "invite_dm_title": "You've been invited!",
+        "invite_dm_desc": "You can now join **{channel}** in **{guild}**.",
+        "invite_button": "Join Voice",
+        "reject_prompt": "Select users to reject (they cannot join):",
+        "rejected": "Rejected {count} user(s).",
+        "btn_save": "Save Settings",
+        "settings_saved": "Settings saved. Your next temp channel will use them.",
+        "permitted_field": "Permitted",
+        "rejected_field": "Rejected",
+        "none_value": "—",
+        "status_permanent": "📌 Permanent",
+        "btn_permanent": "Permanent",
+        "permanent_on": "Channel is now permanent — it won't be deleted.",
+        "permanent_off": "Channel is temporary again — deleted when empty.",
+        "permanent_no_perm": "You don't have a role allowed to make channels permanent."
+      },
+      "mc_link": {
+        "server_only": "This command can only be used in a Discord server.",
+        "not_enabled": "MC account linking is not enabled on this server.",
+        "not_configured": "MC Link is not configured yet. Ask an admin.",
+        "already_linked": "Your account is already linked!",
+        "not_linked": "Your account is not linked.",
+        "invalid_code": "Invalid or expired code. Rejoin the Minecraft server to get a fresh code.",
+        "link_failed": "Could not reach the Minecraft server. Please try again later.",
+        "unlink_disabled": "Self-unlinking is disabled on this server. Contact an admin.",
+        "success_title": "Account linked!",
+        "success_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n\nYou can now join the server.",
+        "dm_desc": "Your Minecraft account **{mc_name}** has been successfully linked on **{guild}**.",
+        "announce": "{mention} linked their Minecraft account **{mc_name}**.",
+        "unlink_success_title": "Account unlinked!",
+        "unlink_success_desc": "**Minecraft:** `{mc_name}` has been unlinked.",
+        "status_title": "MC Account Status",
+        "status_desc": "**Minecraft:** `{mc_name}`\n**Discord:** {mention}\n**Linked:** {linked_at}",
+        "admin_unlink_success": "{mention} has been unlinked. Minecraft account: `{mc_name}`.",
+        "lookup_title": "MC Account Lookup",
+        "lookup_desc": "**Discord:** {mention}\n**Minecraft:** `{mc_name}`\n**UUID:** `{uuid}`\n**Linked:** {linked_at}",
+        "lookup_specify_one": "Provide either a Discord user **or** a Minecraft name — not both.",
+        "lookup_no_match": "No linked Discord user found for Minecraft name `{mc_name}`.",
+        "confirm_title": "Confirm your link",
+        "confirm_desc": "Open this link to finish linking your account:\n{url}\n\nThe link expires in 10 minutes.",
+        "confirm_lede": "You're about to link this Minecraft account to your Discord. Make sure both names look correct.",
+        "already_linked_title": "Already linked",
+        "already_linked_lede": "Your Discord account is already linked to a Minecraft account on this server.",
+        "already_linked_desc": "Your account is already linked. No changes were made.",
+        "bedrock_add_title": "Add Bedrock account",
+        "bedrock_add_lede": "You're already linked with a Java account. Confirm to also add this Bedrock account.",
+        "list_title": "Online players ({count}/{max})",
+        "list_empty": "Nobody is online right now.",
+        "list_unreachable": "Minecraft server unreachable.",
+        "list_outdated_plugin": "Unable to fetch player list — the server plugin is outdated.",
+        "footer": "Baxi · avocloud.net"
+      },
+      "giveaway": {
+        "embed_title": "GIVEAWAY",
+        "footer": "Baxi · Giveaway",
+        "field_ends": "Ends",
+        "field_ended": "Ended",
+        "field_winners": "Winners",
+        "field_host": "Host",
+        "entered": "You've entered the giveaway! Good luck!",
+        "left": "You've left the giveaway.",
+        "not_found": "This giveaway could not be found.",
+        "already_ended": "This giveaway has already ended.",
+        "no_permission": "You need the **Manage Server** permission to start a giveaway.",
+        "invalid_duration": "Invalid duration. Use formats like `1h`, `30m`, `2d`, `1h30m`. Minimum is 60 seconds.",
+        "channel_only": "Giveaways can only be started in text channels.",
+        "send_error": "Failed to send the giveaway message.",
+        "started": "Giveaway started in {channel}!",
+        "winner_announce_title": "GIVEAWAY // WINNER",
+        "winner_announce": "Congratulations {winners}!\nYou won **{reward}**!\n[Jump to Giveaway]({msg_link})",
+        "winner_message_field": "Message from the host",
+        "winner_dm_title": "GIVEAWAY // YOU WON",
+        "winner_dm": "You won **{reward}** in **{guild}**!\n[Jump to Giveaway]({msg_link})",
+        "no_winners_title": "GIVEAWAY // NO WINNERS",
+        "no_winners": "No one entered the giveaway for **{reward}**.\n[Jump to Giveaway]({msg_link})"
+      },
+      "music": {
+        "disabled": "The music system is disabled on this server.",
+        "not_in_voice": "Join a voice channel first.",
+        "bot_busy": "The bot is already playing in another voice channel.",
+        "queue_full": "Queue is full.",
+        "song_too_long": "Track exceeds the configured maximum duration.",
+        "source_blocked": "This source is not allowed on this server.",
+        "extract_failed": "Could not load that track.",
+        "url_not_whitelisted": "This URL is not on the radio whitelist.",
+        "invalid_url": "Invalid URL.",
+        "preset_not_found": "Unknown station.",
+        "radio_pick_one": "Pick a station or pass a custom_url.",
+        "nothing_playing": "Nothing is playing.",
+        "not_paused": "Nothing is paused.",
+        "added": "Added to queue",
+        "now_playing": "Now playing",
+        "streaming": "Live stream",
+        "skipped": "Skipped.",
+        "stopped": "Stopped and left voice channel.",
+        "paused": "Paused.",
+        "resumed": "Resumed.",
+        "queue_title": "Music Queue",
+        "queue_empty": "Queue is empty.",
+        "queue_upcoming": "Up next",
+        "queue_more": "...and {n} more",
+        "duration_field": "Duration",
+        "requester_field": "Requested by",
+        "source_field": "Source",
+        "volume_set": "Volume set: {level}%",
+        "volume_invalid": "Volume must be between 0 and 200."
+      }
+    },
+    "events": {
+      "on_guild_join": {
+        "title": "SYS // INIT",
+        "content": "Hello everyone! I am Baxi, a Discord bot here to help you. My goal is to keep this community safe and engaged.\nTo configure me, open the **Baxi Dashboard**: https://baxi.avocloud.net\n\n-# {saved_data}",
+        "saved_data": {
+          "new_data": "By default, all systems are disabled. You can now enable and configure any systems via the dashboard at https://baxi.avocloud.net",
+          "existing_data": "Since we have already saved settings from this server, they have been restored. Please check the dashboard at https://baxi.avocloud.net to ensure these settings are correct."
+        }
+      }
+    },
+    "games": {
+      "counting": {
+        "title": "GAME // COUNTING",
+        "wrong_number": "<:x_:1492987102353166587> **{user}** broke the chain! Sent: **{sent}**, expected: **{expected}**.\nThe count was reset from **{count}** back to **0**.",
+        "double_count": "<:x_:1492987102353166587> **{user}** cannot count twice in a row! The count stays at **{count}**.",
+        "footer": "Baxi · Counting Game",
+        "score_title": "🔢 Counting Game",
+        "score_not_enabled": "<:x_:1492987102353166587> The Counting Game is not enabled on this server.",
+        "score_description": "**Current count:** {current}\n**High score:** {high}\n**Channel:** {channel}",
+        "score_no_channel": "*not set*",
+        "reset_done": "The count was reset from **{old}** to **0**.",
+        "new_highscore": "<:celebrate:1492987070841491707> **New record!** {user} set the high score to **{count}**!",
+        "milestone": "<:trophy:1492978643646026006> **Milestone reached!** The count has hit **{count}**!"
+      },
+      "guessing": {
+        "title": "GAME // GUESS",
+        "description_correct": "{user}, you guessed the number correctly!\nWe will start with a new number, which has been generated between 1 and {max_value}.\nGood luck!"
+      },
+      "flag_quiz": {
+        "title": "Flag Quiz",
+        "question": "Which country does this flag belong to?",
+        "question_footer": "Baxi · Flag Quiz  |  Type your answer!",
+        "correct": "<:celebrate:1492987070841491707> **{user}** got it right!\nThe answer was: **{country}** {flag}",
+        "hint": "**Hint:** `{hint}` ({length} letters)",
+        "footer": "Baxi · Flag Quiz",
+        "leaderboard_title": "Flag Quiz – Leaderboard",
+        "leaderboard_empty": "No points awarded yet. Be the first!",
+        "leaderboard_pts_single": "point",
+        "leaderboard_pts_plural": "points"
+      }
+    },
+    "leveling": {
+      "levelup_title": "<:up:1493702235295580210> LEVEL // LEVEL UP · {level}",
+      "levelup_desc": "{user} has reached **Level {level}**!",
+      "disabled_title": "LEVEL // DISABLED",
+      "disabled_desc": "The level system is not enabled on this server. An admin can enable it in the dashboard.",
+      "level_title": "LEVEL // {user}",
+      "level_field": "Level",
+      "xp_field": "Total XP",
+      "progress_field": "Progress to next level",
+      "leaderboard_title": "LEVEL // LEADERBOARD · {guild}",
+      "leaderboard_empty": "No contributions recorded yet.",
+      "messages_label": "messages",
+      "rank_title": "LEVEL // RANK · {user}",
+      "rank_xp_field": "XP contributed",
+      "rank_msgs_field": "Messages",
+      "rank_share_field": "Share of server XP",
+      "rank_pos_field": "Leaderboard rank"
+    }
+  }
 }

@@ -89,6 +89,25 @@ def get_link(guild_id: int, discord_id: int) -> dict | None:
     return _links.get(str(guild_id), {}).get(str(discord_id))
 
 
+def find_by_mc_name(guild_id: int, mc_name: str) -> tuple[int, dict] | None:
+    """Reverse lookup: given a Minecraft name, return (discord_id, link) or None.
+
+    Case-insensitive. Matches the Java primary `name` and any supported Bedrock
+    secondary `bedrock_name`, so an admin can resolve either account back to its
+    Discord owner.
+    """
+    ensure_loaded()
+    needle = mc_name.strip().lstrip(".").casefold()
+    for discord_id, entry in _links.get(str(guild_id), {}).items():
+        names = (entry.get("name", ""), entry.get("bedrock_name", ""))
+        if any(n and n.strip().lstrip(".").casefold() == needle for n in names):
+            try:
+                return int(discord_id), entry
+            except ValueError:
+                return None
+    return None
+
+
 async def resolve_token(api_url: str, secret: str, token: str) -> dict | None:
     """GET /dg/token/{token} → {uuid, name} or None."""
     url = f"{api_url.rstrip('/')}/dg/token/{token.upper()}"
