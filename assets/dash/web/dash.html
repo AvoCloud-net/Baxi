@@ -233,7 +233,7 @@
             </span>
         </button>
         <hr role="separator" />
-        <button onclick="location.href = '/'" class="btn-lg-outline">
+        <button onclick="window.dashGoBack ? window.dashGoBack() : (location.href = '/')" class="btn-lg-outline">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
@@ -7999,20 +7999,8 @@
             if (!dashNav) return;
             const navLinks = Array.from(dashNav.querySelectorAll('.dash-nav-item'));
             const hubRoot  = document.getElementById('hub-root');
-            const mainEl   = document.querySelector('main');
 
             const ARROW_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
-
-            /* Back-to-home button: shown on every system page, hidden on Home.
-               Inserted at top of <main> (after the section-reorder IIFE has run). */
-            const backBtn = document.createElement('button');
-            backBtn.type = 'button';
-            backBtn.className = 'dash-back';
-            backBtn.setAttribute('aria-label', 'Back to home');
-            backBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Home</span>';
-            backBtn.style.display = 'none';
-            backBtn.addEventListener('click', function () { showSection('home'); });
-            if (mainEl) mainEl.insertBefore(backBtn, mainEl.firstChild);
 
             /* Status overrides for sections with no role="switch" toggle.
                Read from the initial `data` snapshot (available at parse). */
@@ -8120,7 +8108,6 @@
                 navLinks.forEach(function (l) {
                     l.classList.toggle('active', (l.getAttribute('href') || '') === '#' + id);
                 });
-                backBtn.style.display = (id === 'home') ? 'none' : 'inline-flex';
                 if (id === 'home') refreshHubStatus();
                 if (!opts.noHash && location.hash !== '#' + id) {
                     history.pushState(null, '', '#' + id);
@@ -8128,6 +8115,13 @@
                 window.scrollTo({ top: 0, behavior: opts.instant ? 'auto' : 'smooth' });
             }
             window.dashShowSection = showSection;   // used by nav-search
+
+            /* Step-back: a system page → Home hub; the Home hub → guild login (/). */
+            window.dashGoBack = function () {
+                const cur = (location.hash || '#home').slice(1);
+                if (cur && cur !== 'home') showSection('home');
+                else location.href = '/';
+            };
 
             /* nav-item clicks → route (external links keep default nav) */
             navLinks.forEach(function (link) {
