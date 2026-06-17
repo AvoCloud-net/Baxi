@@ -61,6 +61,7 @@ from assets.tasks import (
     InstagramTask,
     MusicIdleTask,
     Radio247Task,
+    McLinkSyncTask,
 )
 from assets.giveaway import GiveawayTask
 from assets.poll import PollTask
@@ -128,14 +129,66 @@ _STICKY_DEBOUNCE_SECONDS = 4
 def events(bot: commands.AutoShardedBot, web):
     logger.debug.info("Events loaded.")
 
+    async def _warm_guild_cache_and_info():
+        """Background: download member lists + refresh each guild's DB info row.
+
+        Runs off the on_ready critical path so startup isn't blocked on gateway
+        member chunking (the old default cost minutes). Member-dependent features
+        (stats human/bot split, scan, dash) get a complete cache a few seconds
+        after ready instead of before it. Owner lookup happens *after* chunk so
+        the owner user is in cache (no per-guild REST fetch on the hot path).
+        """
+        import assets.db as _db
+        for guild in list(bot.guilds):
+            try:
+                if not guild.chunked:
+                    await guild.chunk()
+            except Exception as e:
+                logger.error(f"Member chunk failed for {guild.id}: {type(e).__name__}: {e}")
+
+            owner_id: int = guild.owner_id or 0
+            owner_name: str = ""
+            if owner_id:
+                owner_user = bot.get_user(owner_id)
+                if owner_user is None:
+                    try:
+                        owner_user = await bot.fetch_user(owner_id)
+                    except Exception:
+                        owner_user = None
+                if owner_user:
+                    owner_name = str(owner_user.name)
+            try:
+                _db.ensure_guild(guild.id)
+                datasys.save_data(guild.id, "guild_name", str(guild.name))
+                datasys.save_data(guild.id, "guild_id", guild.id)
+                datasys.save_data(guild.id, "owner_id", owner_id)
+                datasys.save_data(guild.id, "owner_name", owner_name)
+            except Exception as e:
+                logger.error(f"Guild info update failed for {guild.id}: {type(e).__name__}: {e}")
+        logger.debug.success(f"Member cache warmed + info refreshed for {len(bot.guilds)} guild(s).")
+
     @bot.event
     async def on_ready():
+        assert bot is not None, "Bot user is None!"
+        assert bot.user is not None, "Bot user is None!"
+        logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
+
+        # on_ready fires again on every gateway reconnect/resume. The heavy
+        # startup work below must run only once — re-running it would re-sync
+        # commands and try to re-.start() already-running task loops.
+        if getattr(bot, "_baxi_started", False):
+            try:
+                await bot.change_presence(activity=discord.Activity(
+                    type=discord.ActivityType.playing,
+                    name=f"on {len(bot.guilds)} Worlds! - v{config.Discord.version}"))
+            except Exception:
+                pass
+            return
+        bot._baxi_started = True
+
         logger.info("Almost ready...")
 
         dash_web(app=web, bot=bot)
-
-        assert bot is not None, "Bot user is None!"
-        assert bot.user is not None, "Bot user is None!"
 
         def load_globalchat_message_data():
             logger.debug.info("Loading globalchat_message_data")
@@ -148,33 +201,11 @@ def events(bot: commands.AutoShardedBot, web):
 
         globalchat_message_data.update(globalchat_message_data_file)
 
-        logger.debug.info(f"Logged in as {bot.user.name} with id {bot.user.id}")
         share.bot = bot  # Prism notifications
 
-        for guild in bot.guilds:
-            guild_id = guild.id
-
-            # Resolve owner info from cache, fall back to API fetch
-            owner_id: int = guild.owner_id or 0
-            owner_name: str = ""
-            if owner_id:
-                owner_user = bot.get_user(owner_id)
-                if owner_user is None:
-                    try:
-                        owner_user = await bot.fetch_user(owner_id)
-                    except Exception:
-                        owner_user = None
-                if owner_user:
-                    owner_name = str(owner_user.name)
-
-            # Ensure the guild row exists (idempotent) and update guild info
-            import assets.db as _db
-            _db.ensure_guild(guild_id)
-            datasys.save_data(guild_id, "guild_name", str(guild.name))
-            datasys.save_data(guild_id, "guild_id", guild_id)
-            datasys.save_data(guild_id, "owner_id", owner_id)
-            datasys.save_data(guild_id, "owner_name", owner_name)
-            logger.success(f"Guild {guild_id} ({guild.name}) config aktualisiert.")
+        # Warm member cache + refresh guild info rows in the background so neither
+        # blocks the bot from becoming ready.
+        asyncio.create_task(_warm_guild_cache_and_info())
 
         try:
             await bot.tree.sync()
@@ -285,6 +316,12 @@ def events(bot: commands.AutoShardedBot, web):
             radio_247_task.watch.start()
             share.task_instances["Radio247"] = radio_247_task
             logger.debug.success("Radio 24/7 task started.")
+
+            logger.working("Starting McLinkSync task...")
+            mc_link_sync_task = McLinkSyncTask(bot)
+            mc_link_sync_task.sync_links.start()
+            share.task_instances["McLinkSync"] = mc_link_sync_task
+            logger.debug.success("Minecraft link sync task started.")
 
             # Music: enable discord.py voice debug logging
             import logging as _logging

@@ -339,7 +339,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def mc_link_accept(token: str):
         from assets.mc_link import (
             get_link_session, consume_link_session,
-            whitelist_player, store_link, add_bedrock_link,
+            whitelist_player, store_link,
             announce_link, dm_user,
         )
         sess = get_link_session(token)
@@ -351,12 +351,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             consume_link_session(token)
             return quart.jsonify({"ok": True, "status": "already_linked"})
 
-        success = await whitelist_player(
+        success, err = await whitelist_player(
             sess["api_url"], sess["api_secret"],
             sess["uuid"], sess["mc_name"],
             sess["discord_id"], sess["discord_name"],
         )
         if not success:
+            if err == "already_linked":
+                # 1:1 default enforced by the MC plugin — Discord already linked.
+                consume_link_session(token)
+                return quart.jsonify({"ok": False, "error": "already_linked"}), 409
             return quart.jsonify({"ok": False, "error": "mc_unreachable"}), 502
 
         guild_id = sess["guild_id"]
@@ -365,22 +369,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         guild_conf = datasys.load_data(guild_id, "mc_link")
         lang = datasys.load_lang_file(guild_id)
 
-        if kind == "bedrock_add":
-            await add_bedrock_link(guild_id, discord_id, sess["uuid"], mc_name)
-        else:
-            await store_link(guild_id, discord_id, sess["uuid"], mc_name)
-            guild = bot.get_guild(guild_id)
-            role_id_str = guild_conf.get("role_id", "")
-            if guild and role_id_str:
-                try:
-                    role = guild.get_role(int(role_id_str))
-                    member = guild.get_member(discord_id)
-                    if role and member:
-                        await member.add_roles(role, reason="MC account linked")
-                except Exception:
-                    pass
-            await announce_link(bot, guild_id, discord_id, mc_name, guild_conf, lang)
-            await dm_user(bot, guild_id, discord_id, mc_name, guild_conf, lang)
+        await store_link(guild_id, discord_id, sess["uuid"], mc_name)
+        guild = bot.get_guild(guild_id)
+        role_id_str = guild_conf.get("role_id", "")
+        if guild and role_id_str:
+            try:
+                role = guild.get_role(int(role_id_str))
+                member = guild.get_member(discord_id)
+                if role and member:
+                    await member.add_roles(role, reason="MC account linked")
+            except Exception:
+                pass
+        await announce_link(bot, guild_id, discord_id, mc_name, guild_conf, lang)
+        await dm_user(bot, guild_id, discord_id, mc_name, guild_conf, lang)
 
         consume_link_session(token)
         return quart.jsonify({"ok": True, "status": kind})
@@ -512,14 +513,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if guild.permissions.manage_guild
             }
 
-            bot_guilds = bot.guilds
-            bot_guild_ids = {str(guild.id) for guild in bot_guilds}
+            bot_guild_ids = {str(guild.id) for guild in bot.guilds}
 
-            valid_guilds = {
-                guild_id: name
-                for guild_id, name in user_managed_guilds.items()
-                if guild_id in bot_guild_ids
-            }
+            valid_guilds = []
+            for guild_id, name in user_managed_guilds.items():
+                if guild_id not in bot_guild_ids:
+                    continue
+                bot_guild = bot.get_guild(int(guild_id))
+                icon = str(bot_guild.icon.url) if (bot_guild and bot_guild.icon) else None
+                valid_guilds.append({"id": guild_id, "name": name, "icon": icon})
             stats: dict = dict(load_data(1001, "stats"))
             show_intro = session.pop('show_intro', False)
             admins: list = list(datasys.load_data(1001, "admins"))
@@ -1440,40 +1442,148 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             action = cmd_data.get("action")
             custom_commands: dict = dict(load_data(int(guild_id), "custom_commands"))
 
+            # Parse + validate the gate and actions payload shared by add/edit.
+            # Returns (error_message_or_None, gate, actions).
+            def _parse_gate_actions(src: dict):
+                _valid_perms = {
+                    "manage_messages", "manage_roles", "kick_members", "ban_members",
+                    "manage_channels", "manage_guild", "moderate_members", "mention_everyone",
+                }
+                raw_gate = src.get("gate", {}) or {}
+                gate_roles = [
+                    str(r) for r in (raw_gate.get("roles", []) or [])
+                    if re.fullmatch(r"\d{17,20}", str(r))
+                ]
+                gate_perms = [str(p) for p in (raw_gate.get("perms", []) or []) if str(p) in _valid_perms]
+                gate = {"roles": gate_roles, "perms": gate_perms}
+
+                raw_actions = src.get("actions", [])
+                if not isinstance(raw_actions, list) or not raw_actions:
+                    return "At least one action is required.", None, None
+                if len(raw_actions) > 15:
+                    return "Too many actions (max 15).", None, None
+
+                actions: list = []
+                for raw in raw_actions:
+                    if not isinstance(raw, dict):
+                        continue
+                    atype = str(raw.get("type", ""))
+
+                    if atype == "text":
+                        response = str(raw.get("response", "")).strip()
+                        if not response:
+                            return "Text action response is required.", None, None
+                        if len(response) > 2000:
+                            return "Response must be 2000 characters or less.", None, None
+                        embed_color = str(raw.get("embed_color", ""))[:7]
+                        if embed_color and not re.match(r'^#[0-9a-fA-F]{6}$', embed_color):
+                            embed_color = ""
+                        actions.append({
+                            "type": "text",
+                            "response": response,
+                            "reply": bool(raw.get("reply", False)),
+                            "embed": bool(raw.get("embed", True)),
+                            "embed_color": embed_color,
+                            "embed_title": str(raw.get("embed_title", ""))[:256],
+                            "embed_footer": str(raw.get("embed_footer", ""))[:256],
+                        })
+
+                    elif atype in ("add_role", "remove_role"):
+                        role = str(raw.get("role", "")).strip()
+                        if not re.fullmatch(r"\d{17,20}", role):
+                            return "Role action needs a valid role.", None, None
+                        target = str(raw.get("target", "author"))
+                        if target not in ("author", "mentioned"):
+                            target = "author"
+                        actions.append({"type": atype, "role": role, "target": target})
+
+                    elif atype == "delete_messages":
+                        try:
+                            count = int(raw.get("count", 10))
+                        except (TypeError, ValueError):
+                            count = 10
+                        actions.append({"type": "delete_messages", "count": max(1, min(100, count))})
+
+                    elif atype == "react":
+                        emoji = str(raw.get("emoji", "")).strip()[:64]
+                        if not emoji:
+                            return "React action needs an emoji.", None, None
+                        actions.append({"type": "react", "emoji": emoji})
+
+                    elif atype == "dm":
+                        response = str(raw.get("response", "")).strip()
+                        if not response:
+                            return "DM action message is required.", None, None
+                        if len(response) > 2000:
+                            return "DM message must be 2000 characters or less.", None, None
+                        target = str(raw.get("target", "author"))
+                        if target not in ("author", "mentioned"):
+                            target = "author"
+                        actions.append({"type": "dm", "response": response, "target": target})
+
+                    else:
+                        return f"Unknown action type '{atype}'.", None, None
+
+                if not actions:
+                    return "At least one valid action is required.", None, None
+
+                return None, gate, actions
+
             if action == "add":
                 trigger = str(cmd_data.get("trigger", "")).strip()
-                response = str(cmd_data.get("response", "")).strip()
-                embed = bool(cmd_data.get("embed", True))
 
-                if not trigger or not response:
-                    return quart.jsonify({"success": False, "message": "Trigger and response are required."}), 400
-
+                if not trigger:
+                    return quart.jsonify({"success": False, "message": "Trigger is required."}), 400
                 if len(trigger) > 50:
                     return quart.jsonify({"success": False, "message": "Trigger must be 50 characters or less."}), 400
-
-                if len(response) > 2000:
-                    return quart.jsonify({"success": False, "message": "Response must be 2000 characters or less."}), 400
-
                 if trigger.lower() in {k.lower() for k in custom_commands}:
                     return quart.jsonify({"success": False, "message": f"Command '{trigger}' already exists."}), 400
 
-                # Embed styling fields
-                embed_color = str(cmd_data.get("embed_color", ""))[:7]
-                if embed_color and not re.match(r'^#[0-9a-fA-F]{6}$', embed_color):
-                    embed_color = ""
-                embed_title = str(cmd_data.get("embed_title", ""))[:256]
-                embed_footer = str(cmd_data.get("embed_footer", ""))[:256]
+                err, gate, actions = _parse_gate_actions(cmd_data)
+                if err:
+                    return quart.jsonify({"success": False, "message": err}), 400
 
                 user = await discord_auth.fetch_user()
                 custom_commands[trigger] = {
-                    "response": response,
-                    "embed": embed,
-                    "embed_color": embed_color,
-                    "embed_title": embed_title,
-                    "embed_footer": embed_footer,
+                    "gate": gate,
+                    "actions": actions,
                     "created_by": str(user.name),
                     "created_by_id": int(user.id),
                     "created_at": str(datetime.now(_VIENNA).strftime("%Y-%m-%d")),
+                }
+
+            elif action == "edit":
+                orig = str(cmd_data.get("orig_trigger", "")).strip()
+                trigger = str(cmd_data.get("trigger", "")).strip()
+
+                if not trigger:
+                    return quart.jsonify({"success": False, "message": "Trigger is required."}), 400
+                if len(trigger) > 50:
+                    return quart.jsonify({"success": False, "message": "Trigger must be 50 characters or less."}), 400
+
+                orig_key = next((k for k in custom_commands if k.lower() == orig.lower()), None)
+                if orig_key is None:
+                    return quart.jsonify({"success": False, "message": f"Command '{orig}' not found."}), 404
+
+                # Renaming onto a different existing command is not allowed.
+                if trigger.lower() != orig_key.lower() and trigger.lower() in {k.lower() for k in custom_commands}:
+                    return quart.jsonify({"success": False, "message": f"Command '{trigger}' already exists."}), 400
+
+                err, gate, actions = _parse_gate_actions(cmd_data)
+                if err:
+                    return quart.jsonify({"success": False, "message": err}), 400
+
+                user = await discord_auth.fetch_user()
+                orig_rec = custom_commands.get(orig_key, {})
+                del custom_commands[orig_key]
+                custom_commands[trigger] = {
+                    "gate": gate,
+                    "actions": actions,
+                    "created_by": orig_rec.get("created_by", str(user.name)),
+                    "created_by_id": orig_rec.get("created_by_id", int(user.id)),
+                    "created_at": orig_rec.get("created_at", str(datetime.now(_VIENNA).strftime("%Y-%m-%d"))),
+                    "edited_by": str(user.name),
+                    "edited_at": str(datetime.now(_VIENNA).strftime("%Y-%m-%d")),
                 }
 
             elif action == "remove":
@@ -1488,7 +1598,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 del custom_commands[found_key]
 
             else:
-                return quart.jsonify({"success": False, "message": "Invalid action. Use 'add' or 'remove'."}), 400
+                return quart.jsonify({"success": False, "message": "Invalid action. Use 'add', 'edit' or 'remove'."}), 400
 
             save_data(int(guild_id), "custom_commands", custom_commands)
 

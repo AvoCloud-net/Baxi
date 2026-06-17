@@ -9,13 +9,14 @@ from assets.repo.standalone import load_mc_links as _standalone_load, save_mc_li
 logger = Logger()
 
 _links: dict = {}  # guild_id_str → {discord_id: {uuid, name, linked_at}}
+_loaded: bool = False  # True once _links was loaded from the DB without error
 
 _lock = asyncio.Lock()
 
 _LINK_SESSION_TTL = 600  # 10 min
 # token → {guild_id, discord_id, discord_name, discord_avatar_url,
 #          uuid, mc_name, api_url, api_secret, kind, expires_at}
-# kind: "new" | "bedrock_add" | "already_linked"
+# kind: "new" | "already_linked"  (1:1 default — one MC account per Discord)
 _link_sessions: dict[str, dict] = {}
 
 
@@ -47,15 +48,23 @@ def cleanup_link_sessions():
 
 
 def _load():
-    global _links
+    global _links, _loaded
     try:
         _links = _standalone_load()
+        _loaded = True
     except Exception as e:
+        # Leave _loaded False: store_link/sync persist via _save(), which does a
+        # full-table rewrite. Persisting an empty/partial _links that came from a
+        # failed load would WIPE every guild's links. Guard against that.
         logger.error(f"[mc_link] Failed to load links: {e}")
         _links = {}
 
 
 def _save():
+    if not _loaded:
+        logger.error("[mc_link] Refusing to save: links were never loaded "
+                     "(a full-table rewrite now would wipe all links).")
+        return
     try:
         _standalone_save(_links)
     except Exception as e:
@@ -63,13 +72,20 @@ def _save():
 
 
 _load()
+# Retry the load lazily on first use if the import-time attempt hit an uninitialized
+# DB — without this, one early failure left _links empty for the whole process.
+def ensure_loaded() -> None:
+    if not _loaded:
+        _load()
 
 
 def is_linked(guild_id: int, discord_id: int) -> bool:
+    ensure_loaded()
     return str(discord_id) in _links.get(str(guild_id), {})
 
 
 def get_link(guild_id: int, discord_id: int) -> dict | None:
+    ensure_loaded()
     return _links.get(str(guild_id), {}).get(str(discord_id))
 
 
@@ -106,17 +122,113 @@ async def fetch_online_players(api_url: str, secret: str) -> tuple[dict | None, 
         return None, "unreachable"
 
 
-async def whitelist_player(api_url: str, secret: str, uuid: str, name: str, discord_id: int, discord_name: str = "") -> bool:
-    """POST /dg/whitelist → bool success."""
+async def fetch_all_links(api_url: str, secret: str) -> list[dict] | None:
+    """GET /dg/links → list of {uuid, name, discord_id, discord_name, linked_at}.
+
+    Returns None on any failure (unreachable, 404 on old plugins, bad JSON) so the
+    caller can treat "couldn't fetch" distinctly from "server has zero links" and
+    never reconcile-delete on a transient error.
+    """
+    url = f"{api_url.rstrip('/')}/dg/links"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    return None
+                data = await resp.json()
+        links = data.get("links") if isinstance(data, dict) else None
+        return links if isinstance(links, list) else None
+    except Exception as e:
+        logger.error(f"[mc_link] fetch_all_links failed: {e}")
+        return None
+
+
+async def sync_guild_from_server(guild_id: int, api_url: str, secret: str) -> dict | None:
+    """Mirror one guild's link list from its DiscordGate server (server wins).
+
+    Adds links the server has, updates changed ones, removes links the server no
+    longer has. Bedrock fields Baxi tracks (which the server doesn't) are preserved.
+
+    Returns stats {added, updated, removed, total} on success, or None when skipped
+    — fetch failed, or the server returned zero links while Baxi holds some (guard
+    against wiping the whole guild on a glitchy/empty response).
+    """
+    if not api_url.strip() or not secret.strip():
+        return None
+    links = await fetch_all_links(api_url.strip(), secret.strip())
+    if links is None:
+        return None  # fetch failed → no changes
+
+    server_map: dict[str, dict] = {}
+    for item in links:
+        if not isinstance(item, dict):
+            continue
+        did = str(item.get("discord_id") or "").strip()
+        uuid = str(item.get("uuid") or "").strip()
+        if not did or not uuid:
+            continue
+        server_map[did] = {  # last entry wins on a duplicate discord_id
+            "uuid": uuid,
+            "name": str(item.get("name") or ""),
+            "linked_at": int(item.get("linked_at") or 0),
+        }
+
+    async with _lock:
+        if not _loaded:
+            logger.error(f"[mc_link] sync guild {guild_id}: local links never loaded — skipping (guard).")
+            return None
+        gid = str(guild_id)
+        current = _links.get(gid, {})
+        if not server_map and current:
+            logger.error(f"[mc_link] sync guild {gid}: server returned 0 links but "
+                         f"{len(current)} exist locally — skipping (guard).")
+            return None
+
+        added = updated = 0
+        new_map: dict[str, dict] = {}
+        for did, entry in server_map.items():
+            old = current.get(did)
+            if old:
+                # keep Baxi-only bedrock link the server doesn't know about
+                if old.get("bedrock_uuid"):
+                    entry["bedrock_uuid"] = old["bedrock_uuid"]
+                if old.get("bedrock_name"):
+                    entry["bedrock_name"] = old["bedrock_name"]
+                if old.get("uuid") != entry["uuid"] or old.get("name") != entry["name"]:
+                    updated += 1
+            else:
+                added += 1
+            new_map[did] = entry
+        removed = sum(1 for did in current if did not in server_map)
+
+        if not (added or updated or removed):
+            return {"added": 0, "updated": 0, "removed": 0, "total": len(new_map)}
+
+        _links[gid] = new_map
+        _save()
+    return {"added": added, "updated": updated, "removed": removed, "total": len(new_map)}
+
+
+async def whitelist_player(api_url: str, secret: str, uuid: str, name: str, discord_id: int, discord_name: str = "") -> tuple[bool, str | None]:
+    """POST /dg/whitelist → (ok, error).
+
+    error: None on success; "already_linked" when the MC plugin refuses because the
+    Discord account already links a different MC account (409, the 1:1 default);
+    "unreachable" on any other failure.
+    """
     url = f"{api_url.rstrip('/')}/dg/whitelist"
     payload = {"uuid": uuid, "name": name, "discord_id": str(discord_id), "discord_name": discord_name}
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                return resp.status == 200
+                if resp.status == 200:
+                    return True, None
+                if resp.status == 409:
+                    return False, "already_linked"
+                return False, "unreachable"
     except Exception as e:
         logger.error(f"[mc_link] whitelist_player failed: {e}")
-        return False
+        return False, "unreachable"
 
 
 async def unlink_player(api_url: str, secret: str, uuid: str) -> bool:
@@ -182,11 +294,18 @@ async def store_link(guild_id: int, discord_id: int, uuid: str, name: str):
         gid = str(guild_id)
         if gid not in _links:
             _links[gid] = {}
-        _links[gid][str(discord_id)] = {
+        entry = {
             "uuid": uuid,
             "name": name,
             "linked_at": int(time.time()),
         }
+        # Preserve a supported Bedrock secondary across a (re)link of the Java primary.
+        prev = _links[gid].get(str(discord_id), {})
+        if prev.get("bedrock_uuid"):
+            entry["bedrock_uuid"] = prev["bedrock_uuid"]
+        if prev.get("bedrock_name"):
+            entry["bedrock_name"] = prev["bedrock_name"]
+        _links[gid][str(discord_id)] = entry
         _save()
 
 

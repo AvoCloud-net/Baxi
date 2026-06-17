@@ -198,6 +198,7 @@ _TASK_METHODS = {
     "TikTokVideos":     "check_videos",
     "TwitterPosts":     "check_posts",
     "Instagram":        "check_posts",
+    "McLinkSync":       "sync_links",
 }
 
 
@@ -269,17 +270,31 @@ async def dispatch(name: str, args: list[str]) -> None:
 async def run_console(bot=None) -> None:
     """Read commands from the bot's stdin and dispatch them on the event loop.
 
-    stdin.readline runs in a thread pool so the bot is never blocked. EOF (stdin
-    closed, e.g. headless service with no tty) disables the console cleanly.
+    stdin is read on a dedicated *daemon* thread that feeds an asyncio.Queue, so
+    the bot is never blocked AND a thread parked in a blocking readline can never
+    keep the process alive at shutdown (a non-daemon executor thread would — it
+    gets joined at interpreter exit and readline only returns on EOF, which a
+    pterodactyl stdin pipe never sends → hang). EOF disables the console cleanly.
     """
+    import threading
+
     loop = asyncio.get_running_loop()
+    queue: "asyncio.Queue[str | None]" = asyncio.Queue()
+
+    def _reader() -> None:
+        try:
+            for raw in sys.stdin:                       # blocks here, off-loop
+                loop.call_soon_threadsafe(queue.put_nowait, raw)
+        except Exception:
+            pass
+        loop.call_soon_threadsafe(queue.put_nowait, None)  # EOF sentinel
+
+    threading.Thread(target=_reader, name="baxi-console-stdin", daemon=True).start()
+
     print("[console] ready — type 'help' (Ctrl+C stops the bot).", flush=True)
     while True:
-        try:
-            line = await loop.run_in_executor(None, sys.stdin.readline)
-        except (RuntimeError, ValueError):
-            return
-        if line == "":  # EOF — no interactive console available
+        line = await queue.get()
+        if line is None:  # EOF — no interactive console available
             print("[console] stdin closed — console disabled.", flush=True)
             return
         line = line.strip()

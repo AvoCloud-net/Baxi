@@ -26,10 +26,14 @@ import config.config as config
 from assets.repo.standalone import (
     load_temp_voice_owners as _load_db_owners,
     save_temp_voice_owners as _save_db_owners,
+    upsert_temp_voice_owner as _upsert_db_owner,
+    delete_temp_voice_owner as _delete_db_owner,
     load_temp_voice_profiles as _load_db_profiles,
     save_temp_voice_profiles as _save_db_profiles,
     load_temp_voice_permanent as _load_db_permanent,
     save_temp_voice_permanent as _save_db_permanent,
+    add_temp_voice_permanent as _add_db_permanent,
+    delete_temp_voice_permanent as _delete_db_permanent,
 )
 
 logger = Logger()
@@ -104,21 +108,31 @@ def save_profile(guild_id: int, user_id: int, profile: dict) -> None:
 # Channel ids marked permanent (not deleted when empty).
 _permanent: set[int] = set()
 
+# False until the permanent set has been read from the DB without error.
+# While False, ``is_permanent`` fails *safe* (treats every channel as permanent)
+# so a transient startup DB error can never cause a real permanent channel to be
+# deleted by the empty-channel cleanup.
+_permanent_loaded: bool = False
+
 
 def _load_permanent() -> None:
-    global _permanent
-    _permanent = set()
+    global _permanent, _permanent_loaded
+    loaded: set[int] = set()
     try:
         raw = _load_db_permanent()
         if isinstance(raw, list):
             for cid in raw:
                 try:
-                    _permanent.add(int(cid))
+                    loaded.add(int(cid))
                 except Exception:
                     continue
+        _permanent = loaded
+        _permanent_loaded = True
     except Exception:
-        logger.exception("[tempvoice] failed to load permanent set, starting empty")
+        logger.exception("[tempvoice] failed to load permanent set; "
+                         "treating channels as permanent until reloaded")
         _permanent = set()
+        _permanent_loaded = False
 
 
 def _write_permanent() -> None:
@@ -129,16 +143,26 @@ def _write_permanent() -> None:
 
 
 def is_permanent(channel_id: int) -> bool:
+    # Fail safe: if the permanent set never loaded, never report a channel as
+    # non-permanent (which would let the cleanup delete it).
+    if not _permanent_loaded:
+        return True
     return int(channel_id) in _permanent
 
 
 def set_permanent(channel_id: int, permanent: bool) -> None:
     cid = int(channel_id)
-    if permanent:
-        _permanent.add(cid)
-    else:
-        _permanent.discard(cid)
-    _write_permanent()
+    # Granular write: only this channel's row is touched, so a stale/incomplete
+    # in-memory set can never wipe other channels' permanent rows from the DB.
+    try:
+        if permanent:
+            _permanent.add(cid)
+            _add_db_permanent(cid)
+        else:
+            _permanent.discard(cid)
+            _delete_db_permanent(cid)
+    except Exception:
+        logger.exception("[tempvoice] failed to write permanent flag")
 
 
 def _write_state() -> None:
@@ -160,17 +184,29 @@ def get_owner(channel_id: int) -> int | None:
 
 
 def set_owner(channel_id: int, owner_id: int, guild_id: int) -> None:
-    _owners[int(channel_id)] = {"owner_id": int(owner_id), "guild_id": int(guild_id)}
-    _write_state()
+    cid = int(channel_id)
+    _owners[cid] = {"owner_id": int(owner_id), "guild_id": int(guild_id)}
+    # Granular upsert — does not rewrite the whole owner table.
+    try:
+        _upsert_db_owner(cid, owner_id, guild_id)
+    except Exception:
+        logger.exception("[tempvoice] failed to write owner state")
 
 
 def remove_state(channel_id: int) -> None:
-    if int(channel_id) in _owners:
-        _owners.pop(int(channel_id), None)
-        _write_state()
-    if int(channel_id) in _permanent:
-        _permanent.discard(int(channel_id))
-        _write_permanent()
+    cid = int(channel_id)
+    if cid in _owners:
+        _owners.pop(cid, None)
+        try:
+            _delete_db_owner(cid)
+        except Exception:
+            logger.exception("[tempvoice] failed to delete owner state")
+    if cid in _permanent:
+        _permanent.discard(cid)
+        try:
+            _delete_db_permanent(cid)
+        except Exception:
+            logger.exception("[tempvoice] failed to delete permanent flag")
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +349,26 @@ async def send_control_panel(bot, channel: "discord.VoiceChannel", owner: "disco
         )
     except Exception:
         logger.exception("[tempvoice] send_control_panel failed")
+
+
+async def resend_panel(bot, channel: "discord.VoiceChannel", owner: "discord.Member") -> None:
+    """Re-post the control panel for an existing temp channel.
+
+    Unlike :func:`send_control_panel`, this does NOT re-apply the owner's saved
+    profile or change any permissions — it only renders a fresh panel reflecting
+    the channel's *current* state. Used by ``/tempvoice panel`` so the owner can
+    resurface the panel after it scrolls out of the voice channel's chat.
+
+    Raises on failure so the caller can report it.
+    """
+    lang = datasys.load_lang_file(channel.guild.id)
+    try:
+        ow = channel.overwrites_for(channel.guild.default_role)
+        is_private = ow.connect is False
+    except Exception:
+        is_private = False
+    embed = build_control_embed(channel, owner, is_private=is_private, lang=lang)
+    await channel.send(embed=embed, view=TempVoiceControlView(bot))
 
 
 # ---------------------------------------------------------------------------

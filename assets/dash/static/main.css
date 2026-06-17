@@ -386,6 +386,264 @@ html:not(.dark) .dash-nav {
   scroll-margin-top: 5.5rem;
 }
 
+/* ── Section router: only the active section is shown ───────── */
+.dash-section { display: none; }
+.dash-section.is-active { display: block; animation: dashFadeIn 0.18s ease; }
+
+@keyframes dashFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Back-to-home button (shown on every system page) ───────── */
+.dash-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-radius: 11px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, transform 0.12s;
+}
+
+.dash-back:hover {
+  color: var(--color-primary, #FF6B4A);
+  border-color: var(--color-primary, #FF6B4A);
+  transform: translateX(-2px);
+}
+
+.dash-back svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Home hub: system tiles grouped by category ─────────────── */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.hub-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-radius: 14px;
+  background: var(--card, rgba(255, 255, 255, 0.02));
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s, background 0.15s;
+}
+
+.hub-tile:hover {
+  border-color: var(--color-primary, #FF6B4A);
+  transform: translateY(-2px);
+}
+
+.hub-tile-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9px;
+  background: rgba(255, 107, 74, 0.1);
+  color: var(--color-primary, #FF6B4A);
+}
+
+.hub-tile-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hub-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.hub-tile-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hub-tile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(.5 0 0);
+}
+
+.hub-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(128, 128, 128, 0.4);
+}
+
+.hub-tile-status.is-on { color: #46A758; }
+.hub-tile-status.is-on .hub-status-dot {
+  background: #46A758;
+  box-shadow: 0 0 6px rgba(70, 167, 88, 0.6);
+}
+
+.hub-tile-arrow {
+  flex-shrink: 0;
+  opacity: 0.35;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.hub-tile:hover .hub-tile-arrow {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+.hub-tile-arrow svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Home stat tiles (big-number metrics) ───────────────────── */
+
+.stat-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-radius: 14px;
+  background: var(--card, rgba(255, 255, 255, 0.02));
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-tile:hover {
+  border-color: rgba(255, 107, 74, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.stat-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary, #FF6B4A), #FF9379, transparent);
+  opacity: 0.65;
+}
+
+.stat-tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9px;
+  background: rgba(255, 107, 74, 0.1);
+  color: var(--color-primary, #FF6B4A);
+  margin-bottom: 0.35rem;
+}
+
+.stat-tile-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stat-tile-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.stat-tile-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.stat-tile-sub {
+  font-size: 0.75rem;
+  color: oklch(.5 0 0);
+  line-height: 1.35;
+}
+
+/* ── Guild picker (replaces login dropdown) ─────────────────── */
+
+.guild-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.6rem;
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.guild-tile {
+  text-decoration: none;
+}
+
+.guild-tile-letter {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  text-transform: uppercase;
+  overflow: hidden;
+}
+
+.guild-tile-letter img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+
 /* ── Scroll indicator ─────────────────────────────────────── */
 
 .scroll-indicator {
@@ -1126,4 +1384,34 @@ fieldset {
   .dash-nav-toggle {
     display: none;
   }
+}
+
+/* ── Sidebar removed: Home hub + back button + search replace it ──────────
+   #dash-nav stays in the DOM (display:none) as the data source for the hub,
+   nav-search and the router — only its visual chrome is gone. */
+.dash-nav { display: none !important; }
+.dash-nav-toggle { display: none !important; }
+body { padding-left: 0 !important; }
+
+@media (min-width: 900px) {
+  /* Save/reload action group: float as a card bottom-left (was pinned in the
+     sidebar column). Keeps the blurred surface + user label + buttons. */
+  .local-button-group {
+    left: 1.25rem;
+    bottom: 1.25rem;
+    width: auto;
+    min-width: 190px;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+    padding: 0.35rem;
+    overflow: hidden;
+  }
+
+  html:not(.dark) .local-button-group {
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  .local-button-group button { border-radius: 9px; }
 }

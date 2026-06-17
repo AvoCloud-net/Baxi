@@ -2027,3 +2027,60 @@ class Radio247Task:
     async def before_watch(self):
         await self.bot.wait_until_ready()
 
+
+class McLinkSyncTask:
+    """Mirror each guild's Minecraft link list from its DiscordGate server.
+
+    The MC server (DiscordGate plugin) is the source of truth for who is
+    whitelisted/linked. This pulls GET /dg/links per guild and reconciles it into
+    that guild's mc_links (server wins: add/update/remove). Runs once on startup
+    (via before_loop) and every 10 minutes thereafter.
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(minutes=10)
+    async def sync_links(self):
+        set_task_status("McLinkSync", "running", "Syncing Minecraft links...")
+        await self._sync_all()
+
+    async def _sync_all(self):
+        from assets.mc_link import sync_guild_from_server
+
+        synced = 0
+        total_added = total_updated = total_removed = 0
+        for guild in self.bot.guilds:
+            cfg = dict(datasys.load_data(guild.id, "mc_link"))
+            if not cfg.get("enabled", False):
+                continue
+            api_url = str(cfg.get("api_url", "")).strip()
+            secret = str(cfg.get("api_secret", "")).strip()
+            if not api_url or not secret:
+                continue
+            try:
+                stats = await sync_guild_from_server(guild.id, api_url, secret)
+            except Exception as e:
+                logger.error(f"[McLinkSync] guild {guild.id} failed: {type(e).__name__}: {e}")
+                continue
+            if stats is None:
+                logger.warning(f"[McLinkSync] guild {guild.id}: skipped (server unreachable or guard).")
+                continue
+            synced += 1
+            total_added += stats["added"]
+            total_updated += stats["updated"]
+            total_removed += stats["removed"]
+            if stats["added"] or stats["updated"] or stats["removed"]:
+                logger.info(f"[McLinkSync] guild {guild.id}: +{stats['added']} "
+                            f"~{stats['updated']} -{stats['removed']} (total {stats['total']})")
+
+        set_task_status(
+            "McLinkSync", "ok",
+            f"Synced {synced} guild(s): +{total_added} ~{total_updated} -{total_removed}",
+        )
+
+    @sync_links.before_loop
+    async def before_sync_links(self):
+        await self.bot.wait_until_ready()
+        await self._sync_all()
+

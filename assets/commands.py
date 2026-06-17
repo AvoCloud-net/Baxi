@@ -15,6 +15,7 @@ from assets.buttons import (
     ClearConfirmView,
 )
 from assets.message.warnings import add_warning, remove_warning, get_warnings
+import assets.message.tempvoice as tempvoice
 import assets.trust as sentinel
 import reds_simple_logger
 
@@ -1068,7 +1069,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             api_url: str = guild_conf.get("api_url", "").strip()
             secret: str = guild_conf.get("api_secret", "").strip()
 
-            from assets.mc_link import is_linked, get_link, resolve_token, is_bedrock_uuid, create_link_session
+            from assets.mc_link import is_linked, resolve_token, create_link_session
 
             token_data = await resolve_token(api_url, secret, code.strip().upper())
             if not token_data or "uuid" not in token_data:
@@ -1081,13 +1082,11 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             mc_name: str = token_data.get("name", "Unknown")
             discord_name: str = interaction.user.name
 
+            # 1:1 default: one MC account per Discord. If already linked, no second
+            # account is added (Java or Bedrock) — use Geyser linking or ask an admin.
             kind = "new"
             if is_linked(guild_id, interaction.user.id):
-                existing = get_link(guild_id, interaction.user.id) or {}
-                if is_bedrock_uuid(uuid) and not is_bedrock_uuid(existing.get("uuid", "")):
-                    kind = "bedrock_add"
-                else:
-                    kind = "already_linked"
+                kind = "already_linked"
 
             session_token = create_link_session({
                 "guild_id": guild_id,
@@ -1107,9 +1106,6 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             if kind == "already_linked":
                 card_title = t.get("already_linked_title", "Already linked")
                 card_subtitle = t.get("already_linked_lede", "Your Discord account is already linked to a Minecraft account on this server.")
-            elif kind == "bedrock_add":
-                card_title = t.get("bedrock_add_title", "Add Bedrock account")
-                card_subtitle = t.get("bedrock_add_lede", "You're already linked with a Java account. Confirm to also add this Bedrock account.")
             else:
                 card_title = t.get("confirm_title", "Confirm your link")
                 card_subtitle = t.get("confirm_lede", "You're about to link this Minecraft account to your Discord. Make sure both names look correct.")
@@ -1430,7 +1426,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         api_url: str = guild_conf["api_url"].strip()
         secret: str = guild_conf["api_secret"].strip()
 
-        from assets.mc_link import admin_link_player, store_link, is_linked
+        from assets.mc_link import admin_link_player, store_link, add_bedrock_link, is_linked, get_link, is_bedrock_uuid
 
         result = await admin_link_player(api_url, secret, mc_name.strip(), user.id, user.name)
         if result is None:
@@ -1443,7 +1439,18 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             )
 
         uuid: str = result["uuid"]
-        await store_link(guild_id, user.id, uuid, mc_name.strip())
+
+        # The default self-serve flow is strict 1:1; admins are the sanctioned path
+        # for a second account. If the user already has a (Java) primary and this is
+        # a Bedrock UUID, attach it as the supported Bedrock secondary rather than
+        # overwriting the primary. /dg/admin-link bypasses the MC plugin's 1:1 guard.
+        existing = get_link(guild_id, user.id) if is_linked(guild_id, user.id) else None
+        if existing and is_bedrock_uuid(uuid) and not is_bedrock_uuid(existing.get("uuid", "")):
+            await add_bedrock_link(guild_id, user.id, uuid, mc_name.strip())
+            link_desc = f"{config.Icons.check} Added Bedrock account `{mc_name}` → {user.mention} and whitelisted."
+        else:
+            await store_link(guild_id, user.id, uuid, mc_name.strip())
+            link_desc = f"{config.Icons.check} Linked `{mc_name}` → {user.mention} and whitelisted."
 
         role_id_str: str = guild_conf.get("role_id", "")
         if role_id_str:
@@ -1456,7 +1463,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
 
         await interaction.followup.send(
             embed=discord.Embed(
-                description=f"{config.Icons.check} Linked `{mc_name}` → {user.mention} and whitelisted.",
+                description=link_desc,
                 color=config.Discord.success_color,
             ),
             ephemeral=True,
@@ -1498,6 +1505,90 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     bot.tree.add_command(mc_group)
+
+
+def tempvoice_commands(bot: commands.AutoShardedBot):
+    """/tempvoice — temporary voice channel utilities."""
+    tv_group = app_commands.Group(
+        name="tempvoice", description="Temporary voice channel commands"
+    )
+
+    @tv_group.command(
+        name="panel",
+        description="Re-post your temp voice control panel in this channel.",
+    )
+    async def tempvoice_panel(interaction: Interaction):
+        try:
+            await interaction.response.defer(ephemeral=True)
+        except Exception:
+            logger.error("[tempvoice_panel] defer failed", exc_info=True)
+            return
+
+        try:
+            guild = interaction.guild
+            if guild is None:
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} This command can only be used in a server.",
+                        color=config.Discord.danger_color,
+                    ),
+                    ephemeral=True,
+                )
+
+            lang = datasys.load_lang_file(guild.id)
+            channel = interaction.channel
+
+            owner_id = tempvoice.get_owner(channel.id) if channel is not None else None
+            if owner_id is None:
+                msg = tempvoice._t(
+                    lang, "not_temp_channel",
+                    "Use this in your temporary voice channel's text chat.",
+                )
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {msg}",
+                        color=config.Discord.danger_color,
+                    ),
+                    ephemeral=True,
+                )
+
+            if interaction.user.id != owner_id:
+                msg = tempvoice._t(
+                    lang, "not_owner",
+                    "Only the channel owner can use this control panel.",
+                )
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {msg}",
+                        color=config.Discord.danger_color,
+                    ),
+                    ephemeral=True,
+                )
+
+            await tempvoice.resend_panel(bot, channel, interaction.user)
+
+            msg = tempvoice._t(lang, "panel_resent", "Control panel re-posted below.")
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    description=f"{config.Icons.check} {msg}",
+                    color=config.Discord.success_color,
+                ),
+                ephemeral=True,
+            )
+        except Exception:
+            logger.error("[tempvoice_panel] failed", exc_info=True)
+            try:
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} Something went wrong.",
+                        color=config.Discord.danger_color,
+                    ),
+                    ephemeral=True,
+                )
+            except Exception:
+                pass
+
+    bot.tree.add_command(tv_group)
 
 
 def bot_admin_commands(bot: commands.AutoShardedBot):

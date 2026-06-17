@@ -319,6 +319,10 @@
 
         <!-- Quick-jump nav -->
         <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
+            <a href="#home" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Home
+            </a>
             <a href="#config-general" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 General
@@ -471,6 +475,12 @@
         </nav>
 
         <main class="pb-24">
+
+            <!-- Home hub: tile grid of all systems, grouped by category (built by JS from the sidebar) -->
+            <section class="pb-16 dash-section is-active" id="home">
+                <div class="section-label">DASHBOARD</div>
+                <div id="hub-root"></div>
+            </section>
 
             <!-- Guild Statistics -->
             <section class="pb-16 dash-section" id="stats">
@@ -3208,51 +3218,86 @@
                     </header>
                     <section>
                         <!-- Add new command form -->
-                        <form id="customcmd-add-form" class="form grid gap-4 mb-6">
+                        <form id="customcmd-add-form" class="form grid gap-5 mb-6">
                             <div class="grid gap-2">
                                 <label for="customcmd-trigger">Trigger:</label>
                                 <input type="text" id="customcmd-trigger" placeholder="!rules" maxlength="50" class="w-full" required>
                                 <p class="text-muted text-xs">The word or phrase users type to trigger this command.</p>
                             </div>
 
-                            <div class="grid gap-2">
-                                <label for="customcmd-response">Response:</label>
-                                <textarea id="customcmd-response" placeholder="Please follow our rules: ..." maxlength="2000"
-                                    class="w-full min-h-[80px]" required></textarea>
-                                <p class="text-muted text-xs">Variables: {user}, {username}, {server}, {membercount}</p>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="customcmd-embed">
-                                    <input type="checkbox" id="customcmd-embed" checked onchange="document.getElementById('customcmd-embed-options').classList.toggle('hidden', !this.checked)">
-                                    Send as embed
-                                </label>
-                            </div>
-
-                            <div id="customcmd-embed-options" class="grid gap-4 pl-4 border-l-2 border-muted">
-                                <div class="grid gap-2">
-                                    <label for="customcmd-embed-title">Embed title:</label>
-                                    <input type="text" id="customcmd-embed-title" placeholder="Optional title" maxlength="256" class="w-full">
+                            <!-- Permission gate -->
+                            <div class="grid gap-3 rounded-lg border border-muted p-4">
+                                <div>
+                                    <label class="text-sm font-semibold">Who can use this command?</label>
+                                    <p class="text-muted text-xs">Leave everything empty to allow everyone. A user must have <b>one</b> of the selected roles <b>and all</b> of the selected permissions. Server admins always bypass.</p>
                                 </div>
                                 <div class="grid gap-2">
-                                    <label for="customcmd-embed-color">Embed color:</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="color" id="customcmd-embed-color" value="#6F83AA" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('customcmd-embed-color-hex').value=this.value">
-                                        <input type="text" id="customcmd-embed-color-hex" value="#6F83AA" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('customcmd-embed-color').value=this.value">
+                                    <label class="text-xs font-medium text-muted">Required roles</label>
+                                    <div id="cc-gate-roles" class="grid gap-2 max-h-40 overflow-y-auto border border-muted rounded p-3">
+                                        {% for role_id, role_name in roles.items() %}
+                                        {% if role_name != '@everyone' %}
+                                        <label class="flex items-center gap-3 cursor-pointer">
+                                            <input type="checkbox" class="cc-gate-role-cb" value="{{ role_id }}">
+                                            <span class="text-sm">{{ role_name }}</span>
+                                        </label>
+                                        {% endif %}
+                                        {% endfor %}
                                     </div>
                                 </div>
                                 <div class="grid gap-2">
-                                    <label for="customcmd-embed-footer">Embed footer:</label>
-                                    <input type="text" id="customcmd-embed-footer" placeholder="Optional footer text" maxlength="256" class="w-full">
+                                    <label class="text-xs font-medium text-muted">Required permissions</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="manage_messages"> Manage Messages</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="manage_roles"> Manage Roles</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="kick_members"> Kick Members</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="ban_members"> Ban Members</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="manage_channels"> Manage Channels</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="manage_guild"> Manage Server</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="moderate_members"> Timeout Members</label>
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="cc-gate-perm-cb" value="mention_everyone"> Mention Everyone</label>
+                                    </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary w-full">
-                                <svg class="lucide" viewBox="0 0 24 24">
-                                    <path d="M5 12h14"/><path d="M12 5v14"/>
-                                </svg>
-                                Add Command
-                            </button>
+                            <!-- Actions -->
+                            <div class="grid gap-2">
+                                <label class="text-sm font-semibold">Actions</label>
+                                <p class="text-muted text-xs">Run in order when the command is triggered. Variables: {user}, {username}, {server}, {membercount}, {target}</p>
+                                <div id="cc-actions-list" class="grid gap-3"></div>
+                                <div class="add-area mt-2">
+                                    <div class="flex items-center gap-2">
+                                        <select id="cc-action-type" class="w-full">
+                                            <option value="text">Send message / reply</option>
+                                            <option value="add_role">Add role</option>
+                                            <option value="remove_role">Remove role</option>
+                                            <option value="delete_messages">Delete messages</option>
+                                            <option value="react">Add reaction</option>
+                                            <option value="dm">Send DM</option>
+                                        </select>
+                                        <button type="button" class="btn-primary shrink-0" onclick="ccAddActionRow(document.getElementById('cc-action-type').value)">
+                                            <svg class="lucide" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                            Add action
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button type="submit" class="btn-primary submit-btn flex-1 min-w-0">
+                                    <span class="btn-text flex items-center justify-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M5 12h14"/><path d="M12 5v14"/>
+                                        </svg>
+                                        <span id="customcmd-submit-label">Add Command</span>
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                                <button type="button" id="customcmd-cancel-edit" class="btn-outline shrink-0 hidden" onclick="ccCancelEdit()">Cancel</button>
+                            </div>
                         </form>
 
                         <hr class="my-4">
@@ -3909,14 +3954,11 @@
             var main = document.querySelector('main');
             if (!main) return;
             var order = [
+                'home',
                 'config-general',
-                '__Overview',
                 'stats', 'auditlog',
-                '__Moderation',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
-                '__Community',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
-                '__Automation',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
@@ -3929,12 +3971,7 @@
             // (footer links + site-footer remain as last children of main)
             var fragment = document.createDocumentFragment();
             order.forEach(function (id) {
-                if (id.startsWith('__')) {
-                    var el = document.createElement('div');
-                    el.className = 'dash-category-header';
-                    el.textContent = id.slice(2);
-                    fragment.appendChild(el);
-                } else if (sectionMap[id]) {
+                if (sectionMap[id]) {
                     fragment.appendChild(sectionMap[id]);
                 }
             });
@@ -4273,6 +4310,7 @@
 
             // Custom Commands
             renderCustomCommands();
+            if (!document.querySelector('#cc-actions-list .cc-action')) ccAddActionRow('text');
 
             // Auto-Slowmode
             if (data.auto_slowmode) {
@@ -5200,6 +5238,162 @@
         }
 
         // --- Custom Commands ---
+        const _ccRolesMap = { {% for role_id, role_name in roles.items() %}{% if role_name != '@everyone' %}"{{ role_id }}": {{ role_name | tojson | safe }},{% endif %}{% endfor %} };
+        const _ccPermLabel = {
+            manage_messages: 'Manage Messages', manage_roles: 'Manage Roles', kick_members: 'Kick Members',
+            ban_members: 'Ban Members', manage_channels: 'Manage Channels', manage_guild: 'Manage Server',
+            moderate_members: 'Timeout Members', mention_everyone: 'Mention Everyone',
+        };
+        function ccEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function ccInfo(t) { return `<span title="${ccEsc(t)}" style="display:inline-flex;cursor:help;color:#8b8b94;margin-left:4px;vertical-align:middle;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>`; }
+        const _CC_TARGET_INFO = "Command author = the person who typed the trigger. First @mentioned user = the first user mentioned in their message (e.g. for a '!warn @user' command). If 'mentioned' is chosen but nobody is mentioned, this action is skipped.";
+        function ccActionLabel(t) {
+            return { text: 'Send message / reply', add_role: 'Add role', remove_role: 'Remove role', delete_messages: 'Delete messages', react: 'Add reaction', dm: 'Send DM' }[t] || t;
+        }
+        function _ccTarget(t) { return t === 'mentioned' ? 'mentioned user' : 'author'; }
+        function ccActionSummary(a) {
+            switch (a.type) {
+                case 'text': return a.reply ? 'Reply to trigger' : 'Send message';
+                case 'add_role': return 'Add @' + (_ccRolesMap[a.role] || a.role) + ' to ' + _ccTarget(a.target);
+                case 'remove_role': return 'Remove @' + (_ccRolesMap[a.role] || a.role) + ' from ' + _ccTarget(a.target);
+                case 'delete_messages': return 'Delete ' + (a.count || 10) + ' messages';
+                case 'react': return 'React ' + (a.emoji || '');
+                case 'dm': return 'DM ' + _ccTarget(a.target);
+                default: return a.type;
+            }
+        }
+
+        // ----- Action-row builder (add form) -----
+        function ccRoleOptions(selected) {
+            let opts = '<option value="">Select a role…</option>';
+            for (const id in _ccRolesMap) opts += `<option value="${id}" ${selected === id ? 'selected' : ''}>${ccEsc(_ccRolesMap[id])}</option>`;
+            return opts;
+        }
+        function ccTargetSelect(selected) {
+            selected = selected || 'author';
+            return `<select class="cc-act-target w-full">
+                <option value="author" ${selected === 'author' ? 'selected' : ''}>Command author</option>
+                <option value="mentioned" ${selected === 'mentioned' ? 'selected' : ''}>First @mentioned user</option>
+            </select>`;
+        }
+        function ccActionBody(type, d) {
+            d = d || {};
+            if (type === 'text' || type === 'dm') {
+                let html = `<textarea class="cc-act-response w-full min-h-[60px]" maxlength="2000" placeholder="Message…">${ccEsc(d.response || '')}</textarea>`;
+                if (type === 'text') {
+                    const embedOn = d.embed !== false;
+                    const color = d.embed_color || '#6F83AA';
+                    html += `<label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" class="cc-act-reply" ${d.reply ? 'checked' : ''}> Reply to the trigger message${ccInfo("The bot replies directly to the user's message (shown as a reply, like clicking 'Reply' in Discord). Off = the bot sends a normal standalone message in the channel.")}</label>
+                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="cc-act-embed" ${embedOn ? 'checked' : ''} onchange="this.closest('.cc-action').querySelector('.cc-act-embed-opts').classList.toggle('hidden', !this.checked)"> Send as embed${ccInfo('Sends the message inside a styled embed box (with optional title, color and footer). Off = plain text message.')}</label>
+                        <div class="cc-act-embed-opts grid gap-2 pl-4 border-l-2 border-muted mt-1 ${embedOn ? '' : 'hidden'}">
+                            <input type="text" class="cc-act-embed-title w-full" maxlength="256" placeholder="Embed title (optional)" value="${ccEsc(d.embed_title || '')}">
+                            <div class="flex items-center gap-2">
+                                <input type="color" class="cc-act-embed-color h-9 w-12 rounded cursor-pointer" value="${color}" oninput="this.nextElementSibling.value=this.value">
+                                <input type="text" class="cc-act-embed-color-hex w-28 font-mono" maxlength="7" value="${color}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))this.previousElementSibling.value=this.value">
+                            </div>
+                            <input type="text" class="cc-act-embed-footer w-full" maxlength="256" placeholder="Embed footer (optional)" value="${ccEsc(d.embed_footer || '')}">
+                        </div>`;
+                } else {
+                    html += `<div class="grid gap-1 mt-2"><label class="text-xs text-muted flex items-center">Send DM to${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>`;
+                }
+                return html;
+            }
+            if (type === 'add_role' || type === 'remove_role') {
+                return `<div class="grid gap-2">
+                    <div class="grid gap-1"><label class="text-xs text-muted">Role</label><select class="cc-act-role w-full">${ccRoleOptions(d.role)}</select></div>
+                    <div class="grid gap-1"><label class="text-xs text-muted flex items-center">${type === 'add_role' ? 'Add to' : 'Remove from'}${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>
+                </div>`;
+            }
+            if (type === 'delete_messages') {
+                return `<div class="grid gap-1"><label class="text-xs text-muted">Number of messages to delete (1-100)</label>
+                    <input type="number" class="cc-act-count w-32" min="1" max="100" value="${d.count || 10}"></div>`;
+            }
+            if (type === 'react') {
+                return `<div class="grid gap-1"><label class="text-xs text-muted">Emoji</label>
+                    <input type="text" class="cc-act-emoji w-32" maxlength="64" placeholder="👍" value="${ccEsc(d.emoji || '')}"></div>`;
+            }
+            return '';
+        }
+        function ccAddActionRow(type, d) {
+            const list = document.getElementById('cc-actions-list');
+            const row = document.createElement('div');
+            row.className = 'card cc-action';
+            row.dataset.type = type;
+            row.innerHTML = `
+                <header class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold">${ccActionLabel(type)}</h4>
+                    <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
+                        <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </header>
+                <section class="mt-2">${ccActionBody(type, d)}</section>`;
+            list.appendChild(row);
+        }
+        function ccCollectGate() {
+            return {
+                roles: Array.from(document.querySelectorAll('.cc-gate-role-cb:checked')).map(cb => cb.value),
+                perms: Array.from(document.querySelectorAll('.cc-gate-perm-cb:checked')).map(cb => cb.value),
+            };
+        }
+        function ccCollectActions() {
+            const actions = [];
+            document.querySelectorAll('#cc-actions-list .cc-action').forEach(row => {
+                const type = row.dataset.type;
+                if (type === 'text') {
+                    actions.push({ type, response: row.querySelector('.cc-act-response').value.trim(), reply: row.querySelector('.cc-act-reply').checked, embed: row.querySelector('.cc-act-embed').checked, embed_color: row.querySelector('.cc-act-embed-color-hex').value.trim(), embed_title: row.querySelector('.cc-act-embed-title').value.trim(), embed_footer: row.querySelector('.cc-act-embed-footer').value.trim() });
+                } else if (type === 'dm') {
+                    actions.push({ type, response: row.querySelector('.cc-act-response').value.trim(), target: row.querySelector('.cc-act-target').value });
+                } else if (type === 'add_role' || type === 'remove_role') {
+                    actions.push({ type, role: row.querySelector('.cc-act-role').value, target: row.querySelector('.cc-act-target').value });
+                } else if (type === 'delete_messages') {
+                    actions.push({ type, count: parseInt(row.querySelector('.cc-act-count').value, 10) || 10 });
+                } else if (type === 'react') {
+                    actions.push({ type, emoji: row.querySelector('.cc-act-emoji').value.trim() });
+                }
+            });
+            return actions;
+        }
+        // Original trigger when editing an existing command; null = add mode.
+        let _ccEditing = null;
+
+        function ccResetForm() {
+            _ccEditing = null;
+            document.getElementById('customcmd-trigger').value = '';
+            document.getElementById('cc-actions-list').innerHTML = '';
+            document.querySelectorAll('.cc-gate-role-cb:checked, .cc-gate-perm-cb:checked').forEach(cb => cb.checked = false);
+            document.getElementById('customcmd-submit-label').textContent = 'Add Command';
+            document.getElementById('customcmd-cancel-edit').classList.add('hidden');
+            ccAddActionRow('text');
+        }
+
+        function ccCancelEdit() { ccResetForm(); }
+
+        function editCustomCmd(trigger) {
+            const cmd = (data.custom_commands || {})[trigger];
+            if (!cmd) return;
+            _ccEditing = trigger;
+
+            document.getElementById('customcmd-trigger').value = trigger;
+
+            // Gate checkboxes.
+            const gate = cmd.gate || {};
+            const roleSet = new Set((gate.roles || []).map(String));
+            const permSet = new Set(gate.perms || []);
+            document.querySelectorAll('.cc-gate-role-cb').forEach(cb => cb.checked = roleSet.has(cb.value));
+            document.querySelectorAll('.cc-gate-perm-cb').forEach(cb => cb.checked = permSet.has(cb.value));
+
+            // Actions (backward compat: derive a text action from legacy fields).
+            const actions = (Array.isArray(cmd.actions) && cmd.actions.length)
+                ? cmd.actions
+                : [{ type: 'text', response: cmd.response || '', reply: false, embed: cmd.embed !== false, embed_color: cmd.embed_color || '', embed_title: cmd.embed_title || '', embed_footer: cmd.embed_footer || '' }];
+            document.getElementById('cc-actions-list').innerHTML = '';
+            actions.forEach(a => ccAddActionRow(a.type, a));
+
+            document.getElementById('customcmd-submit-label').textContent = 'Save changes';
+            document.getElementById('customcmd-cancel-edit').classList.remove('hidden');
+            document.getElementById('customcmd-add-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         function renderCustomCommands() {
             const list = document.getElementById('customcmd-list');
             const empty = document.getElementById('customcmd-empty');
@@ -5217,25 +5411,46 @@
 
             keys.forEach(trigger => {
                 const cmd = cmds[trigger];
+                // Backward compat: legacy commands store a single top-level response.
+                const actions = (Array.isArray(cmd.actions) && cmd.actions.length)
+                    ? cmd.actions
+                    : [{ type: 'text', reply: false }];
+                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:#26262b;border:1px solid #3c3c41;border-radius:6px;padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
+
+                const gate = cmd.gate || {};
+                const gateParts = [
+                    ...(gate.roles || []).map(r => '@' + (_ccRolesMap[r] || r)),
+                    ...(gate.perms || []).map(p => _ccPermLabel[p] || p),
+                ];
+                const gateStr = gateParts.length ? gateParts.join(', ') : 'Everyone';
+
                 const card = document.createElement('div');
                 card.className = 'card customcmd-card';
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-base font-semibold"><code>${trigger}</code></h3>
-                            <p class="text-muted text-xs">by ${cmd.created_by || 'Unknown'} &mdash; ${cmd.created_at || ''}</p>
+                            <h3 class="text-base font-semibold"><code>${ccEsc(trigger)}</code></h3>
+                            <p class="text-muted text-xs">by ${ccEsc(cmd.created_by || 'Unknown')} &mdash; ${ccEsc(cmd.created_at || '')}</p>
                         </div>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
-                            <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
-                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                            </svg>
-                            Delete
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="btn-outline" onclick="editCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                                </svg>
+                                Edit
+                            </button>
+                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </div>
                     </header>
                     <section>
-                        <p class="text-sm text-muted">${cmd.response || ''}</p>
-                        <p class="text-xs text-muted mt-1">Embed: ${cmd.embed !== false ? 'Yes' : 'No'}${cmd.embed !== false && cmd.embed_color ? ' &bull; Color: <span style="color:'+cmd.embed_color+'">'+cmd.embed_color+'</span>' : ''}${cmd.embed !== false && cmd.embed_title ? ' &bull; Title: '+cmd.embed_title : ''}</p>
+                        <p class="text-xs text-muted mb-1"><b>Who:</b> ${ccEsc(gateStr)}</p>
+                        <div>${actionsHtml}</div>
                     </section>
                 `;
                 list.appendChild(card);
@@ -5267,28 +5482,59 @@
         document.getElementById('customcmd-add-form').onsubmit = function (event) {
             event.preventDefault();
             const trigger = document.getElementById('customcmd-trigger').value.trim();
-            const response = document.getElementById('customcmd-response').value.trim();
-            const embed = document.getElementById('customcmd-embed').checked;
-            const embed_color = document.getElementById('customcmd-embed-color-hex').value.trim();
-            const embed_title = document.getElementById('customcmd-embed-title').value.trim();
-            const embed_footer = document.getElementById('customcmd-embed-footer').value.trim();
-            if (!trigger || !response) return;
-            const payload = { custom_commands: { action: 'add', trigger, response, embed, embed_color, embed_title, embed_footer } };
+            if (!trigger) { showSaveToast(false, 'Trigger is required.'); return; }
+
+            const gate = ccCollectGate();
+            const actions = ccCollectActions();
+            if (!actions.length) { showSaveToast(false, 'Add at least one action.'); return; }
+
+            // Client-side validation per action type.
+            for (const a of actions) {
+                if ((a.type === 'text' || a.type === 'dm') && !a.response) { showSaveToast(false, 'A message action is empty.'); return; }
+                if ((a.type === 'add_role' || a.type === 'remove_role') && !a.role) { showSaveToast(false, 'Select a role for the role action.'); return; }
+                if (a.type === 'react' && !a.emoji) { showSaveToast(false, 'Pick an emoji for the reaction action.'); return; }
+            }
+
+            const editing = _ccEditing;
+            const payload = editing
+                ? { custom_commands: { action: 'edit', orig_trigger: editing, trigger, gate, actions } }
+                : { custom_commands: { action: 'add', trigger, gate, actions } };
+
+            const btn = event.currentTarget.querySelector('.submit-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.querySelector('.spinner')?.classList.remove('hidden');
+                btn.querySelector('.btn-text')?.classList.add('hidden');
+            }
+
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=custom_commands&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.querySelector('.spinner')?.classList.add('hidden');
+                        btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    }
                     try {
                         const resp = JSON.parse(xhr.responseText);
                         showSaveToast(resp.success, resp.message);
                         if (resp.success) {
                             if (!data.custom_commands) data.custom_commands = {};
-                            data.custom_commands[trigger] = { response, embed, embed_color, embed_title, embed_footer, created_by: '{{ user.name }}', created_at: new Date().toISOString().split('T')[0] };
+                            if (editing && editing !== trigger) {
+                                const prev = data.custom_commands[editing] || {};
+                                data.custom_commands[trigger] = { gate, actions, created_by: prev.created_by || '{{ user.name }}', created_at: prev.created_at || new Date().toISOString().split('T')[0] };
+                                delete data.custom_commands[editing];
+                            } else if (editing) {
+                                const prev = data.custom_commands[editing] || {};
+                                data.custom_commands[trigger] = { gate, actions, created_by: prev.created_by || '{{ user.name }}', created_at: prev.created_at || new Date().toISOString().split('T')[0] };
+                            } else {
+                                data.custom_commands[trigger] = { gate, actions, created_by: '{{ user.name }}', created_at: new Date().toISOString().split('T')[0] };
+                            }
                             renderCustomCommands();
-                            document.getElementById('customcmd-trigger').value = '';
-                            document.getElementById('customcmd-response').value = '';
+                            ccResetForm();
                         }
                     } catch (e) {
                         showSaveToast(false, 'An unexpected error occurred.');
@@ -7744,57 +7990,167 @@
     
 
     <script>
-        /* Highlight active nav item based on scroll position */
-        document.addEventListener('DOMContentLoaded', () => {
-            const sections = document.querySelectorAll('.dash-section');
-            const navLinks = document.querySelectorAll('.dash-nav-item');
+        /* ── Section router + Home hub ─────────────────────────────
+           One section visible at a time (no inter-section scrolling).
+           The Home hub is built from the sidebar so icons/labels/groups
+           stay in sync automatically. */
+        (function () {
+            const dashNav = document.getElementById('dash-nav');
+            if (!dashNav) return;
+            const navLinks = Array.from(dashNav.querySelectorAll('.dash-nav-item'));
+            const hubRoot  = document.getElementById('hub-root');
+            const mainEl   = document.querySelector('main');
 
-            let scrollLock = false;
-            let scrollLockTimer = null;
+            const ARROW_SVG = '<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
 
-            const observer = new IntersectionObserver(entries => {
-                if (scrollLock) return;
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        navLinks.forEach(l => l.classList.remove('active'));
-                        const active = document.querySelector(`.dash-nav-item[href="#${entry.target.id}"]`);
-                        if (active) {
-                            active.classList.add('active');
-                            active.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-                        }
+            /* Back-to-home button: shown on every system page, hidden on Home.
+               Inserted at top of <main> (after the section-reorder IIFE has run). */
+            const backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'dash-back';
+            backBtn.setAttribute('aria-label', 'Back to home');
+            backBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Home</span>';
+            backBtn.style.display = 'none';
+            backBtn.addEventListener('click', function () { showSection('home'); });
+            if (mainEl) mainEl.insertBefore(backBtn, mainEl.firstChild);
+
+            /* Status overrides for sections with no role="switch" toggle.
+               Read from the initial `data` snapshot (available at parse). */
+            function _safe(fn) { try { const v = fn(); return v === true || v === false ? v : null; } catch (e) { return null; } }
+            const STATUS_OVERRIDE = {
+                'prism':           function () { return _safe(function () { return data.prism_enabled !== false; }); },
+                'sticky-messages': function () { return _safe(function () { return Object.keys(data.sticky_messages || {}).length > 0; }); }
+            };
+
+            /* Master enable state of a section: true/false, or null if the
+               section has no on/off concept. Prefer the live toggle; fall
+               back to a data-based override (e.g. prism, sticky messages). */
+            function statusFor(id) {
+                const sec = document.getElementById(id);
+                if (!sec) return null;
+                const sw = sec.querySelector('input[role="switch"]');
+                if (sw) return !!sw.checked;
+                if (STATUS_OVERRIDE[id]) return STATUS_OVERRIDE[id]();
+                return null;
+            }
+
+            function statusInner(state) {
+                return '<span class="hub-status-dot"></span>' + (state ? 'on' : 'off');
+            }
+
+            function buildHub() {
+                if (!hubRoot) return;
+                hubRoot.innerHTML = '';
+                let pendingGroup = null;   // group label not yet rendered (skipped if it has no tiles)
+                let grid = null;
+
+                function ensureGrid() {
+                    if (grid) return;
+                    if (pendingGroup !== null) {
+                        const h = document.createElement('div');
+                        h.className = 'dash-category-header';
+                        h.textContent = pendingGroup;
+                        hubRoot.appendChild(h);
+                        pendingGroup = null;
                     }
+                    grid = document.createElement('div');
+                    grid.className = 'hub-grid';
+                    hubRoot.appendChild(grid);
+                }
+
+                Array.from(dashNav.children).forEach(function (el) {
+                    if (el.classList.contains('dash-nav-group-label')) {
+                        pendingGroup = el.textContent.trim();
+                        grid = null;          // fresh grid for the new group
+                        return;
+                    }
+                    if (!el.classList.contains('dash-nav-item')) return;
+                    const href = el.getAttribute('href') || '';
+                    if (!href.startsWith('#')) return;                       // external link
+                    const id = href.slice(1);
+                    if (id === 'home') return;                                // don't tile Home
+                    if (el.textContent.indexOf('UNAVAILABLE') !== -1) return; // disabled feature
+
+                    ensureGrid();
+
+                    const icon  = el.querySelector('svg') ? el.querySelector('svg').outerHTML : '';
+                    const label = el.textContent.trim();
+                    const state = statusFor(id);
+
+                    const tile = document.createElement('button');
+                    tile.type = 'button';
+                    tile.className = 'hub-tile';
+                    tile.setAttribute('data-target', id);
+                    tile.innerHTML =
+                        '<span class="hub-tile-icon">' + icon + '</span>' +
+                        '<span class="hub-tile-body">' +
+                            '<span class="hub-tile-label">' + label + '</span>' +
+                            (state === null ? '' :
+                                '<span class="hub-tile-status' + (state ? ' is-on' : '') + '" data-status-for="' + id + '">' +
+                                statusInner(state) + '</span>') +
+                        '</span>' +
+                        '<span class="hub-tile-arrow">' + ARROW_SVG + '</span>';
+                    tile.addEventListener('click', function () { showSection(id); });
+                    grid.appendChild(tile);
                 });
-            }, { rootMargin: '-10% 0px -80% 0px' });
+            }
 
-            sections.forEach(s => observer.observe(s));
+            function refreshHubStatus() {
+                if (!hubRoot) return;
+                hubRoot.querySelectorAll('[data-status-for]').forEach(function (el) {
+                    const state = statusFor(el.getAttribute('data-status-for'));
+                    if (state === null) return;
+                    el.classList.toggle('is-on', state);
+                    el.innerHTML = statusInner(state);
+                });
+            }
 
-            /* Set first item active on load */
-            if (navLinks.length) navLinks[0].classList.add('active');
-
-            /* Center target section when clicking a nav item */
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    const href = this.getAttribute('href') || '';
-                    if (!href.startsWith('#')) return; // allow normal navigation for external links
-                    e.preventDefault();
-                    const targetId = href.slice(1);
-                    const target = document.getElementById(targetId);
+            /* ── Router ─────────────────────────────────────────────── */
+            function showSection(id, opts) {
+                opts = opts || {};
+                let target = document.getElementById(id);
+                if (!target || !target.classList.contains('dash-section')) {
+                    id = 'home';
+                    target = document.getElementById('home');
                     if (!target) return;
+                }
+                document.querySelectorAll('.dash-section').forEach(function (s) {
+                    s.classList.toggle('is-active', s === target);
+                });
+                navLinks.forEach(function (l) {
+                    l.classList.toggle('active', (l.getAttribute('href') || '') === '#' + id);
+                });
+                backBtn.style.display = (id === 'home') ? 'none' : 'inline-flex';
+                if (id === 'home') refreshHubStatus();
+                if (!opts.noHash && location.hash !== '#' + id) {
+                    history.pushState(null, '', '#' + id);
+                }
+                window.scrollTo({ top: 0, behavior: opts.instant ? 'auto' : 'smooth' });
+            }
+            window.dashShowSection = showSection;   // used by nav-search
 
-                    /* Immediately highlight the clicked item */
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                    this.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-
-                    /* Lock observer until scroll animation finishes (~600ms) */
-                    scrollLock = true;
-                    clearTimeout(scrollLockTimer);
-                    scrollLockTimer = setTimeout(() => { scrollLock = false; }, 600);
-
-                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            /* nav-item clicks → route (external links keep default nav) */
+            navLinks.forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href') || '';
+                    if (!href.startsWith('#')) return;
+                    e.preventDefault();
+                    showSection(href.slice(1));
                 });
             });
-        });
+
+            /* back/forward button support */
+            window.addEventListener('hashchange', function () {
+                showSection((location.hash || '#home').slice(1), { noHash: true });
+            });
+
+            buildHub();
+            showSection((location.hash || '#home').slice(1), { noHash: true, instant: true });
+
+            /* Toggle states are populated on window.load (createDynamicFields);
+               refresh the hub dots once they're set. */
+            window.addEventListener('load', refreshHubStatus);
+        })();
 
         // Stats Channels update countdown (aligns to clock's 10-min marks)
         (function () {
@@ -7898,8 +8254,8 @@
 
             function navigateTo(href) {
                 close();
-                const target = document.querySelector(href);
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const id = (href || '').replace(/^#/, '');
+                if (window.dashShowSection) window.dashShowSection(id);
             }
 
             function close() {

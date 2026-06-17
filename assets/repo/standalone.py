@@ -170,6 +170,24 @@ def save_temp_voice_owners(data: dict) -> None:
             )
 
 
+def upsert_temp_voice_owner(channel_id: int, owner_id: int, guild_id: int) -> None:
+    """Insert/update a single owner row. Never touches other channels' rows."""
+    with db.transaction() as cx:
+        cx.execute(
+            "INSERT INTO temp_voice_owners (channel_id,owner_id,guild_id) VALUES (?,?,?) "
+            "ON CONFLICT(channel_id) DO UPDATE SET "
+            "owner_id=excluded.owner_id, guild_id=excluded.guild_id",
+            (int(channel_id), int(owner_id), int(guild_id)),
+        )
+
+
+def delete_temp_voice_owner(channel_id: int) -> None:
+    with db.transaction() as cx:
+        cx.execute(
+            "DELETE FROM temp_voice_owners WHERE channel_id=?", (int(channel_id),)
+        )
+
+
 # ── Temp voice profiles ───────────────────────────────────────────────────────
 
 def load_temp_voice_profiles() -> dict:
@@ -201,6 +219,22 @@ def save_temp_voice_permanent(data: list) -> None:
             cx.execute(
                 "INSERT OR IGNORE INTO temp_voice_permanent (channel_id) VALUES (?)", (int(ch_id),)
             )
+
+
+def add_temp_voice_permanent(channel_id: int) -> None:
+    """Mark a single channel permanent. Never touches other channels' rows."""
+    with db.transaction() as cx:
+        cx.execute(
+            "INSERT OR IGNORE INTO temp_voice_permanent (channel_id) VALUES (?)",
+            (int(channel_id),),
+        )
+
+
+def delete_temp_voice_permanent(channel_id: int) -> None:
+    with db.transaction() as cx:
+        cx.execute(
+            "DELETE FROM temp_voice_permanent WHERE channel_id=?", (int(channel_id),)
+        )
 
 
 # ── AI feedback ───────────────────────────────────────────────────────────────

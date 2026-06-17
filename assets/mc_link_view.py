@@ -101,36 +101,37 @@ class MCLinkConfirmView(discord.ui.View):
             )
             return
 
-        ok = await mcl.whitelist_player(
+        ok, err = await mcl.whitelist_player(
             sess["api_url"], sess["api_secret"],
             sess["uuid"], mc_name,
             sess["discord_id"], sess["discord_name"],
         )
         if not ok:
-            await self._render_cancel(
-                interaction,
-                title="Couldn't complete",
-                subtitle=t.get("link_failed", "Minecraft server unreachable. Try again later."),
-            )
+            if err == "already_linked":
+                # MC plugin enforces the 1:1 default — the Discord already links a
+                # different MC account. Show that instead of a generic failure.
+                fail_title = t.get("already_linked_title", "Already linked")
+                fail_subtitle = t.get("already_linked_desc", "Your Discord account is already linked to a Minecraft account. Unlink it first, or ask an admin.")
+            else:
+                fail_title = "Couldn't complete"
+                fail_subtitle = t.get("link_failed", "Minecraft server unreachable. Try again later.")
+            await self._render_cancel(interaction, title=fail_title, subtitle=fail_subtitle)
             mcl.consume_link_session(self.token)
             return
 
-        if kind == "bedrock_add":
-            await mcl.add_bedrock_link(guild_id, discord_id, sess["uuid"], mc_name)
-        else:
-            await mcl.store_link(guild_id, discord_id, sess["uuid"], mc_name)
-            guild = self.bot.get_guild(guild_id)
-            role_id_str = guild_conf.get("role_id", "")
-            if guild and role_id_str:
-                try:
-                    role = guild.get_role(int(role_id_str))
-                    member = guild.get_member(discord_id)
-                    if role and member:
-                        await member.add_roles(role, reason="MC account linked")
-                except Exception:
-                    logger.exception("[mc_link_view] role add failed")
-            await mcl.announce_link(self.bot, guild_id, discord_id, mc_name, guild_conf, lang)
-            await mcl.dm_user(self.bot, guild_id, discord_id, mc_name, guild_conf, lang)
+        await mcl.store_link(guild_id, discord_id, sess["uuid"], mc_name)
+        guild = self.bot.get_guild(guild_id)
+        role_id_str = guild_conf.get("role_id", "")
+        if guild and role_id_str:
+            try:
+                role = guild.get_role(int(role_id_str))
+                member = guild.get_member(discord_id)
+                if role and member:
+                    await member.add_roles(role, reason="MC account linked")
+            except Exception:
+                logger.exception("[mc_link_view] role add failed")
+        await mcl.announce_link(self.bot, guild_id, discord_id, mc_name, guild_conf, lang)
+        await mcl.dm_user(self.bot, guild_id, discord_id, mc_name, guild_conf, lang)
 
         mcl.consume_link_session(self.token)
 
