@@ -17,6 +17,7 @@ import discord
 from discord.ext import commands
 
 from assets.message.antispam import AntiSpam
+from .antiraid import antiraid
 from .context import RiskContext
 from .enforce import enforce_antispam
 
@@ -51,6 +52,14 @@ class ModerationEngine:
         rest of the ``on_message`` pipeline should not run.
         """
         ctx = self.context_for(message)
+
+        # Anti-Raid: record this message into the guild's rolling window and, during an
+        # active lockdown, action raiders (delete + timeout) before anything else runs.
+        raid_verdict = await antiraid.record_message(message, ctx)
+        if raid_verdict.flagged:
+            ctx.add(raid_verdict)
+            await antiraid.enforce(message, raid_verdict, bot)
+            return ModerationResult(stop=True, ctx=ctx)
 
         verdict = self.antispam.evaluate(message, ctx)
         if verdict.flagged:

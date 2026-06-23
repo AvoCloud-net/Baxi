@@ -40,6 +40,7 @@ from assets.tasks import (
     LivestreamTask,
     StatsChannelsTask,
     TempActionsTask,
+    AntiRaidTask,
     PhishingListTask,
     GarbageCollectorTask,
     YouTubeVideoTask,
@@ -239,6 +240,12 @@ def events(bot: commands.AutoShardedBot, web):
             temp_actions_task.check_temp_actions.start()
             share.task_instances["TempActions"] = temp_actions_task
             logger.debug.success("Temp actions task started.")
+
+            logger.working("Starting AntiRaid task...")
+            anti_raid_task = AntiRaidTask(bot)
+            anti_raid_task.tick.start()
+            share.task_instances["AntiRaid"] = anti_raid_task
+            logger.debug.success("Anti-Raid task started.")
 
             logger.working("Starting PhishingList task...")
             phishing_list_task = PhishingListTask()
@@ -662,6 +669,14 @@ def events(bot: commands.AutoShardedBot, web):
                         admin_log("info", f"Auto-role '{role.name}' assigned to {member.name} in {member.guild.name}", source="AutoRole")
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+
+        # Anti-Raid: feed the join into the guild's rolling window; engage a lockdown on a
+        # detected join wave and action members joining during an active lockdown.
+        try:
+            from assets.moderation.antiraid import antiraid
+            await antiraid.record_join(member, bot)
+        except Exception as _ar_err:
+            logger.error(f"[AntiRaid] on_member_join error: {_ar_err}")
 
         # Mod-Gate: check joining member's PRISM standing (quarantine / kick / hold for review).
         try:

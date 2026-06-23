@@ -2863,6 +2863,57 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "antiraid":
+            data: dict = await quart.request.get_json()
+            ar = data.get("antiraid")
+
+            if not isinstance(ar, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'antiraid' must be an object."}), 400
+            if not isinstance(ar.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            join_action = str(ar.get("join_action", "timeout"))
+            if join_action not in ("timeout", "kick", "quarantine", "none"):
+                return quart.jsonify({"success": False, "message": "join_action must be timeout, kick, quarantine or none."}), 400
+
+            try:
+                acts = ar.get("actions", {}) or {}
+                settings = {
+                    "enabled": ar["enabled"],
+                    "sensitivity": max(0.25, min(4.0, float(ar.get("sensitivity", 1.0)))),
+                    "join_window": max(2, min(120, int(ar.get("join_window", 10)))),
+                    "msg_window": max(2, min(120, int(ar.get("msg_window", 10)))),
+                    "min_joins": max(2, min(200, int(ar.get("min_joins", 5)))),
+                    "min_messages": max(2, min(500, int(ar.get("min_messages", 25)))),
+                    "lockdown_duration": max(30, min(3600, int(ar.get("lockdown_duration", 300)))),
+                    "alert_channel": int(ar.get("alert_channel", 0) or 0),
+                    "whitelisted_roles": [str(r) for r in ar.get("whitelisted_roles", []) if str(r).strip()],
+                    "join_action": join_action,
+                    "quarantine_role": int(ar.get("quarantine_role", 0) or 0),
+                    "actions": {
+                        "pause_invites": bool(acts.get("pause_invites", True)),
+                        "raise_verification": bool(acts.get("raise_verification", True)),
+                        "slowmode": bool(acts.get("slowmode", True)),
+                        "slowmode_delay": max(1, min(21600, int(acts.get("slowmode_delay", 10)))),
+                        "timeout_spammers": bool(acts.get("timeout_spammers", True)),
+                        "timeout_minutes": max(1, min(1440, int(acts.get("timeout_minutes", 10)))),
+                    },
+                }
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "Numeric fields must be valid numbers."}), 400
+
+            save_data(int(guild_id), "antiraid", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save", "user": user.name, "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "antiraid",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
         elif system == "mod_gate":
             data: dict = await quart.request.get_json()
             mg = data.get("mod_gate")

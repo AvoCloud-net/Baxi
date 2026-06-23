@@ -752,6 +752,29 @@ class TempActionsTask:
                 logger.error(f"[TempActions] Error for guild {guild.id}: {e}")
 
 
+class AntiRaidTask:
+    """Rolls the per-guild Anti-Raid windows every 5s: updates the learned baselines,
+    detects message floods, and lifts expired lockdowns (restoring changed settings)."""
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(seconds=5)
+    async def tick(self):
+        try:
+            set_task_status("AntiRaid", "running", "Rolling raid windows...")
+            from assets.moderation.antiraid import antiraid
+            for guild in list(self.bot.guilds):
+                try:
+                    await antiraid.tick(guild, self.bot)
+                except Exception as e:
+                    logger.error(f"[AntiRaid] tick error @ {guild.id}: {e}")
+            set_task_status("AntiRaid", "ok", "Raid windows rolled")
+        except Exception as e:
+            logger.error(f"[AntiRaid] Error in tick: {e}")
+            set_task_status("AntiRaid", "error", f"Error: {e}")
+
+
 class PhishingListTask:
     """Background task that downloads and refreshes the phishing domain list every 12 hours.
 

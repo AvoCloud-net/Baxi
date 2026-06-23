@@ -161,6 +161,11 @@
         }
         .add-area.mt-4 { margin-top: 1rem; }
         .add-area.mt-3 { margin-top: 0.75rem; }
+        /* Anti-Raid advanced disclosure */
+        .antiraid-advanced > summary::-webkit-details-marker { display: none; }
+        .antiraid-advanced > summary { user-select: none; }
+        .antiraid-advanced > summary svg { transition: transform .15s ease; }
+        .antiraid-advanced[open] > summary svg { transform: rotate(90deg); }
     </style>
 </head>
 
@@ -368,6 +373,10 @@
             <a href="#auto-slowmode" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 Auto-Slowmode
+            </a>
+            <a href="#antiraid" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9-5 5"/><path d="m9.5 9 5 5"/></svg>
+                Anti-Raid
             </a>
             <a href="#mod_gate" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9.5 12.5 11 14l3.5-3.5"/></svg>
@@ -1492,6 +1501,191 @@
                                 <input type="number" id="asm-duration" min="10" max="3600" value="120" class="w-full">
                                 <p class="text-muted text-xs">How long the slowmode stays active before being lifted automatically.</p>
                             </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Anti-Raid -->
+            <section class="pb-16 dash-section" id="antiraid">
+                <div class="section-label">ANTI-RAID</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                <path d="m14.5 9-5 5"/><path d="m9.5 9 5 5"/>
+                            </svg>
+                            Anti-Raid
+                        </h2>
+                        <p class="text-muted">Baxi learns this server's normal rate of joins and messages over time. When the live rate spikes far above the baseline (a join wave or message flood), the server is automatically locked down: invites paused, verification raised, slowmode applied, and raiders timed out. Everything is restored when the lockdown expires.</p>
+                    </header>
+                    <section>
+                        <form id="antiraid-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="antiraid-enabled" role="switch">
+                                    <span class="font-medium">Enable Anti-Raid</span>
+                                </label>
+                            </div>
+
+                            <!-- Protection level: simple preset picker. Sets the advanced
+                                 thresholds below; "Custom" shows when fine-tuned by hand. -->
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Protection level</label>
+                                <div id="antiraid-presets" class="grid grid-cols-3 gap-2">
+                                    <button type="button" class="btn-outline antiraid-preset" data-preset="relaxed" onclick="antiraidApplyPreset('relaxed')">Relaxed</button>
+                                    <button type="button" class="btn-outline antiraid-preset" data-preset="balanced" onclick="antiraidApplyPreset('balanced')">Balanced</button>
+                                    <button type="button" class="btn-outline antiraid-preset" data-preset="strict" onclick="antiraidApplyPreset('strict')">Strict</button>
+                                </div>
+                                <p class="text-muted text-xs" id="antiraid-preset-hint">Balanced — sensible default for most servers.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antiraid-alert-channel">Alert channel:</label>
+                                <select id="antiraid-alert-channel" class="select w-full">
+                                    <option value="0">- None (use notification channel) -</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Where raid lockdown / lift alerts are posted.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="antiraid-join-action">When someone joins during a raid:</label>
+                                <select id="antiraid-join-action" class="select w-full">
+                                    <option value="timeout">Timeout them</option>
+                                    <option value="kick">Kick them</option>
+                                    <option value="quarantine">Quarantine (assign role)</option>
+                                    <option value="none">Do nothing (alert only)</option>
+                                </select>
+                            </div>
+
+                            <!-- Advanced: power-user knobs. Hidden by default to keep the card simple. -->
+                            <details class="antiraid-advanced">
+                                <summary class="text-sm font-medium" style="cursor:pointer;list-style:none;">
+                                    <span class="inline-flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
+                                        Advanced settings
+                                    </span>
+                                </summary>
+                                <div class="grid gap-6 mt-4">
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-sensitivity">Sensitivity: <span id="antiraid-sensitivity-val" class="text-muted font-normal">1.0×</span></label>
+                                        <input type="range" id="antiraid-sensitivity" min="0.25" max="4" step="0.25" value="1" class="w-full"
+                                            oninput="document.getElementById('antiraid-sensitivity-val').textContent = parseFloat(this.value).toFixed(2) + '×'; antiraidSyncPresetButtons();">
+                                        <p class="text-muted text-xs">Higher = trips sooner (more aggressive). Lower = more tolerant of busy periods.</p>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-min-joins">Join floor (joins / window):</label>
+                                        <input type="number" id="antiraid-min-joins" min="2" max="200" value="5" class="w-full" onchange="antiraidSyncPresetButtons()">
+                                        <p class="text-muted text-xs">Minimum joins inside the join window before a raid can be declared, regardless of baseline.</p>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-join-window">Join window (seconds):</label>
+                                        <input type="number" id="antiraid-join-window" min="2" max="120" value="10" class="w-full">
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-min-messages">Message floor (msgs / window):</label>
+                                        <input type="number" id="antiraid-min-messages" min="2" max="500" value="25" class="w-full" onchange="antiraidSyncPresetButtons()">
+                                        <p class="text-muted text-xs">Minimum messages inside the message window before a message-flood raid can be declared.</p>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-msg-window">Message window (seconds):</label>
+                                        <input type="number" id="antiraid-msg-window" min="2" max="120" value="10" class="w-full">
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-lockdown-duration">Lockdown duration (seconds):</label>
+                                        <input type="number" id="antiraid-lockdown-duration" min="30" max="3600" value="300" class="w-full">
+                                        <p class="text-muted text-xs">How long the lockdown stays active before settings are restored automatically.</p>
+                                    </div>
+
+                                    <hr class="my-2">
+
+                                    <div class="grid gap-3">
+                                        <label class="font-medium text-sm">Lockdown actions</label>
+                                        <label class="flex items-center gap-3" style="cursor:pointer">
+                                            <input type="checkbox" id="antiraid-act-pause-invites">
+                                            <span>Pause server invites</span>
+                                        </label>
+                                        <label class="flex items-center gap-3" style="cursor:pointer">
+                                            <input type="checkbox" id="antiraid-act-raise-verification">
+                                            <span>Raise verification level to highest</span>
+                                        </label>
+                                        <label class="flex items-center gap-3" style="cursor:pointer">
+                                            <input type="checkbox" id="antiraid-act-slowmode">
+                                            <span>Apply slowmode to text channels</span>
+                                        </label>
+                                        <label class="flex items-center gap-3" style="cursor:pointer">
+                                            <input type="checkbox" id="antiraid-act-timeout-spammers">
+                                            <span>Timeout spammers during the raid</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-slowmode-delay">Slowmode delay (seconds):</label>
+                                        <input type="number" id="antiraid-slowmode-delay" min="1" max="21600" value="10" class="w-full">
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-timeout-minutes">Timeout duration (minutes):</label>
+                                        <input type="number" id="antiraid-timeout-minutes" min="1" max="1440" value="10" class="w-full">
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label for="antiraid-quarantine-role">Quarantine role:</label>
+                                        <select id="antiraid-quarantine-role" class="select w-full">
+                                            <option value="0">- None -</option>
+                                            {% for id, name in roles.items() %}
+                                            <option value="{{ id }}">{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <p class="text-muted text-xs">Only used with the Quarantine join action.</p>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <label class="font-medium text-sm">Whitelisted roles <span class="text-muted font-normal" id="antiraid-wl-ro-count">(0)</span></label>
+                                        <div id="antiraid-wl-roles-list" class="flex flex-wrap gap-2"></div>
+                                        <p id="antiraid-wl-roles-empty" class="text-muted text-xs">No whitelisted roles.</p>
+                                        <hr class="my-3">
+                                        <div class="flex gap-2 add-area">
+                                            <select id="antiraid-add-wl-role" class="select flex-1">
+                                                <option value="">-  Select a role - </option>
+                                                {% for id, name in roles.items() %}
+                                                <option value="{{ id }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="button" class="btn-primary" onclick="antiraidAddWlRole()" style="flex-shrink:0;">
+                                                <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                Add
+                                            </button>
+                                        </div>
+                                        <p class="text-muted text-xs">Members with any of these roles are never auto-actioned during a raid.</p>
+                                    </div>
+                                </div>
+                            </details>
 
                             <button type="submit" class="btn-primary submit-btn w-full">
                                 <span class="btn-text">
@@ -4074,7 +4268,7 @@
                 'home',
                 'config-general',
                 'stats', 'auditlog',
-                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode', 'mod_gate', 'mod_review', 'classifier_training',
+                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode', 'antiraid', 'mod_gate', 'mod_review', 'classifier_training',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
             ];
@@ -4436,6 +4630,34 @@
                 document.getElementById('asm-interval').value = data.auto_slowmode.interval ?? 10;
                 document.getElementById('asm-slowmode-delay').value = data.auto_slowmode.slowmode_delay ?? 5;
                 document.getElementById('asm-duration').value = data.auto_slowmode.duration ?? 120;
+            }
+
+            // Anti-Raid
+            if (data.antiraid) {
+                const ar = data.antiraid;
+                document.getElementById('antiraid-enabled').checked = ar.enabled === true;
+                document.getElementById('antiraid-sensitivity').value = ar.sensitivity ?? 1.0;
+                document.getElementById('antiraid-sensitivity-val').textContent = parseFloat(ar.sensitivity ?? 1.0).toFixed(2) + '×';
+                document.getElementById('antiraid-min-joins').value = ar.min_joins ?? 5;
+                document.getElementById('antiraid-join-window').value = ar.join_window ?? 10;
+                document.getElementById('antiraid-min-messages').value = ar.min_messages ?? 25;
+                document.getElementById('antiraid-msg-window').value = ar.msg_window ?? 10;
+                document.getElementById('antiraid-lockdown-duration').value = ar.lockdown_duration ?? 300;
+                document.getElementById('antiraid-alert-channel').value = String(ar.alert_channel ?? 0);
+                document.getElementById('antiraid-join-action').value = ar.join_action || 'timeout';
+                document.getElementById('antiraid-quarantine-role').value = String(ar.quarantine_role ?? 0);
+                const acts = ar.actions || {};
+                document.getElementById('antiraid-act-pause-invites').checked = acts.pause_invites !== false;
+                document.getElementById('antiraid-act-raise-verification').checked = acts.raise_verification !== false;
+                document.getElementById('antiraid-act-slowmode').checked = acts.slowmode !== false;
+                document.getElementById('antiraid-act-timeout-spammers').checked = acts.timeout_spammers !== false;
+                document.getElementById('antiraid-slowmode-delay').value = acts.slowmode_delay ?? 10;
+                document.getElementById('antiraid-timeout-minutes').value = acts.timeout_minutes ?? 10;
+                _antiraidWlRoles = Array.isArray(ar.whitelisted_roles) ? ar.whitelisted_roles.map(String) : [];
+                renderAntiraidWlRoles();
+                antiraidSyncPresetButtons();
+            } else {
+                antiraidSyncPresetButtons();
             }
 
             // Mod-Gate
@@ -6655,6 +6877,46 @@
             };
         };
 
+        // ── Anti-Raid ──────────────────────────────────────────────────────────
+        document.getElementById('antiraid-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = { antiraid: {
+                enabled: document.getElementById('antiraid-enabled').checked,
+                sensitivity: parseFloat(document.getElementById('antiraid-sensitivity').value),
+                min_joins: parseInt(document.getElementById('antiraid-min-joins').value, 10),
+                join_window: parseInt(document.getElementById('antiraid-join-window').value, 10),
+                min_messages: parseInt(document.getElementById('antiraid-min-messages').value, 10),
+                msg_window: parseInt(document.getElementById('antiraid-msg-window').value, 10),
+                lockdown_duration: parseInt(document.getElementById('antiraid-lockdown-duration').value, 10),
+                alert_channel: parseInt(document.getElementById('antiraid-alert-channel').value, 10) || 0,
+                join_action: document.getElementById('antiraid-join-action').value,
+                quarantine_role: parseInt(document.getElementById('antiraid-quarantine-role').value, 10) || 0,
+                whitelisted_roles: [..._antiraidWlRoles],
+                actions: {
+                    pause_invites: document.getElementById('antiraid-act-pause-invites').checked,
+                    raise_verification: document.getElementById('antiraid-act-raise-verification').checked,
+                    slowmode: document.getElementById('antiraid-act-slowmode').checked,
+                    slowmode_delay: parseInt(document.getElementById('antiraid-slowmode-delay').value, 10),
+                    timeout_spammers: document.getElementById('antiraid-act-timeout-spammers').checked,
+                    timeout_minutes: parseInt(document.getElementById('antiraid-timeout-minutes').value, 10),
+                },
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=antiraid&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
         // ── Mod-Gate ───────────────────────────────────────────────────────────
         document.getElementById('mod_gate-form').onsubmit = function (event) {
             event.preventDefault();
@@ -7055,6 +7317,66 @@
         }
         function antispamRemoveWlChannel(id) { _antispamWlChannels = _antispamWlChannels.filter(c => c !== id); renderAntispamWlChannels(); }
         function antispamRemoveWlRole(id) { _antispamWlRoles = _antispamWlRoles.filter(r => r !== id); renderAntispamWlRoles(); }
+
+        // ── Anti-Raid whitelisted roles ───────────────────────────────────────
+        let _antiraidWlRoles = [];
+        function renderAntiraidWlRoles() { _renderTagList(_antiraidWlRoles, 'antiraid-wl-roles-list', 'antiraid-wl-roles-empty', 'antiraid-wl-ro-count', 'antiraid-add-wl-role', 'antiraidRemoveWlRole', '@'); }
+        function antiraidAddWlRole() {
+            const sel = document.getElementById('antiraid-add-wl-role');
+            const val = sel.value;
+            if (!val || _antiraidWlRoles.includes(val)) { sel.value = ''; return; }
+            _antiraidWlRoles.push(val); sel.value = ''; renderAntiraidWlRoles();
+        }
+        function antiraidRemoveWlRole(id) { _antiraidWlRoles = _antiraidWlRoles.filter(r => r !== id); renderAntiraidWlRoles(); }
+
+        // ── Anti-Raid protection-level presets ────────────────────────────────
+        // Each preset only sets the detection thresholds; actions stay as configured.
+        const _ANTIRAID_PRESETS = {
+            relaxed:  { sensitivity: 0.75, min_joins: 8, min_messages: 40, join_window: 10, msg_window: 10, lockdown_duration: 300 },
+            balanced: { sensitivity: 1.0,  min_joins: 5, min_messages: 25, join_window: 10, msg_window: 10, lockdown_duration: 300 },
+            strict:   { sensitivity: 1.5,  min_joins: 3, min_messages: 15, join_window: 10, msg_window: 10, lockdown_duration: 300 },
+        };
+        const _ANTIRAID_PRESET_HINTS = {
+            relaxed:  'Relaxed — only reacts to clear, large spikes. Fewest false alarms.',
+            balanced: 'Balanced — sensible default for most servers.',
+            strict:   'Strict — reacts to smaller spikes. Best for servers that get targeted.',
+            custom:   'Custom — thresholds were fine-tuned by hand in Advanced settings.',
+        };
+        function antiraidApplyPreset(name) {
+            const p = _ANTIRAID_PRESETS[name];
+            if (!p) return;
+            document.getElementById('antiraid-sensitivity').value = p.sensitivity;
+            document.getElementById('antiraid-sensitivity-val').textContent = p.sensitivity.toFixed(2) + '×';
+            document.getElementById('antiraid-min-joins').value = p.min_joins;
+            document.getElementById('antiraid-min-messages').value = p.min_messages;
+            document.getElementById('antiraid-join-window').value = p.join_window;
+            document.getElementById('antiraid-msg-window').value = p.msg_window;
+            document.getElementById('antiraid-lockdown-duration').value = p.lockdown_duration;
+            antiraidSyncPresetButtons();
+        }
+        function antiraidDetectPreset() {
+            const cur = {
+                sensitivity: parseFloat(document.getElementById('antiraid-sensitivity').value),
+                min_joins: parseInt(document.getElementById('antiraid-min-joins').value, 10),
+                min_messages: parseInt(document.getElementById('antiraid-min-messages').value, 10),
+            };
+            for (const [name, p] of Object.entries(_ANTIRAID_PRESETS)) {
+                if (p.sensitivity === cur.sensitivity && p.min_joins === cur.min_joins && p.min_messages === cur.min_messages) {
+                    return name;
+                }
+            }
+            return 'custom';
+        }
+        function antiraidSyncPresetButtons() {
+            const active = antiraidDetectPreset();
+            document.querySelectorAll('.antiraid-preset').forEach(function (btn) {
+                const on = btn.dataset.preset === active;
+                btn.classList.toggle('btn-primary', on);
+                btn.classList.toggle('btn-outline', !on);
+            });
+            const hint = document.getElementById('antiraid-preset-hint');
+            if (hint) hint.textContent = _ANTIRAID_PRESET_HINTS[active] || _ANTIRAID_PRESET_HINTS.custom;
+        }
 
         // ── Escalation Steps (Warn Config) ────────────────────────────────────
         let _escalationSteps = [];

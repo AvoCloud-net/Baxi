@@ -206,6 +206,27 @@ class datasys:
         "log_channel": 0,           # staff channel for gate alerts (0 = fallback)
         "use_safety_list": True,    # consume the opt-in human-gated network safety list
     },
+    "antiraid": {
+        "enabled": False,
+        "sensitivity": 1.0,          # >1 trips easier, <1 more lenient
+        "join_window": 10,           # seconds: window for join-rate detection
+        "msg_window": 10,            # seconds: window for message-rate detection
+        "min_joins": 5,              # absolute floor of joins/window before a raid can trip
+        "min_messages": 25,          # absolute floor of msgs/window before a raid can trip
+        "lockdown_duration": 300,    # seconds the lockdown stays active
+        "alert_channel": 0,          # staff channel for raid alerts (0 = fallback)
+        "whitelisted_roles": [],     # roles never auto-actioned during a raid
+        "join_action": "timeout",    # timeout | kick | quarantine | none (joins during raid)
+        "quarantine_role": 0,        # role for join_action == quarantine
+        "actions": {
+            "pause_invites": True,
+            "raise_verification": True,
+            "slowmode": True,
+            "slowmode_delay": 10,
+            "timeout_spammers": True,
+            "timeout_minutes": 10,
+        },
+    },
     "welcomer": {
         "enabled": False,
         "channel": 0,

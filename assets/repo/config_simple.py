@@ -700,6 +700,49 @@ def save_mod_gate(gid: int, data: dict) -> None:
     )
 
 
+# ── Anti-Raid ─────────────────────────────────────────────────────────────────
+# Stored as a single JSON blob: the config has nested fields (actions dict,
+# whitelisted_roles list) that don't map cleanly to flat columns.
+
+_AR_DEF = _DD["antiraid"]
+
+
+def _default_antiraid() -> dict:
+    return json.loads(json.dumps(_AR_DEF))
+
+
+def _merge_antiraid(stored: dict) -> dict:
+    out = _default_antiraid()
+    if not isinstance(stored, dict):
+        return out
+    for k, v in stored.items():
+        if k == "actions" and isinstance(v, dict):
+            out["actions"] = {**out.get("actions", {}), **v}
+        else:
+            out[k] = v
+    return out
+
+
+def load_antiraid(gid: int) -> dict:
+    rows = db.query("SELECT data FROM cfg_antiraid WHERE guild_id=?", (gid,))
+    if not rows:
+        return _default_antiraid()
+    try:
+        stored = json.loads(rows[0]["data"] or "{}")
+    except Exception:
+        stored = {}
+    return _merge_antiraid(stored)
+
+
+def save_antiraid(gid: int, data: dict) -> None:
+    db.ensure_guild(gid)
+    db.execute(
+        "INSERT INTO cfg_antiraid (guild_id,data) VALUES (?,?) "
+        "ON CONFLICT(guild_id) DO UPDATE SET data=excluded.data",
+        (gid, json.dumps(data)),
+    )
+
+
 # ── Counting ──────────────────────────────────────────────────────────────────
 
 _CO_DEF = _DD["counting"]

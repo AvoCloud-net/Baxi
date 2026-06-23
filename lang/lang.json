@@ -477,6 +477,13 @@
         "source_field": "Quelle",
         "volume_set": "Lautstärke gesetzt: {level}%",
         "volume_invalid": "Lautstärke muss zwischen 0 und 200 liegen."
+      },
+      "antiraid": {
+        "lockdown_title": "🛡 Anti-Raid · Lockdown",
+        "lockdown_desc": "Ein Raid wurde erkannt. Der Server wurde vorübergehend abgeriegelt (Einladungen pausiert, Verifizierung erhöht, Slowmode aktiv).",
+        "reason_field": "Auslöser",
+        "lifted_title": "✅ Anti-Raid · Lockdown beendet",
+        "lifted_desc": "Der Lockdown ist abgelaufen. Die ursprünglichen Einstellungen wurden wiederhergestellt."
       }
     },
     "events": {
@@ -1017,6 +1024,13 @@
         "source_field": "Source",
         "volume_set": "Volume set: {level}%",
         "volume_invalid": "Volume must be between 0 and 200."
+      },
+      "antiraid": {
+        "lockdown_title": "🛡 Anti-Raid · Lockdown",
+        "lockdown_desc": "A raid was detected. The server was temporarily locked down (invites paused, verification raised, slowmode active).",
+        "reason_field": "Trigger",
+        "lifted_title": "✅ Anti-Raid · Lockdown lifted",
+        "lifted_desc": "The lockdown has expired. The original settings were restored."
       }
     },
     "events": {
