@@ -10,6 +10,9 @@ class Discord:
     success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e -  Green
     info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 -  Blue
     version = "7.0.0"
+    # Central avocloud channel that receives network-wide alerts (was the old Prism global
+    # channel). User reports are mirrored here for operator oversight.
+    report_channel = 1303089032640725065
 
 
 class Web:
@@ -194,6 +197,14 @@ class datasys:
         "action": "mute",
         "whitelisted_channels": [],
         "whitelisted_roles": [],
+    },
+    "mod_gate": {
+        "enabled": False,
+        "threshold": 30,            # legacy (unused since score removed); kept for config compat
+        "action": "quarantine",     # quarantine | kick | approve | notify
+        "quarantine_role": 0,       # role applied for quarantine / approve hold
+        "log_channel": 0,           # staff channel for gate alerts (0 = fallback)
+        "use_safety_list": True,    # consume the opt-in human-gated network safety list
     },
     "welcomer": {
         "enabled": False,

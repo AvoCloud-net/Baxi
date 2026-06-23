@@ -654,6 +654,52 @@ def save_auto_slowmode(gid: int, data: dict) -> None:
     )
 
 
+# ── Mod Gate (on-join PRISM gating) ─────────────────────────────────────────────
+
+_MG_DEF = _DD.get("mod_gate", {
+    "enabled": False, "threshold": 30, "action": "quarantine",
+    "quarantine_role": 0, "log_channel": 0,
+})
+
+
+def load_mod_gate(gid: int) -> dict:
+    rows = db.query("SELECT * FROM cfg_mod_gate WHERE guild_id=?", (gid,))
+    if not rows:
+        return dict(_MG_DEF)
+    r = rows[0]
+    return {
+        "enabled":         bool(r["enabled"]),
+        "threshold":       _int(r["threshold"], 30),
+        "action":          str(r["action"] or "quarantine"),
+        "quarantine_role": _int(r["quarantine_role"]),
+        "log_channel":     _int(r["log_channel"]),
+        "use_safety_list": bool(r["use_safety_list"]),
+    }
+
+
+def save_mod_gate(gid: int, data: dict) -> None:
+    db.ensure_guild(gid)
+    action = str(data.get("action", "quarantine"))
+    if action not in ("quarantine", "kick", "approve", "notify"):
+        action = "quarantine"
+    db.execute(
+        "INSERT INTO cfg_mod_gate (guild_id,enabled,threshold,action,quarantine_role,log_channel,use_safety_list) "
+        "VALUES (?,?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET "
+        "enabled=excluded.enabled,threshold=excluded.threshold,action=excluded.action,"
+        "quarantine_role=excluded.quarantine_role,log_channel=excluded.log_channel,"
+        "use_safety_list=excluded.use_safety_list",
+        (
+            gid,
+            _int(data.get("enabled", False)),
+            _int(data.get("threshold", 30)),
+            action,
+            _int(data.get("quarantine_role", 0)),
+            _int(data.get("log_channel", 0)),
+            _int(data.get("use_safety_list", True)),
+        ),
+    )
+
+
 # ── Counting ──────────────────────────────────────────────────────────────────
 
 _CO_DEF = _DD["counting"]

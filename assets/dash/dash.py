@@ -811,6 +811,49 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "error.html", message="An unexpected error occurred."
             )
 
+    @app.route("/api/dash/mod_review/", methods=["GET"])
+    async def dash_mod_review():
+        guild_id = quart.request.args.get("dash_login")
+        status = quart.request.args.get("status") or None
+        if not guild_id:
+            return quart.jsonify({"success": False, "message": "Missing guild."}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            member = await guild.fetch_member(user.id)
+            if not member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        except Exception:
+            return quart.jsonify({"success": False, "message": "Auth failed."}), 403
+        from assets.repo import load_review_queue
+        if status not in (None, "pending", "approved", "rejected"):
+            status = None
+        return quart.jsonify({"success": True, "items": load_review_queue(int(guild_id), status)})
+
+    @app.route("/api/dash/classifier_status/", methods=["GET"])
+    async def dash_classifier_status():
+        guild_id = quart.request.args.get("dash_login")
+        if not guild_id:
+            return quart.jsonify({"success": False, "message": "Missing guild."}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            member = await guild.fetch_member(user.id)
+            if not member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        except Exception:
+            return quart.jsonify({"success": False, "message": "Auth failed."}), 403
+        try:
+            from assets.message.safetext import feedback, finetune
+            return quart.jsonify({
+                "success": True,
+                "samples": feedback.stats(),
+                "min_samples": finetune.MIN_SAMPLES,
+                "training": finetune.read_status(),
+            })
+        except Exception as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 500
+
     @app.route("/api/dash/save/", methods=["POST", "GET"])
     async def dash_api():
         system = quart.request.args.get("system")
@@ -2820,6 +2863,93 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "mod_gate":
+            data: dict = await quart.request.get_json()
+            mg = data.get("mod_gate")
+
+            if not isinstance(mg, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'mod_gate' must be an object."}), 400
+            if not isinstance(mg.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            action = str(mg.get("action", "quarantine"))
+            if action not in ("quarantine", "kick", "approve", "notify"):
+                return quart.jsonify({"success": False, "message": "action must be quarantine, kick, approve or notify."}), 400
+            try:
+                settings = {
+                    "enabled": mg["enabled"],
+                    "threshold": max(0, min(100, int(mg.get("threshold", 30)))),
+                    "action": action,
+                    "quarantine_role": int(mg.get("quarantine_role", 0) or 0),
+                    "log_channel": int(mg.get("log_channel", 0) or 0),
+                }
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "Numeric fields must be integers."}), 400
+
+            save_data(int(guild_id), "mod_gate", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save", "user": user.name, "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "mod_gate",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "mod_review_resolve":
+            data: dict = await quart.request.get_json()
+            pos = data.get("pos")
+            action = data.get("action")          # "approve" | "reject"
+            label = data.get("label")            # optional override training label for deleted_msg
+
+            if not isinstance(pos, int) or action not in ("approve", "reject"):
+                return quart.jsonify({"success": False, "message": "pos (int) and action (approve|reject) required."}), 400
+
+            from assets.repo import load_review_queue, resolve_review_item
+            items = load_review_queue(int(guild_id))
+            item = next((it for it in items if it["pos"] == pos), None)
+            if item is None:
+                return quart.jsonify({"success": False, "message": "Review item not found."}), 404
+
+            user = await discord_auth.fetch_user()
+            status = "approved" if action == "approve" else "rejected"
+            updated = resolve_review_item(int(guild_id), pos, status, resolved_by=user.name)
+
+            kind = item.get("kind")
+            rc = dict(item.get("context", {}) or {})
+            try:
+                if kind == "deleted_msg":
+                    # Approve = confirmed bad → train as the (suggested) toxic label.
+                    # Reject  = not actually bad → teach the model SAFE (reduces false positives).
+                    from assets.message.safetext import feedback
+                    if action == "approve":
+                        correct = str(label or rc.get("suggested_label", "2"))
+                        model_said = "SAFE"
+                    else:
+                        correct = "SAFE"
+                        model_said = "unsafe"
+                    await feedback.submit(
+                        log_id=f"review:{guild_id}:{pos}",
+                        message=rc.get("message", ""),
+                        model_said=model_said,
+                        correct_label=correct,
+                        admin=user.name,
+                        reason=f"mod review {action} (deleted_msg)",
+                    )
+                elif kind in ("prism_flag", "join_gate") and action == "reject":
+                    # Staff says the PRISM flag was wrong → heal the trust score.
+                    import assets.trust as sentinel
+                    sentinel.record_fp_correction(
+                        int(item["user_id"]), item.get("user_name", ""), int(guild_id),
+                        reason="Staff marked PRISM flag as false positive (review queue)",
+                    )
+            except Exception as _re_err:
+                print(f"[mod_review_resolve] side-effect error: {_re_err}")
+
+            return quart.jsonify({"success": True, "item": updated})
+
         elif system == "counting":
             data: dict = await quart.request.get_json()
             counting = data.get("counting")
@@ -4459,6 +4589,53 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "filtered": len(entries),
         })
 
+    @app.route("/api/admin/reports")
+    @requires_authorization
+    async def admin_reports():
+        """Network-wide user reports for operator oversight."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        from assets.repo import load_global_reports
+        limit = min(int(quart.request.args.get("limit", 500)), 5000)
+        search = quart.request.args.get("search", "").strip().lower()
+        reports = load_global_reports(limit=limit)
+
+        if search:
+            reports = [r for r in reports if (
+                search in r["reported_name"].lower()
+                or search in r["reporter_name"].lower()
+                or search in r["guild_name"].lower()
+                or search in r["reason"].lower()
+                or search == r["reported_id"]
+            )]
+
+        # Per-user aggregation: how many reports per reported user (spot network abusers).
+        by_user: dict = {}
+        for r in reports:
+            uid = r["reported_id"]
+            agg = by_user.setdefault(uid, {
+                "reported_id": uid, "reported_name": r["reported_name"],
+                "count": 0, "guilds": set(), "reasons": [],
+            })
+            agg["count"] += 1
+            if r["guild_id"]:
+                agg["guilds"].add(r["guild_id"])
+            if r["reason"]:
+                agg["reasons"].append(r["reason"])
+        top = sorted(
+            ({**v, "guilds": len(v["guilds"])} for v in by_user.values()),
+            key=lambda x: x["count"], reverse=True,
+        )
+
+        return quart.jsonify({
+            "reports": reports,
+            "total": len(reports),
+            "unique_reported": len(by_user),
+            "top_reported": top[:25],
+        })
+
     @app.route("/api/admin/ai-feedback", methods=["POST"])
     @requires_authorization
     async def admin_ai_feedback():
@@ -4785,6 +4962,40 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             share.admin_log("success", f"User {user_id_str} deflagged by {user.name}", source="AdminDash")
             return quart.jsonify({"success": True, "message": "User deflagged."})
 
+        elif action == "safety_flag":
+            # Add a user to the network-wide safety list (human-gated denylist).
+            import assets.trust as sentinel
+            user_id_str = str(data.get("user_id", "")).strip()
+            category = str(data.get("category", "other")).strip().lower()
+            reason = str(data.get("reason", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            if category not in sentinel.SAFETY_CATEGORIES:
+                category = "other"
+            name = ""
+            try:
+                target = await bot.fetch_user(int(user_id_str))
+                name = target.name
+            except Exception:
+                name = ""
+            ok = sentinel.flag_user(int(user_id_str), category, guild_id=1001,
+                                    moderator_name=user.name, reason=reason)
+            if not ok:
+                return quart.jsonify({"success": False, "message": "User has opted out of the safety list."}), 400
+            share.admin_log("warning",
+                f"Safety-list: {name or user_id_str} flagged ({category}) by {user.name}: {reason}",
+                source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"Added to safety list ({category})."})
+
+        elif action == "safety_unflag":
+            import assets.trust as sentinel
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            sentinel.unflag_user(int(user_id_str))
+            share.admin_log("success", f"Safety-list: {user_id_str} removed by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": "Removed from safety list."})
+
         elif action == "clear_prism_events":
             user_id_str = str(data.get("user_id", "")).strip()
             if not user_id_str.isdigit():
@@ -4983,7 +5194,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "StatsChannels": "update_stats_channels",
                 "TempActions":   "check_temp_actions",
                 "PhishingList":  "update_phishing_list",
-                "TrustScore":    "recalculate_scores",
                 "GarbageCollector": "collect",
                 "YouTubeVideos":    "check_videos",
                 "TikTokVideos":     "check_videos",

@@ -56,12 +56,6 @@ task_status: dict = {
         "last_run": None,
         "detail": "Checks expired bans/mutes every 60s",
     },
-    "TrustScore": {
-        "name": "Prism Trust Scores",
-        "status": "idle",
-        "last_run": None,
-        "detail": "Recalculates Prism scores every hour",
-    },
     "PhishingList": {
         "name": "Phishing List",
         "status": "idle",

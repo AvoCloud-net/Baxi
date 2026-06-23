@@ -8,17 +8,6 @@ from zoneinfo import ZoneInfo
 _VIENNA = ZoneInfo("Europe/Vienna")
 
 # Maps raw AI/chatfilter reason codes to human-readable labels (for Prism event reasons)
-_PRISM_REASON_LABELS: dict[str, str] = {
-    "phishing":  "Phishing / Scam Link",
-    "custom":    "Custom Badword",
-    "internal":  "Badword",
-    "1":         "NSFW / Explicit Content",
-    "2":         "Insults / Toxicity",
-    "3":         "Hate Speech / Discrimination",
-    "4":         "Doxxing / Personal Data",
-    "5":         "Suicide / Self-Harm",
-}
-
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
@@ -30,7 +19,7 @@ import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
 from assets.buttons import build_ticket_panel_view
 import assets.message.customcmd as customcmd
-from assets.message.antispam import AntiSpam
+from assets.moderation import ModerationEngine
 import assets.message.reactionroles as reactionroles
 import assets.message.auto_slowmode as auto_slowmode
 import assets.message.serverlog as serverlog
@@ -39,7 +28,6 @@ import assets.games.counting as counting_game
 import assets.games.quiz as quiz_game
 import assets.leveling as leveling_sys
 import assets.suggestions as suggestions_sys
-import assets.trust as sentinel
 import config.config as config
 import discord
 
@@ -53,7 +41,6 @@ from assets.tasks import (
     StatsChannelsTask,
     TempActionsTask,
     PhishingListTask,
-    TrustScoreTask,
     GarbageCollectorTask,
     YouTubeVideoTask,
     TikTokVideoTask,
@@ -62,6 +49,7 @@ from assets.tasks import (
     MusicIdleTask,
     Radio247Task,
     McLinkSyncTask,
+    ClassifierTrainTask,
 )
 from assets.giveaway import GiveawayTask
 from assets.poll import PollTask
@@ -118,7 +106,9 @@ def normalize_temp_voice(cfg: dict) -> dict:
     return {"enabled": enabled, "persist_roles": persist_roles, "triggers": triggers}
 
 
-antispam_instance = AntiSpam()
+# Central moderation engine: builds a shared RiskContext per message, runs the rules
+# (Anti-Spam today; Chatfilter reuses the same context) and enforces the worst action.
+moderation_engine = ModerationEngine()
 
 # Per-channel debounce tasks for sticky messages
 # key: "{guild_id}:{channel_id}", value: pending asyncio.Task
@@ -257,17 +247,17 @@ def events(bot: commands.AutoShardedBot, web):
             share.task_instances["PhishingList"] = phishing_list_task
             logger.debug.success("Phishing list task started.")
 
-            logger.working("Starting Prism task...")
-            trust_score_task = TrustScoreTask()
-            trust_score_task.recalculate_scores.start()
-            share.task_instances["TrustScore"] = trust_score_task
-            logger.debug.success("Prism score recalculation task started.")
-
             logger.working("Starting GarbageCollector task...")
             gc_task = GarbageCollectorTask()
             gc_task.collect.start()
             share.task_instances["GarbageCollector"] = gc_task
             logger.debug.success("Garbage collector task started.")
+
+            logger.working("Starting ClassifierTrain task...")
+            classifier_train_task = ClassifierTrainTask()
+            classifier_train_task.train.start()
+            share.task_instances["ClassifierTrain"] = classifier_train_task
+            logger.debug.success("Classifier self-training task started.")
 
             logger.working("Starting YouTubeVideos task...")
             yt_video_task = YouTubeVideoTask(bot)
@@ -473,6 +463,16 @@ def events(bot: commands.AutoShardedBot, web):
         asyncio.create_task(_mc_chat_bridge(message))
 
     @bot.event
+    async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent):
+        # Continuous-learning: a moderator deleting another member's message is a training
+        # signal for the chatfilter. Queued for staff confirmation (see moderation.learning).
+        try:
+            from assets.moderation.learning import handle_raw_delete
+            await handle_raw_delete(payload, bot)
+        except Exception as _learn_err:
+            logger.error(f"[Learning] on_raw_message_delete error: {_learn_err}")
+
+    @bot.event
     async def on_message_delete(message: discord.Message):
         if message.guild is None:
             return
@@ -611,6 +611,13 @@ def events(bot: commands.AutoShardedBot, web):
             bot, guild.id, "member_ban",
             serverlog.build_member_ban(user),
         )
+        # Any ban (Baxi command, Discord-native, or another bot) feeds the opt-in network
+        # safety list when the guild participates.
+        try:
+            from assets.moderation.ban_hook import handle_ban
+            await handle_ban(guild, user, bot)
+        except Exception as _ban_err:
+            logger.error(f"[Safety] on_member_ban hook error: {_ban_err}")
 
     @bot.event
     async def on_member_unban(guild: discord.Guild, user):
@@ -655,6 +662,13 @@ def events(bot: commands.AutoShardedBot, web):
                         admin_log("info", f"Auto-role '{role.name}' assigned to {member.name} in {member.guild.name}", source="AutoRole")
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+
+        # Mod-Gate: check joining member's PRISM standing (quarantine / kick / hold for review).
+        try:
+            from assets.moderation.gate import check_join
+            await check_join(member, bot)
+        except Exception as _gate_err:
+            logger.error(f"[ModGate] on_member_join error: {_gate_err}")
 
     @bot.event
     async def on_member_remove(member: discord.Member):
@@ -899,23 +913,11 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         # Auto-Slowmode check (passive, non-blocking)
         asyncio.create_task(auto_slowmode.check(message))
 
-        # Anti-Spam check (before other processing)
-        is_spam = await antispam_instance.check(message, bot)
-        if is_spam:
-            try:
-                await message.delete()
-            except discord.Forbidden:
-                pass
-            account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-            sentinel.record_event(
-                user_id=message.author.id,
-                user_name=message.author.name,
-                event_type="antispam",
-                guild_id=message.guild.id,
-                reason="Anti-Spam triggered",
-                account_age_days=account_age,
-            )
-            admin_log("warning", f"Anti-Spam: deleted message from {message.author.name} in #{message.channel.name} @ {message.guild.name}", source="AntiSpam")
+        # Unified moderation engine: builds the shared RiskContext and runs the early,
+        # blocking stage (Anti-Spam). It deletes + records centrally; stop = halt pipeline.
+        mod_result = await moderation_engine.process(message, bot)
+        risk_ctx = mod_result.ctx
+        if mod_result.stop:
             return
 
         # Custom commands check
@@ -979,6 +981,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         chatfilter_req: dict = await chatfilter_instance.check(
             message=message.clean_content, gid=message.guild.id, cid=message.channel.id,
             user_id=message.author.id, history=ai_history,
+            strictness=risk_ctx.strictness if risk_ctx is not None else 1.0,
         )
 
         tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
@@ -1084,40 +1087,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                         except Exception as _warn_err:
                             logger.error(f"[Chatfilter] warn_on_violation failed: {_warn_err}")
 
-        elif not bool(chatfilter_data.get("enabled", False)):
-            # Chatfilter OFF → Prism silent scan.
-            # The in-process pipeline already ran the full rule-based + ML AI check in
-            # `check()` above, so `chatfilter_req` IS the AI result. Reuse it directly
-            # for Prism (no moderation action taken). The old queued Ollama re-check
-            # (`_try_ai_check_queued`) was removed when SafeText went in-process.
-            prism_req = chatfilter_req
-
-            if prism_req and prism_req.get("flagged"):
-                try:
-                    account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-                    _pr = prism_req.get("reason", "")
-                    if _pr == "phishing":
-                        event_type = "chatfilter_phishing"
-                    elif _pr == "3":
-                        event_type = "chatfilter_hate"
-                    elif _pr == "2":
-                        event_type = "chatfilter_mild"
-                    else:
-                        event_type = "chatfilter_violation"
-                    sentinel.record_event(
-                        user_id=message.author.id,
-                        user_name=message.author.name,
-                        event_type=event_type,
-                        guild_id=message.guild.id,
-                        reason=f"[Silent] {_PRISM_REASON_LABELS.get(_pr, _pr)}",
-                        account_age_days=account_age,
-                    )
-                    logger.info(
-                        f"[Prism] Silent scan recorded -  user={message.author.name} "
-                        f"guild={message.guild.id} reason={prism_req.get('reason')}"
-                    )
-                except Exception as _prism_err:
-                    logger.error(f"[Prism] Silent scan record error: {_prism_err}")
+        # (Removed: the old "Prism silent scan" that ran the model and recorded cross-server
+        #  behavioral data even when the chatfilter was disabled — beyond stated functionality.)
 
         if str(message.guild.id) in gc_data and message.channel.id == int(
             gc_data[str(message.guild.id)]["channel"]
@@ -1277,27 +1248,8 @@ async def del_chatfilter(
     except Exception as _ins_err:
         logger.error(f"[BaxiInsights] filter event log error: {_ins_err}")
 
-    # Prism: record chatfilter violation (map AI category 3 = Hate Speech to chatfilter_hate)
-    try:
-        account_age = (datetime.datetime.now(datetime.timezone.utc) - message.author.created_at).days
-        if reason == "phishing":
-            event_type = "chatfilter_phishing"
-        elif reason == "3":
-            event_type = "chatfilter_hate"
-        elif reason == "2":
-            event_type = "chatfilter_mild"
-        else:
-            event_type = "chatfilter_violation"
-        sentinel.record_event(
-            user_id=message.author.id,
-            user_name=message.author.name,
-            event_type=event_type,
-            guild_id=message.guild.id,
-            reason=reason_list.get(reason, reason),
-            account_age_days=account_age,
-        )
-    except Exception as _prism_err:
-        logger.error(f"[Prism] Hook error in del_chatfilter: {_prism_err}")
+    # (Removed: cross-server Prism recording of chatfilter violations — compliance.
+    #  The deletion + per-guild filter-event log above are the moderation action.)
 
     await message.channel.send(embed=embed)
     if not deleted and reason == "phishing":

@@ -9,13 +9,6 @@ import json
 import assets.db as db
 
 _MC_PROMOTED = {"uuid", "name", "linked_at", "bedrock_uuid", "bedrock_name"}
-_TRUST_PROMOTED = {
-    "name", "score", "auto_flagged", "opted_out",
-    "account_age_days", "account_created_at",
-    "first_seen", "last_seen", "risk_signals",
-    "llm_summary", "llm_summary_updated",
-}
-_TRUST_EV_PROMOTED = {"type", "reason", "guild_id", "timestamp"}
 
 
 # ── MC links ──────────────────────────────────────────────────────────────────
@@ -61,90 +54,63 @@ def save_mc_links(data: dict) -> None:
                 )
 
 
-# ── Trust profiles ────────────────────────────────────────────────────────────
+# ── Safety denylist (human-gated) + opt-out ───────────────────────────────────
+# Replaces the removed cross-server trust profile. Stores only a moderator-set fact.
 
-def load_trust() -> dict:
-    profiles = db.query("SELECT * FROM trust_profiles")
+def load_safety_flags() -> dict:
+    rows = db.query("SELECT * FROM safety_flags")
     out: dict = {}
-    for p in profiles:
-        events_rows = db.query(
-            "SELECT * FROM trust_event WHERE user_id=? ORDER BY pos", (p["user_id"],)
-        )
-        events = []
-        for e in events_rows:
-            extra = json.loads(e["extra_json"] or "{}")
-            ev: dict = {
-                "type":      e["type"],
-                "reason":    e["reason"],
-                "guild_id":  e["guild_id"],
-                "timestamp": e["timestamp"],
-            }
-            ev.update(extra)
-            events.append(ev)
-
-        extra_p = json.loads(p["extra_json"] or "{}")
-        profile: dict = {
-            "name":                str(p["name"] or ""),
-            "score":               int(p["score"] or 100),
-            "auto_flagged":        bool(p["auto_flagged"]),
-            "opted_out":           bool(p["opted_out"]),
-            "account_age_days":    p["account_age_days"],
-            "account_created_at":  p["account_created_at"],
-            "first_seen":          p["first_seen"],
-            "last_seen":           p["last_seen"],
-            "risk_signals":        json.loads(p["risk_signals_json"] or "[]"),
-            "llm_summary":         p["llm_summary"],
-            "llm_summary_updated": p["llm_summary_updated"],
-            "events":              events,
+    for r in rows:
+        out[r["user_id"]] = {
+            "category":         str(r["category"] or "other"),
+            "reason":           str(r["reason"] or ""),
+            "flagged_by_guild": r["flagged_by_guild"],
+            "flagged_by":       str(r["flagged_by"] or ""),
+            "timestamp":        str(r["timestamp"] or ""),
         }
-        profile.update(extra_p)
-        out[p["user_id"]] = profile
     return out
 
 
-def save_trust(data: dict) -> None:
-    with db.transaction() as cx:
-        cx.execute("DELETE FROM trust_event")
-        cx.execute("DELETE FROM trust_profiles")
-        for uid, profile in data.items():
-            extra_p = {k: v for k, v in profile.items()
-                       if k not in _TRUST_PROMOTED and k != "events"}
-            cx.execute(
-                "INSERT INTO trust_profiles "
-                "(user_id,name,score,auto_flagged,opted_out,account_age_days,"
-                "account_created_at,first_seen,last_seen,risk_signals_json,"
-                "llm_summary,llm_summary_updated,extra_json) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    str(uid),
-                    str(profile.get("name", "")),
-                    int(profile.get("score", 100)),
-                    int(bool(profile.get("auto_flagged", False))),
-                    int(bool(profile.get("opted_out", False))),
-                    profile.get("account_age_days"),
-                    profile.get("account_created_at"),
-                    profile.get("first_seen"),
-                    profile.get("last_seen"),
-                    json.dumps(profile.get("risk_signals", [])),
-                    profile.get("llm_summary"),
-                    profile.get("llm_summary_updated"),
-                    json.dumps(extra_p),
-                ),
-            )
-            for pos, ev in enumerate(profile.get("events", [])):
-                extra_e = {k: v for k, v in ev.items() if k not in _TRUST_EV_PROMOTED}
-                cx.execute(
-                    "INSERT INTO trust_event "
-                    "(user_id,pos,type,reason,guild_id,timestamp,extra_json) VALUES (?,?,?,?,?,?,?)",
-                    (
-                        str(uid), pos,
-                        ev.get("type", ""),
-                        ev.get("reason", ""),
-                        str(ev.get("guild_id", "")),
-                        str(ev.get("timestamp", "")),
-                        json.dumps(extra_e),
-                    ),
-                )
+def get_safety_flag(user_id: str) -> dict | None:
+    rows = db.query("SELECT * FROM safety_flags WHERE user_id=?", (str(user_id),))
+    if not rows:
+        return None
+    r = rows[0]
+    return {
+        "category":         str(r["category"] or "other"),
+        "reason":           str(r["reason"] or ""),
+        "flagged_by_guild": r["flagged_by_guild"],
+        "flagged_by":       str(r["flagged_by"] or ""),
+        "timestamp":        str(r["timestamp"] or ""),
+    }
+
+
+def set_safety_flag(user_id: str, category: str, reason: str, flagged_by_guild: int,
+                    flagged_by: str, timestamp: str) -> None:
+    db.execute(
+        "INSERT INTO safety_flags (user_id,category,reason,flagged_by_guild,flagged_by,timestamp) "
+        "VALUES (?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
+        "category=excluded.category,reason=excluded.reason,"
+        "flagged_by_guild=excluded.flagged_by_guild,flagged_by=excluded.flagged_by,"
+        "timestamp=excluded.timestamp",
+        (str(user_id), str(category), str(reason), flagged_by_guild, str(flagged_by), str(timestamp)),
+    )
+
+
+def remove_safety_flag(user_id: str) -> None:
+    db.execute("DELETE FROM safety_flags WHERE user_id=?", (str(user_id),))
+
+
+def load_safety_optout() -> set:
+    rows = db.query("SELECT user_id FROM safety_optout")
+    return {r["user_id"] for r in rows}
+
+
+def set_safety_optout(user_id: str, opted_out: bool) -> None:
+    if opted_out:
+        db.execute("INSERT OR IGNORE INTO safety_optout (user_id) VALUES (?)", (str(user_id),))
+    else:
+        db.execute("DELETE FROM safety_optout WHERE user_id=?", (str(user_id),))
 
 
 # ── Temp voice owners ─────────────────────────────────────────────────────────

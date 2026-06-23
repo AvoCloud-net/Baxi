@@ -32,6 +32,7 @@ from assets.repo.config_simple import (
     load_temp_voice_cfg, save_temp_voice_cfg,
     load_verify, save_verify,
     load_auto_slowmode, save_auto_slowmode,
+    load_mod_gate, save_mod_gate,
     load_counting, save_counting,
     load_reaction_roles, save_reaction_roles,
     load_suggestions, save_suggestions,
@@ -53,6 +54,7 @@ from assets.repo.moderation import (
     load_warnings, save_warnings,
     load_mod_events, save_mod_events,
     load_filter_events, save_filter_events,
+    add_review_item, load_review_queue, resolve_review_item,
 )
 from assets.repo.engagement import (
     load_giveaways, save_giveaways,
@@ -82,6 +84,7 @@ from assets.repo.entities import (
 from assets.repo.global_store import (
     load_admins, save_admins,
     load_global_bans, save_global_bans,
+    add_global_report, load_global_reports,
     load_globalchat_bans, save_globalchat_bans,
     load_globalchat, save_globalchat,
     load_updates, save_updates,
@@ -132,6 +135,7 @@ REGISTRY: dict[str, _FnPair] = {
     "verify":           (load_verify,             save_verify),
     "reaction_roles":   (load_reaction_roles,     save_reaction_roles),
     "auto_slowmode":    (load_auto_slowmode,      save_auto_slowmode),
+    "mod_gate":         (load_mod_gate,           save_mod_gate),
     "counting":         (load_counting,           save_counting),
     "flag_quiz":        (load_flag_quiz,          save_flag_quiz),
     "flag_quiz_active": (load_flag_quiz_active,   save_flag_quiz_active),

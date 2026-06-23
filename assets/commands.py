@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import Embed, Interaction, app_commands
 import config.config as config
 import assets.data as datasys
+import assets.repo as repo
 from typing import cast, Optional
 import datetime
 from datetime import timezone
@@ -61,138 +62,63 @@ def base_commands(bot: commands.AutoShardedBot):
         )
 
     @bot.tree.command(
-        name="my_trust",
-        description="Shows your personal Prism trust score and what has influenced it.",
+        name="my_data",
+        description="Shows what Baxi stores about you and how to opt out or request deletion.",
     )
-    async def my_trust_cmd(interaction: discord.Interaction):
+    async def my_data_cmd(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         try:
-            guild_id    = interaction.guild.id if interaction.guild else 1001
-            lang        = datasys.load_lang_file(guild_id)
-            t           = lang["commands"]["user"]["my_trust"]
-
-            account_age = (datetime.datetime.now(timezone.utc) - interaction.user.created_at).days
-            sentinel.ensure_profile(interaction.user.id, interaction.user.name, account_age)
-
-            # Check user opt-out
-            if sentinel.is_opted_out(interaction.user.id):
-                embed = discord.Embed(
-                    title=f"{config.Icons.info} {t['title']}",
-                    color=config.Discord.color,
-                )
-                embed.add_field(
-                    name=t["opted_out_title"],
-                    value=t["opted_out_value"],
-                    inline=False,
-                )
-                embed.add_field(
-                    name=t["what_is_prism_title"],
-                    value=t["what_is_prism_value"],
-                    inline=False,
-                )
-                embed.set_footer(text=t["footer"])
-                await interaction.edit_original_response(embed=embed)
-                return
-
-            explanation = sentinel.get_score_explanation(interaction.user.id)
-            score       = explanation["score"]
-            trend       = explanation["trend"]
-            impacts     = explanation["recent_impacts"]
-            recovery    = explanation["recovery_days_remaining"]
-            event_cnt   = explanation["event_count"]
-            account_age = explanation["account_age_days"]
-
-            # LLM summary -  pull directly from profile
-            profile     = sentinel.get_profile(interaction.user.id)
-            llm_summary = profile.get("llm_summary") if profile else None
-
-            trend_icon = {"falling": "↓", "rising": "↑", "stable": "→"}.get(trend, "→")
-            if score >= 75:
-                score_color = config.Discord.success_color
-            elif score >= 45:
-                score_color = config.Discord.warn_color
-            else:
-                score_color = config.Discord.danger_color
+            opted_out = sentinel.is_opted_out(interaction.user.id)
+            flag      = sentinel.get_flag(interaction.user.id)
 
             embed = discord.Embed(
-                title=f"{config.Icons.info} {t['title']}",
-                description=t["score_line"].format(score=score, trend=trend_icon, count=event_cnt),
-                color=score_color,
+                title=f"{config.Icons.info} Your data on Baxi",
+                description=(
+                    "Baxi does **not** build a cross-server profile or behavioral score of you. "
+                    "Moderation data (warnings, flags) is stored **per server** by that server's "
+                    "team and is not aggregated across servers."
+                ),
+                color=config.Discord.color,
             )
-
-            if llm_summary:
-                embed.add_field(
-                    name="Risk Summary",
-                    value=f"*{llm_summary}*",
-                    inline=False,
-                )
-
-            if impacts:
-                impact_lines = []
-                for ev in impacts:
-                    decay_note = " *(½)*" if ev["decayed"] else ""
-                    impact_lines.append(
-                        f"• **{ev['label']}** · {ev['severity_label']} · "
-                        f"`{ev['weight']:+d}` pts · {ev['age_days']}d{decay_note}"
-                        + (f"\n  *{ev['reason']}*" if ev["reason"] else "")
-                    )
-                embed.add_field(
-                    name=t["recent_events_title"],
-                    value="\n".join(impact_lines),
-                    inline=False,
-                )
-            else:
-                embed.add_field(
-                    name=t["recent_events_title"],
-                    value=t["no_events"],
-                    inline=False,
-                )
-
-            if account_age < sentinel.AGE_FULL_TRUST_DAYS:
-                embed.add_field(
-                    name=t["new_account_title"],
-                    value=t["new_account_value"].format(
-                        age=account_age,
-                        full=sentinel.AGE_FULL_TRUST_DAYS,
-                        days=sentinel.AGE_FULL_TRUST_DAYS - account_age,
-                    ),
-                    inline=False,
-                )
-
-            if score < 100 and recovery is not None:
-                embed.add_field(
-                    name=t["recovery_title"],
-                    value=t["recovery_value"].format(days=recovery),
-                    inline=False,
-                )
-            elif score == 100:
-                embed.add_field(
-                    name=t["recovery_title"],
-                    value=t["perfect_value"],
-                    inline=False,
-                )
-
             embed.add_field(
-                name=t["what_is_prism_title"],
-                value=t["what_is_prism_value"],
+                name="Network safety list",
+                value=(
+                    f"You are currently **on** the opt-in safety list (category: "
+                    f"`{flag.get('category', 'other')}`). This happens only when a moderator "
+                    f"explicitly bans/reports a user."
+                    if flag else
+                    "You are **not** on the network safety list."
+                ),
                 inline=False,
             )
-            embed.set_footer(text=t["footer"])
+            embed.add_field(
+                name="Opt-out status",
+                value=("You have **opted out** of the network safety list." if opted_out
+                       else "You are opted in (default). Use `/safety_optout` to opt out."),
+                inline=False,
+            )
+            embed.add_field(
+                name="Deletion",
+                value="To request deletion of your safety-list entry, use `/safety_optout` "
+                      "(opting out also removes any existing entry).",
+                inline=False,
+            )
+            embed.set_footer(text="Baxi · avocloud.net")
             await interaction.edit_original_response(embed=embed)
 
         except Exception as e:
-            logger.error(f"[my_trust] {e}")
+            logger.error(f"[my_data] {e}")
             await interaction.edit_original_response(
                 embed=discord.Embed(
                     title="ERROR",
-                    description="Could not load your trust profile. Please try again later.",
+                    description="Could not load your data overview. Please try again later.",
                     color=config.Discord.danger_color,
                 )
             )
 
     @bot.tree.command(
-        name="prism_optout",
-        description="Opt out of (or back into) Prism trust scoring.",
+        name="safety_optout",
+        description="Opt out of (or back into) the Baxi network safety list.",
     )
     async def prism_optout_cmd(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -327,6 +253,155 @@ def base_commands(bot: commands.AutoShardedBot):
                 color=config.Discord.danger_color
             )
             await interaction.edit_original_response(embed=error_embed)
+
+    # ── User reports (slash + context menus) ─────────────────────────────────────
+    # Anyone can report a user/message. Reports land in the per-guild moderation review
+    # queue for the server's team — they do NOT touch the network safety list (that stays
+    # gated behind a moderator ban). Staff approve/reject in the dashboard.
+
+    async def _submit_report(interaction: discord.Interaction, reported: discord.abc.User,
+                             reason: str, message: Optional[discord.Message] = None):
+        guild = interaction.guild
+        if guild is None:
+            await interaction.response.send_message("Reports only work inside a server.", ephemeral=True)
+            return
+        if getattr(reported, "bot", False):
+            await interaction.response.send_message("You can't report bots.", ephemeral=True)
+            return
+        if reported.id == interaction.user.id:
+            await interaction.response.send_message("You can't report yourself.", ephemeral=True)
+            return
+
+        context = {
+            "reason": (reason or "").strip() or "No reason provided",
+            "reporter_id": str(interaction.user.id),
+            "reporter_name": interaction.user.name,
+            "reported_id": str(reported.id),
+        }
+        if message is not None:
+            context["message"] = (message.content or "")[:500]
+            context["message_link"] = message.jump_url
+            context["channel_id"] = str(message.channel.id)
+
+        try:
+            repo.add_review_item(guild.id, reported.id, reported.name, "user_report", context)
+        except Exception as e:
+            logger.error(f"[report] enqueue failed: {e}")
+            await interaction.response.send_message("Could not submit your report. Try again later.", ephemeral=True)
+            return
+
+        # Central operator oversight: store network-wide + mirror to the avocloud channel.
+        try:
+            repo.add_global_report({
+                "reported_id": str(reported.id), "reported_name": reported.name,
+                "reporter_id": str(interaction.user.id), "reporter_name": interaction.user.name,
+                "guild_id": str(guild.id), "guild_name": guild.name,
+                "reason": context["reason"], "message_link": context.get("message_link", ""),
+                "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+            })
+        except Exception as e:
+            logger.error(f"[report] global store failed: {e}")
+
+        # Server-team notification + central avocloud channel mirror.
+        try:
+            await _notify_report(interaction, guild, reported, context)
+        except Exception:
+            pass
+        try:
+            await _notify_report_central(interaction, guild, reported, context)
+        except Exception:
+            pass
+
+        await interaction.response.send_message(
+            f"Thanks — your report about **{reported.name}** was sent to the server team.",
+            ephemeral=True,
+        )
+
+    async def _notify_report(interaction, guild, reported, context):
+        channel = None
+        try:
+            mg = dict(datasys.load_data(guild.id, "mod_gate"))
+            ch_id = int(mg.get("log_channel", 0) or 0)
+            if ch_id:
+                channel = guild.get_channel(ch_id)
+        except Exception:
+            channel = None
+        if channel is None:
+            try:
+                notif = datasys.load_data(guild.id, "notification_channel")
+                if notif:
+                    channel = guild.get_channel(int(notif))
+            except Exception:
+                channel = None
+        if channel is None:
+            return
+        embed = discord.Embed(
+            title=f"{config.Icons.messageexclamation} New user report",
+            description=(
+                f"**Reported:** {reported.mention} (`{reported.id}`)\n"
+                f"**By:** <@{context['reporter_id']}>\n"
+                f"**Reason:** {context['reason']}"
+                + (f"\n**Message:** [jump]({context['message_link']})" if context.get("message_link") else "")
+            ),
+            color=config.Discord.warn_color,
+        ).set_footer(text="Baxi · pending in the moderation review queue")
+        await channel.send(embed=embed)
+
+    async def _notify_report_central(interaction, guild, reported, context):
+        """Mirror the report to the central avocloud oversight channel."""
+        ch_id = int(getattr(config.Discord, "report_channel", 0) or 0)
+        if not ch_id:
+            return
+        channel = bot.get_channel(ch_id)
+        if channel is None:
+            return
+        embed = discord.Embed(
+            title=f"{config.Icons.messageexclamation} User reported",
+            description=(
+                f"**Reported:** {reported.mention} (`{reported.id}`)\n"
+                f"**By:** {interaction.user.mention} (`{interaction.user.id}`)\n"
+                f"**Server:** {guild.name} (`{guild.id}`)\n"
+                f"**Reason:** {context['reason']}"
+                + (f"\n**Message:** [jump]({context['message_link']})" if context.get("message_link") else "")
+            ),
+            color=config.Discord.warn_color,
+        ).set_footer(text="Baxi · avocloud network oversight")
+        await channel.send(embed=embed)
+
+    class ReportModal(discord.ui.Modal, title="Report user"):
+        reason = discord.ui.TextInput(
+            label="Why are you reporting this?",
+            style=discord.TextStyle.paragraph,
+            required=True, max_length=400,
+            placeholder="Spam, harassment, scam links, …",
+        )
+
+        def __init__(self, reported: discord.abc.User, message: Optional[discord.Message] = None):
+            super().__init__()
+            self._reported = reported
+            self._message = message
+
+        async def on_submit(self, interaction: discord.Interaction):
+            await _submit_report(interaction, self._reported, str(self.reason), self._message)
+
+    @bot.tree.command(name="report", description="Report a user to the server team.")
+    @app_commands.describe(user="The user you want to report.", reason="What's wrong (optional).")
+    @app_commands.checks.cooldown(3, 120.0)
+    async def report_cmd(interaction: discord.Interaction, user: discord.Member, reason: Optional[str] = None):
+        if reason:
+            await _submit_report(interaction, user, reason)
+        else:
+            await interaction.response.send_modal(ReportModal(user))
+
+    @bot.tree.context_menu(name="Report User")
+    @app_commands.checks.cooldown(3, 120.0)
+    async def report_user_ctx(interaction: discord.Interaction, member: discord.Member):
+        await interaction.response.send_modal(ReportModal(member))
+
+    @bot.tree.context_menu(name="Report Message")
+    @app_commands.checks.cooldown(3, 120.0)
+    async def report_message_ctx(interaction: discord.Interaction, message: discord.Message):
+        await interaction.response.send_modal(ReportModal(message.author, message))
 
     from assets.music import register_music_commands
     register_music_commands(bot)

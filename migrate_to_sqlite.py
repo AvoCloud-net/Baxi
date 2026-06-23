@@ -100,11 +100,9 @@ def _migrate_flat_globals() -> None:
         if isinstance(d, dict):
             _standalone.save_mc_links(d); _bump("mc_links", len(d))
 
-    trust = os.path.join(_DATA, "1001", "trust.json")
-    if os.path.exists(trust):
-        d = _read(trust)
-        if isinstance(d, dict):
-            _standalone.save_trust(d); _bump("trust", len(d))
+    # Trust profiles are intentionally NOT migrated: the cross-server behavioral profile
+    # (score + event dossier + LLM summaries) was removed for Discord Developer Policy
+    # compliance. Any legacy data/1001/trust.json is ignored on purpose.
 
     owners = os.path.join(_DATA, "temp_voice_owners.json")
     if os.path.exists(owners):

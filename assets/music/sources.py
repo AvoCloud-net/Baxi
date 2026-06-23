@@ -1,4 +1,5 @@
 import asyncio
+import os
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
@@ -32,7 +33,15 @@ _YDL_OPTS = {
     "skip_download": True,
     "extract_flat": False,
     "source_address": "0.0.0.0",
+    # Avoid YouTube's "confirm you're not a bot" check on datacenter IPs. web first so real
+    # audio formats are available (music must download); tv as cookieless fallback.
+    "extractor_args": {"youtube": {"player_client": ["web_safari", "web", "tv"]}},
 }
+
+# Optional auth cookies (Netscape format) for persistent bot checks — see livestream.py.
+_YT_COOKIES_FILE = os.environ.get("YT_COOKIES_FILE", "data/youtube_cookies.txt")
+if os.path.isfile(_YT_COOKIES_FILE):
+    _YDL_OPTS["cookiefile"] = _YT_COOKIES_FILE
 
 
 def _ydl_extract(query: str) -> dict:

@@ -4,7 +4,6 @@ import string
 import os
 
 import assets.data as datasys
-import assets.trust as sentinel
 import discord
 from assets.views import (
     Verify_Captcha_Modal,
@@ -82,20 +81,8 @@ class BanConfirmView(ui.View):
             except Exception:
                 pass
 
-            # Prism: record ban event
-            try:
-                assert interaction.guild is not None
-                account_age = (datetime.datetime.now(datetime.timezone.utc) - self.user.created_at).days
-                sentinel.record_event(
-                    user_id=self.user.id,
-                    user_name=self.user.name,
-                    event_type="ban",
-                    guild_id=interaction.guild.id,
-                    reason=self.reason,
-                    account_age_days=account_age,
-                )
-            except Exception:
-                pass
+            # (Safety-list contribution is handled centrally in the on_member_ban event,
+            #  so it covers Baxi, Discord-native and other-bot bans alike.)
 
             # Store temp-ban entry for auto-unban
             if self.duration and expires_at:
@@ -228,20 +215,8 @@ class KickConfirmView(ui.View):
             except Exception:
                 pass
 
-            # Prism: record kick event
-            try:
-                assert interaction.guild is not None
-                account_age = (datetime.datetime.now(datetime.timezone.utc) - self.user.created_at).days
-                sentinel.record_event(
-                    user_id=self.user.id,
-                    user_name=self.user.name,
-                    event_type="kick",
-                    guild_id=interaction.guild.id,
-                    reason=self.reason,
-                    account_age_days=account_age,
-                )
-            except Exception:
-                pass
+            # (Kick is a local action only -  no cross-server record. The safety denylist is
+            #  reserved for bans / explicit reports.)
 
             embed = discord.Embed(
                 title=f'{lang["commands"]["admin"]["kick"]["title"]} // {self.user.name}',

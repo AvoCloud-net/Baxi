@@ -13,7 +13,6 @@ from assets.livestream import (
     IGNotFound, IGRateLimited, IGBlocked, IGTransient,
 )
 import assets.data as datasys
-import assets.trust as sentinel
 import config.config as config
 import config.auth as auth
 import copy
@@ -753,34 +752,6 @@ class TempActionsTask:
                 logger.error(f"[TempActions] Error for guild {guild.id}: {e}")
 
 
-class TrustScoreTask:
-    """Background task that recalculates Prism trust scores every hour.
-
-    Applies score decay/recovery and triggers auto-flag/unflag logic for all
-    tracked users without needing a new event to fire.
-    """
-
-    @tasks.loop(hours=1)
-    async def recalculate_scores(self):
-        try:
-            set_task_status("TrustScore", "running", "Recalculating Prism scores...")
-            total_before = len(sentinel.get_all_profiles())
-            await asyncio.to_thread(sentinel.recalculate_all)
-            total_after = len(sentinel.get_all_profiles())
-            logger.debug.success("[Prism] Periodic score recalculation complete")
-            set_task_status("TrustScore", "ok", f"Recalculated {total_after} users")
-            admin_log("success", f"Recalculated scores for {total_after} tracked users", source="TrustScore")
-        except Exception as e:
-            logger.error(f"[Prism] Error in recalculate_scores: {e}")
-            set_task_status("TrustScore", "error", f"Error: {e}")
-
-        # Update stale/missing LLM summaries for users with score < 100
-        try:
-            await sentinel.update_pending_summaries()
-        except Exception as e:
-            logger.error(f"[Prism LLM] Error in update_pending_summaries: {e}")
-
-
 class PhishingListTask:
     """Background task that downloads and refreshes the phishing domain list every 12 hours.
 
@@ -1017,7 +988,10 @@ class YouTubeVideoTask:
             # Fetch all videos once (deduplicated)
             video_cache = {}
             logger.info(f"[YouTubeVideos] Checking {len(all_channel_ids)} unique channels across {len(guild_data)} guilds")
-            for channel_id in all_channel_ids:
+            import random as _random
+            channel_list = list(all_channel_ids)
+            _random.shuffle(channel_list)  # vary order each run so the pattern isn't fixed
+            for idx, channel_id in enumerate(channel_list):
                 try:
                     video = await youtube_api.get_latest_video(session, channel_id)
                     video_cache[channel_id] = video
@@ -1025,6 +999,9 @@ class YouTubeVideoTask:
                 except Exception as e:
                     logger.error(f"[YouTubeVideos] Failed to fetch {channel_id}: {e}")
                     video_cache[channel_id] = None
+                # Small randomized spacing so checks don't arrive as one identifiable burst.
+                if idx < len(channel_list) - 1:
+                    await asyncio.sleep(_random.uniform(0.6, 2.0))
             
             # Process each guild with cached videos and cached config
             for guild in self.bot.guilds:
@@ -2084,3 +2061,40 @@ class McLinkSyncTask:
         await self.bot.wait_until_ready()
         await self._sync_all()
 
+
+
+class ClassifierTrainTask:
+    """Daily self-training pass for the SafeText chatfilter.
+
+    Folds staff-confirmed training samples (from moderator deletions and feedback
+    corrections) into a LoRA fine-tune once enough have accumulated. Fully local -
+    no external LLM. The fine-tune runs in a subprocess and reloads the model on success.
+    """
+
+    @tasks.loop(hours=24)
+    async def train(self):
+        try:
+            from assets.message.safetext import feedback, finetune
+            st = feedback.stats()
+            untrained = st.get("untrained", 0)
+            if untrained < finetune.MIN_SAMPLES:
+                set_task_status(
+                    "ClassifierTrain", "ok",
+                    f"{untrained}/{finetune.MIN_SAMPLES} samples -  waiting for more",
+                )
+                return
+            set_task_status("ClassifierTrain", "running", f"Fine-tuning on {untrained} new samples...")
+            res = await finetune.start_job()
+            if res.get("ok"):
+                set_task_status("ClassifierTrain", "ok", f"Training started (pid {res.get('pid')})")
+                logger.debug.success(f"[ClassifierTrain] Fine-tune started on {untrained} samples")
+            else:
+                set_task_status("ClassifierTrain", "error", f"Could not start: {res.get('error')}")
+        except Exception as e:
+            logger.error(f"[ClassifierTrain] Error: {e}")
+            set_task_status("ClassifierTrain", "error", f"Error: {e}")
+
+    @train.before_loop
+    async def before_train(self):
+        # Stagger 5 min after start so it never competes with boot-time model loading.
+        await asyncio.sleep(300)

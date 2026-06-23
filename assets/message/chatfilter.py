@@ -31,11 +31,12 @@ AI_CATEGORIES: Dict[str, str] = {
 class Chatfilter:
     async def check(
         self,
-        message:  str,
-        gid:      int,
-        cid:      int,
-        user_id:  int = 0,
-        history:  list[dict] | None = None,   # unused, kept for compat
+        message:    str,
+        gid:        int,
+        cid:        int,
+        user_id:    int = 0,
+        history:    list[dict] | None = None,   # unused, kept for compat
+        strictness: float = 1.0,                # risk-weight from RiskContext
     ) -> Dict[str, Any]:
 
         chatfilter_data: dict = dict(datasys.load_data(gid, "chatfilter"))
@@ -67,4 +68,5 @@ class Chatfilter:
             chatfilter_data=chatfilter_data,
             guild_lang=guild_lang,
             enabled_categories=enabled_categories,
+            strictness=strictness,
         )

@@ -57,6 +57,44 @@ def save_global_bans(data: dict) -> None:
             )
 
 
+# ── Global user reports (operator oversight) ──────────────────────────────────
+
+def add_global_report(entry: dict) -> None:
+    """Append one network-wide user report. Human-submitted, not inferred data."""
+    db.execute(
+        "INSERT INTO global_reports "
+        "(reported_id,reported_name,reporter_id,reporter_name,guild_id,guild_name,reason,message_link,timestamp) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (
+            str(entry.get("reported_id", "")), str(entry.get("reported_name", "")),
+            str(entry.get("reporter_id", "")), str(entry.get("reporter_name", "")),
+            str(entry.get("guild_id", "")), str(entry.get("guild_name", "")),
+            str(entry.get("reason", "")), str(entry.get("message_link", "")),
+            str(entry.get("timestamp", "")),
+        ),
+    )
+
+
+def load_global_reports(limit: int = 500) -> list:
+    """Return recent network-wide reports, newest first."""
+    rows = db.query("SELECT * FROM global_reports ORDER BY pos DESC LIMIT ?", (int(limit),))
+    return [
+        {
+            "pos": r["pos"],
+            "reported_id": str(r["reported_id"] or ""),
+            "reported_name": str(r["reported_name"] or ""),
+            "reporter_id": str(r["reporter_id"] or ""),
+            "reporter_name": str(r["reporter_name"] or ""),
+            "guild_id": str(r["guild_id"] or ""),
+            "guild_name": str(r["guild_name"] or ""),
+            "reason": str(r["reason"] or ""),
+            "message_link": str(r["message_link"] or ""),
+            "timestamp": str(r["timestamp"] or ""),
+        }
+        for r in rows
+    ]
+
+
 # ── Globalchat bans (gc_ban) ──────────────────────────────────────────────────
 
 def load_globalchat_bans() -> dict:

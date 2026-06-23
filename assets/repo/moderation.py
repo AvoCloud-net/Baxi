@@ -203,3 +203,65 @@ def save_filter_events(gid: int, data: list) -> None:
                 "INSERT INTO filter_events (guild_id,pos,timestamp,data_json) VALUES (?,?,?,?)",
                 (gid, pos, str(ev.get("timestamp", "")), json.dumps(ev)),
             )
+
+
+# ── Moderation review queue ─────────────────────────────────────────────────────
+
+def _review_row_to_dict(r) -> dict:
+    return {
+        "pos":         r["pos"],
+        "user_id":     str(r["user_id"]),
+        "user_name":   str(r["user_name"] or ""),
+        "kind":        str(r["kind"] or ""),
+        "status":      str(r["status"] or "pending"),
+        "context":     json.loads(r["context_json"] or "{}"),
+        "created_at":  str(r["created_at"] or ""),
+        "resolved_by": str(r["resolved_by"] or ""),
+        "resolved_at": str(r["resolved_at"] or ""),
+    }
+
+
+def add_review_item(gid: int, user_id: int, user_name: str, kind: str, context: dict | None = None) -> int:
+    """Append a pending review item; returns its pos. kind: join_gate|deleted_msg|prism_flag."""
+    db.ensure_guild(gid)
+    now = datetime.datetime.utcnow().isoformat()
+    with db.transaction() as cx:
+        row = cx.execute(
+            "SELECT COALESCE(MAX(pos)+1,0) as next_pos FROM mod_review_queue WHERE guild_id=?", (gid,)
+        ).fetchone()
+        next_pos = row["next_pos"] if row else 0
+        cx.execute(
+            "INSERT INTO mod_review_queue "
+            "(guild_id,pos,user_id,user_name,kind,status,context_json,created_at) "
+            "VALUES (?,?,?,?,?,'pending',?,?)",
+            (gid, next_pos, str(user_id), str(user_name), str(kind),
+             json.dumps(context or {}), now),
+        )
+    return next_pos
+
+
+def load_review_queue(gid: int, status: str | None = None) -> list:
+    """Return review items (optionally filtered by status), newest first."""
+    if status:
+        rows = db.query(
+            "SELECT * FROM mod_review_queue WHERE guild_id=? AND status=? ORDER BY pos DESC",
+            (gid, status),
+        )
+    else:
+        rows = db.query(
+            "SELECT * FROM mod_review_queue WHERE guild_id=? ORDER BY pos DESC", (gid,)
+        )
+    return [_review_row_to_dict(r) for r in rows]
+
+
+def resolve_review_item(gid: int, pos: int, status: str, resolved_by: str = "") -> dict | None:
+    """Set a review item's status (approved|rejected) and return the updated item."""
+    if status not in ("approved", "rejected", "pending"):
+        return None
+    now = datetime.datetime.utcnow().isoformat()
+    db.execute(
+        "UPDATE mod_review_queue SET status=?,resolved_by=?,resolved_at=? WHERE guild_id=? AND pos=?",
+        (status, str(resolved_by), now, gid, pos),
+    )
+    rows = db.query("SELECT * FROM mod_review_queue WHERE guild_id=? AND pos=?", (gid, pos))
+    return _review_row_to_dict(rows[0]) if rows else None

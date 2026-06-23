@@ -342,8 +342,8 @@
 
     <div class="nav-group-label">Moderation</div>
     <a href="#section-prism" data-view="section-prism">
-        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-        Prism Users
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        User Reports
     </a>
     <a href="#section-flagged" data-view="section-flagged">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
@@ -556,27 +556,65 @@
 
     <!-- ── PRISM USERS ────────────────────────────────────────── -->
     <section id="section-prism" class="admin-view" data-view="section-prism" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Prism Trust System</div>
-        <div class="card">
+        <div class="section-badge">User Reports</div>
+
+        <!-- Manual network safety-list flag -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <header>
+                <h2 style="font-size:1rem; font-weight:600;">Add user to the network safety list</h2>
+                <p class="text-muted" style="font-size:.78rem;">Flags a user network-wide. Participating servers screen joins against this list. Stores only the ID, a coarse category and your reason — no score or content.</p>
+            </header>
+            <section>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end;">
+                    <div style="display:flex; flex-direction:column; gap:.25rem;">
+                        <label style="font-size:.72rem; opacity:.7;">User ID</label>
+                        <input id="safety-uid" type="text" placeholder="123456789012345678" style="font-size:.8rem; padding:.4rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:.25rem;">
+                        <label style="font-size:.72rem; opacity:.7;">Category</label>
+                        <select id="safety-category" class="select" style="font-size:.8rem; padding:.4rem .5rem; height:auto;">
+                            <option value="raid">Raid</option>
+                            <option value="spam">Spam</option>
+                            <option value="hate">Hate</option>
+                            <option value="other" selected>Other</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:.25rem; flex:1; min-width:200px;">
+                        <label style="font-size:.72rem; opacity:.7;">Reason</label>
+                        <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:100%;">
+                    </div>
+                    <button onclick="safetyFlagSubmit()" class="btn-sm-outline" style="color:#f87171; border-color:#f87171;">Flag user</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Most-reported users (spot network abusers) -->
+        <div class="card" style="margin-bottom:1.25rem;">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">All Prism Users</h2>
-                    <p class="text-muted" style="font-size:.78rem;"><span id="prism-total">–</span> total tracked users · sorted worst-first</p>
+                    <h2 style="font-size:1rem; font-weight:600;">Most reported users</h2>
+                    <p class="text-muted" style="font-size:.78rem;"><span id="reports-total">–</span> reports · <span id="reports-unique">–</span> distinct users</p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                    <select id="prism-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="filterPrism()">
-                        <option value="all">All users</option>
-                        <option value="flagged">Flagged</option>
-                        <option value="clean">Clean</option>
-                        <option value="opted_out">Opted Out</option>
-                    </select>
-                    <input id="prism-search" type="text" placeholder="Search name or ID…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:170px;" oninput="filterPrism()">
+                    <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:210px;" oninput="filterReports()">
+                    <button onclick="loadReports()" class="btn-sm-outline">Refresh</button>
                 </div>
             </header>
             <section>
-                <table class="admin-table" id="prism-table">
-                    <thead><tr><th>User</th><th>Score</th><th>Events</th><th>Status</th><th>Last seen</th><th>Actions</th></tr></thead>
-                    <tbody id="prism-body"><tr><td colspan="6" style="opacity:.4;">Loading...</td></tr></tbody>
+                <table class="admin-table">
+                    <thead><tr><th>User</th><th>Reports</th><th>Servers</th><th>Reasons</th><th></th></tr></thead>
+                    <tbody id="reports-top-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Recent individual reports -->
+        <div class="card">
+            <header><h2 style="font-size:1rem; font-weight:600;">Recent reports</h2></header>
+            <section>
+                <table class="admin-table">
+                    <thead><tr><th>Reported</th><th>By</th><th>Server</th><th>Reason</th><th>When</th></tr></thead>
+                    <tbody id="reports-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
@@ -1473,58 +1511,83 @@ function renderAdoption() {
 
 // ── Prism Users ───────────────────────────────────────────────
 
-function renderPrism() {
-    allPrismUsers = adminData.prism_users || [];
-    document.getElementById('prism-total').textContent = fmt(adminData.prism_total || allPrismUsers.length);
-    filterPrism();
+// Legacy alias kept so the adminData load path doesn't error; reports load independently.
+function renderPrism() { loadReports(); }
+
+let _reportsData = { reports: [], top_reported: [] };
+
+async function loadReports() {
+    try {
+        const r = await fetch('/api/admin/reports');
+        const j = await r.json();
+        if (j.error) return;
+        _reportsData = j;
+        document.getElementById('reports-total').textContent = fmt(j.total || 0);
+        document.getElementById('reports-unique').textContent = fmt(j.unique_reported || 0);
+        renderReports();
+    } catch (e) {
+        document.getElementById('reports-body').innerHTML = '<tr><td colspan="5" style="opacity:.4;">Failed to load.</td></tr>';
+    }
 }
 
-function filterPrism() {
-    const filter = document.getElementById('prism-filter').value;
-    const search = document.getElementById('prism-search').value.toLowerCase();
-    let users = allPrismUsers;
-    if (filter === 'flagged') users = users.filter(u => u.auto_flagged || u.manually_flagged);
-    if (filter === 'clean') users = users.filter(u => !u.auto_flagged && !u.manually_flagged && !u.opted_out);
-    if (filter === 'opted_out') users = users.filter(u => u.opted_out);
-    if (search) users = users.filter(u => u.name.toLowerCase().includes(search) || u.uid.includes(search));
+function filterReports() { renderReports(); }
 
-    const body = document.getElementById('prism-body');
-    if (!users.length) { body.innerHTML = '<tr><td colspan="6" style="opacity:.4;">No users</td></tr>'; return; }
-    body.innerHTML = users.map(u => {
-        let statusBadge;
-        if (u.auto_flagged) statusBadge = '<span class="badge badge-auto">Auto-flagged</span>';
-        else if (u.manually_flagged) statusBadge = `<span class="badge badge-flagged">Manual</span>`;
-        else if (u.opted_out) statusBadge = '<span class="badge badge-idle">Opted Out</span>';
-        else statusBadge = '<span class="badge badge-clean">Clean</span>';
+async function safetyFlagSubmit() {
+    const uid = (document.getElementById('safety-uid').value || '').trim();
+    const category = document.getElementById('safety-category').value;
+    const reason = (document.getElementById('safety-reason').value || '').trim();
+    if (!/^\d{5,}$/.test(uid)) { alert('Enter a valid user ID.'); return; }
+    const r = await doAction({ action: 'safety_flag', user_id: uid, category, reason });
+    alert(r.ok ? (r.message || 'User flagged.') : ('Error: ' + (r.message || 'failed')));
+    if (r.ok) {
+        document.getElementById('safety-uid').value = '';
+        document.getElementById('safety-reason').value = '';
+    }
+}
 
-        const lastEvent = u.events && u.events.length ? u.events[u.events.length-1] : null;
-        const lastStr = lastEvent ? `${escHtml(lastEvent.type)} · ${(lastEvent.timestamp||'').slice(0,10)}` : '–';
+async function safetyFlagQuick(uid, name) {
+    if (!uid) return;
+    const reason = prompt('Reason for adding ' + (name || uid) + ' to the network safety list:');
+    if (reason === null) return;
+    const category = (prompt('Category (raid / spam / hate / other):', 'other') || 'other').toLowerCase();
+    const r = await doAction({ action: 'safety_flag', user_id: String(uid), category, reason: reason.trim() });
+    alert(r.ok ? (r.message || 'User flagged.') : ('Error: ' + (r.message || 'failed')));
+}
 
-        return `<tr>
-            <td>
-                <div style="font-weight:600; font-size:.82rem;">${escHtml(u.name)}</div>
-                <div style="opacity:.4; font-size:.7rem;">${u.uid}</div>
-            </td>
-            <td>
-                ${scoreBadge(u.score)}
-                <div class="score-bar" style="margin-top:.3rem; width:80px;">
-                    <div class="score-bar-fill" style="width:${u.score}%; background:${scoreBarColor(u.score)};"></div>
-                </div>
-            </td>
-            <td style="opacity:.7;">${u.event_count}</td>
-            <td>${statusBadge}</td>
-            <td style="opacity:.5; font-size:.75rem;">${lastStr}</td>
-            <td style="display:flex; gap:.35rem; flex-wrap:wrap;">
-                ${u.auto_flagged || u.manually_flagged
-                    ? `<button onclick="quickDeflag('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#4ade80;">Deflag</button>`
-                    : `<button onclick="quickFlag('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Flag</button>`
-                }
-                <button onclick="quickClearEvents('${u.uid}', '${escHtml(u.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#facc15;" title="Delete all Prism events">Clear events</button>
-                <button onclick="quickReanalyze('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#a78bfa;" title="Request new AI risk summary">↻ Re-analyze</button>
-                <button onclick="viewPrismProfile('${u.uid}')" class="btn-sm-outline" style="font-size:.72rem; color:#a78bfa;">View</button>
-            </td>
-        </tr>`;
-    }).join('');
+function renderReports() {
+    const search = (document.getElementById('reports-search').value || '').toLowerCase();
+    const match = (r) => !search
+        || (r.reported_name||'').toLowerCase().includes(search)
+        || (r.reporter_name||'').toLowerCase().includes(search)
+        || (r.guild_name||'').toLowerCase().includes(search)
+        || (r.reason||'').toLowerCase().includes(search)
+        || (r.reported_id||'') === search;
+
+    // Top reported
+    const top = (_reportsData.top_reported || []).filter(t =>
+        !search || (t.reported_name||'').toLowerCase().includes(search) || (t.reported_id||'') === search
+    );
+    const topBody = document.getElementById('reports-top-body');
+    topBody.innerHTML = top.length ? top.map(t => `<tr>
+        <td><div style="font-weight:600; font-size:.82rem;">${escHtml(t.reported_name||'?')}</div>
+            <div style="opacity:.4; font-size:.7rem;">${escHtml(t.reported_id)}</div></td>
+        <td style="font-weight:700;">${t.count}</td>
+        <td style="opacity:.7;">${t.guilds}</td>
+        <td style="opacity:.6; font-size:.74rem; max-width:340px;">${escHtml((t.reasons||[]).slice(0,3).join(' · '))}</td>
+        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171; border-color:#f87171;" title="Add to network safety list">Flag</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports yet.</td></tr>';
+
+    // Recent reports
+    const recent = (_reportsData.reports || []).filter(match);
+    const body = document.getElementById('reports-body');
+    body.innerHTML = recent.length ? recent.map(r => `<tr>
+        <td><div style="font-weight:600; font-size:.82rem;">${escHtml(r.reported_name||'?')}</div>
+            <div style="opacity:.4; font-size:.7rem;">${escHtml(r.reported_id)}</div></td>
+        <td style="opacity:.8; font-size:.78rem;">${escHtml(r.reporter_name||'?')}</td>
+        <td style="opacity:.7; font-size:.78rem;">${escHtml(r.guild_name||r.guild_id)}</td>
+        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:#a78bfa;">msg</a>` : ''}</td>
+        <td style="opacity:.5; font-size:.72rem;">${(r.timestamp||'').replace('T',' ').slice(0,16)}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports match.</td></tr>';
 }
 
 async function runTask(taskKey) {

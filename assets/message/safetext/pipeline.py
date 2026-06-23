@@ -66,6 +66,14 @@ def _check_phishing(text: str) -> Optional[Dict[str, Any]]:
 
 
 # ── main entry ───────────────────────────────────────────────────────────────
+def _scaled(threshold: float, strictness: float) -> float:
+    """Risk-weight a model threshold. strictness>1 lowers it (flag more, for risky users);
+    strictness<1 raises it (flag less, benefit of the doubt for trusted users)."""
+    if strictness == 1.0:
+        return threshold
+    return max(0.30, min(0.97, threshold / strictness))
+
+
 async def check(
     message: str,
     gid: int,
@@ -74,11 +82,17 @@ async def check(
     chatfilter_data: dict,
     guild_lang: str,
     enabled_categories: set[str],
+    strictness: float = 1.0,
 ) -> Dict[str, Any]:
-    """Run the full SafeText pipeline. Returns a chatfilter result dict."""
+    """Run the full SafeText pipeline. Returns a chatfilter result dict.
+
+    *strictness* risk-weights the ML thresholds based on the author's PRISM standing."""
 
     nsfw_score: float | None = None
     toxic_scores: dict[str, float] = {}
+    obscene_thr = _scaled(OBSCENE_THRESHOLD, strictness)
+    hate_thr    = _scaled(HATE_THRESHOLD, strictness)
+    toxic_thr   = _scaled(TOXIC_THRESHOLD, strictness)
 
     # 1. phishing
     if chatfilter_data.get("phishing_filter", False):
@@ -139,21 +153,21 @@ async def check(
         if wants_nsfw:
             obscene_score = max((toxic_scores.get(l, 0.0) for l in OBSCENE_LABELS), default=0.0)
             nsfw_score = obscene_score
-            if obscene_score >= OBSCENE_THRESHOLD:
+            if obscene_score >= obscene_thr:
                 res = _flagged("ai-1", "1", "1", {"confidence": round(obscene_score, 4)})
                 return _finalize(gid, user_id, "nsfw", res, confidence=obscene_score, message=message)
 
         hate_score  = max((toxic_scores.get(l, 0.0) for l in HATE_LABELS), default=0.0)
         toxic_score = max((toxic_scores.get(l, 0.0) for l in TOXIC_LABELS), default=0.0)
 
-        if wants_hate and hate_score >= HATE_THRESHOLD:
+        if wants_hate and hate_score >= hate_thr:
             top = max(HATE_LABELS, key=lambda l: toxic_scores.get(l, 0.0))
             res = _flagged("ai-3", "3", "3", {
                 "label": top, "confidence": round(hate_score, 4), "scores": toxic_scores
             })
             return _finalize(gid, user_id, "hate", res, confidence=hate_score, message=message)
 
-        if wants_toxic and toxic_score >= TOXIC_THRESHOLD:
+        if wants_toxic and toxic_score >= toxic_thr:
             top = max(TOXIC_LABELS, key=lambda l: toxic_scores.get(l, 0.0))
             res = _flagged("ai-2", "2", "2", {
                 "label": top, "confidence": round(toxic_score, 4), "scores": toxic_scores

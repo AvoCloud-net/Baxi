@@ -369,6 +369,18 @@
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 Auto-Slowmode
             </a>
+            <a href="#mod_gate" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M9.5 12.5 11 14l3.5-3.5"/></svg>
+                Mod-Gate
+            </a>
+            <a href="#mod_review" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 12.5 5 14l2.5-2.5"/><path d="M3 19.5 5 21l2.5-2.5"/></svg>
+                Review Queue
+            </a>
+            <a href="#classifier_training" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+                Classifier Training
+            </a>
 
             <span class="dash-nav-group-label">Community</span>
             <a href="#minigames" class="dash-nav-item">
@@ -675,9 +687,9 @@
                 </div>
             </section>
 
-            <!-- PRISM -->
+            <!-- NETWORK SAFETY (formerly PRISM) -->
             <section class="pb-16 dash-section" id="prism">
-                <div class="section-label">PRISM</div>
+                <div class="section-label">NETWORK SAFETY</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -685,29 +697,29 @@
                                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
                                 <path d="M6.376 18.91a6 6 0 0 1 11.249.003"/><circle cx="12" cy="11" r="4"/>
                             </svg>
-                            PRISM -  Trust Scoring
-                            <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.5rem;border-radius:9999px;background:color-mix(in srgb,var(--color-primary,#FF6B4A) 15%,transparent);color:var(--color-primary,#FF6B4A);vertical-align:middle;">BETA</span>
+                            Network Safety
                         </h2>
-                        <p class="text-muted">Prism analyzes user behavior across all Baxi servers and generates a network-wide trust score per user.</p>
+                        <p class="text-muted">A shared safety list of users that a human moderator has banned or reported, so participating servers can catch known bad actors early when they try to join.</p>
                     </header>
                     <section>
                         <form id="prism-form" class="form grid gap-6 settings-form">
                             <div class="grid gap-2">
-                                <label>Server participation</label>
+                                <label>Participation</label>
                                 <p class="text-muted text-sm">
-                                    Prism analyzes user behavior on your server (chat filter violations, spam, warnings, bans and kicks)
-                                    and contributes to a network-wide trust score per user. Users that fall below the trust threshold
-                                    are automatically flagged and will appear in <code>/scan_users</code>. Disabling this means actions
-                                    on your server will <strong>not</strong> feed into the global Prism score.
+                                    When enabled, bans your moderators issue on this server contribute a minimal entry
+                                    to the network safety list (the user ID + a coarse category like raid/spam/hate, set
+                                    by the moderator — no message content, no behavior log, no score). Other participating
+                                    servers can then screen joins against it. Use <strong>Mod-Gate</strong> to act on the
+                                    list when users join. Users can opt out via <code>/safety_optout</code>.
                                 </p>
                                 <fieldset class="grid gap-3">
                                     <label class="radio-label">
                                         <input type="radio" name="prism-enabled" id="prism-enabled-yes"
                                             value="true" class="mt-1 h-4 w-4">
                                         <div>
-                                            <span class="block text-sm font-medium">Enabled</span>
+                                            <span class="block text-sm font-medium">Participate</span>
                                             <span class="block text-xs text-muted">
-                                                User behavior on this server contributes to Prism trust scores.
+                                                Your moderators' bans contribute to the network safety list.
                                             </span>
                                         </div>
                                     </label>
@@ -715,9 +727,9 @@
                                         <input type="radio" name="prism-enabled" id="prism-enabled-no"
                                             value="false" class="mt-1 h-4 w-4">
                                         <div>
-                                            <span class="block text-sm font-medium">Disabled</span>
+                                            <span class="block text-sm font-medium">Do not participate</span>
                                             <span class="block text-xs text-muted">
-                                                This server's moderation actions are excluded from Prism scoring.
+                                                This server neither contributes to nor consumes the network safety list.
                                             </span>
                                         </div>
                                     </label>
@@ -739,49 +751,6 @@
                                 </svg>
                             </button>
                         </form>
-
-                        <!-- User Scores -->
-                        <div class="card mt-6">
-                            <header>
-                                <h2 class="text-base font-semibold flex items-center gap-2">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="9" cy="7" r="4"/>
-                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                    </svg>
-                                    User Trust Scores
-                                </h2>
-                                <p class="text-muted text-sm">Members of this server sorted by trust score (lowest first).</p>
-                            </header>
-                            <section>
-                                <div id="prism-filter-bar" class="hidden" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-                                    <button type="button" class="prism-filter-btn active" data-filter="all"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:#2a2d35;color:#ccc;cursor:pointer;transition:all .2s;">All</button>
-                                    <button type="button" class="prism-filter-btn" data-filter="opted_out"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Opt-Out</button>
-                                    <button type="button" class="prism-filter-btn" data-filter="flagged"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Flagged</button>
-                                    <button type="button" class="prism-filter-btn" data-filter="high_risk"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">High Risk</button>
-                                    <button type="button" class="prism-filter-btn" data-filter="medium_risk"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Medium Risk</button>
-                                    <button type="button" class="prism-filter-btn" data-filter="low_risk"
-                                        style="font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:9999px;border:1px solid #3a3d45;background:transparent;color:#888;cursor:pointer;transition:all .2s;">Low Risk</button>
-                                </div>
-                                <div id="prism-scores-loading" class="text-muted text-sm">Loading...</div>
-                                <div id="prism-scores-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
-                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                    </div>
-                                    <div class="flex max-w-xs flex-col gap-1">
-                                        <h3 class="text-base font-semibold tracking-tight">No Users Found</h3>
-                                        <p class="text-muted text-sm" id="prism-scores-empty-msg">No users with a low trust score on this server yet.</p>
-                                    </div>
-                                </div>
-                                <div id="prism-scores-list" class="hidden" style="display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;"></div>
-                            </section>
-                        </div>
                     </section>
                 </div>
             </section>
@@ -1540,6 +1509,154 @@
                                 </svg>
                             </button>
                         </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Mod-Gate Config -->
+            <section class="pb-16 dash-section" id="mod_gate">
+                <div class="section-label">MOD-GATE</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                                <path d="M9.5 12.5 11 14l3.5-3.5"/>
+                            </svg>
+                            Mod-Gate
+                        </h2>
+                        <p class="text-muted">Screen joining members live (account age, this server's history, and the opt-in network safety list) and alert your team about risky joins.</p>
+                    </header>
+                    <section>
+                        <form id="mod_gate-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mod_gate-enabled" role="switch">
+                                    <span class="font-medium">Enable Mod-Gate</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="mod_gate-use-safety-list">
+                                    <span class="font-medium">Screen joins against the network safety list</span>
+                                </label>
+                                <p class="text-muted text-xs">When on, joining users on the opt-in network safety list (set by a human mod's ban elsewhere) trigger the action below. New accounts and locally-flagged users always trigger a team alert.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="mod_gate-action">Action on gated user:</label>
+                                <select id="mod_gate-action" class="select w-full">
+                                    <option value="notify">Notify team only (no action)</option>
+                                    <option value="quarantine">Quarantine (assign role)</option>
+                                    <option value="kick">Kick</option>
+                                    <option value="approve">Approve (log only)</option>
+                                </select>
+                                <p class="text-muted text-xs">Enforcement for users on the network safety list or flagged in this server. The team is always notified about any risky join (new account, active warnings, flagged) regardless of this setting.</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="mod_gate-quarantine-role">Quarantine role:</label>
+                                <select id="mod_gate-quarantine-role" class="select w-full">
+                                    <option value="0">- None -</option>
+                                    {% for id, name in roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Role assigned to quarantined users (only used with the Quarantine action).</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="mod_gate-log-channel">Log channel:</label>
+                                <select id="mod_gate-log-channel" class="select w-full">
+                                    <option value="0">- None -</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Channel where gate decisions are logged.</p>
+                            </div>
+
+                            <button type="submit" class="btn-primary submit-btn w-full">
+                                <span class="btn-text">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                    </svg>
+                                    Save
+                                </span>
+                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                    stroke="currentColor" fill="none" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Review Queue -->
+            <section class="pb-16 dash-section" id="mod_review">
+                <div class="section-label">REVIEW QUEUE</div>
+                <div class="card">
+                    <header class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <svg class="lucide" viewBox="0 0 24 24">
+                                    <path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/>
+                                    <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                                    <path d="M3 12.5 5 14l2.5-2.5"/>
+                                    <path d="M3 19.5 5 21l2.5-2.5"/>
+                                </svg>
+                                Review Queue
+                            </h2>
+                            <p class="text-muted">Pending moderation items awaiting staff review.</p>
+                        </div>
+                        <button type="button" class="btn-outline" onclick="modReviewRefresh()" style="flex-shrink:0;">
+                            <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                            <span class="btn-label">Refresh</span>
+                        </button>
+                    </header>
+                    <section>
+                        <div id="mod_review-list" class="grid gap-3"></div>
+                        <div id="mod_review-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden">
+                            <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
+                                <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><path d="M20 6 9 17l-5-5"/></svg>
+                            </div>
+                            <h3 class="text-base font-semibold tracking-tight">All clear</h3>
+                            <p class="text-muted text-sm">There are no pending review items right now.</p>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Classifier Training -->
+            <section class="pb-16 dash-section" id="classifier_training">
+                <div class="section-label">CLASSIFIER TRAINING</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                                <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                            </svg>
+                            Classifier Training
+                        </h2>
+                        <p class="text-muted">Status of the moderation classifier that learns from staff feedback.</p>
+                    </header>
+                    <section class="grid gap-4">
+                        <div class="grid gap-2">
+                            <span class="text-muted text-xs">Samples ready</span>
+                            <span id="classifier-samples" class="text-2xl font-semibold">- / -</span>
+                            <p id="classifier-samples-hint" class="text-muted text-xs">Untrained, staff-confirmed samples vs the minimum needed to retrain.</p>
+                        </div>
+                        <div class="grid gap-2">
+                            <span class="text-muted text-xs">Training state</span>
+                            <span id="classifier-state" class="text-base font-medium">-</span>
+                        </div>
+                        <p class="text-muted text-sm">The classifier retrains automatically every day from staff-confirmed moderator deletions and review feedback. No manual action is required.</p>
                     </section>
                 </div>
             </section>
@@ -3957,7 +4074,7 @@
                 'home',
                 'config-general',
                 'stats', 'auditlog',
-                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode',
+                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode', 'mod_gate', 'mod_review', 'classifier_training',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
             ];
@@ -4319,6 +4436,19 @@
                 document.getElementById('asm-interval').value = data.auto_slowmode.interval ?? 10;
                 document.getElementById('asm-slowmode-delay').value = data.auto_slowmode.slowmode_delay ?? 5;
                 document.getElementById('asm-duration').value = data.auto_slowmode.duration ?? 120;
+            }
+
+            // Mod-Gate
+            if (data.mod_gate) {
+                document.getElementById('mod_gate-enabled').checked = data.mod_gate.enabled === true;
+                document.getElementById('mod_gate-use-safety-list').checked = data.mod_gate.use_safety_list !== false;
+                document.getElementById('mod_gate-action').value = data.mod_gate.action || 'quarantine';
+                document.getElementById('mod_gate-quarantine-role').value = String(data.mod_gate.quarantine_role ?? 0);
+                document.getElementById('mod_gate-log-channel').value = String(data.mod_gate.log_channel ?? 0);
+            } else {
+                document.getElementById('mod_gate-enabled').checked = false;
+                document.getElementById('mod_gate-use-safety-list').checked = true;
+                document.getElementById('mod_gate-action').value = 'quarantine';
             }
 
             // Counting Game
@@ -5294,7 +5424,7 @@
                             <input type="text" class="cc-act-embed-footer w-full" maxlength="256" placeholder="Embed footer (optional)" value="${ccEsc(d.embed_footer || '')}">
                         </div>`;
                 } else {
-                    html += `<div class="grid gap-1 mt-2"><label class="text-xs text-muted flex items-center">Send DM to${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>`;
+                    html += `<div class="grid gap-1"><label class="text-xs text-muted flex items-center">Send DM to${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>`;
                 }
                 return html;
             }
@@ -5563,6 +5693,10 @@
             };
         };
 
+        // Network Safety: cross-server behavioral trust scores were removed for compliance;
+        // there is no per-user score list to render here anymore.
+        const _PRISM_SCORES_REMOVED = true;
+        /* legacy score-list code removed:
         let _prismUsers = [];
         let _prismFilter = 'all';
 
@@ -5737,6 +5871,7 @@
                 });
         }
         loadPrismScores();
+        */
 
         document.getElementById('chatfilter-form').onsubmit = function (event) {
             event.preventDefault();
@@ -6519,6 +6654,202 @@
                 }
             };
         };
+
+        // ── Mod-Gate ───────────────────────────────────────────────────────────
+        document.getElementById('mod_gate-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('mod_gate-enabled').checked;
+            const use_safety_list = document.getElementById('mod_gate-use-safety-list').checked;
+            const action = document.getElementById('mod_gate-action').value;
+            const quarantine_role = parseInt(document.getElementById('mod_gate-quarantine-role').value, 10) || 0;
+            const log_channel = parseInt(document.getElementById('mod_gate-log-channel').value, 10) || 0;
+            const payload = { mod_gate: { enabled, use_safety_list, action, quarantine_role, log_channel } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=mod_gate&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
+        // ── Review Queue ───────────────────────────────────────────────────────
+        function modReviewEscape(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function modReviewBadge(kind) {
+            const labels = { join_gate: 'Join Gate', deleted_msg: 'Deleted Message', prism_flag: 'Safety Flag', user_report: 'User Report' };
+            return modReviewEscape(labels[kind] || kind || 'item');
+        }
+
+        function modReviewFmtTime(s) {
+            if (!s) return '';
+            return modReviewEscape(String(s).replace('T', ' ').slice(0, 16));
+        }
+
+        function modReviewHint(kind) {
+            if (kind === 'deleted_msg')
+                return 'Approve trains the chat filter to catch messages like this in future. Reject marks it as harmless (the filter learns it is safe).';
+            if (kind === 'user_report')
+                return 'Approve marks this report as handled. Reject dismisses it. Either way it leaves the queue — take any moderation action (ban, warn) yourself.';
+            if (kind === 'join_gate' || kind === 'prism_flag')
+                return 'Approve confirms this flag was correct. Reject marks it a false positive.';
+            return 'Approve confirms this item. Reject dismisses it.';
+        }
+
+        function modReviewRenderItem(item) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.cssText = 'padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:.85rem;';
+            card.dataset.pos = item.pos;
+            const ctx = item.context || {};
+            let contextHtml = '';
+            if (item.kind === 'deleted_msg') {
+                contextHtml +=
+                    '<div class="grid gap-1">' +
+                    '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.message) + '</p>' +
+                    (ctx.deleted_by_name ? '<p class="text-muted text-xs">Deleted by ' + modReviewEscape(ctx.deleted_by_name) + '</p>' : '') +
+                    '</div>';
+            } else if (item.kind === 'user_report') {
+                const link = ctx.message_link ? ' · <a href="' + modReviewEscape(ctx.message_link) + '" target="_blank" rel="noopener">view message</a>' : '';
+                contextHtml +=
+                    '<div class="grid gap-1">' +
+                    '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.reason) + '</p>' +
+                    (ctx.message ? '<p class="text-muted text-xs" style="white-space:pre-wrap;word-break:break-word;">Reported message: ' + modReviewEscape(ctx.message) + '</p>' : '') +
+                    '<p class="text-muted text-xs">Reported by ' + modReviewEscape(ctx.reporter_name) + link + '</p>' +
+                    '</div>';
+            } else {
+                const reasons = Array.isArray(ctx.reasons) ? ctx.reasons.join(', ') : (ctx.reasons || '');
+                contextHtml +=
+                    '<div class="grid gap-1 text-xs text-muted">' +
+                    (reasons ? '<p>' + modReviewEscape(reasons) + '</p>' : '') +
+                    (ctx.account_age_days !== undefined ? '<p>Account age: ' + modReviewEscape(ctx.account_age_days) + ' days</p>' : '') +
+                    (ctx.safety_category ? '<p>Safety list: ' + modReviewEscape(ctx.safety_category) + '</p>' : '') +
+                    '</div>';
+            }
+            let labelSelect = '';
+            if (item.kind === 'deleted_msg') {
+                labelSelect =
+                    '<span class="text-muted text-xs" style="align-self:center;">Train as:</span>' +
+                    '<select class="select mod_review-label" style="flex:0 0 auto;width:auto;">' +
+                    '<option value="2">Toxic</option>' +
+                    '<option value="3">Hate</option>' +
+                    '<option value="1">NSFW</option>' +
+                    '<option value="4">Doxxing</option>' +
+                    '<option value="5">Self-harm</option>' +
+                    '</select>';
+            }
+            card.innerHTML =
+                '<header class="flex items-start justify-between gap-3" style="flex-wrap:wrap;">' +
+                '<div style="display:flex; flex-direction:column; gap:.35rem;">' +
+                '<h3 class="text-base font-semibold" style="margin:0; line-height:1.2;">' + modReviewEscape(item.user_name) + '</h3>' +
+                '<div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">' +
+                '<span class="adoption-badge" style="position:static; display:inline-block;">' + modReviewBadge(item.kind) + '</span>' +
+                '<span class="text-muted text-xs">' + modReviewFmtTime(item.created_at) + '</span>' +
+                '</div>' +
+                '</div>' +
+                '</header>' +
+                contextHtml +
+                '<p class="text-muted text-xs" style="margin:0; line-height:1.4;">' + modReviewEscape(modReviewHint(item.kind)) + '</p>' +
+                '<div class="flex items-center gap-2" style="flex-wrap:wrap; margin-top:.15rem;">' +
+                labelSelect +
+                '<button type="button" class="btn-primary mod_review-approve" style="background:#22c55e; border-color:#22c55e;">' +
+                '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>Approve</button>' +
+                '<button type="button" class="btn-outline mod_review-reject" style="color:#ef4444; border-color:#ef4444;">' +
+                '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+                '<span class="btn-label">Reject</span></button>' +
+                '</div>';
+            card.querySelector('.mod_review-approve').onclick = function () { modReviewResolve(card, item, 'approve'); };
+            card.querySelector('.mod_review-reject').onclick = function () { modReviewResolve(card, item, 'reject'); };
+            return card;
+        }
+
+        function modReviewResolve(card, item, action) {
+            const payload = { pos: parseInt(item.pos, 10), action: action };
+            const labelEl = card.querySelector('.mod_review-label');
+            if (labelEl) payload.label = labelEl.value;
+            card.querySelectorAll('button').forEach(b => b.disabled = true);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=mod_review_resolve&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    let ok = false, msg = 'An unexpected error occurred.';
+                    try { const r = JSON.parse(xhr.responseText); ok = r.success; msg = r.message; }
+                    catch (e) { ok = false; }
+                    showSaveToast(ok, msg);
+                    if (ok) {
+                        card.parentNode && card.parentNode.removeChild(card);
+                        const list = document.getElementById('mod_review-list');
+                        if (list && !list.children.length) {
+                            document.getElementById('mod_review-empty').classList.remove('hidden');
+                        }
+                    } else {
+                        card.querySelectorAll('button').forEach(b => b.disabled = false);
+                    }
+                }
+            };
+        }
+
+        function modReviewRefresh() {
+            const list = document.getElementById('mod_review-list');
+            const empty = document.getElementById('mod_review-empty');
+            if (!list) return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/dash/mod_review/?dash_login={{ data.dash_login }}&status=pending');
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    let items = [];
+                    try { const r = JSON.parse(xhr.responseText); if (r.success && Array.isArray(r.items)) items = r.items; }
+                    catch (e) { items = []; }
+                    list.innerHTML = '';
+                    if (!items.length) {
+                        empty.classList.remove('hidden');
+                        return;
+                    }
+                    empty.classList.add('hidden');
+                    items.forEach(function (it) { list.appendChild(modReviewRenderItem(it)); });
+                }
+            };
+        }
+
+        // ── Classifier Training ────────────────────────────────────────────────
+        function classifierStatusRefresh() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/dash/classifier_status/?dash_login={{ data.dash_login }}');
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        if (!r.success) return;
+                        const samples = r.samples || {};
+                        const untrained = samples.untrained ?? 0;
+                        const min = r.min_samples ?? 0;
+                        document.getElementById('classifier-samples').textContent = untrained + ' / ' + min + ' samples ready';
+                        const total = samples.total ?? 0;
+                        document.getElementById('classifier-samples-hint').textContent =
+                            untrained + ' untrained of ' + total + ' total staff-confirmed samples. Needs ' + min + ' to retrain.';
+                        const state = (r.training && r.training.state) ? r.training.state : 'idle';
+                        document.getElementById('classifier-state').textContent = state;
+                    } catch (e) { /* leave placeholders */ }
+                }
+            };
+        }
+
+        // (Section data auto-loads via the router's showSection — see dashShowSection.)
 
         // ── Counting Game ──────────────────────────────────────────────────────
         document.getElementById('counting-form').onsubmit = function (event) {
@@ -8109,6 +8440,9 @@
                     l.classList.toggle('active', (l.getAttribute('href') || '') === '#' + id);
                 });
                 if (id === 'home') refreshHubStatus();
+                // Auto-load data-backed sections every time they are opened.
+                if (id === 'mod_review' && typeof modReviewRefresh === 'function') modReviewRefresh();
+                if (id === 'classifier_training' && typeof classifierStatusRefresh === 'function') classifierStatusRefresh();
                 if (!opts.noHash && location.hash !== '#' + id) {
                     history.pushState(null, '', '#' + id);
                 }

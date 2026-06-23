@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import os
 import time
 from typing import Optional
 from reds_simple_logger import Logger
@@ -128,6 +129,13 @@ class YouTubeAPI:
         "extract_flat": False,
         "socket_timeout": 15,
         "logger": _SilentLogger(),
+        # "Sign in to confirm you're not a bot": these innertube clients avoid the bot check
+        # far more often than the default. web first (clean formats + works with cookies),
+        # tv as a last-resort fallback for cookieless datacenter IPs.
+        "extractor_args": {"youtube": {"player_client": ["web_safari", "web", "tv"]}},
+        # Metadata-only: we never download, so don't fail when a client returns no playable
+        # format (the tv/innertube clients sometimes do) -  still return id/title/date.
+        "ignore_no_formats_error": True,
         "http_headers": {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -138,6 +146,13 @@ class YouTubeAPI:
             "Cookie": "SOCS=CAI; CONSENT=YES+cb",
         },
     }
+
+    # Reliable fix for persistent bot checks on a datacenter IP: a Netscape-format cookies
+    # file exported from a browser logged into YouTube. Set YT_COOKIES_FILE or drop it at
+    # data/youtube_cookies.txt. Used automatically when present.
+    _YT_COOKIES_FILE = os.environ.get("YT_COOKIES_FILE", "data/youtube_cookies.txt")
+    if os.path.isfile(_YT_COOKIES_FILE):
+        _YDL_OPTS["cookiefile"] = _YT_COOKIES_FILE
 
     def _channel_url(self, handle_or_id: str) -> str:
         import re
@@ -268,20 +283,66 @@ class YouTubeAPI:
             "thumbnail_url": info.get("thumbnail", ""),
         }
 
+    async def _latest_via_rss(
+        self, session: aiohttp.ClientSession, channel_id: str
+    ) -> Optional[dict]:
+        """Latest upload via YouTube's official Atom feed. Lightweight + no bot check."""
+        import xml.etree.ElementTree as ET
+
+        feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+        ns = {
+            "a":     "http://www.w3.org/2005/Atom",
+            "yt":    "http://www.youtube.com/xml/schemas/2015",
+            "media": "http://search.yahoo.com/mrss/",
+        }
+        try:
+            headers = {"User-Agent": self._YDL_OPTS["http_headers"]["User-Agent"]}
+            async with session.get(feed_url, headers=headers, timeout=15) as resp:
+                if resp.status != 200:
+                    return None
+                text = await resp.text()
+            root = ET.fromstring(text)
+            entry = root.find("a:entry", ns)   # entries are newest-first
+            if entry is None:
+                return None
+            video_id = entry.findtext("yt:videoId", default="", namespaces=ns)
+            if not video_id:
+                return None
+            title = entry.findtext("a:title", default="", namespaces=ns)
+            published = entry.findtext("a:published", default="", namespaces=ns)
+            thumb = ""
+            mt = entry.find("media:group/media:thumbnail", ns)
+            if mt is not None:
+                thumb = mt.get("url", "")
+            if not thumb:
+                thumb = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+            return {
+                "video_id": video_id,
+                "title": title,
+                "published": published,
+                "thumbnail_url": thumb,
+                "url": f"https://www.youtube.com/watch?v={video_id}",
+            }
+        except Exception as e:
+            logger.debug.info(f"[YouTubeVideos] RSS fallback for {channel_id}: {e}")
+            return None
+
     async def get_latest_video(
         self, session: aiohttp.ClientSession, channel_id: str
     ) -> Optional[dict]:
-        """Fetch the latest uploaded video for a YouTube channel via yt-dlp.
+        """Fetch the latest uploaded video for a YouTube channel.
 
-        YouTube deprecated their RSS feeds (now returning 404).
-        yt-dlp handles all the scraping internally and is actively maintained.
+        Primary path is the official, low-footprint RSS feed
+        (feeds/videos.xml?channel_id=…) -  no bot check, no cookies, a tiny XML GET that
+        looks like a normal feed reader. yt-dlp scraping is only used as a fallback, which
+        keeps the polling far less conspicuous to YouTube.
         Returns a dict with video metadata or None on failure/empty channel.
         """
         import asyncio
         import yt_dlp
         import re as _re
 
-        # yt-dlp requires a real UC... channel ID — resolve handle first if needed
+        # A UC... channel ID is required for both the RSS feed and yt-dlp.
         if not _re.match(r"^UC[\w-]{22}$", channel_id):
             logger.info(f"[YouTubeVideos] '{channel_id}' is not a UC channel ID — resolving via get_channel")
             resolved = await self.get_channel(session, channel_id)
@@ -290,6 +351,12 @@ class YouTubeAPI:
                 return None
             channel_id = resolved["channel_id"]
 
+        # ── Primary: official RSS feed (unobtrusive) ─────────────────────────────
+        rss = await self._latest_via_rss(session, channel_id)
+        if rss:
+            return rss
+
+        # ── Fallback: yt-dlp scraping ────────────────────────────────────────────
         urls_to_try = [
             f"https://www.youtube.com/channel/{channel_id}/videos",
             f"https://www.youtube.com/channel/{channel_id}/shorts",

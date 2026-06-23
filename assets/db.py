@@ -40,7 +40,26 @@ def init(db_path: str | None = None) -> None:
     with _LOCK:
         _conn = _connect(_DB_PATH)
         _create_schema(_conn)
+        _migrate_columns(_conn)
         _conn.commit()
+
+
+# Columns added to existing tables after their initial release. CREATE TABLE IF NOT EXISTS
+# never alters an existing table, so we add any missing columns here (idempotent).
+_COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
+    "cfg_mod_gate": [("use_safety_list", "INTEGER DEFAULT 1")],
+}
+
+
+def _migrate_columns(conn: sqlite3.Connection) -> None:
+    for table, cols in _COLUMN_MIGRATIONS.items():
+        try:
+            existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        except sqlite3.OperationalError:
+            continue  # table doesn't exist yet (fresh DB already has the column via schema)
+        for name, ddl in cols:
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -370,6 +389,16 @@ CREATE TABLE IF NOT EXISTS cfg_auto_slowmode (
     duration       INTEGER DEFAULT 120
 );
 
+CREATE TABLE IF NOT EXISTS cfg_mod_gate (
+    guild_id        INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    enabled         INTEGER DEFAULT 0,
+    threshold       INTEGER DEFAULT 30,
+    action          TEXT    DEFAULT 'quarantine',
+    quarantine_role INTEGER DEFAULT 0,
+    log_channel     INTEGER DEFAULT 0,
+    use_safety_list INTEGER DEFAULT 1
+);
+
 CREATE TABLE IF NOT EXISTS cfg_counting (
     guild_id        INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
     enabled         INTEGER DEFAULT 0,
@@ -694,6 +723,22 @@ CREATE TABLE IF NOT EXISTS filter_events (
 
 CREATE INDEX IF NOT EXISTS ix_filter_events_ts ON filter_events(guild_id, timestamp);
 
+CREATE TABLE IF NOT EXISTS mod_review_queue (
+    guild_id     INTEGER,
+    pos          INTEGER,
+    user_id      TEXT,
+    user_name    TEXT,
+    kind         TEXT,                       -- join_gate | deleted_msg | prism_flag
+    status       TEXT DEFAULT 'pending',     -- pending | approved | rejected
+    context_json TEXT DEFAULT '{}',
+    created_at   TEXT,
+    resolved_by  TEXT DEFAULT '',
+    resolved_at  TEXT DEFAULT '',
+    PRIMARY KEY (guild_id, pos)
+);
+
+CREATE INDEX IF NOT EXISTS ix_mod_review_status ON mod_review_queue(guild_id, status);
+
 CREATE TABLE IF NOT EXISTS activity (
     guild_id  INTEGER PRIMARY KEY,
     data_json TEXT
@@ -720,6 +765,22 @@ CREATE TABLE IF NOT EXISTS global_bans (
     user_id   TEXT PRIMARY KEY,
     data_json TEXT
 );
+
+-- Network-wide user reports (operator oversight). Human-submitted reports, not inferred data.
+CREATE TABLE IF NOT EXISTS global_reports (
+    pos            INTEGER PRIMARY KEY AUTOINCREMENT,
+    reported_id    TEXT,
+    reported_name  TEXT,
+    reporter_id    TEXT,
+    reporter_name  TEXT,
+    guild_id       TEXT,
+    guild_name     TEXT,
+    reason         TEXT,
+    message_link   TEXT DEFAULT '',
+    timestamp      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS ix_global_reports_reported ON global_reports(reported_id);
 
 CREATE TABLE IF NOT EXISTS globalchat_bans (
     user_id   TEXT PRIMARY KEY,
@@ -753,34 +814,28 @@ CREATE TABLE IF NOT EXISTS mc_links (
     PRIMARY KEY (guild_id, discord_id)
 );
 
-CREATE TABLE IF NOT EXISTS trust_profiles (
-    user_id              TEXT PRIMARY KEY,
-    name                 TEXT,
-    score                INTEGER DEFAULT 100,
-    auto_flagged         INTEGER DEFAULT 0,
-    opted_out            INTEGER DEFAULT 0,
-    account_age_days     INTEGER,
-    account_created_at   TEXT,
-    first_seen           TEXT,
-    last_seen            TEXT,
-    risk_signals_json    TEXT DEFAULT '[]',
-    llm_summary          TEXT,
-    llm_summary_updated  TEXT,
-    extra_json           TEXT DEFAULT '{}'
+-- Compliance (Discord Developer Policy): the old cross-server behavioral profile
+-- (trust score + per-user event dossier + LLM summaries) constituted profiling of
+-- individuals and is removed. Drop the tables wherever they still exist.
+DROP TABLE IF EXISTS trust_profiles;
+DROP TABLE IF EXISTS trust_event;
+
+-- Human-gated safety denylist: written ONLY by a moderator action (ban / report to
+-- network), never by automated behavioral inference. Stores a coarse mod-chosen
+-- category fact, no score, no event history, no message content.
+CREATE TABLE IF NOT EXISTS safety_flags (
+    user_id          TEXT PRIMARY KEY,
+    category         TEXT,                  -- raid | spam | hate | other
+    reason           TEXT DEFAULT '',
+    flagged_by_guild INTEGER,
+    flagged_by       TEXT DEFAULT '',       -- moderator name (audit)
+    timestamp        TEXT
 );
 
-CREATE TABLE IF NOT EXISTS trust_event (
-    user_id    TEXT,
-    pos        INTEGER,
-    type       TEXT,
-    reason     TEXT,
-    guild_id   TEXT,
-    timestamp  TEXT,
-    extra_json TEXT DEFAULT '{}',
-    PRIMARY KEY (user_id, pos)
+-- Users who opted out of the network safety list.
+CREATE TABLE IF NOT EXISTS safety_optout (
+    user_id TEXT PRIMARY KEY
 );
-
-CREATE INDEX IF NOT EXISTS ix_trust_event_user ON trust_event(user_id);
 
 CREATE TABLE IF NOT EXISTS temp_voice_owners (
     channel_id INTEGER PRIMARY KEY,
