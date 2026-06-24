@@ -540,11 +540,13 @@ def events(bot: commands.AutoShardedBot, web):
 
         # Server log
         try:
-            if not message.author.bot:
-                await serverlog.send_log(
-                    bot, message.guild.id, "message_delete",
-                    serverlog.build_message_delete(message),
+            if not message.author.bot and serverlog.should_log(message.guild.id, "message_delete"):
+                embed = serverlog.build_message_delete(message)
+                actor, reason = await serverlog.fetch_actor(
+                    message.guild, discord.AuditLogAction.message_delete, message.author.id,
                 )
+                serverlog.add_actor(embed, actor, reason)
+                await serverlog.send_log(bot, message.guild.id, "message_delete", embed)
         except Exception:
             pass
 
@@ -566,58 +568,71 @@ def events(bot: commands.AutoShardedBot, web):
         guild = getattr(channel, "guild", None)
         if guild is None:
             return
-        await serverlog.send_log(
-            bot, guild.id, "channel_create",
-            serverlog.build_channel_create(channel),
-        )
+        if not serverlog.should_log(guild.id, "channel_create"):
+            return
+        embed = serverlog.build_channel_create(channel)
+        actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.channel_create, channel.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, guild.id, "channel_create", embed)
 
     @bot.event
     async def on_guild_channel_delete(channel):
         guild = getattr(channel, "guild", None)
         if guild is None:
             return
-        await serverlog.send_log(
-            bot, guild.id, "channel_delete",
-            serverlog.build_channel_delete(channel),
-        )
+        if not serverlog.should_log(guild.id, "channel_delete"):
+            return
+        embed = serverlog.build_channel_delete(channel)
+        actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.channel_delete, channel.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, guild.id, "channel_delete", embed)
 
     @bot.event
     async def on_guild_channel_update(before, after):
         guild = getattr(after, "guild", None)
         if guild is None:
             return
-        await serverlog.send_log(
-            bot, guild.id, "channel_update",
-            serverlog.build_channel_update(before, after),
-        )
+        if not serverlog.should_log(guild.id, "channel_update"):
+            return
+        embed = serverlog.build_channel_update(before, after)
+        actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.channel_update, after.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, guild.id, "channel_update", embed)
 
     @bot.event
     async def on_guild_role_create(role: discord.Role):
-        await serverlog.send_log(
-            bot, role.guild.id, "role_create",
-            serverlog.build_role_create(role),
-        )
+        if not serverlog.should_log(role.guild.id, "role_create"):
+            return
+        embed = serverlog.build_role_create(role)
+        actor, reason = await serverlog.fetch_actor(role.guild, discord.AuditLogAction.role_create, role.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, role.guild.id, "role_create", embed)
 
     @bot.event
     async def on_guild_role_delete(role: discord.Role):
-        await serverlog.send_log(
-            bot, role.guild.id, "role_delete",
-            serverlog.build_role_delete(role),
-        )
+        if not serverlog.should_log(role.guild.id, "role_delete"):
+            return
+        embed = serverlog.build_role_delete(role)
+        actor, reason = await serverlog.fetch_actor(role.guild, discord.AuditLogAction.role_delete, role.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, role.guild.id, "role_delete", embed)
 
     @bot.event
     async def on_guild_role_update(before: discord.Role, after: discord.Role):
-        await serverlog.send_log(
-            bot, after.guild.id, "role_update",
-            serverlog.build_role_update(before, after),
-        )
+        if not serverlog.should_log(after.guild.id, "role_update"):
+            return
+        embed = serverlog.build_role_update(before, after)
+        actor, reason = await serverlog.fetch_actor(after.guild, discord.AuditLogAction.role_update, after.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, after.guild.id, "role_update", embed)
 
     @bot.event
     async def on_member_ban(guild: discord.Guild, user):
-        await serverlog.send_log(
-            bot, guild.id, "member_ban",
-            serverlog.build_member_ban(user),
-        )
+        if serverlog.should_log(guild.id, "member_ban"):
+            embed = serverlog.build_member_ban(user)
+            actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.ban, user.id)
+            serverlog.add_actor(embed, actor, reason)
+            await serverlog.send_log(bot, guild.id, "member_ban", embed)
         # Any ban (Baxi command, Discord-native, or another bot) feeds the opt-in network
         # safety list when the guild participates.
         try:
@@ -628,19 +643,33 @@ def events(bot: commands.AutoShardedBot, web):
 
     @bot.event
     async def on_member_unban(guild: discord.Guild, user):
-        await serverlog.send_log(
-            bot, guild.id, "member_unban",
-            serverlog.build_member_unban(user),
-        )
+        if not serverlog.should_log(guild.id, "member_unban"):
+            return
+        embed = serverlog.build_member_unban(user)
+        actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.unban, user.id)
+        serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, guild.id, "member_unban", embed)
 
     @bot.event
     async def on_member_update(before: discord.Member, after: discord.Member):
-        if before.nick == after.nick and set(before.roles) == set(after.roles):
+        roles_changed = set(before.roles) != set(after.roles)
+        if before.nick == after.nick and not roles_changed:
             return
-        await serverlog.send_log(
-            bot, after.guild.id, "member_update",
-            serverlog.build_member_update(before, after),
+        if not serverlog.should_log(after.guild.id, "member_update"):
+            return
+        embed = serverlog.build_member_update(before, after)
+        # Role changes and nick changes are distinct audit actions; pick the likely one.
+        action = (
+            discord.AuditLogAction.member_role_update
+            if roles_changed
+            else discord.AuditLogAction.member_update
         )
+        actor, reason = await serverlog.fetch_actor(after.guild, action, after.id)
+        # The member editing their own nickname is not a moderation action — only
+        # attribute it when someone else (a mod) made the change.
+        if actor is not None and actor.id != after.id:
+            serverlog.add_actor(embed, actor, reason)
+        await serverlog.send_log(bot, after.guild.id, "member_update", embed)
 
     @bot.event
     async def on_member_join(member: discord.Member):
@@ -695,10 +724,18 @@ def events(bot: commands.AutoShardedBot, web):
         await welcomer.on_member_remove(member, bot)
 
         try:
-            await serverlog.send_log(
-                bot, member.guild.id, "member_leave",
-                serverlog.build_member_leave(member),
-            )
+            if serverlog.should_log(member.guild.id, "member_leave"):
+                # A kick surfaces as a plain remove; distinguish it via the audit log
+                # so the embed shows who kicked the member rather than a silent leave.
+                actor, reason = await serverlog.fetch_actor(
+                    member.guild, discord.AuditLogAction.kick, member.id,
+                )
+                if actor is not None:
+                    embed = serverlog.build_member_kick(member)
+                    serverlog.add_actor(embed, actor, reason)
+                else:
+                    embed = serverlog.build_member_leave(member)
+                await serverlog.send_log(bot, member.guild.id, "member_leave", embed)
         except Exception:
             pass
 

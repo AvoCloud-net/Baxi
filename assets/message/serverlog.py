@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 
 import assets.data as datasys
@@ -58,6 +60,74 @@ async def send_log(bot, guild_id, event_type: str, embed: discord.Embed):
         pass
     except Exception:
         pass
+
+
+def should_log(guild_id, event_type: str) -> bool:
+    """Cheap pre-check so callers can skip expensive audit-log lookups when the
+    event is disabled / unconfigured. Mirrors the gate inside send_log."""
+    try:
+        cfg = dict(datasys.load_data(guild_id, "serverlog"))
+        if not cfg.get("enabled", False):
+            return False
+        if not cfg.get("channel", ""):
+            return False
+        return bool(cfg.get("events", {}).get(event_type, False))
+    except Exception:
+        return False
+
+
+# ----------------------------------------------------------------------------
+# Audit-log actor lookup ("who did it")
+# ----------------------------------------------------------------------------
+
+async def fetch_actor(guild, action, target_id=None, *, delay: float = 1.2, max_age: float = 20.0):
+    """Return ``(executor, reason)`` for the most recent audit-log entry matching
+    ``action`` (and optionally ``target_id``), or ``(None, None)``.
+
+    Discord populates audit logs a beat after the gateway event, so a small
+    ``delay`` is applied before the lookup. ``max_age`` guards against returning a
+    stale entry (e.g. an old batched message-delete record). Never raises.
+    """
+    if guild is None or action is None:
+        return None, None
+    try:
+        me = guild.me
+        if me is None or not me.guild_permissions.view_audit_log:
+            return None, None
+    except Exception:
+        return None, None
+    if delay:
+        try:
+            await asyncio.sleep(delay)
+        except Exception:
+            pass
+    try:
+        async for entry in guild.audit_logs(limit=8, action=action):
+            try:
+                if (discord.utils.utcnow() - entry.created_at).total_seconds() > max_age:
+                    continue
+            except Exception:
+                pass
+            if target_id is not None:
+                tid = getattr(entry.target, "id", None)
+                if tid is None or int(tid) != int(target_id):
+                    continue
+            return entry.user, getattr(entry, "reason", None)
+    except (discord.Forbidden, discord.HTTPException):
+        return None, None
+    except Exception:
+        return None, None
+    return None, None
+
+
+def add_actor(embed: discord.Embed, actor, reason=None) -> discord.Embed:
+    """Append a 'Performed by' (and optional 'Reason') field to an embed."""
+    if actor is not None:
+        mention = getattr(actor, "mention", str(actor))
+        embed.add_field(name="Performed by", value=f"{mention} (`{actor.id}`)", inline=False)
+    if reason:
+        embed.add_field(name="Reason", value=_trunc(reason, 500), inline=False)
+    return embed
 
 
 # ----------------------------------------------------------------------------
@@ -246,6 +316,12 @@ def build_member_leave(member: discord.Member) -> discord.Embed:
             )
     except Exception:
         pass
+    return embed
+
+
+def build_member_kick(member) -> discord.Embed:
+    embed = _base_embed("👢 Member Kicked", config.Discord.danger_color)
+    embed.add_field(name="Member", value=f"{member} (`{member.id}`)", inline=False)
     return embed
 
 

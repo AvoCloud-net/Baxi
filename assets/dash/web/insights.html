@@ -35,12 +35,38 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .stat-card {
+            position: relative;
             background: var(--card, var(--color-card));
             border: 1px solid var(--border, var(--color-border));
             border-radius: 0.75rem; padding: 1.25rem 1.5rem;
             display: flex; flex-direction: column; gap: 0.3rem;
         }
         .stat-card .label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.5; }
+
+        /* Inline info "i" with hover/tap tooltip */
+        .info-i {
+            position: absolute; top: 0.85rem; right: 0.9rem;
+            width: 1.05rem; height: 1.05rem; border-radius: 50%;
+            border: 1px solid var(--border, var(--color-border));
+            font-size: 0.68rem; font-weight: 700; font-style: normal;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.4; cursor: help; user-select: none; transition: opacity 0.12s;
+        }
+        .info-i:hover, .info-i:focus { opacity: 0.9; outline: none; }
+        .info-i .tip {
+            position: absolute; bottom: 150%; right: -0.35rem;
+            width: max-content; max-width: 230px;
+            background: var(--card, #1a1a24);
+            border: 1px solid var(--border, var(--color-border));
+            border-radius: 0.55rem; padding: 0.55rem 0.7rem;
+            font-size: 0.72rem; font-weight: 500; line-height: 1.4;
+            text-transform: none; letter-spacing: normal; text-align: left;
+            color: var(--foreground, inherit); opacity: 0;
+            visibility: hidden; transform: translateY(4px);
+            transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+            z-index: 60; box-shadow: 0 10px 28px rgba(0,0,0,0.28); pointer-events: none;
+        }
+        .info-i:hover .tip, .info-i:focus .tip { opacity: 1; visibility: visible; transform: translateY(0); }
         .stat-card .value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
         .stat-card .sub   { font-size: 0.78rem; opacity: 0.45; }
 
@@ -196,7 +222,6 @@
         <button onclick="scrollToSection('sec-messages')" class="btn-lg-outline">Messages</button>
         <button onclick="scrollToSection('sec-members')" class="btn-lg-outline">Members</button>
         <button onclick="scrollToSection('sec-moderation')" class="btn-lg-outline">Moderation</button>
-        <button onclick="scrollToSection('sec-prism')" class="btn-lg-outline">PRISM</button>
         <hr role="separator" />
         <button onclick="location.href='/logout/'" class="btn-lg-outline">
             <svg class="lucide" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
@@ -212,7 +237,6 @@
         <button onclick="scrollToSection('sec-messages')">Messages</button>
         <button onclick="scrollToSection('sec-members')">Members</button>
         <button onclick="scrollToSection('sec-moderation')">Moderation</button>
-        <button onclick="scrollToSection('sec-prism')">PRISM</button>
         <div class="mnav-sep"></div>
         <button onclick="location.href='/logout/'" style="color:#f87171;border-color:rgba(248,113,113,0.3);">Log-out</button>
     </nav>
@@ -238,39 +262,92 @@
             <p class="section-title">Overview</p>
             <div class="grid-auto">
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Total messages sent across all channels in the selected period.</span></span>
                     <span class="label">Messages</span>
                     <span class="value" id="st-msgs">{{ data.total_messages }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Current total member count of this server (live).</span></span>
                     <span class="label">Members</span>
                     <span class="value">{{ data.member_count }}</span>
                     <span class="sub">current</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">How many members joined the server in this period.</span></span>
                     <span class="label">Joins</span>
                     <span class="value" style="color:#22c55e" id="st-joins">{{ data.total_joins }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">How many members left or were removed in this period.</span></span>
                     <span class="label">Leaves</span>
                     <span class="value" style="color:#ef4444" id="st-leaves">{{ data.total_leaves }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Total moderation actions taken: warns, kicks, bans and mutes combined.</span></span>
                     <span class="label">Mod Actions</span>
                     <span class="value" id="st-mod">{{ data.mod_total }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Messages caught &amp; removed by the chat filter (spam, phishing, banned words).</span></span>
                     <span class="label">Filter Hits</span>
                     <span class="value" id="st-filter">{{ data.filter_total }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">An at-a-glance score (0–100) of server wellbeing. Higher means fewer mod actions and filter hits relative to your member count. Green is healthy, amber is okay, red needs attention.</span></span>
                     <span class="label">Health Score</span>
                     <span class="value" id="st-health">{{ data.health }}<span style="font-size:1rem;opacity:0.5;">/100</span></span>
                     <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}#22c55e{% elif data.health>=40 %}#f59e0b{% else %}#ef4444{% endif %};"></div></div>
+                </div>
+            </div>
+
+            <!-- Secondary headline metrics -->
+            <div class="grid-auto" style="margin-top:0.9rem;">
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Average number of messages sent per day over the selected period.</span></span>
+                    <span class="label">Msgs / Day</span>
+                    <span class="value" id="st-avgmsg">{{ data.avg_msgs_per_day }}</span>
+                    <span class="sub">average</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Joins minus leaves. A positive number means your server grew in this period; negative means it shrank.</span></span>
+                    <span class="label">Net Members</span>
+                    <span class="value" id="st-net" style="color:{% if data.net_members>=0 %}#22c55e{% else %}#ef4444{% endif %};">{% if data.net_members>=0 %}+{% endif %}{{ data.net_members }}</span>
+                    <span class="sub">joins − leaves</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Of all member movement (joins + leaves), the share that were joins. Higher means more people staying than leaving.</span></span>
+                    <span class="label">Retention</span>
+                    <span class="value" id="st-ret">{{ data.retention_pct }}<span style="font-size:1rem;opacity:0.5;">%</span></span>
+                    <span class="sub">of arrivals stayed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">The hour of the day with the most messages, shown in Europe/Vienna time. Good for timing announcements.</span></span>
+                    <span class="label">Peak Hour</span>
+                    <span class="value" id="st-peak">{% if data.peak_hour is not none %}{{ '%02d:00'|format(data.peak_hour) }}{% else %}–{% endif %}</span>
+                    <span class="sub">Europe/Vienna</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Moderation actions per 100 members. Lets you compare how strict moderation is regardless of server size.</span></span>
+                    <span class="label">Mod / 100</span>
+                    <span class="value" id="st-mod100">{{ data.mod_per_100 }}</span>
+                    <span class="sub">actions per 100 members</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Support tickets currently open. The sub-line shows how many still wait for a staff reply and their average age.</span></span>
+                    <span class="label">Open Tickets</span>
+                    <span class="value" id="st-tickets">{{ data.ticket_stats.open }}</span>
+                    <span class="sub" id="st-tickets-sub">{{ data.ticket_stats.unanswered }} unanswered · {{ data.ticket_stats.avg_age_h }}h avg age</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">The single day with the most messages in this period, with that day's message count.</span></span>
+                    <span class="label">Busiest Day</span>
+                    <span class="value" id="st-busy" style="font-size:1.35rem;">{% if data.busiest_day %}{{ data.busiest_day.date }}{% else %}–{% endif %}</span>
+                    <span class="sub" id="st-busy-sub">{% if data.busiest_day %}{{ data.busiest_day.count }} messages{% else %}no data{% endif %}</span>
                 </div>
             </div>
         </section>
@@ -424,20 +501,7 @@
             </div>
         </section>
 
-        <!-- ══ PRISM ═════════════════════════════════════════════════════════ -->
-        <section class="section" id="sec-prism">
-            <p class="section-title">PRISM Trust Scores</p>
-            <div class="chart-card">
-                <h3>Score Distribution across {{ data.prism_scores_count }} tracked members (avg: {{ data.avg_prism }})</h3>
-                {% if data.prism_scores_count > 0 %}
-                <canvas id="chart-prism" height="80"></canvas>
-                {% else %}
-                <p class="no-data">No PRISM profiles tracked for this server yet.</p>
-                {% endif %}
-            </div>
-        </section>
-
-        <p style="font-size:0.75rem;opacity:0.3;text-align:center;margin-bottom:2rem;">BaxiInsights · avocloud.net · No message content is stored.</p>
+        <p style="font-size:0.75rem;opacity:0.3;text-align:center;margin-bottom:2rem;">BaxiInsights · Baxi v{{ data.version }} · avocloud.net · No message content is stored.</p>
     </div>
 
     <script>
@@ -570,20 +634,6 @@
                 }
             }
 
-            // ── PRISM distribution ───────────────────────────────────────────
-            const ctxP = document.getElementById('chart-prism');
-            if (ctxP && d.prism_scores_count > 0) {
-                const pk=['0-20','21-40','41-60','61-80','81-100'];
-                charts.prism = new Chart(ctxP, {
-                    type:'bar',
-                    data:{labels:pk,datasets:[{label:'Members',data:pk.map(k=>d.prism_dist[k]||0),
-                        backgroundColor:[C.redA,'rgba(249,115,22,0.6)',C.amberA,'rgba(132,204,22,0.6)',C.greenA],
-                        borderColor:    [C.red, C.orange,              C.amber,  C.lime,               C.green],
-                        borderWidth:1.5, borderRadius:5}]},
-                    options:{responsive:true,plugins:{legend:{display:false}},
-                        scales:{x:{ticks:{color},grid:{color:grid}},y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true}}},
-                });
-            }
         }
 
         function renderRankList(items, labelFn, maxCount) {
@@ -619,6 +669,20 @@
             set('st-mod',    d.mod_total);
             set('st-filter', d.filter_total);
             set('st-health', d.health);
+            set('st-avgmsg', d.avg_msgs_per_day);
+            set('st-ret',    d.retention_pct + '%');
+            set('st-mod100', d.mod_per_100);
+
+            const net = document.getElementById('st-net');
+            if (net) { net.textContent = (d.net_members >= 0 ? '+' : '') + d.net_members; net.style.color = d.net_members >= 0 ? '#22c55e' : '#ef4444'; }
+            set('st-peak', d.peak_hour === null || d.peak_hour === undefined ? '–' : String(d.peak_hour).padStart(2,'0') + ':00');
+
+            if (d.ticket_stats) {
+                set('st-tickets', d.ticket_stats.open);
+                set('st-tickets-sub', d.ticket_stats.unanswered + ' unanswered · ' + d.ticket_stats.avg_age_h + 'h avg age');
+            }
+            set('st-busy',     d.busiest_day ? d.busiest_day.date : '–');
+            set('st-busy-sub', d.busiest_day ? d.busiest_day.count + ' messages' : 'no data');
             set('st-warn',   d.mod_counts.warn);
             set('st-kick',   d.mod_counts.kick);
             set('st-ban',    d.mod_counts.ban);
@@ -669,9 +733,13 @@
             top_offenders:       {{ data.top_offenders | tojson }},
             top_filter_users:    {{ data.top_filter_users | tojson }},
             top_filter_channels: {{ data.top_filter_channels | tojson }},
-            prism_scores_count:  {{ data.prism_scores_count }},
-            avg_prism:           {{ data.avg_prism }},
-            prism_dist:          {{ data.prism_dist | tojson }},
+            avg_msgs_per_day:    {{ data.avg_msgs_per_day }},
+            net_members:         {{ data.net_members }},
+            retention_pct:       {{ data.retention_pct }},
+            peak_hour:           {{ data.peak_hour if data.peak_hour is not none else 'null' }},
+            mod_per_100:         {{ data.mod_per_100 }},
+            busiest_day:         {{ data.busiest_day | tojson }},
+            ticket_stats:        {{ data.ticket_stats | tojson }},
         };
 
         document.addEventListener('DOMContentLoaded', () => buildCharts(D));

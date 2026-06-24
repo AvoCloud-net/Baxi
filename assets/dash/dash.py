@@ -5980,7 +5980,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     def _load_insights_data(guild_id: str, days: int) -> dict:
         """Load and aggregate insights data for a guild over the past N days."""
-        import assets.trust as sentinel_mod
         from datetime import timedelta
         cutoff = datetime.now() - timedelta(days=days)
 
@@ -6105,30 +6104,47 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         total_joins  = sum(v.get("joins",  0) for v in member_days.values())
         total_leaves = sum(v.get("leaves", 0) for v in member_days.values())
 
-        # PRISM scores for guild members
-        all_trust = sentinel_mod._load()
+        # Health score (PRISM removed -  compliance rework 2026-06)
         guild = bot.get_guild(int(guild_id))
-        prism_scores = []
-        if guild:
-            member_ids = {str(m.id) for m in guild.members}
-            for uid, profile in all_trust.items():
-                if uid in member_ids and not profile.get("opt_out", False):
-                    prism_scores.append(profile.get("score", 100))
-        avg_prism = round(sum(prism_scores) / len(prism_scores), 1) if prism_scores else 100
-        prism_dist = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
-        for s in prism_scores:
-            if s <= 20:    prism_dist["0-20"] += 1
-            elif s <= 40:  prism_dist["21-40"] += 1
-            elif s <= 60:  prism_dist["41-60"] += 1
-            elif s <= 80:  prism_dist["61-80"] += 1
-            else:          prism_dist["81-100"] += 1
-
-        # Health score
         member_count = guild.member_count if guild and guild.member_count else 1
         mod_rate = len(mod_events) / max(member_count, 1)
         filter_rate = len(filter_events) / max(member_count * days, 1)
-        health = 100 - (mod_rate * 20) - (filter_rate * 15) - max(0, (50 - avg_prism) * 0.8)
+        health = 100 - (mod_rate * 20) - (filter_rate * 15)
         health = max(0, min(100, round(health)))
+
+        # ── Derived headline metrics ──────────────────────────────────────────
+        avg_msgs_per_day = round(total_messages / max(days, 1), 1)
+        net_members = total_joins - total_leaves
+        # Retention proxy: of all arrivals+departures, share that stayed
+        churn_total = total_joins + total_leaves
+        retention_pct = round((total_joins / churn_total) * 100, 1) if churn_total else 100.0
+        # Peak activity hour
+        peak_hour = None
+        if any(hourly.values()):
+            peak_hour = int(max(hourly, key=lambda h: hourly[h]))
+        # Busiest day
+        busiest_day = None
+        if msg_timeline:
+            top_day = max(msg_timeline, key=lambda e: e["count"])
+            if top_day["count"] > 0:
+                busiest_day = {"date": top_day["date"], "count": top_day["count"]}
+        # Mod actions per 100 members
+        mod_per_100 = round(len(mod_events) / max(member_count, 1) * 100, 2)
+
+        # ── Ticket stats ──────────────────────────────────────────────────────
+        ticket_stats = {"open": 0, "unanswered": 0, "avg_age_h": 0}
+        try:
+            tickets = dict(load_data(int(guild_id), "open_tickets"))
+            now_ts = datetime.now().timestamp()
+            if tickets:
+                total_age = sum(now_ts - t.get("created_at", now_ts) for t in tickets.values())
+                ticket_stats["avg_age_h"] = round((total_age / len(tickets)) / 3600, 1)
+            ticket_stats["open"] = len(tickets)
+            for t in tickets.values():
+                if not any(m.get("is_staff", False) for m in t.get("transcript", [])):
+                    ticket_stats["unanswered"] += 1
+        except Exception:
+            pass
 
         return {
             # Moderation
@@ -6150,14 +6166,20 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "member_timeline": member_timeline,
             "total_joins": total_joins,
             "total_leaves": total_leaves,
-            # PRISM
-            "prism_scores_count": len(prism_scores),
-            "avg_prism": avg_prism,
-            "prism_dist": prism_dist,
+            # Derived headline metrics
+            "avg_msgs_per_day": avg_msgs_per_day,
+            "net_members": net_members,
+            "retention_pct": retention_pct,
+            "peak_hour": peak_hour,
+            "busiest_day": busiest_day,
+            "mod_per_100": mod_per_100,
+            # Tickets
+            "ticket_stats": ticket_stats,
             # Meta
             "health": health,
             "days": days,
             "member_count": member_count,
+            "version": config.Discord.version,
         }
 
     @app.route("/api/admin/notify-progress/<job_id>")

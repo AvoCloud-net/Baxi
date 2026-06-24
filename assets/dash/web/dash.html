@@ -333,16 +333,10 @@
                 General
             </a>
 
-            <span class="dash-nav-group-label">Analytics</span>
+            <span class="dash-nav-group-label">Overview</span>
             <a href="/guild/insights/?guild_login={{ guild.id }}" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                BaxiInsights
-            </a>
-
-            <span class="dash-nav-group-label">Overview</span>
-            <a href="#stats" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                Stats
+                Insights
             </a>
             <a href="#auditlog" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -504,61 +498,7 @@
             </section>
 
             <!-- Guild Statistics -->
-            <section class="pb-16 dash-section" id="stats">
-                <div class="section-label">GUILD STATISTICS</div>
-                <div class="card">
-                    <header>
-                        <h2 class="text-xl font-semibold flex items-center gap-2">
-                            <svg class="lucide" viewBox="0 0 24 24">
-                                <line x1="18" y1="20" x2="18" y2="10"/>
-                                <line x1="12" y1="20" x2="12" y2="4"/>
-                                <line x1="6" y1="20" x2="6" y2="14"/>
-                            </svg>
-                            Guild Statistics
-                        </h2>
-                        <p class="text-muted">Here you can see some statistics about your guild.</p>
-                    </header>
-                    <section>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="card">
-                                <header>
-                                    <h2 class="text-base font-semibold flex items-center gap-2">
-                                        <svg class="lucide" viewBox="0 0 24 24">
-                                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
-                                            <path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
-                                        </svg>
-                                        Tickets
-                                    </h2>
-                                </header>
-                                <section>
-                                    <p class="text-muted">
-                                        You currently have <strong>{{stats.get("open_tickets")}}</strong> open tickets.<br>
-                                        <strong>{{stats.get("unanswered_tickets")}}</strong> of them have not been answered by staff yet.<br>
-                                        The average age of open tickets is <strong>{{stats.get("avg_ticket_age_h")}}</strong> hours.
-                                    </p>
-                                </section>
-                            </div>
-                            <div class="card">
-                                <header>
-                                    <h2 class="text-base font-semibold flex items-center gap-2">
-                                        <svg class="lucide" viewBox="0 0 24 24">
-                                            <path d="M12 3v6"/>
-                                            <circle cx="12" cy="12" r="3"/>
-                                            <path d="M12 15v6"/>
-                                        </svg>
-                                        Version
-                                    </h2>
-                                </header>
-                                <section>
-                                    <p class="text-muted">
-                                        You are currently using Baxi version <strong>{{stats.get("version")}}</strong>.
-                                    </p>
-                                </section>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            </section>
+            <!-- Guild statistics moved to BaxiInsights (/guild/insights/) -->
 
             <!-- General Config -->
             <section class="pb-16 dash-section" id="config-general">
@@ -4267,7 +4207,7 @@
             var order = [
                 'home',
                 'config-general',
-                'stats', 'auditlog',
+                'auditlog',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'auto-slowmode', 'antiraid', 'mod_gate', 'mod_review', 'classifier_training',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
@@ -8707,16 +8647,16 @@
                     }
                     if (!el.classList.contains('dash-nav-item')) return;
                     const href = el.getAttribute('href') || '';
-                    if (!href.startsWith('#')) return;                       // external link
-                    const id = href.slice(1);
-                    if (id === 'home') return;                                // don't tile Home
                     if (el.textContent.indexOf('UNAVAILABLE') !== -1) return; // disabled feature
+                    const external = !href.startsWith('#');                   // links to another page
+                    const id = external ? href : href.slice(1);
+                    if (id === 'home') return;                                // don't tile Home
 
                     ensureGrid();
 
                     const icon  = el.querySelector('svg') ? el.querySelector('svg').outerHTML : '';
                     const label = el.textContent.trim();
-                    const state = statusFor(id);
+                    const state = external ? null : statusFor(id);
 
                     const tile = document.createElement('button');
                     tile.type = 'button';
@@ -8731,7 +8671,8 @@
                                 statusInner(state) + '</span>') +
                         '</span>' +
                         '<span class="hub-tile-arrow">' + ARROW_SVG + '</span>';
-                    tile.addEventListener('click', function () { showSection(id); });
+                    if (external) tile.addEventListener('click', function () { location.href = href; });
+                    else          tile.addEventListener('click', function () { showSection(id); });
                     grid.appendChild(tile);
                 });
             }
