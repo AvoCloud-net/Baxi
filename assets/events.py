@@ -545,7 +545,16 @@ def events(bot: commands.AutoShardedBot, web):
                 actor, reason = await serverlog.fetch_actor(
                     message.guild, discord.AuditLogAction.message_delete, message.author.id,
                 )
-                serverlog.add_actor(embed, actor, reason)
+                if actor is not None:
+                    serverlog.add_actor(embed, actor, reason)
+                else:
+                    # Discord writes no audit entry when a user deletes their own
+                    # message — so no actor means the author deleted it themselves.
+                    embed.add_field(
+                        name="Performed by",
+                        value=f"{message.author.mention} (`{message.author.id}`) · self-deleted",
+                        inline=False,
+                    )
                 await serverlog.send_log(bot, message.guild.id, "message_delete", embed)
         except Exception:
             pass
