@@ -21,7 +21,7 @@ _DD = config.datasys.default_data
 _REQUIRED_CONF_KEYS = [
     "chatfilter", "ticket", "serverlog", "warn_config", "antispam", "welcomer",
     "livestream", "youtube_videos", "tiktok", "twitter", "instagram", "stats_channels",
-    "auto_roles", "temp_voice", "verify", "reaction_roles", "auto_slowmode", "counting",
+    "auto_roles", "temp_voice", "verify", "reaction_roles", "counting",
     "flag_quiz", "suggestions", "leveling", "auto_release", "mc_link", "music", "donations",
 ]
 _missing_conf_keys = [k for k in _REQUIRED_CONF_KEYS if k not in _DD]
@@ -613,43 +613,6 @@ def save_verify(gid: int, data: dict) -> None:
             str(data.get("title", "Verification")),
             str(data.get("description", _VF_DEF["description"])),
             str(data.get("color", "#FF6B4A")),
-        ),
-    )
-
-
-# ── Auto slowmode ─────────────────────────────────────────────────────────────
-
-_ASM_DEF = _DD["auto_slowmode"]
-
-
-def load_auto_slowmode(gid: int) -> dict:
-    rows = db.query("SELECT * FROM cfg_auto_slowmode WHERE guild_id=?", (gid,))
-    if not rows:
-        return dict(_ASM_DEF)
-    r = rows[0]
-    return {
-        "enabled":        bool(r["enabled"]),
-        "threshold":      _int(r["threshold"]),
-        "interval":       _int(r["interval"]),
-        "slowmode_delay": _int(r["slowmode_delay"]),
-        "duration":       _int(r["duration"]),
-    }
-
-
-def save_auto_slowmode(gid: int, data: dict) -> None:
-    db.ensure_guild(gid)
-    db.execute(
-        "INSERT INTO cfg_auto_slowmode (guild_id,enabled,threshold,interval,slowmode_delay,duration) "
-        "VALUES (?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET "
-        "enabled=excluded.enabled,threshold=excluded.threshold,interval=excluded.interval,"
-        "slowmode_delay=excluded.slowmode_delay,duration=excluded.duration",
-        (
-            gid,
-            _int(data.get("enabled", False)),
-            _int(data.get("threshold", 10)),
-            _int(data.get("interval", 10)),
-            _int(data.get("slowmode_delay", 5)),
-            _int(data.get("duration", 120)),
         ),
     )
 

@@ -1491,7 +1491,7 @@ function renderAdoption() {
         welcomer:'Welcomer', livestream:'Livestream', youtube_videos:'YouTube Alerts',
         custom_commands:'Custom Commands', globalchat:'Global Chat',
         stats_channels:'Stats Channels', auto_roles:'Auto Roles',
-        reaction_roles:'Reaction Roles', auto_slowmode:'Auto Slowmode',
+        reaction_roles:'Reaction Roles',
         counting:'Counting', flag_quiz:'Flag Quiz', suggestions:'Suggestions',
         temp_voice:'Temp Voice', verify:'Verification', sticky_messages:'Sticky Messages',
     };
@@ -2483,7 +2483,7 @@ const GC_FEATURE_NAMES = {
     welcomer: 'Welcomer', custom_commands: 'Custom Commands', livestream: 'Livestream',
     youtube_videos: 'YouTube Alerts', stats_channels: 'Stats Channels',
     auto_roles: 'Auto Roles', reaction_roles: 'Reaction Roles',
-    auto_slowmode: 'Auto Slowmode', counting: 'Counting', flag_quiz: 'Flag Quiz',
+    counting: 'Counting', flag_quiz: 'Flag Quiz',
     suggestions: 'Suggestions', temp_voice: 'Temp Voice', verify: 'Verification',
     _sticky_messages: 'Sticky Messages',
 };
@@ -2635,16 +2635,6 @@ function renderGuildConfig(r) {
         ]));
     }
 
-    // Auto Slowmode
-    if (c.auto_slowmode) {
-        const asm = c.auto_slowmode;
-        cards.push(gcDetailCard('Auto Slowmode', [
-            ['Enabled', gcBool(asm.enabled)],
-            ['Threshold', asm.threshold ?? '- '],
-            ['Slowmode Delay (s)', asm.slowmode_delay ?? '- '],
-            ['Duration (s)', asm.duration ?? '- '],
-        ]));
-    }
 
     // Counting
     if (c.counting) {

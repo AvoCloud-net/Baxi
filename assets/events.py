@@ -21,7 +21,6 @@ from assets.buttons import build_ticket_panel_view
 import assets.message.customcmd as customcmd
 from assets.moderation import ModerationEngine
 import assets.message.reactionroles as reactionroles
-import assets.message.auto_slowmode as auto_slowmode
 import assets.message.serverlog as serverlog
 from assets.message import tempvoice
 import assets.games.counting as counting_game
@@ -971,9 +970,6 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
     except Exception:
         pass
     try:
-        # Auto-Slowmode check (passive, non-blocking)
-        asyncio.create_task(auto_slowmode.check(message))
-
         # Unified moderation engine: builds the shared RiskContext and runs the early,
         # blocking stage (Anti-Spam). It deletes + records centrally; stop = halt pipeline.
         mod_result = await moderation_engine.process(message, bot)

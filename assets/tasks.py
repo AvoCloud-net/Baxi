@@ -596,12 +596,17 @@ class StatsChannelsTask:
                         continue
 
                     count = counts.get(stat_type, 0)
-                    last = self._last_values.get(guild.id, {}).get(stat_type)
-                    if last == count:
-                        continue
 
                     template = stat.get("template", f"{stat_type.capitalize()}: {{count}}")
                     new_name = template.replace("{count}", str(count))
+
+                    # Skip if channel name already matches target (survives restarts
+                    # where _last_values is empty). Protects against rate limit + log spam.
+                    if channel.name == new_name:
+                        if guild.id not in self._last_values:
+                            self._last_values[guild.id] = {}
+                        self._last_values[guild.id][stat_type] = count
+                        continue
 
                     try:
                         await channel.edit(name=new_name)

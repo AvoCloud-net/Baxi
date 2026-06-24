@@ -31,7 +31,6 @@ from assets.repo.config_simple import (
     load_auto_roles, save_auto_roles,
     load_temp_voice_cfg, save_temp_voice_cfg,
     load_verify, save_verify,
-    load_auto_slowmode, save_auto_slowmode,
     load_mod_gate, save_mod_gate,
     load_antiraid, save_antiraid,
     load_counting, save_counting,
@@ -135,7 +134,6 @@ REGISTRY: dict[str, _FnPair] = {
     "notification_channel": (None, None),  # same
     "verify":           (load_verify,             save_verify),
     "reaction_roles":   (load_reaction_roles,     save_reaction_roles),
-    "auto_slowmode":    (load_auto_slowmode,      save_auto_slowmode),
     "mod_gate":         (load_mod_gate,           save_mod_gate),
     "antiraid":         (load_antiraid,           save_antiraid),
     "counting":         (load_counting,           save_counting),

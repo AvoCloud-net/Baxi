@@ -51,7 +51,6 @@ def get_feature_adoption() -> dict:
         "stats_channels": 0,
         "auto_roles": 0,
         "reaction_roles": 0,
-        "auto_slowmode": 0,
         "counting": 0,
         "flag_quiz": 0,
         "suggestions": 0,
@@ -90,7 +89,6 @@ def get_feature_adoption() -> dict:
                 "stats_channels":  load_data(guild_id_int, "stats_channels"),
                 "auto_roles":    load_data(guild_id_int, "auto_roles"),
                 "reaction_roles": load_data(guild_id_int, "reaction_roles"),
-                "auto_slowmode": load_data(guild_id_int, "auto_slowmode"),
                 "counting":      load_data(guild_id_int, "counting"),
                 "flag_quiz":     load_data(guild_id_int, "flag_quiz"),
                 "suggestions":   load_data(guild_id_int, "suggestions"),
@@ -120,8 +118,6 @@ def get_feature_adoption() -> dict:
             counts["auto_roles"] += 1
         if conf["reaction_roles"].get("panels"):
             counts["reaction_roles"] += 1
-        if conf["auto_slowmode"].get("enabled", False):
-            counts["auto_slowmode"] += 1
         if conf["counting"].get("enabled", False):
             counts["counting"] += 1
         if conf["flag_quiz"].get("enabled", False):
@@ -153,17 +149,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     discord_auth = DiscordOAuth2Session(app)
 
-    # Pending-vote map: discord_user_id -> (guild_id, expires_at_unix).
-    # Populated when a user clicks the vote button on the dashboard, then
-    # consumed when the top.gg webhook fires (V1 doesn't pass `query` anymore).
-    pending_votes: dict[int, tuple[int, float]] = {}
-    PENDING_VOTE_TTL = 60 * 60 * 6  # 6 hours
-
-    def _cleanup_pending_votes():
-        now = time.time()
-        stale = [uid for uid, (_g, exp) in pending_votes.items() if exp < now]
-        for uid in stale:
-            pending_votes.pop(uid, None)
+    # Pending-vote map now lives in share.py so the /vote slash command can also
+    # register a (user -> guild) mapping. See share.pending_votes.
+    pending_votes = share.pending_votes
+    PENDING_VOTE_TTL = share.PENDING_VOTE_TTL
+    _cleanup_pending_votes = share.cleanup_pending_votes
 
     @app.route("/login/")
     async def login():
@@ -2828,41 +2818,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
-        elif system == "auto_slowmode":
-            data: dict = await quart.request.get_json()
-            asm = data.get("auto_slowmode")
-
-            if not isinstance(asm, dict):
-                return quart.jsonify({"success": False, "message": "Invalid data format: 'auto_slowmode' must be an object."}), 400
-
-            if not isinstance(asm.get("enabled"), bool):
-                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
-
-            try:
-                settings = {
-                    "enabled": asm["enabled"],
-                    "threshold": max(2, min(50, int(asm.get("threshold", 10)))),
-                    "interval": max(2, min(60, int(asm.get("interval", 10)))),
-                    "slowmode_delay": max(1, min(21600, int(asm.get("slowmode_delay", 5)))),
-                    "duration": max(10, min(3600, int(asm.get("duration", 120)))),
-                }
-            except (ValueError, TypeError):
-                return quart.jsonify({"success": False, "message": "All numeric fields must be integers."}), 400
-
-            save_data(int(guild_id), "auto_slowmode", settings)
-
-            user = await discord_auth.fetch_user()
-            audit_log_new: dict = {
-                "type": "save",
-                "user": user.name,
-                "success": True,
-                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
-                "sys": "auto_slowmode",
-            }
-            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
-            audit_log.append(audit_log_new)
-            save_data(int(guild_id), "audit_log", audit_log)
-
         elif system == "antiraid":
             data: dict = await quart.request.get_json()
             ar = data.get("antiraid")
@@ -2890,6 +2845,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "whitelisted_roles": [str(r) for r in ar.get("whitelisted_roles", []) if str(r).strip()],
                     "join_action": join_action,
                     "quarantine_role": int(ar.get("quarantine_role", 0) or 0),
+                    "crowd_control": {
+                        "enabled": bool((ar.get("crowd_control", {}) or {}).get("enabled", True)),
+                        "threshold_mode": ("manual" if str((ar.get("crowd_control", {}) or {}).get("threshold_mode", "auto")) == "manual" else "auto"),
+                        "threshold": max(2, min(100, int((ar.get("crowd_control", {}) or {}).get("threshold", 12)))),
+                        "slowmode_delay": max(1, min(21600, int((ar.get("crowd_control", {}) or {}).get("slowmode_delay", 5)))),
+                        "duration_mode": ("manual" if str((ar.get("crowd_control", {}) or {}).get("duration_mode", "auto")) == "manual" else "auto"),
+                        "duration": max(10, min(3600, int((ar.get("crowd_control", {}) or {}).get("duration", 120)))),
+                    },
                     "actions": {
                         "pause_invites": bool(acts.get("pause_invites", True)),
                         "raise_verification": bool(acts.get("raise_verification", True)),

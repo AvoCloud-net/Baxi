@@ -380,15 +380,6 @@ CREATE TABLE IF NOT EXISTS cfg_rr_entry (
     FOREIGN KEY (guild_id) REFERENCES guilds(guild_id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS cfg_auto_slowmode (
-    guild_id       INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
-    enabled        INTEGER DEFAULT 0,
-    threshold      INTEGER DEFAULT 10,
-    interval       INTEGER DEFAULT 10,
-    slowmode_delay INTEGER DEFAULT 5,
-    duration       INTEGER DEFAULT 120
-);
-
 CREATE TABLE IF NOT EXISTS cfg_mod_gate (
     guild_id        INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
     enabled         INTEGER DEFAULT 0,

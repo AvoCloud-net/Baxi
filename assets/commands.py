@@ -18,6 +18,8 @@ from assets.buttons import (
 from assets.message.warnings import add_warning, remove_warning, get_warnings
 import assets.message.tempvoice as tempvoice
 import assets.trust as sentinel
+import assets.share as share
+import time
 import reds_simple_logger
 
 logger = reds_simple_logger.Logger()
@@ -60,6 +62,39 @@ def base_commands(bot: commands.AutoShardedBot):
             "## Baxi Dashboard\nConfigure Baxi for your server at: https://baxi.avocloud.net",
             ephemeral=True,
         )
+
+    @bot.tree.command(name="vote", description="Vote for Baxi on top.gg")
+    async def vote_cmd(interaction: Interaction):
+        # Register a pending (user -> guild) mapping so the top.gg webhook can
+        # build the rich announcement (server name + member count), same as the
+        # web dashboard "Vote for Baxi" flow. V1 webhooks drop the query string.
+        if interaction.guild_id:
+            share.cleanup_pending_votes()
+            share.pending_votes[interaction.user.id] = (
+                interaction.guild_id,
+                time.time() + share.PENDING_VOTE_TTL,
+            )
+        vote_url = f"https://top.gg/bot/{bot.user.id}/vote"
+        embed = Embed(
+            title=f"{config.Icons.thumbsup} Vote for Baxi",
+            description=(
+                "Support Baxi by voting on top.gg! "
+                "Every vote helps Baxi grow and reach more servers.\n\n"
+                "You can vote once every 12 hours."
+            ),
+            color=discord.Color.from_rgb(255, 84, 84),
+        )
+        embed.set_footer(text="Baxi · avocloud.net")
+        view = discord.ui.View()
+        view.add_item(
+            discord.ui.Button(
+                label="Vote on top.gg",
+                style=discord.ButtonStyle.link,
+                url=vote_url,
+                emoji="🔼",
+            )
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @bot.tree.command(
         name="my_data",

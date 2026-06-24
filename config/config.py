@@ -218,6 +218,16 @@ class datasys:
         "whitelisted_roles": [],     # roles never auto-actioned during a raid
         "join_action": "timeout",    # timeout | kick | quarantine | none (joins during raid)
         "quarantine_role": 0,        # role for join_action == quarantine
+        "crowd_control": {           # tier-1 soft slowmode (no lockdown) for a single busy channel
+            "enabled": True,
+            "threshold_mode": "auto",  # auto = trip when a channel goes above its learned normal;
+                                       # manual = trip at a fixed message count
+            "threshold": 12,         # msgs in msg_window inside ONE channel (manual mode only)
+            "slowmode_delay": 5,     # seconds of slowmode applied to that channel
+            "duration_mode": "auto",   # auto = lift when the channel calms back to normal;
+                                       # manual = lift after a fixed time
+            "duration": 120,         # seconds the soft slowmode stays (manual mode only)
+        },
         "actions": {
             "pause_invites": True,
             "raise_verification": True,
@@ -311,13 +321,6 @@ class datasys:
     },
     "reaction_roles": {
         "panels": []
-    },
-    "auto_slowmode": {
-        "enabled": False,
-        "threshold": 10,
-        "interval": 10,
-        "slowmode_delay": 5,
-        "duration": 120
     },
     "counting": {
         "enabled": False,

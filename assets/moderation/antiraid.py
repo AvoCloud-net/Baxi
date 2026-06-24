@@ -47,6 +47,9 @@ _EWMA_ALPHA = 0.1
 _BASE_SPIKE = 3.0
 # Per-user message count inside the raid window that marks a member as a spammer.
 _SPAMMER_MSGS = 6
+# Crowd-control (tier-1) tuning.
+_CC_FLOOR = 5         # absolute minimum msgs/window before auto mode can trip (ignore tiny channels)
+_CC_AUTO_CAP = 1800   # hard safety cap (s) for an auto-duration soft slowmode that never calms
 
 
 @dataclass
@@ -54,6 +57,14 @@ class GuildRaidState:
     join_times: deque[float] = field(default_factory=deque)
     msg_times:  deque[float] = field(default_factory=deque)
     msg_by_user: dict[int, deque[float]] = field(default_factory=dict)
+    msg_by_channel: dict[int, deque[float]] = field(default_factory=dict)
+
+    # Tier-1 "crowd control": soft per-channel slowmode without a lockdown.
+    cc_until: dict[int, float] = field(default_factory=dict)  # channel_id -> expiry ts (auto = safety cap)
+    cc_prev:  dict[int, int] = field(default_factory=dict)    # channel_id -> slowmode to restore
+    # Per-channel learned "normal" message rate, for auto threshold/duration.
+    cc_baseline: dict[int, float] = field(default_factory=dict)
+    cc_seen:     dict[int, int] = field(default_factory=dict)  # per-channel warmup counter
 
     baseline_joins: float = 0.0
     baseline_msgs:  float = 0.0
@@ -158,7 +169,16 @@ class AntiRaid:
         ut.append(now)
         _prune(ut, now, mwin)
 
+        ct = s.msg_by_channel.get(message.channel.id)
+        if ct is None:
+            ct = deque()
+            s.msg_by_channel[message.channel.id] = ct
+        ct.append(now)
+        _prune(ct, now, mwin)
+
         if not s.raid_active:
+            # Tier-1 crowd control: slow a single busy channel, no lockdown, no punishment.
+            await self._crowd_control(message.channel, s, cfg, len(ct), now)
             return safe("antiraid")
 
         member = message.author if isinstance(message.author, discord.Member) else None
@@ -213,6 +233,12 @@ class AntiRaid:
         if s.raid_active and now >= s.raid_until:
             await self._lift(guild, bot)
 
+        # Lift soft (crowd-control) slowmodes that hit their cap/manual expiry, or whose
+        # system was just disabled. Auto-duration "calm again" lifting happens further down.
+        for cid, until in list(s.cc_until.items()):
+            if cfg is None or now >= until:
+                await self._lift_crowd_control(guild, s, cid)
+
         if cfg is None:
             return
 
@@ -224,9 +250,36 @@ class AntiRaid:
             _prune(s.msg_by_user[uid], now, mwin)
             if not s.msg_by_user[uid]:
                 del s.msg_by_user[uid]
+        for cid in list(s.msg_by_channel.keys()):
+            _prune(s.msg_by_channel[cid], now, mwin)
+            if not s.msg_by_channel[cid]:
+                del s.msg_by_channel[cid]
 
         joins = len(s.join_times)
         msgs = len(s.msg_times)
+
+        # ── Crowd control: learn per-channel "normal" rate + auto "calm again" lifting ──
+        cc = cfg.get("crowd_control", {}) or {}
+        if not s.raid_active and cc.get("enabled", True):
+            for cid, dq in s.msg_by_channel.items():
+                if cid in s.cc_until:
+                    continue  # don't learn while a channel is slowed (rate is suppressed)
+                cnt = len(dq)
+                seen = s.cc_seen.get(cid, 0)
+                if seen == 0:
+                    s.cc_baseline[cid] = float(cnt)
+                else:
+                    s.cc_baseline[cid] += _EWMA_ALPHA * (cnt - s.cc_baseline[cid])
+                s.cc_seen[cid] = seen + 1
+
+            if str(cc.get("duration_mode", "auto")) == "auto":
+                for cid in list(s.cc_until.keys()):
+                    dq = s.msg_by_channel.get(cid)
+                    cnt = len(dq) if dq else 0
+                    base = s.cc_baseline.get(cid, 0.0)
+                    # Calm = back at/below normal (20% hysteresis so it doesn't flap).
+                    if cnt <= max(2.0, base * 1.2):
+                        await self._lift_crowd_control(guild, s, cid)
 
         # Learn the baseline only when calm -  never during a raid.
         if not s.raid_active:
@@ -244,11 +297,12 @@ class AntiRaid:
             thresh = _spike_threshold(s.baseline_msgs if warm else 0.0, floor, sens)
             if msgs >= floor and msgs >= thresh:
                 await self._engage(guild, cfg, bot,
-                                   reason=f"Message flood: {msgs} msgs in {mwin}s")
+                                   reason=f"Message flood: {msgs} msgs in {mwin}s",
+                                   hot_channels=self._hot_channels(s, cfg, now, mwin))
 
     # ── Lockdown lifecycle ───────────────────────────────────────────────────────
     async def _engage(self, guild: discord.Guild, cfg: dict, bot: commands.AutoShardedBot,
-                      reason: str) -> None:
+                      reason: str, hot_channels: list[int] | None = None) -> None:
         s = _st(guild.id)
         if s.raid_active:
             s.raid_until = time.time() + int(cfg.get("lockdown_duration", 300))  # extend
@@ -275,7 +329,7 @@ class AntiRaid:
 
         if actions.get("slowmode", True):
             delay = max(1, min(21600, int(actions.get("slowmode_delay", 10))))
-            await self._apply_slowmode(guild, s, delay)
+            await self._apply_slowmode(guild, s, delay, hot_channels)
 
         if actions.get("timeout_spammers", True):
             await self._timeout_current_spammers(guild, cfg, s)
@@ -323,25 +377,122 @@ class AntiRaid:
         logger.info(f"[AntiRaid] Lockdown lifted @ {guild.name}")
 
     # ── Action helpers ───────────────────────────────────────────────────────────
-    async def _apply_slowmode(self, guild: discord.Guild, s: GuildRaidState, delay: int) -> None:
-        """Slowmode the channels that are actively flooding (top by recent message rate)."""
-        # Heuristic: any text channel the bot can edit that the raid is hitting. Without
-        # per-channel counts we slowmode every text channel the bot can edit but keep it
-        # cheap by capping. Most raids hammer one channel; a blanket slowmode is acceptable
-        # for the lockdown_duration and fully restored on lift.
-        for ch in guild.text_channels:
+    async def _apply_slowmode(self, guild: discord.Guild, s: GuildRaidState, delay: int,
+                              hot_channels: list[int] | None) -> None:
+        """Slowmode only the channel(s) the raid is actually hitting — never the whole server.
+
+        ``hot_channels`` comes from per-channel message counts (see :meth:`_hot_channels`).
+        A join-wave lockdown has no hot channel, so nothing is slowmoded (invites +
+        verification carry that defence)."""
+        for cid in (hot_channels or []):
+            ch = guild.get_channel(cid)
+            if not isinstance(ch, discord.TextChannel):
+                continue
             try:
                 perms = ch.permissions_for(guild.me)
             except Exception:
                 continue
             if not perms.manage_channels:
                 continue
-            if ch.id not in s.prev_slowmode:
-                s.prev_slowmode[ch.id] = ch.slowmode_delay
+            # Take over from a soft crowd-control slowmode, preserving the *original* delay.
+            if cid in s.cc_until:
+                s.prev_slowmode[cid] = s.cc_prev.pop(cid, ch.slowmode_delay)
+                s.cc_until.pop(cid, None)
+            elif cid not in s.prev_slowmode:
+                s.prev_slowmode[cid] = ch.slowmode_delay
             try:
                 await ch.edit(slowmode_delay=delay, reason="Baxi Anti-Raid lockdown")
             except (discord.Forbidden, discord.HTTPException):
-                s.prev_slowmode.pop(ch.id, None)
+                s.prev_slowmode.pop(cid, None)
+
+    def _hot_channels(self, s: GuildRaidState, cfg: dict, now: float, mwin: int) -> list[int]:
+        """Channels (busiest first, capped at 5) carrying the flood. Falls back to the single
+        busiest channel so a lockdown always has at least one target to slow."""
+        counts: list[tuple[int, int]] = []
+        for cid, dq in s.msg_by_channel.items():
+            _prune(dq, now, mwin)
+            if dq:
+                counts.append((len(dq), cid))
+        counts.sort(reverse=True)
+        cc_thr = max(2, int((cfg.get("crowd_control", {}) or {}).get("threshold", 12)))
+        hot = [cid for n, cid in counts if n >= cc_thr][:5]
+        if not hot and counts:
+            hot = [counts[0][1]]
+        return hot
+
+    # ── Crowd control (tier-1, no lockdown) ──────────────────────────────────────
+    async def _crowd_control(self, channel: discord.abc.Messageable, s: GuildRaidState,
+                             cfg: dict, count: int, now: float) -> None:
+        """Soft-slow a single busy channel when its rate spikes — no lockdown, no punishment.
+        This is the merged former 'Auto-Slowmode' feature, scoped to the hot channel only."""
+        cc = cfg.get("crowd_control", {}) or {}
+        if not cc.get("enabled", True):
+            return
+        if not isinstance(channel, discord.TextChannel):
+            return
+        cid = channel.id
+        if cid in s.cc_until:  # already slowed
+            return
+
+        # Trip decision: manual = fixed count, auto = above the channel's learned normal.
+        if str(cc.get("threshold_mode", "auto")) == "manual":
+            if count < max(2, int(cc.get("threshold", 12))):
+                return
+        else:
+            warm = s.cc_seen.get(cid, 0) >= 3
+            base = s.cc_baseline.get(cid, 0.0) if warm else 0.0
+            thr = _spike_threshold(base, _CC_FLOOR, float(cfg.get("sensitivity", 1.0)))
+            if count < _CC_FLOOR or count < thr:
+                return
+
+        try:
+            perms = channel.permissions_for(channel.guild.me)
+        except Exception:
+            return
+        if not perms.manage_channels:
+            return
+        delay = max(1, min(21600, int(cc.get("slowmode_delay", 5))))
+        s.cc_prev[cid] = channel.slowmode_delay
+        try:
+            await channel.edit(slowmode_delay=delay,
+                               reason="Baxi Crowd Control: channel rate spike")
+        except (discord.Forbidden, discord.HTTPException):
+            s.cc_prev.pop(cid, None)
+            return
+
+        # Duration: manual = fixed seconds, auto = lift on calm (tick), capped for safety.
+        if str(cc.get("duration_mode", "auto")) == "manual":
+            s.cc_until[cid] = now + max(10, int(cc.get("duration", 120)))
+        else:
+            s.cc_until[cid] = now + _CC_AUTO_CAP
+        logger.info(f"[CrowdControl] {delay}s slowmode on #{channel.name} @ {channel.guild.name} "
+                    f"({count} msgs in window)")
+        if str(cc.get("duration_mode", "auto")) == "manual":
+            lift_note = f"It lifts automatically in **{int(cc.get('duration', 120))}s**."
+        else:
+            lift_note = "It lifts automatically once the channel calms down."
+        try:
+            embed = discord.Embed(
+                title="⏱ Slowmode activated",
+                description=(f"A burst of activity was detected, so a **{delay}s** slowmode was "
+                            f"applied to this channel. {lift_note}"),
+                color=config.Discord.warn_color,
+            )
+            embed.set_footer(text="Baxi · Anti-Raid · Crowd Control")
+            await channel.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+    async def _lift_crowd_control(self, guild: discord.Guild, s: GuildRaidState, cid: int) -> None:
+        s.cc_until.pop(cid, None)
+        prev = s.cc_prev.pop(cid, 0)
+        ch = guild.get_channel(cid)
+        if isinstance(ch, discord.TextChannel):
+            try:
+                await ch.edit(slowmode_delay=prev, reason="Baxi Crowd Control: expired")
+                logger.info(f"[CrowdControl] Lifted slowmode on #{ch.name}")
+            except (discord.Forbidden, discord.HTTPException):
+                pass
 
     async def _timeout_current_spammers(self, guild: discord.Guild, cfg: dict, s: GuildRaidState) -> None:
         mins = int(cfg.get("actions", {}).get("timeout_minutes", 10))

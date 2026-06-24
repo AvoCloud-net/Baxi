@@ -11,6 +11,18 @@ phishing_url_list: set = set()
 
 temp_voice_channels: set = set()
 
+# ── TopGG pending votes: discord_user_id -> (guild_id, expires_at_unix) ────────
+# Populated when a user clicks vote (dashboard or /vote command), consumed when
+# the top.gg webhook fires (V1 webhooks no longer carry the original query).
+pending_votes: dict = {}
+PENDING_VOTE_TTL = 60 * 60 * 6  # 6 hours
+
+def cleanup_pending_votes():
+    now = _time.time()
+    stale = [uid for uid, (_g, exp) in pending_votes.items() if exp < now]
+    for uid in stale:
+        pending_votes.pop(uid, None)
+
 livestream_task = None
 
 # ── Music: per-guild MusicPlayer instances ────────────────────────────────────
