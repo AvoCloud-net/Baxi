@@ -4,14 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#0B0B0B" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F2EFE6" media="(prefers-color-scheme: light)">
     <title>Baxi Dashboard -  {{data.name}}</title>
-    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta property="og:title" content="Baxi Dashboard -  {{data.name}}">
     <meta property="og:description" content="5 minute administrative access for the Discord guild {{data.name}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
-    <meta property="og:color" content="#DC143C">
+    <meta property="og:color" content="#FF6B4A">
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
@@ -20,8 +23,8 @@
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap" as="style" onload="this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap"></noscript>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap"></noscript>
 
     <style>
         #page-loader {
@@ -57,8 +60,8 @@
         #page-loader .loader-spinner {
             width: 2.5rem;
             height: 2.5rem;
-            border: 3px solid color-mix(in srgb, var(--color-primary, #6F83AA) 20%, transparent);
-            border-top-color: var(--color-primary, #6F83AA);
+            border: 3px solid color-mix(in srgb, var(--color-primary, #FF6B4A) 20%, transparent);
+            border-top-color: var(--color-primary, #FF6B4A);
             border-radius: 50%;
             animation: loader-spin 0.9s linear infinite;
         }
@@ -74,7 +77,7 @@
             width: 0.45rem;
             height: 0.45rem;
             border-radius: 50%;
-            background: var(--color-primary, #6F83AA);
+            background: var(--color-primary, #FF6B4A);
             opacity: 0.3;
             animation: loader-pulse 1.2s ease-in-out infinite;
         }
@@ -102,7 +105,7 @@
             transition: border-color 0.15s;
         }
         .nav-search-wrap:focus-within {
-            border-color: var(--color-primary, #6F83AA);
+            border-color: var(--color-primary, #FF6B4A);
         }
         .nav-search-ico {
             width: 14px; height: 14px;
@@ -166,6 +169,64 @@
         .antiraid-advanced > summary { user-select: none; }
         .antiraid-advanced > summary svg { transition: transform .15s ease; }
         .antiraid-advanced[open] > summary svg { transform: rotate(90deg); }
+
+        /* Range slider: gradient lives on the TRACK pseudo (var --p = filled %) so external
+           ::-webkit-slider-runnable-track rules can't paint over it. Thumb centred on a 6px
+           track. !important beats basecoat / avocloud main.css range styling. */
+        input[type="range"].dash-range {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 100%;
+            height: 16px;            /* tall enough for the thumb; track drawn by pseudo */
+            background: transparent !important;
+            outline: none;
+            cursor: pointer;
+            margin: 0;
+        }
+        input[type="range"].dash-range::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 9999px;
+            border: none;
+            background: linear-gradient(to right,
+                var(--color-primary, #FF6B4A) calc(var(--p, 0) * 1%),
+                #3c3c41 calc(var(--p, 0) * 1%)) !important;
+        }
+        input[type="range"].dash-range::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 16px;
+            height: 16px;
+            margin-top: -5px;        /* (6px track - 16px thumb) / 2 */
+            border-radius: 9999px;
+            background: var(--color-primary, #FF6B4A) !important;
+            border: 2px solid #18181b;
+            box-shadow: 0 0 0 1px var(--color-primary, #FF6B4A);
+        }
+        input[type="range"].dash-range::-moz-range-track {
+            height: 6px;
+            border-radius: 9999px;
+            border: none;
+            background: #3c3c41 !important;
+        }
+        input[type="range"].dash-range::-moz-range-progress {
+            height: 6px;
+            border-radius: 9999px;
+            background: var(--color-primary, #FF6B4A) !important;
+        }
+        input[type="range"].dash-range::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #18181b;
+            border-radius: 9999px;
+            background: var(--color-primary, #FF6B4A) !important;
+        }
+        /* visible keyboard focus (replaces the removed outline) */
+        input[type="range"].dash-range:focus-visible::-webkit-slider-thumb {
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #FF6B4A) 40%, transparent);
+        }
+        input[type="range"].dash-range:focus-visible::-moz-range-thumb {
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #FF6B4A) 40%, transparent);
+        }
     </style>
 </head>
 
@@ -222,16 +283,16 @@
             </div>
             <ul class="nav-search-results hidden" id="nav-search-results" role="listbox"></ul>
         </div>
-        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle light or dark theme">
+            <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
         </button>
     </nav>
 
-    <div id="toaster" class="toaster"></div>
+    <div id="toaster" class="toaster" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <div class="button-group local-button-group" data-orientation="vertical">
         <button type="button" class="btn-lg-outline p-6">
-            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
+            <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src="{{user.avatar_url}}" width="32" height="32" loading="lazy" />
             <span class="user-label">
                 <span class="user-label__welcome">Welcome</span>
                 <span class="user-label__name">{{user.name}}</span>
@@ -1498,8 +1559,8 @@
                                 <div class="grid gap-6 mt-4">
                                     <div class="grid gap-2">
                                         <label for="antiraid-sensitivity">Sensitivity: <span id="antiraid-sensitivity-val" class="text-muted font-normal">1.0×</span></label>
-                                        <input type="range" id="antiraid-sensitivity" min="0.25" max="4" step="0.25" value="1" class="w-full"
-                                            oninput="document.getElementById('antiraid-sensitivity-val').textContent = parseFloat(this.value).toFixed(2) + '×'; antiraidSyncPresetButtons();">
+                                        <input type="range" id="antiraid-sensitivity" min="0.25" max="4" step="0.25" value="1" class="w-full dash-range"
+                                            oninput="document.getElementById('antiraid-sensitivity-val').textContent = parseFloat(this.value).toFixed(2) + '×'; dashRangeFill(this); antiraidSyncPresetButtons();">
                                         <p class="text-muted text-xs">Higher = trips sooner (more aggressive). Lower = more tolerant of busy periods.</p>
                                     </div>
 
@@ -2283,8 +2344,8 @@
                             <div class="grid gap-2">
                                 <label for="welcomer-color">Embed color:</label>
                                 <div class="flex items-center gap-2">
-                                    <input type="color" id="welcomer-color" value="#6F83AA" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-color-hex').value=this.value">
-                                    <input type="text" id="welcomer-color-hex" value="#6F83AA" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-color').value=this.value">
+                                    <input type="color" id="welcomer-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-color-hex').value=this.value">
+                                    <input type="text" id="welcomer-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-color').value=this.value">
                                 </div>
                             </div>
 
@@ -4538,6 +4599,7 @@
                 document.getElementById('antiraid-enabled').checked = ar.enabled === true;
                 document.getElementById('antiraid-sensitivity').value = ar.sensitivity ?? 1.0;
                 document.getElementById('antiraid-sensitivity-val').textContent = parseFloat(ar.sensitivity ?? 1.0).toFixed(2) + '×';
+                dashRangeFill(document.getElementById('antiraid-sensitivity'));
                 document.getElementById('antiraid-min-joins').value = ar.min_joins ?? 5;
                 document.getElementById('antiraid-join-window').value = ar.join_window ?? 10;
                 document.getElementById('antiraid-min-messages').value = ar.min_messages ?? 25;
@@ -5542,7 +5604,7 @@
                 let html = `<textarea class="cc-act-response w-full min-h-[60px]" maxlength="2000" placeholder="Message…">${ccEsc(d.response || '')}</textarea>`;
                 if (type === 'text') {
                     const embedOn = d.embed !== false;
-                    const color = d.embed_color || '#6F83AA';
+                    const color = d.embed_color || '#FF6B4A';
                     html += `<label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" class="cc-act-reply" ${d.reply ? 'checked' : ''}> Reply to the trigger message${ccInfo("The bot replies directly to the user's message (shown as a reply, like clicking 'Reply' in Discord). Off = the bot sends a normal standalone message in the channel.")}</label>
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="cc-act-embed" ${embedOn ? 'checked' : ''} onchange="this.closest('.cc-action').querySelector('.cc-act-embed-opts').classList.toggle('hidden', !this.checked)"> Send as embed${ccInfo('Sends the message inside a styled embed box (with optional title, color and footer). Off = plain text message.')}</label>
                         <div class="cc-act-embed-opts grid gap-2 pl-4 border-l-2 border-muted mt-1 ${embedOn ? '' : 'hidden'}">
@@ -6771,9 +6833,9 @@
                 min_messages: parseInt(document.getElementById('antiraid-min-messages').value, 10),
                 msg_window: parseInt(document.getElementById('antiraid-msg-window').value, 10),
                 lockdown_duration: parseInt(document.getElementById('antiraid-lockdown-duration').value, 10),
-                alert_channel: parseInt(document.getElementById('antiraid-alert-channel').value, 10) || 0,
+                alert_channel: document.getElementById('antiraid-alert-channel').value || "0",
                 join_action: document.getElementById('antiraid-join-action').value,
-                quarantine_role: parseInt(document.getElementById('antiraid-quarantine-role').value, 10) || 0,
+                quarantine_role: document.getElementById('antiraid-quarantine-role').value || "0",
                 whitelisted_roles: [..._antiraidWlRoles],
                 crowd_control: {
                     enabled: document.getElementById('antiraid-cc-enabled').checked,
@@ -6814,8 +6876,8 @@
             const enabled = document.getElementById('mod_gate-enabled').checked;
             const use_safety_list = document.getElementById('mod_gate-use-safety-list').checked;
             const action = document.getElementById('mod_gate-action').value;
-            const quarantine_role = parseInt(document.getElementById('mod_gate-quarantine-role').value, 10) || 0;
-            const log_channel = parseInt(document.getElementById('mod_gate-log-channel').value, 10) || 0;
+            const quarantine_role = document.getElementById('mod_gate-quarantine-role').value || "0";
+            const log_channel = document.getElementById('mod_gate-log-channel').value || "0";
             const payload = { mod_gate: { enabled, use_safety_list, action, quarantine_role, log_channel } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mod_gate&dash_login={{ data.dash_login }}');
@@ -7233,6 +7295,23 @@
             strict:   'Strict — reacts to smaller spikes. Best for servers that get targeted.',
             custom:   'Custom — thresholds were fine-tuned by hand in Advanced settings.',
         };
+        // Update a .dash-range slider's fill so the coloured track matches the thumb.
+        function dashRangeFill(el) {
+            if (!el) return;
+            const min = parseFloat(el.min) || 0;
+            const max = parseFloat(el.max) || 100;
+            const val = parseFloat(el.value);
+            const p = max > min ? ((val - min) / (max - min)) * 100 : 0;
+            el.style.setProperty('--p', Math.max(0, Math.min(100, p)));
+        }
+        // Initialise every range slider's fill so it matches the thumb before any data loads.
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[type="range"].dash-range').forEach(dashRangeFill);
+            // Decorative icons: hide from the accessibility tree (their buttons carry the label).
+            document.querySelectorAll('svg.lucide, .dash-nav-toggle svg, .nav-search-ico')
+                .forEach(function (s) { if (!s.hasAttribute('aria-hidden')) s.setAttribute('aria-hidden', 'true'); });
+        });
+
         // Show/hide the manual number inputs based on the crowd-control mode selects.
         function antiraidCcSync() {
             const tm = document.getElementById('antiraid-cc-threshold-mode').value;
@@ -7246,6 +7325,7 @@
             if (!p) return;
             document.getElementById('antiraid-sensitivity').value = p.sensitivity;
             document.getElementById('antiraid-sensitivity-val').textContent = p.sensitivity.toFixed(2) + '×';
+            dashRangeFill(document.getElementById('antiraid-sensitivity'));
             document.getElementById('antiraid-min-joins').value = p.min_joins;
             document.getElementById('antiraid-min-messages').value = p.min_messages;
             document.getElementById('antiraid-join-window').value = p.join_window;

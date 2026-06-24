@@ -1,10 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Syne:wght@600;700;800&display=swap');
 
 :root {
   --font-family: "Quicksand", sans-serif;
+  /* avocloud brand fonts: Syne display, Quicksand body, mono kickers */
+  --avo-font-display: 'Syne', sans-serif;
+  --avo-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
   /* avocloud brand primary (coral) - dark-mode default */
   --color-primary: #FF6B4A;
   --color-primary-rgb: 255, 107, 74;
+}
+
+/* avocloud: Syne carries every heading (display font). Body stays Quicksand. */
+h1, h2, h3, h4 {
+  font-family: var(--avo-font-display);
+  letter-spacing: -0.01em;
 }
 
 /* Light-mode token overrides */
@@ -16,12 +25,12 @@ html:not(.dark) {
   --color-primary-rgb: 199, 61, 32;
 }
 
-/* Insights day-selector - hardcode colour; --color-primary resolves to white in dark mode */
+/* Insights day-selector - hardcode brand coral; --color-primary resolves to white in dark mode */
 html.dark .time-bar button.active,
 html.dark .time-bar button:hover {
-  background: #6F83AA !important;
-  color: #fff !important;
-  border-color: #6F83AA !important;
+  background: #FF6B4A !important;
+  color: #0B0B0B !important;
+  border-color: #FF6B4A !important;
 }
 
 body {
@@ -207,12 +216,14 @@ html:not(.dark) .site-nav {
 
 /* ── Section label ────────────────────────────────────────── */
 
+/* mono coral kicker (avocloud signature eyebrow) */
 .section-label {
-  font-size: 0.75rem;
+  font-family: var(--avo-font-mono);
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: oklch(.5 0 0);
+  color: var(--color-primary, #FF6B4A);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -664,7 +675,7 @@ html:not(.dark) .adoption-badge {
   padding: 2px 8px;
   color: rgb(255, 147, 121);
   border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
 }
 
 .highlight-purple:hover {
@@ -682,7 +693,7 @@ html:not(.dark) .adoption-badge {
   padding: 2px 8px;
   color: rgb(255, 147, 121);
   border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
 }
 
 .highlight-yellow:hover {
@@ -1381,4 +1392,26 @@ body { padding-left: 0 !important; }
   }
 
   .local-button-group button { border-radius: 9px; }
+}
+
+/* ── Accessibility: respect reduced-motion ───────────────────── */
+/* Kills the gradient bar, spinners and pulse loops for users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Native <select>: explicit dark colours so the OS popup isn't white-on-white ── */
+select, option {
+  background-color: var(--card-bg, #131313);
+  color: var(--avo-text, inherit);
+}
+html:not(.dark) select,
+html:not(.dark) option {
+  background-color: #ffffff;
+  color: #141414;
 }

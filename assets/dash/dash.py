@@ -768,6 +768,20 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 else:  # blacklist
                     return _gid_str not in guilds
 
+            # Discord snowflake ids exceed JS Number.MAX_SAFE_INTEGER (2^53). Jinja's tojson
+            # emits them as JSON numbers, and the dashboard's JSON.parse then rounds them —
+            # so a <select>'s value no longer matches its option id and the field renders
+            # blank after a reload. Stringify the int id fields the dashboard reads back into
+            # channel/role <select>s so the exact id survives serialization.
+            for _sys, _keys in (
+                ("antiraid", ("alert_channel", "quarantine_role")),
+                ("mod_gate", ("log_channel", "quarantine_role")),
+            ):
+                _cfg = guild_conf.get(_sys)
+                if isinstance(_cfg, dict):
+                    for _k in _keys:
+                        _cfg[_k] = str(_cfg.get(_k, 0) or 0)
+
             return await render_template(
                 "dash.html",
                 data=guild_conf,
@@ -1357,9 +1371,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
 
             # Validate color hex
-            color = str(welcomer.get("color", "#6F83AA"))[:7]
+            color = str(welcomer.get("color", "#FF6B4A"))[:7]
             if not re.match(r'^#[0-9a-fA-F]{6}$', color):
-                color = "#6F83AA"
+                color = "#FF6B4A"
 
             card_color = str(welcomer.get("card_color", "#1a1a2e"))[:7]
             if not re.match(r'^#[0-9a-fA-F]{6}$', card_color):
@@ -5298,7 +5312,48 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if guild_id_str and not guild_id_str.isdigit():
                 return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
 
-            from assets.trust import _resolve_notification_channel
+            # Channel-name keywords to fall back to, best first, when no channel is configured.
+            _NOTIF_KEYWORDS = ("baxi", "staff", "mod-log", "modlog", "mod-mail", "admin",
+                               "announce", "news", "updates", "log", "mod", "general")
+
+            def _resolve_notification_channel(g):
+                """Return a channel to post a notification to, or None.
+
+                Priority: the configured ``notification_channel`` → a text channel whose
+                name contains a known keyword (baxi/staff/…) the bot can post in →
+                the guild's system channel → the first sendable text channel.
+                PRISM's old resolver was removed, so resolution lives here now."""
+                def _can_send(ch):
+                    try:
+                        return isinstance(ch, discord.TextChannel) and ch.permissions_for(g.me).send_messages
+                    except Exception:
+                        return False
+
+                # 1) Explicitly configured channel.
+                try:
+                    notif = load_data(g.id, "notification_channel")
+                except Exception:
+                    notif = None
+                if notif:
+                    try:
+                        ch = g.get_channel(int(notif))
+                    except (ValueError, TypeError):
+                        ch = None
+                    if _can_send(ch):
+                        return ch
+
+                # 2) Keyword match on channel name (best keyword first).
+                sendable = [c for c in g.text_channels if _can_send(c)]
+                for kw in _NOTIF_KEYWORDS:
+                    for c in sendable:
+                        if kw in c.name.lower():
+                            return c
+
+                # 3) System channel, then first sendable channel.
+                if _can_send(g.system_channel):
+                    return g.system_channel
+                return sendable[0] if sendable else None
+
             target_guilds = [bot.get_guild(int(guild_id_str))] if guild_id_str else list(bot.guilds)
             target_guilds = [g for g in target_guilds if g]
 
@@ -5316,7 +5371,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 failed_guilds = []
                 for g in target_guilds:
                     try:
-                        channel = await _resolve_notification_channel(g)
+                        channel = _resolve_notification_channel(g)
                         if channel is None:
                             failed_guilds.append({"id": str(g.id), "name": g.name, "reason": "No notification channel configured"})
                         else:
@@ -5809,7 +5864,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 embed_events = discord.Embed(
                     title="Prism Events (last 20)",
                     description="\n".join(ev_lines) or "No events recorded.",
-                    color=0x9333ea,
+                    color=config.Discord.color,
                 )
                 embeds_to_send.append(embed_events)
 

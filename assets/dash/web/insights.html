@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BaxiInsights -  {{ guild.name }}</title>
-    <link rel="shortcut icon" href="https://avocloud.net/assets/images/logo.png" type="image/x-icon">
+    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
     <meta property="og:title" content="BaxiInsights -  {{ guild.name }}">
     <meta property="og:description" content="Server analytics for {{ guild.name }}.">
-    <meta property="og:color" content="#DC143C">
+    <meta property="og:color" content="#FF6B4A">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -28,8 +28,8 @@
         #page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
         #page-loader .loader-spinner {
             width: 2.5rem; height: 2.5rem;
-            border: 3px solid color-mix(in srgb, var(--color-primary, #6F83AA) 20%, transparent);
-            border-top-color: var(--color-primary, #6F83AA);
+            border: 3px solid color-mix(in srgb, var(--color-primary, #FF6B4A) 20%, transparent);
+            border-top-color: var(--color-primary, #FF6B4A);
             border-radius: 50%; animation: spin 0.9s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -85,7 +85,7 @@
         .rank-row:last-child { border-bottom: none; }
         .rank-num { font-size: 0.72rem; font-weight: 700; opacity: 0.35; width: 1.5rem; flex-shrink: 0; }
         .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--border); border-radius: 9999px; overflow: hidden; }
-        .rank-bar { height: 100%; border-radius: 9999px; background: var(--color-primary, #6F83AA); transition: width 0.4s ease; }
+        .rank-bar { height: 100%; border-radius: 9999px; background: var(--color-primary, #FF6B4A); transition: width 0.4s ease; }
         .rank-count { font-size: 0.78rem; font-weight: 600; opacity: 0.6; white-space: nowrap; }
 
         .tag { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; }
@@ -108,8 +108,8 @@
             transition: background 0.12s, color 0.12s, border-color 0.12s;
         }
         .time-bar button.active, .time-bar button:hover {
-            background: var(--color-primary, #6F83AA); color: #fff;
-            border-color: var(--color-primary, #6F83AA);
+            background: var(--color-primary, #FF6B4A); color: #fff;
+            border-color: var(--color-primary, #FF6B4A);
         }
 
         .health-track { height: 6px; border-radius: 9999px; background: var(--border); overflow: hidden; margin-top: 0.4rem; }
