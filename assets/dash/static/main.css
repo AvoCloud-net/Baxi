@@ -1041,6 +1041,11 @@ fieldset {
     border-radius: 50%;
   }
 
+  /* Hide welcome/name text on mobile -  show only avatar in the pill */
+  .local-button-group .user-label {
+    display: none !important;
+  }
+
   /* Card header action buttons: icon-only on mobile */
   .card header .btn-outline .btn-label,
   .card header .btn-secondary .btn-label {

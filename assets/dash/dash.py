@@ -274,6 +274,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     @app.errorhandler(Unauthorized)
     async def redirect_unauthorized(e):
+        # Remember where the user wanted to go so we can send them back
+        # after login (callback pops session["next_url"]).
+        try:
+            if quart.request.method == "GET":
+                target = quart.request.full_path.rstrip("?")
+                skip = ("/login", "/callback", "/welcome", "/logout")
+                if target and target != "/" and not target.startswith(skip):
+                    session["next_url"] = target
+        except Exception:
+            pass
         return redirect(url_for("welcome"))
 
     @app.route("/welcome/")
