@@ -15,7 +15,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
-    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
 
@@ -142,7 +141,7 @@
             font-size: 0.85rem;
             font-weight: 600;
             opacity: 0.6;
-            transition: opacity 0.15s;
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
             text-decoration: none;
         }
         .back-link:hover { opacity: 1; }
@@ -155,7 +154,7 @@
             font-size: 0.875rem;
             opacity: 0.65;
             text-decoration: none;
-            transition: opacity 0.15s;
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
             padding: 0.2rem 0;
             display: flex;
             align-items: center;
@@ -538,8 +537,8 @@
 
                 <!-- Footer links -->
                 <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 1rem 0; flex-wrap: wrap;">
-                    <a href="/terms/" style="font-size: 0.8rem; opacity: 0.5; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">Terms of Service</a>
-                    <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.5; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5">Impressum</a>
+                    <a href="/terms/" class="footer-link">Terms of Service</a>
+                    <a href="https://avocloud.net/impressum.html" class="footer-link">Impressum</a>
                 </div>
 
                 <footer class="site-footer">

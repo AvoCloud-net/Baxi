@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
-    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
 
@@ -81,7 +80,7 @@
             
             padding: 1rem 1.25rem;
             background: var(--color-card, transparent);
-            transition: border-color 0.15s;
+            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .tier-card:hover { border-color: var(--color-primary, #FF6B4A); }
         .tier-badge {
@@ -133,7 +132,7 @@
             
             text-decoration: none;
             font-size: 0.95rem;
-            transition: background 0.15s;
+            transition: background var(--avo-dur-micro) var(--avo-ease-out);
         }
         .discord-btn:hover { background: #4752c4; }
         .success-box {
@@ -336,5 +335,6 @@
             }
         }
     </script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
 </html>

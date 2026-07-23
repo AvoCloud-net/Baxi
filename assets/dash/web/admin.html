@@ -10,7 +10,6 @@
     <meta property="og:color" content="#FF6B4A">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
-    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
     <style>
@@ -31,13 +30,12 @@
         html { scroll-behavior: smooth; }
         body { background: var(--adm-bg, #000000); }
 
-        /* subtle ambient glow behind everything */
-        body::before {
-            content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-            background:
-                radial-gradient(900px 500px at 12% -5%, rgba(255,107,74,.10), transparent 60%),
-                radial-gradient(800px 600px at 100% 0%, rgba(255,107,74,.04), transparent 55%);
-        }
+        /* The ambient coral glow that used to live here is gone. Two viewport-
+           sized radial gradients are a colour field, not a texture, and
+           BRANDING §6 puts a flat gradient wash on the don't-list explicitly:
+           "the canvas is black — a background treatment is a texture ON the
+           canvas, never a replacement for it." The blueprint grid mounted by
+           scripts/main.js is what belongs behind this page. */
 
         /* ══ Sidebar ══════════════════════════════════════════════ */
         .admin-sidebar {
@@ -47,15 +45,20 @@
             height: 100vh;
             width: var(--adm-sidebar-w);
             overflow-y: auto;
-            background: rgba(10,10,10,.96);
-            backdrop-filter: blur(14px);
+            /* Glass, per BRANDING §6b: dark tint, mostly transparent, 7px.
+               .96 alpha was an opaque panel wearing a blur — nothing came
+               through it, which is the only reason a surface reads as glass. */
+            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
             border-right: 1px solid var(--adm-border);
             padding: 1rem 0.7rem 1.5rem;
             z-index: 200;
             display: flex;
             flex-direction: column;
             gap: 0.1rem;
-            transition: transform .25s cubic-bezier(.4,0,.2,1);
+            transition: transform var(--avo-dur-ui) var(--avo-ease-out);
         }
         .admin-sidebar::-webkit-scrollbar { width: 8px; }
         .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); }
@@ -89,7 +92,7 @@
             text-decoration: none;
             color: inherit;
             opacity: .68;
-            transition: opacity .15s, background .15s, color .15s;
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out), background var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .admin-sidebar a:hover { opacity: 1; background: var(--adm-surface-2); }
         .admin-sidebar a.active {
@@ -115,8 +118,9 @@
             flex-wrap: wrap; gap: 1rem;
             margin: 0 -2rem 1.75rem;
             padding: 1rem 2rem;
-            background: rgba(14,14,20,.72);
-            backdrop-filter: blur(14px);
+            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             border-bottom: 1px solid var(--adm-border);
         }
         .nav-toggle {
@@ -144,7 +148,7 @@
             border: 1px solid var(--adm-border);
             border-radius: var(--adm-radius);
             box-shadow: var(--adm-shadow);
-            transition: border-color .18s;
+            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .card:hover { border-color: rgba(255,255,255,.13); }
 
@@ -162,7 +166,7 @@
 
         /* ── Score bar ───────────────────────────────────────────── */
         .score-bar { height:4px; background: rgba(255,255,255,.08); overflow:hidden; }
-        .score-bar-fill { height:100%; transition: width .4s; }
+        .score-bar-fill { height:100%; transition: width var(--avo-dur-ui) var(--avo-ease-out); }
 
         /* ── Prism profile modal ─────────────────────────────────── */
         #prism-modal-backdrop {
@@ -250,9 +254,11 @@
             display:flex;
             flex-direction:column;
             gap:.35rem;
-            transition:border-color .15s, transform .15s;
+            transition:border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
-        .task-card:hover { border-color:rgba(255,255,255,.14); transform:translateY(-1px); }
+        /* Hairline only — no lift. A grid of cards that each jump on hover is
+           the v1 gesture the card language replaced. */
+        .task-card:hover { border-color:rgba(255,255,255,.14); }
 
         /* ── Action form ─────────────────────────────────────────── */
         .action-result {
@@ -267,7 +273,7 @@
         .admin-table th { text-align:left; padding:.5rem .6rem; opacity:.5; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--adm-border); }
         .admin-table td { padding:.5rem .6rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:middle; }
         .admin-table tr:last-child td { border-bottom:none; }
-        .admin-table tbody tr { transition: background .12s; }
+        .admin-table tbody tr { transition: background var(--avo-dur-micro) var(--avo-ease-out); }
         .admin-table tbody tr:hover td { background:rgba(255,255,255,.035); }
 
         /* ── Inputs / selects polish ─────────────────────────────── */
@@ -276,7 +282,7 @@
             background: rgba(0,0,0,.22);
             border: 1px solid var(--adm-border);
             
-            transition: border-color .15s, box-shadow .15s;
+            transition: border-color var(--avo-dur-micro) var(--avo-ease-out), box-shadow var(--avo-dur-micro) var(--avo-ease-out);
         }
         .admin-main input[type=text]:focus, .admin-main input[type=number]:focus,
         .admin-main textarea:focus, .admin-main .select:focus, .admin-main select:focus {
@@ -289,7 +295,7 @@
         .ga-tab {
             background:none; border:none; cursor:pointer; color:inherit; opacity:.55;
             font-size:.75rem; padding:.25rem .55rem; 
-            transition:opacity .15s,background .15s;
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out),background var(--avo-dur-micro) var(--avo-ease-out);
         }
         .ga-tab:hover { opacity:.85; background:rgba(255,255,255,.06); }
         .ga-tab.active { opacity:1; background:rgba(255,107,74,.2); }
@@ -1187,7 +1193,7 @@
                                 <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
                             </div>
                             <div style="background:rgba(255,255,255,.08); border-radius:99px; height:8px; overflow:hidden;">
-                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#C73D20,#FF9379); border-radius:99px; transition:width .35s ease;"></div>
+                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#C73D20,#FF9379); border-radius:99px; transition: width var(--avo-dur-ui) var(--avo-ease-out);"></div>
                             </div>
                         </div>
 

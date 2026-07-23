@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300..700&family=Syne:wght@600;700;800&display=swap');
 
 /* ==========================================================================
-   avocloud brand v2.0.0 — blueprint / CAD monochrome + coral spark
+   avocloud brand v2.9.1 — blueprint / CAD monochrome + coral spark + glass
    Source of truth: ~/Nextcloud/avocloud/brand/ (tokens/tokens.json).
-   Loads AFTER tailwind + basecoat + the (still v1) remote avocloud.net CSS,
-   so everything here is a deliberate override of those.
+   Loads AFTER tailwind + basecoat, so everything here is a deliberate
+   override of those. The v1 remote avocloud.net stylesheet is no longer
+   pulled in by any template — see BRANDING.md §10.
    ========================================================================== */
 
 :root {
@@ -15,9 +16,30 @@
   --avo-font-display: 'Space Grotesk', system-ui, sans-serif;
   --avo-font-massive: 'Anton', 'Space Grotesk', sans-serif;
   --avo-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+  /* ---- coral ramp (mode-independent) — BRANDING §3.
+     This used to arrive from the v1 remote stylesheet. It is the brand's one
+     spark: a ramp for tints, never a background wash. */
+  --avo-coral-50:  #FFEEEA;
+  --avo-coral-100: #FFD8CF;
+  --avo-coral-200: #FFB6A4;
+  --avo-coral-300: #FF9379;
+  --avo-coral-400: #FF7A5C;
+  --avo-coral-500: #FF6B4A;
+  --avo-coral-600: #ED5333;
+  --avo-coral-700: #C73D20;
+  --avo-coral-800: #9C2E16;
+  --avo-coral-900: #5F1C0D;
+
   /* one coral, both themes (BRANDING §3) */
   --color-primary: #FF6B4A;
   --color-primary-rgb: 255, 107, 74;
+  /* Role tokens, same names as brand/tokens/avocloud.css. These do NOT swap
+     per theme — small coral text on a light surface drops to coral-700 by
+     hand (see --color-primary under html:not(.dark)), which is a sizing
+     call, not a theme one. */
+  --avo-primary:       #FF6B4A;
+  --avo-primary-hover: #FF9379;
+  --avo-primary-on:    #000000; /* text ON a solid coral fill — black, not white */
 
   /* softened corners (BRANDING §6): 6px on controls, 8px on boxes, 0
      elsewhere. basecoat + tailwind derive rounded-sm/md/lg/xl from --radius,
@@ -43,6 +65,46 @@
   /* tailwind font utilities */
   --font-sans: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* ---- semantic (mode-independent) — BRANDING §3 ---- */
+  --avo-success: #46A758;
+  --avo-warning: #E0A33A;
+  --avo-error:   #DC3838;
+  --avo-info:    #3B82C4;
+
+  /* ---- space scale — BRANDING §6. Use the steps; a 13px gap is a mistake. */
+  --avo-space-1: 4px;  --avo-space-2: 8px;  --avo-space-3: 12px; --avo-space-4: 16px;
+  --avo-space-5: 24px; --avo-space-6: 32px; --avo-space-7: 48px; --avo-space-8: 64px;
+
+  /* ---- layout — BRANDING §6 "Spacing & grid" ---- */
+  --avo-maxw:          1180px;
+  --avo-container-pad: clamp(1rem, 4vw, 2.5rem);
+  --avo-section-pad-y: clamp(4rem, 10vw, 8rem);
+  --avo-measure:       60ch;
+
+  /* ---- motion — BRANDING §5b -------------------------------------------
+     Four easing curves and four duration steps, nothing in between. A value
+     that fits none of these usually means the animation is doing something
+     the design language doesn't ask for. Mirrors brand/tokens/avocloud.css —
+     change a number there, change it here. */
+  --avo-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);    /* default, every entrance */
+  --avo-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);   /* reversible, cross-fades */
+  --avo-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);/* pops only */
+
+  --avo-dur-micro: 0.18s;  /* hover, border, colour, focus — must feel instant */
+  --avo-dur-ui:    0.35s;  /* nav state, chips, toggles, small layout shifts */
+  --avo-dur-enter: 0.7s;   /* entrances */
+  --avo-dur-sig:   2.4s;   /* the CAD wordmark reveal, played at 0.6 timeScale */
+
+  /* ---- glass — BRANDING §6b ---------------------------------------------
+     Dark tint, mostly transparent, low blur. The surface should disappear
+     into the canvas and let the blueprint grid behind it do the work; a
+     light tint turns every surface into a grey panel sitting ON the page. */
+  --avo-glass-blur:          7px;
+  --avo-glass-blur-animated: 5px;
+  --avo-glass-tint:          rgba(4, 4, 4, 0.28);
+  --avo-glass-tint-2:        rgba(4, 4, 4, 0.44);
+  --avo-glass-edge:          rgba(255, 255, 255, 0.10);
 }
 
 /* Dark (default canvas): near-black + hairline borders — basecoat tokens */
@@ -55,16 +117,14 @@ html.dark {
   --primary: #FF6B4A;
   --primary-foreground: #000000; /* black on coral, never white (BRANDING §3) */
   --ring: #FF6B4A;
+  --avo-text: #FFFFFF;
   --avo-text-muted: #7E7E7E;
   --avo-border-strong: rgba(255, 255, 255, 0.18);
 }
 
-/* The remote v1 avocloud.net CSS forces Quicksand on every element with a
-   universal rule — counter it with the same pattern, later in the cascade.
-   Class/element rules (h1, .font-mono, code, …) all out-rank this. */
-*, *::before, *::after {
-  font-family: var(--font-family);
-}
+/* Body/UI face. This used to be a `*, *::before, *::after` universal rule
+   whose only job was out-shouting the v1 remote stylesheet's Quicksand
+   universal rule; that stylesheet is gone, so inheritance from body does it. */
 code, pre, kbd, samp {
   font-family: var(--avo-font-mono);
 }
@@ -102,6 +162,71 @@ input[type="email"], textarea, select {
   color: #000000;
 }
 
+/* ── Button gesture (BRANDING §5b) ─────────────────────────────
+   A line passing over something — the same gesture as the kicker rule, the
+   nav links and the accent-link underline: coral wipes in from the left, and
+   the icon steps forward a couple of pixels.
+
+   No overflow:hidden anywhere here on purpose. The wipe is inset:0 scaled in
+   X, so it can never exceed the button box, and clipping buttons would cut
+   off any menu or tooltip anchored inside one.
+
+   ponytail: the third part of the gesture — the label roll (two stacked
+   copies in a 1em overflow:hidden box) — is not implemented. It needs a
+   second aria-hidden copy of every label, and the labels live at several
+   hundred call sites across dash.html/admin.html. Upgrade path: a JS pass in
+   main.js that wraps each button's text node in the roll box at load, which
+   keeps the markup single-sourced. */
+.btn, .btn-primary, .btn-secondary, .btn-outline, .btn-destructive,
+.btn-ghost, .btn-lg-outline, .avo-btn {
+  position: relative;
+  isolation: isolate;
+}
+
+.btn::before, .btn-primary::before, .btn-secondary::before,
+.btn-outline::before, .btn-destructive::before, .btn-ghost::before,
+.btn-lg-outline::before, .avo-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Negative z-index inside the isolated stacking context: paints over the
+     button's own background, under its label. No wrapper span needed. */
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(255, 107, 74, 0.14);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+/* The primary button is already coral, so its wipe is the hover shade —
+   a coral wipe over coral would be no gesture at all. */
+.btn-primary::before {
+  background: var(--avo-primary-hover, #FF9379);
+}
+
+.btn:hover::before, .btn-primary:hover::before, .btn-secondary:hover::before,
+.btn-outline:hover::before, .btn-destructive:hover::before,
+.btn-ghost:hover::before, .btn-lg-outline:hover::before,
+.avo-btn:hover::before {
+  transform: scaleX(1);
+}
+
+/* Icon steps forward. Low-alpha wipe on the outline/ghost family rather than
+   a solid coral one: those buttons carry their own label colour at the call
+   site (the red Remove buttons, for one), and a solid coral fill under a red
+   label is unreadable. */
+.btn svg, .btn-primary svg, .btn-secondary svg, .btn-outline svg,
+.btn-destructive svg, .btn-ghost svg, .btn-lg-outline svg, .avo-btn svg {
+  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.btn:hover svg, .btn-primary:hover svg, .btn-secondary:hover svg,
+.btn-outline:hover svg, .btn-destructive:hover svg, .btn-ghost:hover svg,
+.btn-lg-outline:hover svg, .avo-btn:hover svg {
+  transform: translateX(2px);
+}
+
 /* Light-mode token overrides (secondary theme — dashboard keeps its toggle) */
 html:not(.dark) {
   --card-bg: #E8ECEF;
@@ -115,8 +240,14 @@ html:not(.dark) {
   /* small coral text on a light surface drops to coral-700 (BRANDING §3) */
   --color-primary: #C73D20;
   --color-primary-rgb: 199, 61, 32;
+  --avo-text: #0A0A0A;
   --avo-text-muted: #555555;
   --avo-border-strong: rgba(0, 0, 0, 0.22);
+  /* Glass on the light band: same idea inverted — a lightening of the light
+     canvas, still mostly transparent so the grid reads through it. */
+  --avo-glass-tint:   rgba(255, 255, 255, 0.55);
+  --avo-glass-tint-2: rgba(255, 255, 255, 0.72);
+  --avo-glass-edge:   rgba(255, 255, 255, 0.85);
 }
 
 /* Insights day-selector - hardcode brand coral; --color-primary resolves to white in dark mode */
@@ -130,6 +261,64 @@ html.dark .time-bar button:hover {
 body {
   font-family: var(--font-family);
   overflow-x: clip; /* prevent horizontal scroll from layout-viewport expansion */
+  /* The canvas moves to <html> so the blueprint grid below can sit at
+     z-index:-1 — above the canvas, below every bit of page content, without
+     needing a z-index on anything else. */
+  background: transparent;
+}
+
+html {
+  background: var(--background, #000000);
+}
+
+/* ── Blueprint background grid (BRANDING §6) ──────────────────
+   A fine 40px line grid plus a sparser 200px crosshair layer, both fixed and
+   drifting at DIFFERENT rates on scroll. They are not meant to line up — two
+   independent scales reading as parallax depth is the point, and syncing them
+   flattens it back into one grid.
+
+   This is also what the glass surfaces (§6b) have to reveal: without it the
+   nav's backdrop-filter has nothing recognisable to soften.
+
+   No mix-blend-mode here, ever. An element carrying one establishes its own
+   backdrop root, and every backdrop-filter in front of it then renders with
+   nothing to sample — silently, with correct-looking computed styles. */
+.avo-grid, .avo-crosshair {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Taller than the viewport so the drift never exposes an edge. */
+  top: -20vh;
+  height: 140vh;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.avo-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: translate3d(0, var(--avo-grid-y, 0px), 0);
+}
+
+/* Crosshairs come from an SVG tile: a short arm pair can't be expressed as a
+   linear-gradient, which fills its whole tile along the other axis. */
+.avo-crosshair {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath d='M100 92v16M92 100h16' stroke='rgba(255,255,255,0.09)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  transform: translate3d(0, var(--avo-crosshair-y, 0px), 0);
+}
+
+html:not(.dark) .avo-grid {
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+html:not(.dark) .avo-crosshair {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath d='M100 92v16M92 100h16' stroke='rgba(0,0,0,0.13)' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 html::-webkit-scrollbar {
@@ -157,6 +346,10 @@ html::-webkit-scrollbar {
 
 /* ── Site navigation bar ────────────────────────────────────── */
 
+/* Glass, and the point is restraint (BRANDING §6b): the bar reads as black —
+   the same as the page. You only notice it when the blueprint grid drifts
+   behind it and arrives softened instead of sharp. Nothing opaque underneath,
+   or there is nothing left to show through. */
 .site-nav {
   position: fixed;
   top: 4px;
@@ -167,13 +360,14 @@ html::-webkit-scrollbar {
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1.5rem;
-  background: rgba(10, 11, 11, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+  backdrop-filter: blur(var(--avo-glass-blur));
+  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+  border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.1));
 }
 
 html:not(.dark) .site-nav {
-  background: rgba(255, 255, 255, 0.92);
   border-bottom-color: rgba(0, 0, 0, 0.07);
 }
 
@@ -181,7 +375,10 @@ html:not(.dark) .site-nav {
 .avocloud-logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.15em;
+  /* No gap: AVOCLOUD is one word, and the split into __slot + __rest-wrap is a
+     markup seam, not a space. The clearspace between mark and wordmark lives on
+     __slot instead. */
+  gap: 0;
   text-decoration: none;
   color: inherit;
   font-family: var(--avo-font-brand, 'Syne', sans-serif);
@@ -191,14 +388,21 @@ html:not(.dark) .site-nav {
   line-height: 1;
 }
 
+/* Mark and wordmark sit side by side, which is the whole lockup (BRANDING §2).
+   This was an inline-grid with the icon and "AVO" both in cell 1/1 — stacked,
+   waiting on a swap animation that no script here ever drove, so the mark just
+   printed on top of the A. */
 .avocloud-logo__slot {
-  display: inline-grid;
+  display: inline-flex;
+  align-items: center;
+  /* Clearspace is one bracket-width; the mark renders ~1.5rem tall and the
+     bracket is a sixth of that. */
+  gap: 0.25rem;
   flex-shrink: 0;
 }
 
 .avocloud-logo__icon,
 .avocloud-logo__av {
-  grid-area: 1/1;
   display: flex;
   align-items: center;
 }
@@ -240,7 +444,7 @@ html:not(.dark) .site-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--avo-dur-micro) var(--avo-ease-out), background var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .theme-toggle:hover {
@@ -332,13 +536,23 @@ html:not(.dark) .site-nav {
   flex-shrink: 0;
 }
 
-/* trailing hairline rule off to the right (BRANDING §6) */
+/* Trailing hairline rule off to the right (BRANDING §6) — it draws itself in
+   from the left rather than simply being there. The section router toggles
+   display on .dash-section, and a display change restarts CSS animations, so
+   the rule redraws every time its section is opened. */
 .section-label::after {
   content: '';
   flex: 1;
   height: 1px;
   background: var(--border, rgba(128, 128, 128, 0.2));
   min-width: 2rem;
+  transform-origin: left;
+  animation: avo-draw var(--avo-dur-enter) var(--avo-ease-out) both;
+}
+
+@keyframes avo-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 /* ── Lucide SVG icons ─────────────────────────────────────── */
@@ -371,7 +585,7 @@ html:not(.dark) .site-nav {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.25s;
+  transition: opacity var(--avo-dur-ui) var(--avo-ease-out);
   pointer-events: none;
   background-repeat: no-repeat;
 }
@@ -413,12 +627,46 @@ html:not(.dark) .site-nav {
   opacity: 0.05;
 }
 
+/* Not every card is a target. The marks and the scan grid say "this is the
+   thing you are pointing at", which only means something on a card you can act
+   on as a whole — a tile, a link, a summary you click through.
+
+   Two kinds opt out, both via :has() so no call site has to remember:
+
+   1. A card holding other cards is a container. Hovering it would strike the
+      marks on the whole frame while the tile under the cursor does the same,
+      and the page reads as if two things were selected at once.
+
+   2. A card holding form controls is a work surface, not a target. On a
+      settings panel a thousand pixels tall the 22px grid becomes a wall of
+      lines that moves every time the pointer crosses the card, and the corner
+      marks land so far apart they no longer register as a pair.
+
+   Every card inside a .dash-section is a panel of that second kind, including
+   the read-only ones (Bot Permissions, Review Queue) that :has() cannot catch
+   because they hold no controls. The clickable things in those sections are
+   .hub-tile and .stat-tile, neither of which is a .card, so they keep theirs. */
+.card:has(.card, .hub-tile, .stat-tile):hover::before,
+.card:has(.card, .hub-tile, .stat-tile):hover::after,
+.card:has(input, select, textarea):hover::before,
+.card:has(input, select, textarea):hover::after,
+.dash-section .card:hover::before,
+.dash-section .card:hover::after {
+  opacity: 0;
+}
+
 .card-hover {
-  transition: border-color 0.25s ease;
+  transition: border-color var(--avo-dur-ui) var(--avo-ease-out);
 }
 
 .card-hover:hover {
   border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
+}
+
+/* Same reasoning for the hairline: containers and work surfaces stay put. */
+.card-hover:has(.card, .hub-tile, .stat-tile):hover,
+.card-hover:has(input, select, textarea):hover {
+  border-color: var(--border, rgba(128, 128, 128, 0.18));
 }
 
 .card-featured {
@@ -429,21 +677,42 @@ html:not(.dark) .site-nav {
 /* ── Typography helpers ───────────────────────────────────── */
 
 .text-muted {
-  color: oklch(.5 0 0);
+  color: var(--avo-text-muted, #7E7E7E);
 }
 
+/* A link that dims on hover is off-system — a line should be struck
+   (BRANDING §5b). The underline grows from the left, same gesture as the
+   kicker rule and the button wipe. */
 .accent-link {
+  position: relative;
   color: var(--color-primary, #FF6B4A);
   text-decoration: none;
-  transition: color 0.2s;
 }
 
-.accent-link:hover {
-  color: #FF9379;
-  text-decoration: underline;
+.accent-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
 }
 
-h2 {
+.accent-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Card headings pair an icon with their label, so they shrink-wrap and centre
+   the two. Scoped, not global: as a bare `h2` rule this shrank every heading in
+   the app to its text width, which quietly breaks anything relying on a
+   full-width block heading (centred text, a bottom rule, a flex header). */
+.card header h2,
+.card > h2,
+.popup-inner h2 {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -470,7 +739,7 @@ h2 {
 .hero-content {
   opacity: 0;
   transform: translateY(20px);
-  animation: fadeInUp 1s ease forwards;
+  animation: fadeInUp var(--avo-dur-enter) var(--avo-ease-out) forwards;
 }
 
 @keyframes fadeInUp {
@@ -497,8 +766,9 @@ h2 {
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 0;
-  background: rgba(10, 11, 11, 0.92);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+  backdrop-filter: blur(var(--avo-glass-blur));
+  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
   border-top: 1px solid rgba(128, 128, 128, 0.1);
   border-bottom: 1px solid rgba(128, 128, 128, 0.1);
   /* bleed to container edges */
@@ -510,10 +780,6 @@ h2 {
   scrollbar-width: none;
 }
 
-html:not(.dark) .dash-nav {
-  background: rgba(255, 255, 255, 0.92);
-}
-
 .dash-nav::-webkit-scrollbar { display: none; }
 
 .dash-nav-item {
@@ -523,11 +789,11 @@ html:not(.dark) .dash-nav {
   padding: 0.65rem 0.9rem;
   font-size: 0.8rem;
   font-weight: 500;
-  color: oklch(.5 0 0);
+  color: var(--avo-text-muted, #7E7E7E);
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--avo-dur-micro) var(--avo-ease-out), border-color var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .dash-nav-item svg {
@@ -555,7 +821,7 @@ html:not(.dark) .dash-nav {
 
 /* ── Section router: only the active section is shown ───────── */
 .dash-section { display: none; }
-.dash-section.is-active { display: block; animation: dashFadeIn 0.18s ease; }
+.dash-section.is-active { display: block; animation: dashFadeIn var(--avo-dur-ui) var(--avo-ease-out); }
 
 @keyframes dashFadeIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -565,38 +831,53 @@ html:not(.dark) .dash-nav {
 /* ── Home hub: system tiles grouped by category ─────────────── */
 .hub-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
 .hub-tile {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.7rem;
   width: 100%;
+  min-height: 3.9rem;
   text-align: left;
-  padding: 0.85rem 1rem;
+  /* Extra room on the right for the corner status lamp, which is positioned
+     rather than laid out — without it a two-line label runs under the dot. */
+  padding: 0.7rem 1.4rem 0.7rem 0.8rem;
   border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
   background: var(--card, rgba(255, 255, 255, 0.02));
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--avo-dur-micro) var(--avo-ease-out), background var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .hub-tile:hover {
   border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
 }
 
+/* Hairline plate, not a coral wash. Twenty-five tiles each carrying a filled
+   coral square turned the hub into a field of identical orange chips with the
+   labels as an afterthought; empty plates let the icons read as drawings and
+   give the accent somewhere to go on hover. */
 .hub-tile-icon {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  background: rgba(255, 107, 74, 0.1);
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-radius: var(--avo-radius-sm, 6px);
+  background: transparent;
   color: var(--color-primary, #FF6B4A);
+  transition: background var(--avo-dur-micro) var(--avo-ease-out), border-color var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.hub-tile:hover .hub-tile-icon {
+  background: rgba(255, 107, 74, 0.14);
+  border-color: rgba(255, 107, 74, 0.45);
 }
 
 .hub-tile-icon svg {
@@ -617,48 +898,76 @@ html:not(.dark) .dash-nav {
   flex: 1;
 }
 
+/* Wraps to two lines instead of truncating. "Sticky Messa…", "YouTube Vide…"
+   and "Classifier Trai…" were unreadable at this column width, and a hub whose
+   entries cannot be told apart is not a hub. */
 .hub-tile-label {
   font-weight: 600;
-  font-size: 0.9rem;
-  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
+/* Status is a lamp in the corner, not a line of type. Spelled out under every
+   label it read as a column of "ON" repeated twenty times — the exception is
+   what carries information here, so only the exception gets contrast. The word
+   itself stays in the accessibility tree via .sr-only. */
 .hub-tile-status {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: oklch(.5 0 0);
+  pointer-events: none;
 }
 
 .hub-status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: rgba(128, 128, 128, 0.4);
+  background: rgba(128, 128, 128, 0.35);
 }
 
-.hub-tile-status.is-on { color: #46A758; }
 .hub-tile-status.is-on .hub-status-dot {
   background: #46A758;
-  box-shadow: 0 0 6px rgba(70, 167, 88, 0.6);
+  box-shadow: 0 0 6px rgba(70, 167, 88, 0.55);
+}
+
+/* A disabled system should be legible as disabled without reading anything —
+   the whole tile steps back rather than announcing itself in small type. */
+.hub-tile.is-off .hub-tile-icon {
+  opacity: 0.4;
+}
+
+/* The label only steps back far enough to read as secondary — push it further
+   and a server that has most systems off looks like a broken page rather than
+   a configured one. */
+.hub-tile.is-off .hub-tile-label {
+  opacity: 0.6;
+}
+
+.hub-tile.is-off:hover .hub-tile-icon,
+.hub-tile.is-off:hover .hub-tile-label {
+  opacity: 1;
 }
 
 .hub-tile-arrow {
   flex-shrink: 0;
-  opacity: 0.35;
-  transition: opacity 0.15s, transform 0.15s;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--avo-dur-micro) var(--avo-ease-out), transform var(--avo-dur-micro) var(--avo-ease-out);
 }
 
-.hub-tile:hover .hub-tile-arrow {
-  opacity: 0.8;
-  transform: translateX(2px);
+.hub-tile:hover .hub-tile-arrow,
+.hub-tile:focus-visible .hub-tile-arrow {
+  opacity: 0.75;
+  transform: translateX(0);
 }
 
 .hub-tile-arrow svg {
@@ -681,7 +990,7 @@ html:not(.dark) .dash-nav {
   padding: 1.1rem 1.25rem;
   border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
   background: var(--card, rgba(255, 255, 255, 0.02));
-  transition: border-color 0.2s;
+  transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .stat-tile:hover {
@@ -725,7 +1034,7 @@ html:not(.dark) .dash-nav {
 
 .stat-tile-sub {
   font-size: 0.75rem;
-  color: oklch(.5 0 0);
+  color: var(--avo-text-muted, #7E7E7E);
   line-height: 1.35;
 }
 
@@ -741,10 +1050,22 @@ html:not(.dark) .dash-nav {
   scrollbar-width: thin;
 }
 
+/* The grid scrolls at 440px. Fading the bottom edge is what says so — a hard
+   cut through a tile row reads as a layout bug, not as "there is more below".
+   The mask is dropped once the list is scrolled to the end (.is-end, set by
+   dash_home) so the last row isn't permanently dimmed. */
+.guild-grid:not(.is-end) {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
+}
+
 .guild-tile {
   text-decoration: none;
 }
 
+/* Guild tiles keep the filled plate: an initial floating in an empty hairline
+   box has nothing to sit on, and here the plate stands in for a server icon
+   rather than framing a drawn one. */
 .guild-tile-letter {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
@@ -752,6 +1073,21 @@ html:not(.dark) .dash-nav {
   line-height: 1;
   text-transform: uppercase;
   overflow: hidden;
+  background: rgba(255, 107, 74, 0.12);
+  border-color: transparent;
+}
+
+.guild-tile:hover .guild-tile-letter {
+  border-color: transparent;
+}
+
+/* One-line server names — a guild list is scanned, not read, and the tiles
+   are wider here than in the system hub. */
+.guild-tile .hub-tile-label {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .guild-tile-letter img {
@@ -771,7 +1107,7 @@ html:not(.dark) .dash-nav {
   cursor: pointer;
   color: inherit;
   opacity: 0.5;
-  transition: opacity 0.2s;
+  transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
   animation: bounce 2s infinite;
 }
 
@@ -810,16 +1146,18 @@ html:not(.dark) .adoption-badge {
 
 /* ── Highlight badges ─────────────────────────────────────── */
 
+/* No lift on hover — the badge deepens in place. A translate here would be the
+   one v1 gesture left on the page (see the card block above: "no shadow-lift
+   hovers"), and it drags the surrounding text line with it. */
 .highlight-purple {
   background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
   color: rgb(255, 147, 121);
-  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+  transition: background-color var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .highlight-purple:hover {
   background-color: rgba(255, 107, 74, 0.4);
-  transform: translateY(-2px);
   cursor: pointer;
 }
 
@@ -831,12 +1169,11 @@ html:not(.dark) .adoption-badge {
   background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
   color: rgb(255, 147, 121);
-  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+  transition: background-color var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out);
 }
 
 .highlight-yellow:hover {
   background-color: rgba(255, 107, 74, 0.4);
-  transform: translateY(-2px);
 }
 
 html:not(.dark) .highlight-yellow {
@@ -852,16 +1189,38 @@ html:not(.dark) .highlight-purple {
 /* ── Radio / option label ────────────────────────────────── */
 
 .radio-label {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem;
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: background-color var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+/* A coral rule draws down the left edge instead of the whole row washing grey —
+   same wipe language as the buttons, and it points at the option it belongs to
+   rather than tinting a box the size of two lines of text. */
+.radio-label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-primary, #FF6B4A);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.radio-label:hover::before,
+.radio-label:focus-within::before {
+  transform: scaleY(1);
 }
 
 .radio-label:hover {
-  background: rgba(128, 128, 128, 0.1);
+  background: rgba(255, 107, 74, 0.05);
 }
 
 /* ── Site footer ──────────────────────────────────────────── */
@@ -870,7 +1229,7 @@ html:not(.dark) .highlight-purple {
   font-size: 0.875rem;
   text-align: center;
   padding: 2rem 0;
-  color: oklch(.5 0 0);
+  color: var(--avo-text-muted, #7E7E7E);
   border-top: 1px solid rgba(128, 128, 128, 0.15);
   margin-top: 4rem;
 }
@@ -883,7 +1242,8 @@ html:not(.dark) .highlight-purple {
   inset: 0;
   z-index: 10000;
   background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--avo-glass-blur));
+  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
   padding: 2rem;
   overflow-y: auto;
   align-items: center;
@@ -897,7 +1257,7 @@ html:not(.dark) .highlight-purple {
 }
 
 .popup.fade-out {
-  animation: fadeOut 1s forwards;
+  animation: fadeOut var(--avo-dur-enter) var(--avo-ease-in-out) forwards;
 }
 
 /* ── Misc ─────────────────────────────────────────────────── */
@@ -911,6 +1271,21 @@ main {
   display: none !important;
 }
 
+/* Defined here rather than leaning on Tailwind's: the markup that uses it is
+   built at runtime (the hub tiles), which the browser build's class scanner
+   does not necessarily see. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 @keyframes fadeOut {
   0%   { opacity: 1; }
   100% { opacity: 0; }
@@ -922,7 +1297,7 @@ main {
 }
 
 .container.fade-in {
-  animation: fadeIn 1s forwards;
+  animation: fadeIn var(--avo-dur-enter) var(--avo-ease-in-out) forwards;
 }
 
 /* ── Tag input ────────────────────────────────────────────── */
@@ -955,12 +1330,15 @@ main {
 
 .remove-tag {
   cursor: pointer;
-  opacity: 0.7;
+  color: var(--avo-text-muted, #7E7E7E);
   margin-left: 2px;
+  transition: color var(--avo-dur-micro) var(--avo-ease-out);
 }
 
+/* Colour step, not an opacity fade: the chip is already low-contrast, and
+   fading a faint thing to slightly less faint reads as nothing happening. */
 .remove-tag:hover {
-  opacity: 1;
+  color: var(--color-primary, #FF6B4A);
 }
 
 /* ── Channel permission feedback ─────────────────────────── */
@@ -972,15 +1350,15 @@ main {
   font-size: 0.8rem;
   padding: 0.375rem 0.75rem;
   margin-top: 0.375rem;
-  background: rgba(0, 200, 83, 0.1);
-  color: #00C853;
-  border: 1px solid rgba(0, 200, 83, 0.3);
+  background: rgba(70, 167, 88, 0.1);
+  color: var(--avo-success);
+  border: 1px solid rgba(70, 167, 88, 0.3);
 }
 
 .channel-perm-feedback.error {
-  background: rgba(255, 82, 82, 0.1);
-  color: #FF5252;
-  border-color: rgba(255, 82, 82, 0.3);
+  background: rgba(220, 56, 56, 0.1);
+  color: var(--avo-error);
+  border-color: rgba(220, 56, 56, 0.3);
 }
 
 /* ── General: btn-link text wrapping ─────────────────────── */
@@ -1041,7 +1419,7 @@ fieldset {
 
   .dash-nav-toggle__chevron {
     opacity: 0.5;
-    transition: transform 0.2s;
+    transition: transform var(--avo-dur-micro) var(--avo-ease-out);
   }
 
   .dash-nav-toggle[aria-expanded="true"] .dash-nav-toggle__chevron {
@@ -1133,18 +1511,14 @@ fieldset {
     transform: translateX(-50%);
     flex-direction: row !important;
     align-items: center;
-    background: var(--color-card, rgba(28, 28, 28, 0.95));
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(128, 128, 128, 0.25);
+    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+    backdrop-filter: blur(var(--avo-glass-blur));
+    -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+    border: 1px solid var(--border, rgba(128, 128, 128, 0.25));
     border-radius: 3rem;
     padding: 0.3rem;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
     gap: 0.15rem;
-  }
-
-  html:not(.dark) .local-button-group {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   }
 
   /* Hide the HR divider -  not needed in horizontal pill layout */
@@ -1322,8 +1696,8 @@ fieldset {
 .avo-icon {
   display: inline-grid;
   flex-shrink: 0;
-  transition: opacity .32s ease,
-              transform .32s cubic-bezier(.77,0,.18,1);
+  transition: opacity var(--avo-dur-ui) var(--avo-ease-out),
+              transform var(--avo-dur-ui) var(--avo-ease-out);
 }
 .avo-icon > * { grid-area: 1/1; display: flex; align-items: center; }
 
@@ -1335,8 +1709,8 @@ fieldset {
   white-space: nowrap;
   opacity: 0;
   transform: translateX(6px);
-  transition: opacity .32s ease,
-              transform .32s cubic-bezier(.77,0,.18,1);
+  transition: opacity var(--avo-dur-ui) var(--avo-ease-out),
+              transform var(--avo-dur-ui) var(--avo-ease-out);
 }
 
 .avo-text-wrap {
@@ -1344,7 +1718,7 @@ fieldset {
   max-width: 0;
   display: flex;
   align-items: baseline;
-  transition: max-width .4s cubic-bezier(.77,0,.18,1);
+  transition: max-width var(--avo-dur-ui) var(--avo-ease-out);
 }
 
 .avo-text {
@@ -1355,8 +1729,8 @@ fieldset {
   white-space: nowrap;
   opacity: 0;
   transform: translateX(20px);
-  transition: transform .4s cubic-bezier(.77,0,.18,1),
-              opacity .3s ease .05s;
+  transition: transform var(--avo-dur-ui) var(--avo-ease-out),
+              opacity var(--avo-dur-ui) var(--avo-ease-out) 0.05s;
 }
 
 .avo-dot { color: var(--color-primary, #FF6B4A); }
@@ -1366,12 +1740,17 @@ fieldset {
   stroke-dashoffset: 0;
 }
 
-/* ── Post-login splash: CAD construction reveal (BRANDING §5) ── */
+/* ── CAD construction reveal (BRANDING §5) ────────────────────────────────
 
-/* Ported from brand/motion/wordmark-reveal.css + Wordmark.tsx (React+GSAP)
-   to vanilla — same geometry, same timeline, same timeScale 0.6. Word is
-   BAXI (product wordmark, not AVOCLOUD.NET). Plays once after login only:
-   gated server-side by session['show_intro'], popped in dash.py. */
+   Ported from brand/motion/wordmark-reveal.css + Wordmark.tsx (React+GSAP)
+   to vanilla — same geometry, same timeline, same timeScale 0.6. The word is
+   AVOCLOUD.NET (umbrella brand) at both call sites.
+
+   Two of them share these styles, and there is deliberately only one
+   implementation of the animation (scripts/wordmark.js):
+   · the post-login splash on dash_home.html — full screen, once per login,
+     gated server-side by session['show_intro'], popped in dash.py
+   · the hero on welcome.html — in place, on every load of the landing page */
 
 #avo-splash {
   position: fixed;
@@ -1381,7 +1760,7 @@ fieldset {
   align-items: center;
   justify-content: center;
   background: #000000;
-  transition: opacity 0.7s ease;
+  transition: opacity var(--avo-dur-enter) var(--avo-ease-in-out);
 }
 
 #avo-splash.avo-fade-out {
@@ -1427,16 +1806,21 @@ html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
 .hw-circ { fill: none; stroke: rgba(255, 255, 255, 0.26); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0; }
 .hw-circ.coral { stroke: rgba(255, 107, 74, 0.55); }
 
-/* The universal `*` font-family rule near the top of this file also hits the
-   per-letter spans, so declaring Syne only on .splash-word loses — the letters
-   would silently fall back to Space Grotesk. Name the spans explicitly. */
-.splash-word, .splash-word .hw-ch, .splash-word .hw-fill,
-.splash-word .hw-stroke, .splash-word .hw-stroke::before {
+/* Guide lines on the light band — white scaffolding on #E8ECEF is invisible.
+   Scoped to .hw.is-hero, never global: the splash keeps its black canvas in
+   both themes, so darkening its guides would erase them instead. */
+html:not(.dark) .hw.is-hero .hw-line { stroke: rgba(0, 0, 0, 0.28); }
+html:not(.dark) .hw.is-hero .hw-line.coral { stroke: rgba(199, 61, 32, 0.5); }
+html:not(.dark) .hw.is-hero .hw-circ { stroke: rgba(0, 0, 0, 0.24); }
+html:not(.dark) .hw.is-hero .hw-circ.coral { stroke: rgba(199, 61, 32, 0.55); }
+
+/* The per-letter spans inherit the face; the universal `*` font-family rule
+   that used to break that inheritance is gone with the v1 remote stylesheet.
+   The hero variant is the same wordmark — only the colour source differs, so
+   it stays legible on the light band where the splash never goes. */
+.splash-word, .hero-word {
   font-family: var(--avo-font-brand, 'Syne', sans-serif);
   font-weight: 800;
-}
-
-.splash-word {
   /* flex, not inline-block: the letters are one span each, and whitespace-only
      text nodes between them would otherwise render as word gaps. */
   display: flex;
@@ -1447,10 +1831,22 @@ html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
   letter-spacing: -0.015em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: #FFFFFF;
   margin: 0;
   position: relative;
   z-index: 1;
+}
+
+/* The splash always sits on the black canvas; the hero follows the theme. */
+.splash-word { color: #FFFFFF; }
+.hero-word   { color: var(--avo-text, inherit); }
+
+/* The outline layer is drawn in the text colour so it survives the light
+   theme too — a white stroke on a light band is invisible. */
+html:not(.dark) .hero-word .hw-stroke {
+  -webkit-text-stroke-color: rgba(0, 0, 0, 0.45);
+}
+html:not(.dark) .hero-word .hw-ch.coral .hw-stroke {
+  -webkit-text-stroke-color: rgba(199, 61, 32, 0.7);
 }
 
 /* ── Desktop sidebar (≥ 900px) ───────────────────────────────── */
@@ -1536,17 +1932,13 @@ html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
     border: none;
     border-top: 1px solid rgba(128, 128, 128, 0.1);
     border-right: 1px solid rgba(128, 128, 128, 0.1);
-    background: rgba(10, 11, 11, 0.92);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+    backdrop-filter: blur(var(--avo-glass-blur));
+    -webkit-backdrop-filter: blur(var(--avo-glass-blur));
     padding: 0.35rem 0;
     gap: 0;
-    box-shadow: none;
+    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
     transform: none;
-  }
-
-  html:not(.dark) .local-button-group {
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: none;
   }
 
   .local-button-group hr {
@@ -1621,14 +2013,283 @@ body { padding-left: 0 !important; }
     width: auto;
     min-width: 190px;
     border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-    background: var(--card, rgba(10, 10, 10, 0.92));
+    /* Glass, not a card: an opaque --card background here would block exactly
+       what the backdrop-filter above is meant to sample (BRANDING §6b). */
     padding: 0.35rem;
+    /* It reads as a floating panel here, so it takes the box radius (8px) like
+       every other panel — the 0 it inherited is from the sidebar layout, where
+       this group was flush against two screen edges and had no corners to
+       round. overflow:hidden keeps the button hovers inside the curve. */
+    border-radius: var(--avo-radius-md, 8px);
     overflow: hidden;
+  }
+
+  /* The buttons sit 0.35rem inside, so their own corners have to follow the
+     frame or the hover fill shows square shoulders in the rounded corners. */
+  .local-button-group button {
+    border-radius: calc(var(--avo-radius-md, 8px) - 3px);
   }
 
   html:not(.dark) .local-button-group {
     border-color: rgba(0, 0, 0, 0.14);
   }
+}
+
+/* ── Wordmark lockup tail (was inherited from the v1 remote stylesheet) ─── */
+.avocloud-logo__rest {
+  font-family: var(--avo-font-brand, 'Syne', sans-serif);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ── Stat label (was inherited from the v1 remote stylesheet) ───────────── */
+.stat-label {
+  font-family: var(--avo-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--avo-text-muted, #7E7E7E);
+}
+
+/* ── Page-transition curtain (BRANDING §5b) ─────────────────────
+   One curtain swept across two page loads: it rises from the bottom edge over
+   the outgoing page, and the incoming page carries it the rest of the way off
+   the top. One edge, one direction, one continuous motion across a real
+   navigation — the same language as every other transition here.
+
+   It is parked off-screen and only ever moved by script, so with JS broken it
+   is an inert empty div. Never `body { opacity: 0 }`: make invisible the
+   page's resting state and a script that fails to run leaves a blank page. */
+.avo-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: #000000;
+  pointer-events: none;
+  transform: translateY(100%);
+}
+
+/* Raised: covering the viewport, on its way in from the bottom. */
+.avo-curtain.is-out {
+  transform: translateY(0);
+  transition: transform 0.3s var(--avo-ease-in-out);
+}
+
+/* The incoming page starts covered and lifts it off the top. Both halves are
+   UI scale, not signature scale — this is paid on every click. */
+.avo-curtain.is-covered {
+  transform: translateY(0);
+}
+
+.avo-curtain.is-in {
+  transform: translateY(-100%);
+  transition: transform 0.42s var(--avo-ease-in-out);
+}
+
+/* ── Footer links ─────────────────────────────────────────────
+   Replaces 32 inline onmouseover="this.style.opacity=…" handlers across ten
+   templates. Those had no keyboard state at all, ignored the motion tokens,
+   and — being inline styles — outranked any rule written here later.
+
+   The gesture is .accent-link's: a rule drawn in from the left, not a fade. */
+.footer-link {
+  position: relative;
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--avo-text-muted, #7E7E7E);
+  transition: color var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: var(--avo-text, inherit);
+}
+
+.footer-link:hover::after,
+.footer-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Coral-tinted link that acts as a button (vote, join the Discord). Pair it
+   with .avo-btn at the call site — that is what supplies the radius, the mono
+   face and the hover wipe, so this rule only has to carry the tint. */
+.cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid rgba(255, 107, 74, 0.5);
+  background: rgba(255, 107, 74, 0.12);
+  color: inherit;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
+}
+
+.cta-link:hover {
+  border-color: var(--avo-primary-hover, #FF9379);
+}
+
+/* Admin gets the accent — it is the one link in that row that goes somewhere
+   most visitors cannot. */
+.footer-link.is-accent {
+  color: var(--color-primary, #FF6B4A);
+  font-weight: 600;
+}
+
+.footer-link.is-accent:hover,
+.footer-link.is-accent:focus-visible {
+  color: var(--color-primary, #FF6B4A);
+}
+
+/* ── Card action row ──────────────────────────────────────────
+   The per-card save row. Separated by a hairline so the button does not sit
+   flush against the last field, right-aligned because it acts on the card
+   above it, not on the page.
+
+   It stays in the DOM even with the save bar running: the bar is JavaScript,
+   and a settings page that cannot save at all without JS is worse than one
+   with two ways to do it. body.has-save-bar hides it once the bar is live. */
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+}
+
+/* With the bar running the inline save is a duplicate — but some of these rows
+   also carry a non-save action ("Reset count", "Reset scores"). Hide the save
+   button there and keep the row; hide the whole row only when the save button
+   is all it holds, so no empty rule line is left behind. */
+body.has-save-bar .card-actions > .submit-btn,
+body.has-save-bar .card-actions > [data-save-btn] {
+  display: none;
+}
+
+body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]))) {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  /* Thumb reach beats alignment on a phone. */
+  .card-actions > * {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ── Sticky save bar ──────────────────────────────────────────
+   One save for the whole dashboard, shown only while something is unsaved.
+
+   Centred rather than parked in a corner: the floating account group holds the
+   bottom left (main.css, .local-button-group) and basecoat drops its toasts
+   bottom right, so both corners are already spoken for.
+
+   z-index sits above page content but below .popup (10000) and .avo-curtain
+   (10050) — a modal or a page transition must always cover it. */
+.avo-save-bar {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.7rem 0.6rem 1.1rem;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-radius: var(--avo-radius-md, 8px);
+  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+  backdrop-filter: blur(var(--avo-glass-blur));
+  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+  /* Parked below the edge and pulled up on .is-open. translateX carries the
+     centring, so both axes have to be restated in the open state. */
+  transform: translate(-50%, calc(100% + 1.25rem));
+  transition: transform var(--avo-dur-ui) var(--avo-ease-out);
+}
+
+.avo-save-bar.is-open {
+  transform: translate(-50%, 0);
+}
+
+/* display:flex above outranks the UA rule for [hidden], so the no-JS state has
+   to be restated here — otherwise the bar shows on a page whose script never
+   ran, with nothing wired to its button. */
+.avo-save-bar[hidden] {
+  display: none;
+}
+
+.avo-save-bar__label {
+  font-family: var(--avo-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--avo-text-muted, #7E7E7E);
+  white-space: nowrap;
+}
+
+.avo-save-bar__label strong {
+  color: var(--color-primary, #FF6B4A);
+  font-weight: 600;
+}
+
+/* Hidden from the tab order while parked — a button off the bottom of the
+   screen that still takes focus is a keyboard trap you cannot see. */
+.avo-save-bar:not(.is-open) {
+  visibility: hidden;
+}
+
+/* 900px, not 640: below it the account group leaves its bottom-left corner —
+   between 640 and 899 it sits at left:20px in the base layout, and a ~440px
+   bar centred in a 700px viewport lands right on top of it. Spanning the full
+   width instead removes the question entirely. */
+@media (max-width: 899px) {
+  .avo-save-bar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    justify-content: space-between;
+    transform: translateY(100%);
+  }
+
+  .avo-save-bar.is-open {
+    transform: translateY(0);
+  }
+
+  /* Lift the floating account group clear of the bar rather than letting the
+     two stack on top of each other. */
+  body.has-save-bar .local-button-group {
+    bottom: 4.5rem;
+  }
+}
+
+/* ── Focus (BRANDING §12) ─────────────────────────────────────
+   :focus-visible only, so pointer users don't get a ring on click and
+   keyboard users always do. The offset keeps it clear of the component's own
+   hairline border. Never remove without a replacement at least as visible. */
+:focus-visible {
+  outline: 2px solid var(--avo-primary, #FF6B4A);
+  outline-offset: 3px;
 }
 
 /* ── Accessibility: respect reduced-motion ───────────────────── */

@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
-    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -23,7 +22,7 @@
             position: fixed; inset: 0; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
             background: var(--background, canvas);
-            transition: opacity 0.35s ease, visibility 0.35s ease;
+            transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
         }
         #page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
         #page-loader .loader-spinner {
@@ -51,7 +50,7 @@
             border: 1px solid var(--border, var(--color-border));
             font-size: 0.68rem; font-weight: 700; font-style: normal;
             display: flex; align-items: center; justify-content: center;
-            opacity: 0.4; cursor: help; user-select: none; transition: opacity 0.12s;
+            opacity: 0.4; cursor: help; user-select: none; transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
         }
         .info-i:hover, .info-i:focus { opacity: 0.9; outline: none; }
         .info-i .tip {
@@ -64,7 +63,7 @@
             text-transform: none; letter-spacing: normal; text-align: left;
             color: var(--foreground, inherit); opacity: 0;
             visibility: hidden; transform: translateY(4px);
-            transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out), transform var(--avo-dur-micro) var(--avo-ease-out), visibility var(--avo-dur-micro) var(--avo-ease-out);
             z-index: 60; box-shadow: 0 10px 28px rgba(0,0,0,0.28); pointer-events: none;
         }
         .info-i:hover .tip, .info-i:focus .tip { opacity: 1; visibility: visible; transform: translateY(0); }
@@ -87,7 +86,7 @@
         .rank-row:last-child { border-bottom: none; }
         .rank-num { font-size: 0.72rem; font-weight: 700; opacity: 0.35; width: 1.5rem; flex-shrink: 0; }
         .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--border); border-radius: 9999px; overflow: hidden; }
-        .rank-bar { height: 100%; border-radius: 9999px; background: var(--color-primary, #FF6B4A); transition: width 0.4s ease; }
+        .rank-bar { height: 100%; border-radius: 9999px; background: var(--color-primary, #FF6B4A); transition: width var(--avo-dur-ui) var(--avo-ease-out); }
         .rank-count { font-size: 0.78rem; font-weight: 600; opacity: 0.6; white-space: nowrap; }
 
         .tag { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; }
@@ -107,7 +106,7 @@
             padding: 0.32rem 1rem; border-radius: 9999px;
             border: 1px solid var(--border, var(--color-border));
             font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent;
-            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            transition: background var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out), border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .time-bar button.active, .time-bar button:hover {
             background: var(--color-primary, #FF6B4A); color: #fff;
@@ -115,7 +114,7 @@
         }
 
         .health-track { height: 6px; border-radius: 9999px; background: var(--border); overflow: hidden; margin-top: 0.4rem; }
-        .health-fill  { height: 100%; border-radius: 9999px; transition: width 0.5s ease; }
+        .health-fill  { height: 100%; border-radius: 9999px; transition: width var(--avo-dur-enter) var(--avo-ease-out); }
 
         .no-data { opacity: 0.45; font-size: 0.84rem; padding: 0.5rem 0; }
 
@@ -155,7 +154,7 @@
                 border: 1px solid var(--border, rgba(255,255,255,0.12));
                 background: transparent;
                 cursor: pointer;
-                transition: background 0.12s, color 0.12s, border-color 0.12s;
+                transition: background var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out), border-color var(--avo-dur-micro) var(--avo-ease-out);
             }
             #mobile-nav button:hover, #mobile-nav button:active {
                 background: var(--color-primary, #FF6B4A);
@@ -749,5 +748,6 @@
 
         document.addEventListener('DOMContentLoaded', () => buildCharts(D));
     </script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
 </html>

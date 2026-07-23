@@ -20,7 +20,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
-    <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
@@ -37,7 +36,7 @@
             justify-content: center;
             gap: 1.25rem;
             background: var(--background, var(--color-background, canvas));
-            transition: opacity 0.35s ease, visibility 0.35s ease;
+            transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
         }
         #page-loader.hidden {
             opacity: 0;
@@ -102,7 +101,7 @@
             border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
             border-radius: var(--radius-md, 0.5rem);
             padding: 0.3rem 0.7rem;
-            transition: border-color 0.15s;
+            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .nav-search-wrap:focus-within {
             border-color: var(--color-primary, #FF6B4A);
@@ -136,7 +135,7 @@
             padding: 0.45rem 0.7rem;
             border-radius: calc(var(--radius-md, 0.5rem) - 2px);
             cursor: pointer; font-size: 0.82rem; color: inherit;
-            transition: background 0.1s;
+            transition: background var(--avo-dur-micro) var(--avo-ease-out);
         }
         .nav-search-item:hover,
         .nav-search-item.ns-active {
@@ -156,6 +155,25 @@
         }
         @media (max-width: 700px) { .nav-search { display: none; } }
 
+        /* PRISM score card. --score-border is set per user by renderPrismScores;
+           hover only brightens the hairline to the user's risk colour — no lift,
+           no drop shadow, matching the card language in main.css. */
+        .prism-score-card {
+            background: #0A0A0A;
+            border: 1px solid #2a2a2a;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
+        }
+        .prism-score-card:hover {
+            border-color: var(--score-border, #2a2a2a);
+        }
+
         /* Add-area: dashed border with wider gap between dashes */
         .add-area {
             
@@ -167,7 +185,7 @@
         /* Anti-Raid advanced disclosure */
         .antiraid-advanced > summary::-webkit-details-marker { display: none; }
         .antiraid-advanced > summary { user-select: none; }
-        .antiraid-advanced > summary svg { transition: transform .15s ease; }
+        .antiraid-advanced > summary svg { transition: transform var(--avo-dur-micro) var(--avo-ease-out); }
         .antiraid-advanced[open] > summary svg { transform: rotate(90deg); }
 
         /* Range slider: gradient lives on the TRACK pseudo (var --p = filled %) so external
@@ -328,7 +346,7 @@
         </div>
 
         <!-- Top.gg Vote Banner -  avocloud.net styled -->
-        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
+        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur)); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
             <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,var(--color-primary, #FF6B4A),#FF9379,#FF6B4A,var(--color-primary, #FF6B4A)); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
@@ -344,7 +362,7 @@
                     </div>
                 </div>
                 {% if user_on_avocloud %}
-                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
+                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" class="avo-btn cta-link" style="flex-shrink:0;">
                     <!-- Lucide: thumbs-up -->
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M7 10v12"/>
@@ -362,7 +380,7 @@
                         </svg>
                         Vote on Top.gg
                     </span>
-                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
+                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" class="avo-btn cta-link">
                         <!-- Lucide: users -->
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -641,21 +659,23 @@
                                     <div class="channel-perm-feedback hidden" id="feedback-notification-channel"></div>
                                 </div>
 
-                                <button type="submit" class="btn-primary submit-btn w-full">
-                                    <span class="btn-text">
-                                        <svg class="lucide" viewBox="0 0 24 24">
-                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                <div class="card-actions">
+                                    <button type="submit" class="btn-primary submit-btn">
+                                        <span class="btn-text">
+                                            <svg class="lucide" viewBox="0 0 24 24">
+                                                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                                <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                            </svg>
+                                            Save
+                                        </span>
+                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                            stroke="currentColor" fill="none" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                         </svg>
-                                        Save
-                                    </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
-                                </button>
+                                    </button>
+                                </div>
                             </form>
 
                             <!-- Bot Permissions sub-card -->
@@ -745,21 +765,23 @@
                                     </label>
                                 </fieldset>
                             </div>
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -910,21 +932,23 @@
                                 </div>
 
                                 <div id="chatfilter-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
-                                <button type="submit" class="btn-primary submit-btn w-full">
-                                    <span class="btn-text">
-                                        <svg class="lucide" viewBox="0 0 24 24">
-                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                <div class="card-actions">
+                                    <button type="submit" class="btn-primary submit-btn">
+                                        <span class="btn-text">
+                                            <svg class="lucide" viewBox="0 0 24 24">
+                                                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                                <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                            </svg>
+                                            Save
+                                        </span>
+                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                            stroke="currentColor" fill="none" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                         </svg>
-                                        Save
-                                    </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
-                                </button>
+                                    </button>
+                                </div>
                             </form>
                         </section>
                     </div>
@@ -1043,8 +1067,8 @@
                                 <p class="text-muted text-xs">Number of upvotes needed to trigger the auto-forward. Only fires once per suggestion.</p>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="submit" id="suggestions-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
+                            <div class="card-actions">
+                                <button type="submit" id="suggestions-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -1112,8 +1136,8 @@
                                 </button>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="button" id="sticky-save-btn" class="btn-primary flex-1 flex items-center justify-center gap-2" onclick="stickySave()">
+                            <div class="card-actions">
+                                <button type="button" id="sticky-save-btn" data-save-btn class="btn-primary flex items-center justify-center gap-2" onclick="stickySave()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -1161,21 +1185,23 @@
                                 <div class="channel-perm-feedback hidden" id="feedback-globalchat-channel"></div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -1316,21 +1342,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -1436,21 +1464,23 @@
                             </div>
 
                             <div id="antispam-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -1661,21 +1691,23 @@
                                 </div>
                             </details>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -1745,21 +1777,23 @@
                                 <p class="text-muted text-xs">Channel where gate decisions are logged.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -1908,8 +1942,8 @@
                                 </div>
                             </div>
 
-                            <div class="flex gap-3 flex-wrap">
-                                <button type="submit" class="btn-primary submit-btn flex-1">
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1924,7 +1958,7 @@
                                         <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
                                 </button>
-                                <button type="button" id="verify-post-btn" class="btn-outline flex-1" onclick="postVerifyPanel()">
+                                <button type="button" id="verify-post-btn" class="btn-outline" onclick="postVerifyPanel()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                         <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
                                     </svg>
@@ -2090,21 +2124,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -2415,21 +2451,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -2566,21 +2604,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -2625,21 +2665,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -2710,8 +2752,8 @@
                                 {% endif %}
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="submit" id="auto-release-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
+                            <div class="card-actions">
+                                <button type="submit" id="auto-release-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2802,8 +2844,8 @@
                                 <p class="text-muted text-xs" style="margin-top:4px;">Time out a member for 1 minute if they insult Baxi or another member while talking to the assistant. Requires the bot to have the Timeout Members permission.</p>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="submit" id="assistant-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
+                            <div class="card-actions">
+                                <button type="submit" id="assistant-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2973,21 +3015,23 @@
                                 <input type="text" id="mcl-chat-webhook-url" class="input" placeholder="https://discord.com/api/webhooks/...">
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -3040,21 +3084,23 @@
                                 <p class="text-muted text-xs">This role will be mentioned when a streamer goes live.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
 
                         <hr class="my-6">
@@ -3138,13 +3184,15 @@
                                 <p class="text-muted text-xs">This role will be mentioned with each new video notification.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
                         </form>
 
                         <hr class="my-6">
@@ -3232,13 +3280,15 @@
                                 <p class="text-muted text-xs">This role will be mentioned with each new post notification.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
                         </form>
 
                         <hr class="my-6">
@@ -3325,13 +3375,15 @@
                                 <p class="text-muted text-xs">This role will be mentioned with each new post notification.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
                         </form>
 
                         <hr class="my-6">
@@ -3433,13 +3485,15 @@
                                 </select>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
                         </form>
 
                         <hr class="my-6">
@@ -3559,21 +3613,23 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -3801,21 +3857,23 @@
                                 </div>
                             </template>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                        <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                        <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -3876,17 +3934,19 @@
                                 <p class="text-xs text-muted">Allows custom URLs for <code>/music radio custom_url:&lt;url&gt;</code>. Presets always work.</p>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -3946,17 +4006,19 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn w-full">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                    stroke="currentColor" fill="none" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
+                                        stroke="currentColor" fill="none" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -4024,8 +4086,8 @@
                                 </p>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="submit" class="btn-primary submit-btn flex-1">
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -4090,8 +4152,8 @@
                                 </label>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="submit" class="btn-primary submit-btn flex-1">
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -4163,13 +4225,15 @@
                                 </button>
                             </div>
 
-                            <button type="submit" class="btn-primary submit-btn">
-                                <span class="btn-text">
-                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                                    Save
-                                </span>
-                                <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            </button>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -4314,15 +4378,27 @@
             </section>
 
             <div style="display: flex; gap: 1.5rem; justify-content: center; padding: 0.5rem 0 1rem; flex-wrap: wrap;">
-                <a href="/privacy/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Privacy Policy</a>
-                <a href="/terms/" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Terms of Service</a>
-                <a href="https://avocloud.net/impressum.html" style="font-size: 0.8rem; opacity: 0.4; transition: opacity 0.15s; text-decoration: none;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=0.4">Impressum</a>
+                <a href="/privacy/" class="footer-link">Privacy Policy</a>
+                <a href="/terms/" class="footer-link">Terms of Service</a>
+                <a href="https://avocloud.net/impressum.html" class="footer-link">Impressum</a>
             </div>
             <footer class="site-footer">
                 <p>Avocloud.net &mdash; Baxi Dashboard</p>
             </footer>
 
         </main>
+    </div>
+
+    <!-- Save bar. Inert until the script below claims it: without JS the
+         per-card .card-actions rows stay visible and keep working. -->
+    <div class="avo-save-bar" id="avo-save-bar" role="status" aria-live="polite" hidden>
+        <span class="avo-save-bar__label" id="avo-save-bar-label"></span>
+        <button type="button" class="btn-primary" id="avo-save-bar-btn">
+            <span class="btn-text flex items-center gap-2">
+                <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save changes
+            </span>
+        </button>
     </div>
 
     <script>
@@ -6021,7 +6097,10 @@
             if (!prismPopover) {
                 prismPopover = document.createElement('div');
                 prismPopover.id = 'prism-popover';
-                prismPopover.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);';
+                // Same overlay as every other modal here, so it picks up the
+                // glass blur and z-order from one place instead of a second
+                // hand-tuned copy. display is still toggled inline below.
+                prismPopover.className = 'popup';
                 prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#0A0A0A;border:1px solid #2a2a2a;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
                     <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -6058,9 +6137,11 @@
                 const avatarUrl = u.avatar_url || fallback;
 
                 const card = document.createElement('div');
-                card.style.cssText = 'background:#0A0A0A;border:1px solid #2a2a2a;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
-                card.onmouseenter = () => { card.style.borderColor = scoreBord; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; };
-                card.onmouseleave = () => { card.style.borderColor = '#2a2a2a'; card.style.transform = ''; card.style.boxShadow = ''; };
+                // Hover lives in CSS (.prism-score-card); only the risk colour
+                // is per-user, and it rides in as a custom property so the two
+                // mouse handlers this replaced aren't needed at all.
+                card.className = 'prism-score-card';
+                card.style.setProperty('--score-border', scoreBord);
 
                 let badges = '';
                 if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7E7E7E !important;margin-top:6px;">Opt-Out</span>`;
@@ -8624,6 +8705,100 @@
             });
         });
 
+        /* ── Sticky save bar ─────────────────────────────────────────────
+           One save for the whole dashboard. Each settings form keeps its own
+           onsubmit handler (XHR + showSaveToast); the bar only decides WHEN to
+           fire them, so nothing about how a section saves changes here.
+
+           Deliberately global rather than per-section: the router shows one
+           section at a time, and a bar scoped to the visible one would hide
+           unsaved work the moment you clicked another entry in the hub. */
+        (function () {
+            var bar = document.getElementById('avo-save-bar');
+            if (!bar) return;
+
+            var label = document.getElementById('avo-save-bar-label');
+            var btn   = document.getElementById('avo-save-bar-btn');
+            var dirty = new Set();
+
+            /* Taking the bar over means the per-card rows are redundant — but
+               only now, after the script has proven it runs. */
+            bar.hidden = false;
+            document.body.classList.add('has-save-bar');
+
+            function render() {
+                var n = dirty.size;
+                if (!n) {
+                    bar.classList.remove('is-open');
+                    return;
+                }
+                label.innerHTML = 'Unsaved changes in <strong>' + n +
+                    (n === 1 ? '</strong> section' : '</strong> sections');
+                bar.classList.add('is-open');
+            }
+
+            /* Delegated, so controls rendered later (streamer rows, ticket
+               buttons, reward tiers) are covered without re-binding. */
+            document.addEventListener('input', mark, true);
+            document.addEventListener('change', mark, true);
+
+            function mark(ev) {
+                var form = ev.target.closest && ev.target.closest('.settings-form');
+                if (!form || form.hasAttribute('data-no-dirty')) return;
+                if (dirty.has(form)) return;
+                dirty.add(form);
+                render();
+            }
+
+            function save() {
+                /* Snapshot first: requestSubmit runs the handler synchronously,
+                   and a handler that touches a field would otherwise re-add its
+                   own form to the set we are iterating. */
+                var forms = Array.from(dirty);
+                dirty.clear();
+                render();
+                forms.forEach(function (form) {
+                    // A section whose save is a plain button rather than a
+                    // submit (sticky messages) opts in with data-save-btn.
+                    var manual = form.querySelector('[data-save-btn]');
+                    if (manual) { manual.click(); return; }
+                    /* reportValidity first: requestSubmit on an invalid form is
+                       a silent no-op, which would look like a save that worked.
+
+                       The router shows one section at a time, and the browser
+                       cannot anchor its "please fill this in" bubble to a field
+                       in a hidden one — the save would just quietly refuse. So
+                       open the offending section before asking. */
+                    if (!form.checkValidity()) {
+                        var section = form.closest('.dash-section');
+                        if (section && window.dashShowSection) window.dashShowSection(section.id);
+                        dirty.add(form);
+                        render();
+                        form.reportValidity();
+                        return;
+                    }
+                    form.requestSubmit();
+                });
+            }
+
+            btn.addEventListener('click', save);
+
+            document.addEventListener('keydown', function (ev) {
+                if (!(ev.ctrlKey || ev.metaKey) || ev.key !== 's') return;
+                if (!dirty.size) return;
+                ev.preventDefault();
+                save();
+            });
+
+            /* Moving save out of the card makes it easier to walk away from
+               unsaved work, so the guard comes with it. */
+            window.addEventListener('beforeunload', function (ev) {
+                if (!dirty.size) return;
+                ev.preventDefault();
+                ev.returnValue = '';
+            });
+        })();
+
         // ── Donations JS ─────────────────────────────────────────────────
         {% if feature_donations %}
         let _donationTiers = {{ (data.donations.tiers if data.donations else []) | tojson | safe }};
@@ -8844,8 +9019,11 @@
                 return null;
             }
 
+            /* The dot is the whole visual: the word is kept for screen readers,
+               which get nothing from a coloured circle. */
             function statusInner(state) {
-                return '<span class="hub-status-dot"></span>' + (state ? 'on' : 'off');
+                return '<span class="hub-status-dot"></span>' +
+                       '<span class="sr-only">' + (state ? 'on' : 'off') + '</span>';
             }
 
             function buildHub() {
@@ -8889,7 +9067,7 @@
 
                     const tile = document.createElement('button');
                     tile.type = 'button';
-                    tile.className = 'hub-tile';
+                    tile.className = 'hub-tile' + (state === false ? ' is-off' : '');
                     tile.setAttribute('data-target', id);
                     tile.innerHTML =
                         '<span class="hub-tile-icon">' + icon + '</span>' +
@@ -8912,6 +9090,9 @@
                     const state = statusFor(el.getAttribute('data-status-for'));
                     if (state === null) return;
                     el.classList.toggle('is-on', state);
+                    // The tile, not just the lamp: .is-off steps the whole card
+                    // back so a disabled system reads without being spelled out.
+                    el.closest('.hub-tile')?.classList.toggle('is-off', !state);
                     el.innerHTML = statusInner(state);
                 });
             }
