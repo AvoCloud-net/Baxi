@@ -1,28 +1,122 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Syne:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300..700&family=Syne:wght@600;700;800&display=swap');
+
+/* ==========================================================================
+   avocloud brand v2.0.0 — blueprint / CAD monochrome + coral spark
+   Source of truth: ~/Nextcloud/avocloud/brand/ (tokens/tokens.json).
+   Loads AFTER tailwind + basecoat + the (still v1) remote avocloud.net CSS,
+   so everything here is a deliberate override of those.
+   ========================================================================== */
 
 :root {
-  --font-family: "Quicksand", sans-serif;
-  /* avocloud brand fonts: Syne display, Quicksand body, mono kickers */
-  --avo-font-display: 'Syne', sans-serif;
-  --avo-font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
-  /* avocloud brand primary (coral) - dark-mode default */
+  --font-family: 'Space Grotesk', system-ui, sans-serif;
+  /* avocloud v2 fonts: Syne brand headings, Space Grotesk body/UI,
+     JetBrains Mono kickers/buttons/chips, Anton big stat numbers only */
+  --avo-font-brand: 'Syne', 'Space Grotesk', sans-serif;
+  --avo-font-display: 'Space Grotesk', system-ui, sans-serif;
+  --avo-font-massive: 'Anton', 'Space Grotesk', sans-serif;
+  --avo-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+  /* one coral, both themes (BRANDING §3) */
   --color-primary: #FF6B4A;
   --color-primary-rgb: 255, 107, 74;
+
+  /* softened corners (BRANDING §6): 6px on controls, 8px on boxes, 0
+     elsewhere. basecoat + tailwind derive rounded-sm/md/lg/xl from --radius,
+     so setting it here carries most utility classes; the sizes that would
+     land above 8px are capped further down. Pills/circles stay via
+     rounded-full / explicit 50% rules. */
+  --avo-radius-sharp: 0px;
+  --avo-radius-sm: 6px;  /* buttons, inputs, chips */
+  --avo-radius-md: 8px;  /* cards, panels */
+  --avo-radius-pill: 999px;
+  --radius: 8px;
+  /* Hard cap on the whole utility scale: nothing may exceed 8px, or it reads
+     as the retired v1 rounded-card look (BRANDING §6). */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+  --radius-4xl: 8px;
+
+  /* tailwind font utilities */
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 }
 
-/* avocloud: Syne carries every heading (display font). Body stays Quicksand. */
-h1, h2, h3, h4 {
+/* Dark (default canvas): near-black + hairline borders — basecoat tokens */
+html.dark {
+  --background: #000000;
+  --card: #0A0A0A;
+  --popover: #0A0A0A;
+  --border: rgba(255, 255, 255, 0.10);
+  --input: rgba(255, 255, 255, 0.10);
+  --primary: #FF6B4A;
+  --primary-foreground: #000000; /* black on coral, never white (BRANDING §3) */
+  --ring: #FF6B4A;
+  --avo-text-muted: #7E7E7E;
+  --avo-border-strong: rgba(255, 255, 255, 0.18);
+}
+
+/* The remote v1 avocloud.net CSS forces Quicksand on every element with a
+   universal rule — counter it with the same pattern, later in the cascade.
+   Class/element rules (h1, .font-mono, code, …) all out-rank this. */
+*, *::before, *::after {
+  font-family: var(--font-family);
+}
+code, pre, kbd, samp {
+  font-family: var(--avo-font-mono);
+}
+
+/* avocloud v2: Syne 800 for h1/h2 only; h3/h4 stay Space Grotesk 600. */
+h1, h2 {
+  font-family: var(--avo-font-brand);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+h3, h4 {
   font-family: var(--avo-font-display);
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-/* Light-mode token overrides */
+/* Buttons speak mono (BRANDING §8 .avo-btn) */
+.btn-primary, .btn-secondary, .btn-outline, .btn-destructive,
+.btn-ghost, .btn-lg-outline, .btn, .avo-btn {
+  font-family: var(--avo-font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* Controls take 6px, boxes take 8px (BRANDING §6). Anything already shaped as
+   a pill or circle opts out via rounded-full / an explicit radius of its own. */
+.btn-primary, .btn-secondary, .btn-outline, .btn-destructive,
+.btn-ghost, .btn-lg-outline, .btn, .avo-btn,
+.input, .textarea, .select, input[type="text"], input[type="number"],
+input[type="password"], input[type="search"], input[type="url"],
+input[type="email"], textarea, select {
+  border-radius: var(--avo-radius-sm, 6px);
+}
+/* black text on solid coral fills */
+.btn-primary {
+  color: #000000;
+}
+
+/* Light-mode token overrides (secondary theme — dashboard keeps its toggle) */
 html:not(.dark) {
-  --card-bg: #f4f4f5;
-  --border: #e4e4e7;
-  --bg-secondary: #f4f4f5;
+  --card-bg: #E8ECEF;
+  --border: rgba(0, 0, 0, 0.14);
+  --bg-secondary: #E8ECEF;
+  --background: #E8ECEF;
+  --card: #E8ECEF;
+  --input: rgba(0, 0, 0, 0.14);
+  --primary: #FF6B4A;
+  --primary-foreground: #000000;
+  /* small coral text on a light surface drops to coral-700 (BRANDING §3) */
   --color-primary: #C73D20;
   --color-primary-rgb: 199, 61, 32;
+  --avo-text-muted: #555555;
+  --avo-border-strong: rgba(0, 0, 0, 0.22);
 }
 
 /* Insights day-selector - hardcode brand coral; --color-primary resolves to white in dark mode */
@@ -83,14 +177,16 @@ html:not(.dark) .site-nav {
   border-bottom-color: rgba(0, 0, 0, 0.07);
 }
 
+/* wordmark: Syne 800, tight negative tracking, .NET in coral (BRANDING §2) */
 .avocloud-logo {
   display: inline-flex;
   align-items: center;
   gap: 0.15em;
   text-decoration: none;
   color: inherit;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-family: var(--avo-font-brand, 'Syne', sans-serif);
+  font-weight: 800;
+  letter-spacing: -0.02em;
   font-size: 1rem;
   line-height: 1;
 }
@@ -122,7 +218,7 @@ html:not(.dark) .site-nav {
 }
 
 .avocloud-logo__dot {
-  opacity: 0.45;
+  color: var(--color-primary, #FF6B4A);
 }
 
 /* New logo mark: coral terminal cursor */
@@ -216,28 +312,33 @@ html:not(.dark) .site-nav {
 
 /* ── Section label ────────────────────────────────────────── */
 
-/* mono coral kicker (avocloud signature eyebrow) */
+/* mono kicker (avocloud v2 signature eyebrow): "// LABEL ————" */
 .section-label {
   font-family: var(--avo-font-mono);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-primary, #FF6B4A);
+  color: var(--avo-text-muted, #7E7E7E);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6em;
 }
 
 .section-label::before {
-  content: '';
-  display: inline-block;
-  width: 2rem;
-  height: 2px;
-  background: linear-gradient(90deg, #FF6B4A, #FF9379);
-  border-radius: 2px;
+  content: '//';
+  color: var(--color-primary, #FF6B4A);
   flex-shrink: 0;
+}
+
+/* trailing hairline rule off to the right (BRANDING §6) */
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border, rgba(128, 128, 128, 0.2));
+  min-width: 2rem;
 }
 
 /* ── Lucide SVG icons ─────────────────────────────────────── */
@@ -256,13 +357,68 @@ html:not(.dark) .site-nav {
 
 /* ── Card variants ────────────────────────────────────────── */
 
+/* v2 card language: no shadow-lift hovers. Hairline brightens +
+   coral corner crosshair marks fade in (CAD registration marks). */
+.card, .hub-tile, .stat-tile {
+  position: relative;
+  border-radius: var(--avo-radius-md, 8px);
+}
+
+.card::before, .card::after,
+.hub-tile::before, .hub-tile::after,
+.stat-tile::before, .stat-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+/* Both corner crosshair marks (top-left + bottom-right) in a single layer, so
+   ::after stays free for the scan grid. Drawn as SVG rather than 1px bars so
+   the elbow curves with the card: inset 5px inside an 8px card radius gives a
+   concentric 3px inner radius. Coral is hardcoded because it cannot be read
+   from a custom property inside url() — and the brand runs one coral value on
+   both themes anyway (BRANDING §3). */
+.card::before, .hub-tile::before, .stat-tile::before {
+  z-index: 2;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M.5 11V3.5A3 3 0 0 1 3.5.5H11' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M11.5 1v7.5a3 3 0 0 1-3 3H1' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  background-position: 5px 5px, right 5px bottom 5px;
+}
+
+/* Faint blueprint scan grid, same idea as the corner marks but subtler.
+   border-radius: inherit keeps it inside the card's rounded corners. */
+.card::after, .hub-tile::after, .stat-tile::after {
+  z-index: 0;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-repeat: repeat;
+}
+
+.card:hover::before,
+.hub-tile:hover::before, .stat-tile:hover::before {
+  opacity: 1;
+}
+
+.card:hover::after,
+.hub-tile:hover::after, .stat-tile:hover::after {
+  opacity: 0.05;
+}
+
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.25s ease;
 }
 
 .card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
 }
 
 .card-featured {
@@ -422,16 +578,14 @@ html:not(.dark) .dash-nav {
   text-align: left;
   padding: 0.85rem 1rem;
   border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  border-radius: 14px;
   background: var(--card, rgba(255, 255, 255, 0.02));
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.12s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .hub-tile:hover {
-  border-color: var(--color-primary, #FF6B4A);
-  transform: translateY(-2px);
+  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
 }
 
 .hub-tile-icon {
@@ -441,7 +595,6 @@ html:not(.dark) .dash-nav {
   justify-content: center;
   width: 2.1rem;
   height: 2.1rem;
-  border-radius: 9px;
   background: rgba(255, 107, 74, 0.1);
   color: var(--color-primary, #FF6B4A);
 }
@@ -527,25 +680,12 @@ html:not(.dark) .dash-nav {
   gap: 0.25rem;
   padding: 1.1rem 1.25rem;
   border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  border-radius: 14px;
   background: var(--card, rgba(255, 255, 255, 0.02));
-  overflow: hidden;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .stat-tile:hover {
-  border-color: rgba(255, 107, 74, 0.4);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
-}
-
-.stat-tile::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-primary, #FF6B4A), #FF9379, transparent);
-  opacity: 0.65;
+  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
 }
 
 .stat-tile-icon {
@@ -554,7 +694,6 @@ html:not(.dark) .dash-nav {
   justify-content: center;
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 9px;
   background: rgba(255, 107, 74, 0.1);
   color: var(--color-primary, #FF6B4A);
   margin-bottom: 0.35rem;
@@ -570,12 +709,13 @@ html:not(.dark) .dash-nav {
   stroke-linejoin: round;
 }
 
+/* big stat counters get Anton (BRANDING §4 — display numbers only) */
 .stat-tile-value {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
+  font-family: var(--avo-font-massive, 'Anton', sans-serif);
+  font-weight: 400;
   font-size: clamp(1.35rem, 3vw, 1.75rem);
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 
 .stat-tile-label {
@@ -674,7 +814,6 @@ html:not(.dark) .adoption-badge {
   background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
   color: rgb(255, 147, 121);
-  border-radius: 4px;
   transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
 }
 
@@ -692,7 +831,6 @@ html:not(.dark) .adoption-badge {
   background-color: rgba(255, 107, 74, 0.2);
   padding: 2px 8px;
   color: rgb(255, 147, 121);
-  border-radius: 4px;
   transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
 }
 
@@ -718,7 +856,6 @@ html:not(.dark) .highlight-purple {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.15s;
 }
@@ -797,17 +934,24 @@ main {
   margin-top: 0.375rem;
 }
 
+/* v2 bracket chip: "[ label ]" — literal coral brackets. Chips count as
+   controls, so 6px (BRANDING §6 / avocloud.css .avo-chip; §8's "sharp corners"
+   prose predates the softened radii). */
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(255, 107, 74, 0.15);
-  color: rgb(255, 147, 121);
-  border: 1px solid rgba(255, 107, 74, 0.3);
-  border-radius: 4px;
+  font-family: var(--avo-font-mono);
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+  border-radius: var(--avo-radius-sm, 6px);
   padding: 2px 8px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
+
+.tag::before { content: "["; color: var(--color-primary, #FF6B4A); opacity: 0.7; margin-right: 0.15em; }
+.tag::after  { content: "]"; color: var(--color-primary, #FF6B4A); opacity: 0.7; margin-left: 0.15em; }
 
 .remove-tag {
   cursor: pointer;
@@ -827,7 +971,6 @@ main {
   gap: 0.5rem;
   font-size: 0.8rem;
   padding: 0.375rem 0.75rem;
-  border-radius: 6px;
   margin-top: 0.375rem;
   background: rgba(0, 200, 83, 0.1);
   color: #00C853;
@@ -915,7 +1058,7 @@ fieldset {
     z-index: 9500;
     flex-direction: column;
     flex-wrap: nowrap;
-    background: var(--color-bg, #0f0f0f);
+    background: var(--background, #000000);
     padding: 5rem 1rem 2rem;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -944,7 +1087,6 @@ fieldset {
   /* Nav items: full-width rows in the overlay */
   .dash-nav-item {
     padding: 0.85rem 1rem;
-    border-radius: 0.5rem;
     border-bottom: none !important;
     font-size: 0.9rem;
     width: 100%;
@@ -1131,27 +1273,32 @@ fieldset {
 /* ── Dashboard category headers in main content ─────────────── */
 
 .dash-category-header {
+  font-family: var(--avo-font-mono);
   font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: oklch(.45 0 0);
+  color: var(--avo-text-muted, #7E7E7E);
   padding: 2rem 0 0.85rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6em;
   border-top: 1px solid rgba(128, 128, 128, 0.1);
   margin-top: 0.5rem;
 }
 
 .dash-category-header::before {
-  content: '';
-  display: inline-block;
-  width: 2rem;
-  height: 2px;
-  background: linear-gradient(90deg, #FF6B4A, #FF9379);
-  border-radius: 2px;
+  content: '//';
+  color: var(--color-primary, #FF6B4A);
   flex-shrink: 0;
+}
+
+.dash-category-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border, rgba(128, 128, 128, 0.2));
+  min-width: 2rem;
 }
 
 .dash-category-header:first-child {
@@ -1181,6 +1328,7 @@ fieldset {
 .avo-icon > * { grid-area: 1/1; display: flex; align-items: center; }
 
 .avo-av {
+  font-family: var(--avo-font-brand, 'Syne', sans-serif);
   font-weight: 800;
   font-size: 2rem;
   letter-spacing: .04em;
@@ -1200,6 +1348,7 @@ fieldset {
 }
 
 .avo-text {
+  font-family: var(--avo-font-brand, 'Syne', sans-serif);
   font-weight: 800;
   font-size: 2rem;
   letter-spacing: .04em;
@@ -1210,11 +1359,98 @@ fieldset {
               opacity .3s ease .05s;
 }
 
-.avo-dot { opacity: .55; }
+.avo-dot { color: var(--color-primary, #FF6B4A); }
 
 .avo-path {
   stroke-dasharray: none;
   stroke-dashoffset: 0;
+}
+
+/* ── Post-login splash: CAD construction reveal (BRANDING §5) ── */
+
+/* Ported from brand/motion/wordmark-reveal.css + Wordmark.tsx (React+GSAP)
+   to vanilla — same geometry, same timeline, same timeScale 0.6. Word is
+   BAXI (product wordmark, not AVOCLOUD.NET). Plays once after login only:
+   gated server-side by session['show_intro'], popped in dash.py. */
+
+#avo-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  transition: opacity 0.7s ease;
+}
+
+#avo-splash.avo-fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Nothing else on screen — no tagline, no spinner, no version string. */
+.hw { position: relative; display: inline-block; }
+.hw-ch { position: relative; display: inline-block; }
+.hw-fill { display: inline-block; position: relative; z-index: 1; }
+.hw-ch.coral .hw-fill { color: var(--avo-coral-500, #FF6B4A); }
+
+/* Outline layer. The glyph comes from ::before content so it stays out of the
+   accessible text tree — real text lives only in .hw-fill. */
+.hw-stroke {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.2px rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+.hw-stroke::before { content: attr(data-ch); }
+.hw-ch.coral .hw-stroke { -webkit-text-stroke-color: rgba(255, 107, 74, 0.7); }
+
+/* FOUC guard: pre-hide the fills only when motion is allowed and JS ran (the
+   head script adds .gsap-ready). No JS or reduced motion → no class → the
+   solid wordmark shows, never a blank screen. */
+html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
+
+.hw-guides {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  z-index: 0;
+  pointer-events: none;
+}
+.hw-line { stroke: rgba(255, 255, 255, 0.30); stroke-width: 1; opacity: 0; stroke-dasharray: 1; }
+.hw-line.coral { stroke: rgba(255, 107, 74, 0.5); }
+.hw-circ { fill: none; stroke: rgba(255, 255, 255, 0.26); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0; }
+.hw-circ.coral { stroke: rgba(255, 107, 74, 0.55); }
+
+/* The universal `*` font-family rule near the top of this file also hits the
+   per-letter spans, so declaring Syne only on .splash-word loses — the letters
+   would silently fall back to Space Grotesk. Name the spans explicitly. */
+.splash-word, .splash-word .hw-ch, .splash-word .hw-fill,
+.splash-word .hw-stroke, .splash-word .hw-stroke::before {
+  font-family: var(--avo-font-brand, 'Syne', sans-serif);
+  font-weight: 800;
+}
+
+.splash-word {
+  /* flex, not inline-block: the letters are one span each, and whitespace-only
+     text nodes between them would otherwise render as word gaps. */
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-size: clamp(1.5rem, 5.2vw, 4.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #FFFFFF;
+  margin: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Desktop sidebar (≥ 900px) ───────────────────────────────── */
@@ -1384,19 +1620,15 @@ body { padding-left: 0 !important; }
     bottom: 1.25rem;
     width: auto;
     min-width: 190px;
-    border: 1px solid rgba(128, 128, 128, 0.18);
-    border-radius: 14px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+    background: var(--card, rgba(10, 10, 10, 0.92));
     padding: 0.35rem;
     overflow: hidden;
   }
 
   html:not(.dark) .local-button-group {
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.14);
   }
-
-  .local-button-group button { border-radius: 9px; }
 }
 
 /* ── Accessibility: respect reduced-motion ───────────────────── */
@@ -1412,7 +1644,7 @@ body { padding-left: 0 !important; }
 
 /* ── Native <select>: explicit dark colours so the OS popup isn't white-on-white ── */
 select, option {
-  background-color: var(--card-bg, #131313);
+  background-color: var(--card, #0A0A0A);
   color: var(--avo-text, inherit);
 }
 html:not(.dark) select,

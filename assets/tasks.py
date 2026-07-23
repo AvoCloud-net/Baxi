@@ -1954,6 +1954,13 @@ class Radio247Task:
             try:
                 conf = dict(datasys.load_data(gid, "music") or {})
                 if not conf.get("radio_247_enabled", False):
+                    # 24/7 was turned off: stop the radio we started, else it plays forever
+                    player = share.music_players.get(gid)
+                    if player and player.current and player.current.source_type == "radio" \
+                            and self.bot.user and player.current.requester_id == self.bot.user.id:
+                        logger.info(f"[Radio247:{gid}] 24/7 disabled — stopping radio and disconnecting")
+                        await player.stop_and_disconnect()
+                        share.music_players.pop(gid, None)
                     continue
 
                 channel_id_str = str(conf.get("radio_247_channel_id", "") or "")

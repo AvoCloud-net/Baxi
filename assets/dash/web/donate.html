@@ -15,6 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
     <link rel="stylesheet" href="https://avocloud.net/assets/css/main.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="https://avocloud.net/assets/js/theme.js"></script>
 
     <style>
@@ -72,24 +73,26 @@
             gap: 0.75rem;
         }
         .tier-card {
+            border-radius: var(--avo-radius-md, 8px);
             display: flex;
             align-items: center;
             gap: 1rem;
             border: 1px solid var(--color-border, rgba(255,255,255,0.1));
-            border-radius: 0.75rem;
+            
             padding: 1rem 1.25rem;
             background: var(--color-card, transparent);
             transition: border-color 0.15s;
         }
         .tier-card:hover { border-color: var(--color-primary, #FF6B4A); }
         .tier-badge {
+            border-radius: var(--avo-radius-sm, 6px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-width: 70px;
             padding: 0.4rem 0.6rem;
-            border-radius: 0.5rem;
+            
             background: color-mix(in srgb, var(--color-primary, #FF6B4A) 15%, transparent);
             color: var(--color-primary, #FF6B4A);
             font-weight: 700;
@@ -108,16 +111,18 @@
             margin-top: 0.5rem;
         }
         .login-box {
+            border-radius: var(--avo-radius-md, 8px);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 1rem;
             padding: 2rem;
             border: 1px dashed color-mix(in srgb, currentColor 20%, transparent);
-            border-radius: 0.75rem;
+            
             text-align: center;
         }
         .discord-btn {
+            border-radius: var(--avo-radius-sm, 6px);
             display: inline-flex;
             align-items: center;
             gap: 0.6rem;
@@ -125,7 +130,7 @@
             color: #fff;
             font-weight: 600;
             padding: 0.65rem 1.4rem;
-            border-radius: 0.5rem;
+            
             text-decoration: none;
             font-size: 0.95rem;
             transition: background 0.15s;
@@ -143,8 +148,8 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: color-mix(in srgb, #22c55e 20%, transparent);
-            color: #22c55e;
+            background: color-mix(in srgb, #46A758 20%, transparent);
+            color: #46A758;
             display: flex;
             align-items: center;
             justify-content: center;

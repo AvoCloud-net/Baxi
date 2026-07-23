@@ -19,6 +19,7 @@ import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
 from assets.buttons import build_ticket_panel_view
 import assets.message.customcmd as customcmd
+import assets.message.assistant as assistant
 from assets.moderation import ModerationEngine
 import assets.message.reactionroles as reactionroles
 import assets.message.serverlog as serverlog
@@ -467,6 +468,7 @@ def events(bot: commands.AutoShardedBot, web):
         asyncio.create_task(handle_sticky_message(message, bot))
         asyncio.create_task(handle_auto_release(message))
         asyncio.create_task(_mc_chat_bridge(message))
+        asyncio.create_task(assistant.handle_assistant(message, bot))
 
     @bot.event
     async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent):

@@ -17,26 +17,26 @@
         /* ══ Admin design tokens ══════════════════════════════════ */
         :root {
             --adm-brand: #FF6B4A;
-            --adm-brand-2: #ff8a5c;
-            --adm-bg: #0e0e14;
+            --adm-brand-2: #FF9379;
+            --adm-bg: #000000;
             --adm-surface: rgba(255,255,255,.035);
             --adm-surface-2: rgba(255,255,255,.06);
             --adm-border: rgba(255,255,255,.08);
             --adm-border-soft: rgba(255,255,255,.05);
-            --adm-radius: 14px;
+            --adm-radius: 0px;
             --adm-sidebar-w: 244px;
             --adm-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
         }
 
         html { scroll-behavior: smooth; }
-        body { background: var(--adm-bg, #0e0e14); }
+        body { background: var(--adm-bg, #000000); }
 
         /* subtle ambient glow behind everything */
         body::before {
             content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
             background:
                 radial-gradient(900px 500px at 12% -5%, rgba(255,107,74,.10), transparent 60%),
-                radial-gradient(800px 600px at 100% 0%, rgba(129,140,248,.07), transparent 55%);
+                radial-gradient(800px 600px at 100% 0%, rgba(255,107,74,.04), transparent 55%);
         }
 
         /* ══ Sidebar ══════════════════════════════════════════════ */
@@ -47,7 +47,7 @@
             height: 100vh;
             width: var(--adm-sidebar-w);
             overflow-y: auto;
-            background: linear-gradient(180deg, rgba(20,20,28,.96), rgba(14,14,20,.96));
+            background: rgba(10,10,10,.96);
             backdrop-filter: blur(14px);
             border-right: 1px solid var(--adm-border);
             padding: 1rem 0.7rem 1.5rem;
@@ -58,7 +58,7 @@
             transition: transform .25s cubic-bezier(.4,0,.2,1);
         }
         .admin-sidebar::-webkit-scrollbar { width: 8px; }
-        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 8px; }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); }
 
         .admin-sidebar .nav-brand {
             display:flex; align-items:center; gap:.55rem;
@@ -67,7 +67,7 @@
             padding: 0.45rem 0.55rem 1rem;
         }
         .admin-sidebar .nav-brand .brand-logo {
-            width: 30px; height: 30px; border-radius: 9px; flex-shrink:0;
+            width: 30px; height: 30px; flex-shrink:0;
             display: grid; place-items: center; color: #fff; font-size: .95rem;
             background: linear-gradient(135deg, var(--adm-brand), var(--adm-brand-2));
             box-shadow: 0 4px 14px -4px rgba(255,107,74,.6);
@@ -84,7 +84,7 @@
             align-items: center;
             gap: 0.6rem;
             padding: 0.5rem 0.6rem;
-            border-radius: 9px;
+            
             font-size: 0.82rem; font-weight: 500;
             text-decoration: none;
             color: inherit;
@@ -98,7 +98,7 @@
         }
         .admin-sidebar a.active::before {
             content:""; position:absolute; left:-.7rem; top:50%; transform:translateY(-50%);
-            width: 3px; height: 60%; border-radius: 0 3px 3px 0; background: var(--adm-brand);
+            width: 3px; height: 60%; border-radius: 0; background: var(--adm-brand);
         }
         .admin-sidebar a svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; opacity:.9; }
         .admin-sidebar .nav-sep { height:1px; background: var(--adm-border); margin: 0.6rem 0.4rem; }
@@ -122,7 +122,7 @@
         .nav-toggle {
             display: none;
             align-items: center; justify-content: center;
-            width: 38px; height: 38px; border-radius: 10px;
+            width: 38px; height: 38px; 
             background: var(--adm-surface-2); border: 1px solid var(--adm-border);
             color: inherit; cursor: pointer; flex-shrink: 0;
         }
@@ -150,19 +150,19 @@
 
         /* ── Status badge ─────────────────────────────────────────── */
         .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.22rem .58rem; border-radius:999px; font-weight:600; border:1px solid transparent; white-space:nowrap; }
-        .badge-ok     { background:rgba(34,197,94,.14); color:#4ade80; border-color:rgba(34,197,94,.25); }
-        .badge-running{ background:rgba(99,102,241,.14); color:#818cf8; border-color:rgba(99,102,241,.25); }
-        .badge-error  { background:rgba(239,68,68,.14); color:#f87171; border-color:rgba(239,68,68,.25); }
+        .badge-ok     { background:rgba(70,167,88,.14); color:#46A758; border-color:rgba(70,167,88,.25); }
+        .badge-running{ background:rgba(255,107,74,.14); color:#FF6B4A; border-color:rgba(255,107,74,.25); }
+        .badge-error  { background:rgba(220,56,56,.14); color:#DC3838; border-color:rgba(220,56,56,.25); }
         .badge-idle   { background:rgba(255,255,255,.06); color:#999; border-color:rgba(255,255,255,.1); }
-        .badge-live   { background:rgba(34,197,94,.14); color:#4ade80; border-color:rgba(34,197,94,.25); }
-        .badge-offline{ background:rgba(239,68,68,.1); color:#888; border-color:rgba(255,255,255,.08); }
-        .badge-flagged{ background:rgba(239,68,68,.14); color:#f87171; border-color:rgba(239,68,68,.25); }
-        .badge-auto   { background:rgba(251,146,60,.14); color:#fb923c; border-color:rgba(251,146,60,.25); }
-        .badge-clean  { background:rgba(34,197,94,.12); color:#4ade80; border-color:rgba(34,197,94,.22); }
+        .badge-live   { background:rgba(70,167,88,.14); color:#46A758; border-color:rgba(70,167,88,.25); }
+        .badge-offline{ background:rgba(220,56,56,.1); color:#888; border-color:rgba(255,255,255,.08); }
+        .badge-flagged{ background:rgba(220,56,56,.14); color:#DC3838; border-color:rgba(220,56,56,.25); }
+        .badge-auto   { background:rgba(237,83,51,.14); color:#ED5333; border-color:rgba(237,83,51,.25); }
+        .badge-clean  { background:rgba(70,167,88,.12); color:#46A758; border-color:rgba(70,167,88,.22); }
 
         /* ── Score bar ───────────────────────────────────────────── */
-        .score-bar { height:4px; border-radius:2px; background: rgba(255,255,255,.08); overflow:hidden; }
-        .score-bar-fill { height:100%; border-radius:2px; transition: width .4s; }
+        .score-bar { height:4px; background: rgba(255,255,255,.08); overflow:hidden; }
+        .score-bar-fill { height:100%; transition: width .4s; }
 
         /* ── Prism profile modal ─────────────────────────────────── */
         #prism-modal-backdrop {
@@ -172,9 +172,9 @@
         }
         #prism-modal-backdrop.open { display: flex; }
         #prism-modal {
-            background: var(--color-card, #1a1a2e);
+            background: var(--color-card, #0A0A0A);
             border: 1px solid rgba(255,255,255,.1);
-            border-radius: 12px;
+            
             width: min(820px, 95vw);
             max-height: 85vh;
             display: flex; flex-direction: column;
@@ -190,41 +190,42 @@
         .prism-event-table th { text-align:left; padding:.3rem .5rem; opacity:.4; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.07); }
         .prism-event-table td { padding:.4rem .5rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:top; }
         .prism-event-table tr:last-child td { border-bottom: none; }
-        .sev-critical { color:#f87171; }
-        .sev-severe   { color:#fb923c; }
-        .sev-high     { color:#fbbf24; }
-        .sev-medium   { color:#a3a3a3; }
-        .sev-low, .sev-minor, .sev-minimal { color:#6b7280; }
+        .sev-critical { color:#DC3838; }
+        .sev-severe   { color:#ED5333; }
+        .sev-high     { color:#E0A33A; }
+        .sev-medium   { color:#7E7E7E; }
+        .sev-low, .sev-minor, .sev-minimal { color:#7E7E7E; }
         .decayed-note { font-size:.68rem; opacity:.5; }
 
         /* ── Log stream ──────────────────────────────────────────── */
         #log-stream {
+            border-radius: var(--avo-radius-md, 8px);
             height: 340px;
             overflow-y: auto;
             font-family: monospace;
             font-size: .78rem;
             padding: .75rem;
-            border-radius: 8px;
+            
             border: 1px solid var(--color-border, rgba(255,255,255,.08));
             background: rgba(0,0,0,.25);
         }
         .log-line { display:flex; gap:.75rem; padding:.15rem 0; border-bottom:1px solid rgba(255,255,255,.03); }
         .log-time  { opacity:.4; min-width:60px; }
         .log-src   { opacity:.55; min-width:80px; }
-        .log-info    { color:#94a3b8; }
-        .log-success { color:#4ade80; }
-        .log-warning { color:#fb923c; }
-        .log-error   { color:#f87171; }
+        .log-info    { color:#7E7E7E; }
+        .log-success { color:#46A758; }
+        .log-warning { color:#ED5333; }
+        .log-error   { color:#DC3838; }
 
         /* source-specific source label coloring */
         .log-src-Chatfilter  { color:#FF9379 !important; }
-        .log-src-AntiSpam    { color:#fb923c !important; }
-        .log-src-MemberJoin  { color:#4ade80 !important; }
-        .log-src-MemberLeave { color:#94a3b8 !important; }
-        .log-src-GuildJoin   { color:#60a5fa !important; }
-        .log-src-AdminDash   { color:#f59e0b !important; }
-        .log-src-TempVoice   { color:#818cf8 !important; }
-        .log-src-AutoRole    { color:#34d399 !important; }
+        .log-src-AntiSpam    { color:#ED5333 !important; }
+        .log-src-MemberJoin  { color:#46A758 !important; }
+        .log-src-MemberLeave { color:#7E7E7E !important; }
+        .log-src-GuildJoin   { color:#3B82C4 !important; }
+        .log-src-AdminDash   { color:#E0A33A !important; }
+        .log-src-TempVoice   { color:#FF6B4A !important; }
+        .log-src-AutoRole    { color:#46A758 !important; }
 
         /* ── Section label (now used as the per-view eyebrow heading) ── */
         .section-badge {
@@ -233,7 +234,7 @@
             opacity:1; margin-bottom:1rem; padding-left:0;
         }
         .section-badge::before {
-            content:""; width:4px; height:1.05em; border-radius:3px; flex-shrink:0;
+            content:""; width:4px; height:1.05em; flex-shrink:0;
             background: linear-gradient(180deg, var(--adm-brand), var(--adm-brand-2));
         }
 
@@ -243,7 +244,7 @@
         /* ── Task grid ───────────────────────────────────────────── */
         .task-card {
             border:1px solid var(--adm-border);
-            border-radius:12px;
+            
             padding:.9rem 1.05rem;
             background:var(--adm-surface);
             display:flex;
@@ -255,11 +256,11 @@
 
         /* ── Action form ─────────────────────────────────────────── */
         .action-result {
-            margin-top:.5rem; padding:.55rem .75rem; border-radius:6px; font-size:.8rem;
+            margin-top:.5rem; padding:.55rem .75rem; font-size:.8rem;
             display:none;
         }
-        .action-result.ok  { background:rgba(34,197,94,.12); color:#4ade80; display:block; }
-        .action-result.err { background:rgba(239,68,68,.12); color:#f87171; display:block; }
+        .action-result.ok  { background:rgba(70,167,88,.12); color:#46A758; display:block; }
+        .action-result.err { background:rgba(220,56,56,.12); color:#DC3838; display:block; }
 
         /* ── Search table ────────────────────────────────────────── */
         .admin-table { width:100%; border-collapse:collapse; font-size:.82rem; }
@@ -274,7 +275,7 @@
         .admin-main textarea, .admin-main .select, .admin-main select {
             background: rgba(0,0,0,.22);
             border: 1px solid var(--adm-border);
-            border-radius: 9px;
+            
             transition: border-color .15s, box-shadow .15s;
         }
         .admin-main input[type=text]:focus, .admin-main input[type=number]:focus,
@@ -287,7 +288,7 @@
         /* ── Guild Activity tabs ─────────────────────────────────── */
         .ga-tab {
             background:none; border:none; cursor:pointer; color:inherit; opacity:.55;
-            font-size:.75rem; padding:.25rem .55rem; border-radius:5px;
+            font-size:.75rem; padding:.25rem .55rem; 
             transition:opacity .15s,background .15s;
         }
         .ga-tab:hover { opacity:.85; background:rgba(255,255,255,.06); }
@@ -403,7 +404,7 @@
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Reload Templates
     </a>
-    <a href="/logout/" style="color:#f87171; opacity:.6">
+    <a href="/logout/" style="color:#DC3838; opacity:.6">
         <svg viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
         Logout
     </a>
@@ -429,7 +430,7 @@
                 <img src="{{ user.avatar_url }}" alt="{{ user.name }}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">
                 <span style="font-size:.82rem; opacity:.8;">{{ user.name }}</span>
             </div>
-            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.4rem; border-radius:9px;">
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.4rem; ">
                 <svg id="theme-icon" viewBox="0 0 24 24"></svg>
             </button>
         </div>
@@ -568,7 +569,7 @@
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end;">
                     <div style="display:flex; flex-direction:column; gap:.25rem;">
                         <label style="font-size:.72rem; opacity:.7;">User ID</label>
-                        <input id="safety-uid" type="text" placeholder="123456789012345678" style="font-size:.8rem; padding:.4rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;">
+                        <input id="safety-uid" type="text" placeholder="123456789012345678" style="font-size:.8rem; padding:.4rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;">
                     </div>
                     <div style="display:flex; flex-direction:column; gap:.25rem;">
                         <label style="font-size:.72rem; opacity:.7;">Category</label>
@@ -581,9 +582,9 @@
                     </div>
                     <div style="display:flex; flex-direction:column; gap:.25rem; flex:1; min-width:200px;">
                         <label style="font-size:.72rem; opacity:.7;">Reason</label>
-                        <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:100%;">
+                        <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:100%;">
                     </div>
-                    <button onclick="safetyFlagSubmit()" class="btn-sm-outline" style="color:#f87171; border-color:#f87171;">Flag user</button>
+                    <button onclick="safetyFlagSubmit()" class="btn-sm-outline" style="color:#DC3838; border-color:#DC3838;">Flag user</button>
                 </div>
             </section>
         </div>
@@ -596,7 +597,7 @@
                     <p class="text-muted" style="font-size:.78rem;"><span id="reports-total">–</span> reports · <span id="reports-unique">–</span> distinct users</p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                    <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:210px;" oninput="filterReports()">
+                    <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:210px;" oninput="filterReports()">
                     <button onclick="loadReports()" class="btn-sm-outline">Refresh</button>
                 </div>
             </header>
@@ -656,7 +657,7 @@
                         <option value="phishing">Phishing</option>
                     </select>
                     <input id="cf-search" type="text" placeholder="Search user, guild, message…"
-                        style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;"
+                        style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;"
                         oninput="debounceCf()">
                     <button onclick="loadCfLogs()" class="btn-sm-outline">Search</button>
                 </div>
@@ -803,7 +804,7 @@
                     <td>${ts}</td><td>${guild}</td><td>${user}</td>
                     <td style="max-width:280px; word-break:break-word; opacity:.9;">${_stEsc(msg)}</td>
                     <td>${_stEsc(e.stage||'')}</td>
-                    <td>${e.flagged?'<span style="color:#f87171;">yes</span>':'no'}</td>
+                    <td>${e.flagged?'<span style="color:#DC3838;">yes</span>':'no'}</td>
                     <td>${conf}</td>
                     <td style="white-space:nowrap;">${sel}</td>
                 </tr>`;
@@ -879,7 +880,7 @@
                     <h2 style="font-size:1rem; font-weight:600;">Guild List</h2>
                     <p class="text-muted" style="font-size:.78rem;"><span id="guild-total">–</span> guilds total (showing top 50 by members)</p>
                 </div>
-                <input id="guild-search" type="text" placeholder="Filter guilds…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:180px;" oninput="filterGuilds()">
+                <input id="guild-search" type="text" placeholder="Filter guilds…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:180px;" oninput="filterGuilds()">
             </header>
             <section>
                 <table class="admin-table" id="guild-table">
@@ -901,18 +902,18 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
                     <!-- Status filter tabs -->
-                    <div style="display:flex; gap:.25rem; background:rgba(255,255,255,.05); border-radius:8px; padding:.2rem;">
+                    <div style="display:flex; gap:.25rem; background:rgba(255,255,255,.05); padding:.2rem;">
                         <button class="ga-tab active" data-filter="all" onclick="gaSetFilter('all')">All <span id="ga-cnt-all" class="ga-cnt">–</span></button>
-                        <button class="ga-tab" data-filter="active" onclick="gaSetFilter('active')">Active <span id="ga-cnt-active" class="ga-cnt" style="color:#4ade80;">–</span></button>
-                        <button class="ga-tab" data-filter="idle" onclick="gaSetFilter('idle')">Idle <span id="ga-cnt-idle" class="ga-cnt" style="color:#fb923c;">–</span></button>
-                        <button class="ga-tab" data-filter="fading" onclick="gaSetFilter('fading')">Fading <span id="ga-cnt-fading" class="ga-cnt" style="color:#f87171;">–</span></button>
+                        <button class="ga-tab" data-filter="active" onclick="gaSetFilter('active')">Active <span id="ga-cnt-active" class="ga-cnt" style="color:#46A758;">–</span></button>
+                        <button class="ga-tab" data-filter="idle" onclick="gaSetFilter('idle')">Idle <span id="ga-cnt-idle" class="ga-cnt" style="color:#ED5333;">–</span></button>
+                        <button class="ga-tab" data-filter="fading" onclick="gaSetFilter('fading')">Fading <span id="ga-cnt-fading" class="ga-cnt" style="color:#DC3838;">–</span></button>
                         <button class="ga-tab" data-filter="dead" onclick="gaSetFilter('dead')">Dead <span id="ga-cnt-dead" class="ga-cnt" style="color:#555;">–</span></button>
                     </div>
-                    <input id="ga-search" type="text" placeholder="Filter name…" style="font-size:.78rem; padding:.3rem .6rem; border-radius:6px; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:150px;" oninput="gaRender()">
+                    <input id="ga-search" type="text" placeholder="Filter name…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:150px;" oninput="gaRender()">
                 </div>
             </header>
             <!-- Summary bar -->
-            <div id="ga-summary-bar" style="display:flex; height:6px; border-radius:3px; overflow:hidden; margin:.75rem 0 1rem; gap:2px;"></div>
+            <div id="ga-summary-bar" style="display:flex; height:6px; overflow:hidden; margin:.75rem 0 1rem; gap:2px;"></div>
             <section style="overflow-x:auto;">
                 <table class="admin-table" id="ga-table">
                     <thead>
@@ -949,7 +950,7 @@
                 <div id="gc-inspect-error" class="action-result" style="display:none;"></div>
                 <div id="gc-inspect-wrap" style="display:none;">
                     <!-- Guild header -->
-                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); border-radius:8px; margin-bottom:1.25rem; flex-wrap:wrap;">
+                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); margin-bottom:1.25rem; flex-wrap:wrap;">
                         <div style="flex:1; min-width:0;">
                             <div id="gc-guild-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="gc-guild-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
@@ -964,7 +965,7 @@
                     <!-- Raw JSON toggle -->
                     <details style="margin-top:.5rem;">
                         <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON</summary>
-                        <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:rgba(0,0,0,.3); border-radius:6px; padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
+                        <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:rgba(0,0,0,.3); padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
                     </details>
                 </div>
             </section>
@@ -1010,17 +1011,17 @@
                 <div id="user-search-result" class="action-result"></div>
                 <div id="user-search-wrap" style="display:none;">
                     <!-- Found user header -->
-                    <div id="user-search-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); border-radius:8px; margin-bottom:1rem;">
+                    <div id="user-search-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); margin-bottom:1rem;">
                         <div>
                             <div id="user-search-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="user-search-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
                         </div>
                         <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                            <button id="btn-send-data" onclick="sendUserData()" class="btn-sm-outline" style="color:#60a5fa;" title="Send all stored data to the user via DM">
+                            <button id="btn-send-data" onclick="sendUserData()" class="btn-sm-outline" style="color:#3B82C4;" title="Send all stored data to the user via DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                 Send Data via DM
                             </button>
-                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn-sm-outline" style="color:#f87171;" title="Delete all user data and send a DM">
+                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn-sm-outline" style="color:#DC3838;" title="Delete all user data and send a DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                 Delete All Data
                             </button>
@@ -1114,7 +1115,7 @@
                 <section>
                     <div class="grid gap-3">
                         <p style="opacity:.6; font-size:.78rem; margin:0;">Plays a TTS reboot announcement in every voice channel Baxi is currently in, then exits the process. Your container/service must be configured to auto-restart.</p>
-                        <button onclick="adminAction('reboot')" class="btn-primary" style="background:rgba(239,68,68,.8);">Reboot Bot Now</button>
+                        <button onclick="adminAction('reboot')" class="btn-primary" style="background:rgba(220,56,56,.8);">Reboot Bot Now</button>
                         <div id="reboot-result" class="action-result"></div>
                     </div>
                 </section>
@@ -1126,7 +1127,7 @@
                 <section>
                     <div class="grid gap-3">
                         <input id="leave-gid" type="text" placeholder="Guild ID" class="w-full">
-                        <button onclick="adminAction('leave_server')" class="btn-primary" style="background:rgba(239,68,68,.8);">Leave Server</button>
+                        <button onclick="adminAction('leave_server')" class="btn-primary" style="background:rgba(220,56,56,.8);">Leave Server</button>
                         <div id="leave-result" class="action-result"></div>
                     </div>
                 </section>
@@ -1158,7 +1159,7 @@
                 <section>
                     <div class="grid gap-3">
                         <input id="gc-mid" type="text" placeholder="Message ID (from footer)" class="w-full">
-                        <button onclick="adminAction('gc_delete')" class="btn-primary" style="background:rgba(239,68,68,.8);">Delete GC Message</button>
+                        <button onclick="adminAction('gc_delete')" class="btn-primary" style="background:rgba(220,56,56,.8);">Delete GC Message</button>
                         <div id="gc-result" class="action-result"></div>
                     </div>
                 </section>
@@ -1176,7 +1177,7 @@
                             <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
                             <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                         </div>
-                        <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#1a1a2e); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
+                        <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#0A0A0A); border:1px solid rgba(255,255,255,.1); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
                         <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
 
                         <!-- Progress UI (hidden until job starts) -->
@@ -1186,7 +1187,7 @@
                                 <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
                             </div>
                             <div style="background:rgba(255,255,255,.08); border-radius:99px; height:8px; overflow:hidden;">
-                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#7c3aed,#a78bfa); border-radius:99px; transition:width .35s ease;"></div>
+                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#C73D20,#FF9379); border-radius:99px; transition:width .35s ease;"></div>
                             </div>
                         </div>
 
@@ -1238,10 +1239,10 @@
             <div style="margin-bottom:1rem;">
                 <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem;">
                     <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; flex:1;">AI Risk Summary</div>
-                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:#a78bfa;" title="Request a new AI summary for this user">↻ Re-analyze</button>
+                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:var(--color-primary,#FF6B4A);" title="Request a new AI summary for this user">↻ Re-analyze</button>
                 </div>
                 <div id="pm-summary-wrap" style="display:none;">
-                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(255,107,74,.5); border-radius:4px; color:inherit; opacity:.85;"></div>
+                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(255,107,74,.5); color:inherit; opacity:.85;"></div>
                     <div id="pm-summary-ts" style="font-size:.65rem; opacity:.3; margin-top:.3rem;"></div>
                 </div>
                 <div id="pm-summary-empty" style="font-size:.78rem; opacity:.35; font-style:italic;">No summary generated yet.</div>
@@ -1289,9 +1290,9 @@ function scoreBadge(score) {
 }
 
 function scoreBarColor(score) {
-    if (score <= 30) return '#f87171';
-    if (score <= 60) return '#fb923c';
-    return '#4ade80';
+    if (score <= 30) return '#DC3838';
+    if (score <= 60) return '#ED5333';
+    return '#46A758';
 }
 
 function taskBadge(status) {
@@ -1475,8 +1476,8 @@ function renderShards() {
     if (!shards.length) { el.innerHTML = '<span style="opacity:.4;">No shard info</span>'; return; }
     el.innerHTML = shards.map(s => {
         const lat = s.latency !== null ? `${s.latency} ms` : '–';
-        const color = s.closed ? '#f87171' : (s.latency > 200 ? '#fb923c' : '#4ade80');
-        return `<span style="background:rgba(255,255,255,.05); border-radius:6px; padding:.3rem .6rem; font-size:.78rem;">
+        const color = s.closed ? '#DC3838' : (s.latency > 200 ? '#ED5333' : '#46A758');
+        return `<span style="background:rgba(255,255,255,.05); padding:.3rem .6rem; font-size:.78rem;">
             <span style="color:${color}; font-weight:700;">●</span> Shard ${s.id} · ${lat}${s.closed ? ' · closed':''}
         </span>`;
     }).join('');
@@ -1574,7 +1575,7 @@ function renderReports() {
         <td style="font-weight:700;">${t.count}</td>
         <td style="opacity:.7;">${t.guilds}</td>
         <td style="opacity:.6; font-size:.74rem; max-width:340px;">${escHtml((t.reasons||[]).slice(0,3).join(' · '))}</td>
-        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171; border-color:#f87171;" title="Add to network safety list">Flag</button></td>
+        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838; border-color:#DC3838;" title="Add to network safety list">Flag</button></td>
     </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports yet.</td></tr>';
 
     // Recent reports
@@ -1585,7 +1586,7 @@ function renderReports() {
             <div style="opacity:.4; font-size:.7rem;">${escHtml(r.reported_id)}</div></td>
         <td style="opacity:.8; font-size:.78rem;">${escHtml(r.reporter_name||'?')}</td>
         <td style="opacity:.7; font-size:.78rem;">${escHtml(r.guild_name||r.guild_id)}</td>
-        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:#a78bfa;">msg</a>` : ''}</td>
+        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:var(--color-primary,#FF6B4A);">msg</a>` : ''}</td>
         <td style="opacity:.5; font-size:.72rem;">${(r.timestamp||'').replace('T',' ').slice(0,16)}</td>
     </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports match.</td></tr>';
 }
@@ -1607,10 +1608,10 @@ async function runTwitterNow() {
     btn.textContent = prevLabel;
     if (r.ok) {
         const ts = new Date().toLocaleTimeString();
-        status.style.color = '#4ade80';
+        status.style.color = '#46A758';
         status.textContent = `✓ Triggered at ${ts} — check the logs (grep "TwitterPosts") for the result.`;
     } else {
-        status.style.color = '#f87171';
+        status.style.color = '#DC3838';
         status.textContent = '✗ ' + (r.message || 'Failed to trigger task.');
     }
 }
@@ -1668,7 +1669,7 @@ function renderFlagged() {
         <td>${escHtml(u.reason||'–')}</td>
         <td style="opacity:.5;">${u.entry_date||'–'}</td>
         <td>${u.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}</td>
-        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:#4ade80;">Deflag</button></td>
+        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:#46A758;">Deflag</button></td>
     </tr>`).join('');
 }
 
@@ -1707,7 +1708,7 @@ function filterGuilds() {
         <td style="opacity:.5; font-size:.75rem;">${g.id}</td>
         <td>${fmt(g.member_count)}</td>
         <td>
-            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Leave</button>
+            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838;">Leave</button>
         </td>
     </tr>`).join('');
 }
@@ -1766,7 +1767,7 @@ async function searchUser() {
             ? (p.risk_signals.map(s => `<span class="badge badge-auto" style="font-size:.68rem;">${escHtml(s)}</span>`).join(' '))
             : '';
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,107,74,.25); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(255,107,74,.25); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Prism Profile</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center; margin-bottom:.6rem;">
                 <span>Score: ${scoreBadge(p.score)}</span>
@@ -1791,10 +1792,10 @@ async function searchUser() {
     if (r.data.flagged_entry) {
         const f = r.data.flagged_entry;
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(239,68,68,.25); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(220,56,56,.25); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Global Flag Entry</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
-                <span style="opacity:.7;">Reason: <span style="color:#fb923c;">${escHtml(f.reason||'- ')}</span></span>
+                <span style="opacity:.7;">Reason: <span style="color:#ED5333;">${escHtml(f.reason||'- ')}</span></span>
                 <span style="opacity:.5; font-size:.75rem;">Date: ${escHtml(f.entry_date||'- ')}</span>
                 ${f.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}
             </div>
@@ -1804,14 +1805,14 @@ async function searchUser() {
     // GC ban / BA ban
     if (r.data.gc_ban !== null && r.data.gc_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(239,68,68,.35); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(220,56,56,.35); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Global Chat Ban (gc_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.gc_ban))}</div>
         </div>`);
     }
     if (r.data.ba_ban !== null && r.data.ba_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(239,68,68,.35); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(220,56,56,.35); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Bot-Wide Ban (ba_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.ba_ban))}</div>
         </div>`);
@@ -1828,7 +1829,7 @@ async function searchUser() {
             <td style="max-width:240px; word-break:break-word; font-size:.75rem;">${escHtml(v.message||'- ')}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,147,121,.2); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(255,147,121,.2); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Chatfilter Violations (${viol.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -1853,7 +1854,7 @@ async function searchUser() {
             </tr>`)
         ).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(251,146,60,.2); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(237,83,51,.2); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Warnings (${totalWarns} across ${gw.length} server${gw.length!==1?'s':''})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -1874,7 +1875,7 @@ async function searchUser() {
             <td style="opacity:.5; white-space:nowrap; font-size:.73rem;">${escHtml(t.expires_at||'- ')}</td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(251,146,60,.25); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(237,83,51,.25); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Active Temp Actions (${ta.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -1899,7 +1900,7 @@ async function searchUser() {
             </tr>`;
         }).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(96,165,250,.2); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(96,165,250,.2); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Open Tickets (${ot.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -1923,7 +1924,7 @@ async function searchUser() {
             <td><a href="/?ticket_transcript=${encodeURIComponent(t.id)}" target="_blank" class="btn-sm-outline" style="font-size:.7rem; padding:.15rem .4rem;">View</a></td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(52,211,153,.2); border-radius:8px; padding:.75rem 1rem;">
+        <div style="border:1px solid rgba(52,211,153,.2); padding:.75rem 1rem;">
             <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Closed Ticket Transcripts (${tr.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
@@ -2054,7 +2055,7 @@ async function adminAction(action) {
             <td style="opacity:.5;">${g.boost_count}</td>
             <td>${g.terms ? '✅' : '❌'}</td>
             <td style="opacity:.5;">${g.lang}</td>
-            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#f87171;">Leave</button></td>
+            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838;">Leave</button></td>
         </tr>`).join('');
     } else if (action === 'gc_delete') {
         payload.message_id = document.getElementById('gc-mid').value.trim();
@@ -2129,16 +2130,16 @@ async function adminAction(action) {
                     const failed = data.failed_guilds || [];
                     const failedCount = failed.length;
                     progressBar.style.background = failedCount === 0
-                        ? 'linear-gradient(90deg,#16a34a,#4ade80)'
-                        : 'linear-gradient(90deg,#7c3aed,#a78bfa)';
+                        ? 'linear-gradient(90deg,#46A758,#46A758)'
+                        : 'linear-gradient(90deg,#C73D20,#FF9379)';
                     setResult('notif-result',
                         `Gesendet: ${sent}/${ttl} Server. Fehlgeschlagen: ${failedCount}.`,
                         failedCount === 0);
                     if (failedCount > 0) {
                         failedWrap.style.display = 'block';
                         failedList.innerHTML = failed.map(g => `
-                            <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:rgba(248,113,113,.07); border:1px solid rgba(248,113,113,.15); border-radius:5px;">
-                                <span style="font-size:.78rem; font-weight:600; color:#fca5a5;">${escHtml(g.name)}</span>
+                            <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:rgba(220,56,56,.07); border:1px solid rgba(220,56,56,.15); ">
+                                <span style="font-size:.78rem; font-weight:600; color:#DC3838;">${escHtml(g.name)}</span>
                                 <span style="font-size:.7rem; opacity:.45;">${escHtml(g.id)}</span>
                                 <span style="font-size:.72rem; opacity:.6; margin-left:auto;">${escHtml(g.reason)}</span>
                             </div>`).join('');
@@ -2216,7 +2217,7 @@ async function viewPrismProfile(uid) {
     };
     if (p.risk_signals && p.risk_signals.length) {
         signalsEl.innerHTML = p.risk_signals.map(s =>
-            `<span style="font-size:.7rem; padding:.2rem .5rem; border-radius:3px; background:rgba(245,158,11,.15); color:#f59e0b; border:1px solid rgba(245,158,11,.25);">${SIGNAL_LABELS[s] || s}</span>`
+            `<span style="font-size:.7rem; padding:.2rem .5rem; background:rgba(224,163,58,.15); color:#E0A33A; border:1px solid rgba(224,163,58,.25);">${SIGNAL_LABELS[s] || s}</span>`
         ).join('');
         signalsWrap.style.display = '';
     } else {
@@ -2230,7 +2231,7 @@ async function viewPrismProfile(uid) {
         tbody.innerHTML = p.events.map((ev, i) => {
             const sevCls   = SEV_CLASS[ev.severity] || '';
             const decayed  = ev.decayed ? '<span class="decayed-note"> (½ decay)</span>' : '';
-            const weight   = ev.weight >= 0 ? `<span style="color:#4ade80;">+${ev.weight}</span>` : `<span style="color:#f87171;">${ev.weight}</span>`;
+            const weight   = ev.weight >= 0 ? `<span style="color:#46A758;">+${ev.weight}</span>` : `<span style="color:#DC3838;">${ev.weight}</span>`;
             const tsEsc    = escHtml(ev.timestamp || '');
             return `<tr>
                 <td style="opacity:.35;">${p.event_count - i}</td>
@@ -2240,7 +2241,7 @@ async function viewPrismProfile(uid) {
                 <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '- ')}</td>
                 <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '- '}</td>
                 <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
-                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:#f87171; padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
+                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:#DC3838; padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
             </tr>`;
         }).join('');
     }
@@ -2268,9 +2269,9 @@ document.addEventListener('keydown', e => {
 // ── Chatfilter Logs ───────────────────────────────────────────
 
 const CF_SYSTEM_BADGE = {
-    'SafeText': '<span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;">SafeText</span>',
+    'SafeText': '<span class="badge" style="background:rgba(255,107,74,.15);color:#FF6B4A;">SafeText</span>',
     'AI':       '<span class="badge" style="background:rgba(255,107,74,.15);color:#FF9379;">AI</span>',
-    'Phishing': '<span class="badge" style="background:rgba(239,68,68,.15);color:#f87171;">Phishing</span>',
+    'Phishing': '<span class="badge" style="background:rgba(220,56,56,.15);color:#DC3838;">Phishing</span>',
 };
 
 let cfDebounceTimer = null;
@@ -2355,7 +2356,7 @@ async function loadCfLogs() {
         cfPage = 1;
         renderCfPage();
     } catch(err) {
-        body.innerHTML = `<tr><td colspan="7" style="color:#f87171;">Error loading logs: ${escHtml(String(err))}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="7" style="color:#DC3838;">Error loading logs: ${escHtml(String(err))}</td></tr>`;
     }
 }
 
@@ -2367,9 +2368,9 @@ let gaSortCol = 'msg_30d';
 let gaSortAsc = false;
 
 const GA_STATUS = {
-    active:  { label:'Active',  color:'#4ade80', bg:'rgba(34,197,94,.15)'  },
-    idle:    { label:'Idle',    color:'#fb923c', bg:'rgba(251,146,60,.15)' },
-    fading:  { label:'Fading',  color:'#f87171', bg:'rgba(239,68,68,.15)'  },
+    active:  { label:'Active',  color:'#46A758', bg:'rgba(70,167,88,.15)'  },
+    idle:    { label:'Idle',    color:'#ED5333', bg:'rgba(237,83,51,.15)' },
+    fading:  { label:'Fading',  color:'#DC3838', bg:'rgba(220,56,56,.15)'  },
     dead:    { label:'Dead',    color:'#555',    bg:'rgba(255,255,255,.06)' },
 };
 
@@ -2442,8 +2443,8 @@ function gaRender() {
             ? `<span title="${r.last_active}">${daysSince(r.last_active)}</span>`
             : '<span style="opacity:.3;">never</span>';
         const bar = r.pct > 0
-            ? `<div style="height:5px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;min-width:80px;">
-                <div style="height:100%;width:${r.pct}%;background:${st.color};opacity:.8;border-radius:2px;"></div>
+            ? `<div style="height:5px;background:rgba(255,255,255,.07);overflow:hidden;min-width:80px;">
+                <div style="height:100%;width:${r.pct}%;background:${st.color};opacity:.8;"></div>
                </div>
                <span style="font-size:.68rem;opacity:.45;margin-left:.35rem;">${r.pct}%</span>`
             : `<span style="opacity:.25;font-size:.72rem;">- </span>`;
@@ -2499,8 +2500,8 @@ function gcIsEnabled(key, val) {
 function gcFeatureChip(key, val) {
     const name = GC_FEATURE_NAMES[key] || key;
     const on = gcIsEnabled(key, val);
-    const color = on ? 'rgba(34,197,94,.15)' : 'rgba(255,255,255,.06)';
-    const tc = on ? '#4ade80' : '#666';
+    const color = on ? 'rgba(70,167,88,.15)' : 'rgba(255,255,255,.06)';
+    const tc = on ? '#46A758' : '#666';
     const dot = on ? '●' : '○';
     return `<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:600;background:${color};color:${tc};" title="${on?'Enabled':'Disabled'}">${dot} ${name}</span>`;
 }
@@ -2513,13 +2514,13 @@ function gcDetailCard(title, rows) {
             <span style="text-align:right;word-break:break-all;max-width:60%;">${value}</span>
         </div>`
     ).join('');
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.75rem 1rem;">
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:.75rem 1rem;">
         <div style="font-size:.72rem;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">${title}</div>
         ${rowsHtml}
     </div>`;
 }
 
-function gcBool(v) { return v ? '<span style="color:#4ade80;">Yes</span>' : '<span style="color:#888;">No</span>'; }
+function gcBool(v) { return v ? '<span style="color:#46A758;">Yes</span>' : '<span style="color:#888;">No</span>'; }
 function gcCount(arr) { return Array.isArray(arr) ? arr.length : (arr ? Object.keys(arr).length : 0); }
 
 function renderGuildConfig(r) {
@@ -2854,7 +2855,7 @@ function faRender() {
         const isWhitelist = cfg.mode !== 'blacklist';
 
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:1rem 1.25rem; background:rgba(255,255,255,.02);';
+        wrap.style.cssText = 'border:1px solid rgba(255,255,255,.08); padding:1rem 1.25rem; background:rgba(255,255,255,.02);';
 
         wrap.innerHTML = `
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;">
@@ -2907,7 +2908,7 @@ function faRenderChips(featureKey, guilds) {
 function faAddGuild(featureKey) {
     const input = document.getElementById(`fa-input-${featureKey}`);
     const val = input.value.trim();
-    if (!val || !/^\d+$/.test(val)) { input.style.borderColor = '#f87171'; return; }
+    if (!val || !/^\d+$/.test(val)) { input.style.borderColor = '#DC3838'; return; }
     input.style.borderColor = '';
     if (!_faData[featureKey]) _faData[featureKey] = { mode: 'whitelist', guilds: [] };
     if (_faData[featureKey].guilds.includes(val)) { input.value = ''; return; }

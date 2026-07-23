@@ -395,6 +395,11 @@ CREATE TABLE IF NOT EXISTS cfg_antiraid (
     data     TEXT DEFAULT '{}'
 );
 
+CREATE TABLE IF NOT EXISTS cfg_assistant (
+    guild_id INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    data     TEXT DEFAULT '{}'
+);
+
 CREATE TABLE IF NOT EXISTS cfg_counting (
     guild_id        INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
     enabled         INTEGER DEFAULT 0,

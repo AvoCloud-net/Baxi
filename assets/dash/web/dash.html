@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <meta name="theme-color" content="#0B0B0B" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#F2EFE6" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#E8ECEF" media="(prefers-color-scheme: light)">
     <title>Baxi Dashboard -  {{data.name}}</title>
     <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -158,9 +158,9 @@
 
         /* Add-area: dashed border with wider gap between dashes */
         .add-area {
-            border-radius: 8px;
+            
             padding: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' ry='8' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/Svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='0' ry='0' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/Svg%3E");
         }
         .add-area.mt-4 { margin-top: 1rem; }
         .add-area.mt-3 { margin-top: 0.75rem; }
@@ -199,7 +199,7 @@
             margin-top: -5px;        /* (6px track - 16px thumb) / 2 */
             border-radius: 9999px;
             background: var(--color-primary, #FF6B4A) !important;
-            border: 2px solid #18181b;
+            border: 2px solid #0A0A0A;
             box-shadow: 0 0 0 1px var(--color-primary, #FF6B4A);
         }
         input[type="range"].dash-range::-moz-range-track {
@@ -216,7 +216,7 @@
         input[type="range"].dash-range::-moz-range-thumb {
             width: 16px;
             height: 16px;
-            border: 2px solid #18181b;
+            border: 2px solid #0A0A0A;
             border-radius: 9999px;
             background: var(--color-primary, #FF6B4A) !important;
         }
@@ -328,11 +328,11 @@
         </div>
 
         <!-- Top.gg Vote Banner -  avocloud.net styled -->
-        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); border-radius:10px; backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
+        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); backdrop-filter:blur(8px); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
             <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,var(--color-primary, #FF6B4A),#FF9379,#FF6B4A,var(--color-primary, #FF6B4A)); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
-                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:9px; background:rgba(255,147,121,0.12); border:1px solid rgba(255,147,121,0.3); color:#FF9379;">
+                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; background:rgba(255,147,121,0.12); border:1px solid rgba(255,147,121,0.3); color:#FF9379;">
                         <!-- Lucide: heart -->
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -344,7 +344,7 @@
                     </div>
                 </div>
                 {% if user_on_avocloud %}
-                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
+                <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" style="flex-shrink:0; display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
                     <!-- Lucide: thumbs-up -->
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M7 10v12"/>
@@ -354,7 +354,7 @@
                 </a>
                 {% else %}
                 <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; flex-shrink:0;">
-                    <span title="Join the avocloud.net Discord to unlock voting" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px dashed rgba(255,255,255,0.18); background:transparent; color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; opacity:0.45; cursor:not-allowed;">
+                    <span title="Join the avocloud.net Discord to unlock voting" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px dashed rgba(255,255,255,0.18); background:transparent; color:inherit; font-weight:500; font-size:0.875rem; opacity:0.45; cursor:not-allowed;">
                         <!-- Lucide: lock -->
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
@@ -362,7 +362,7 @@
                         </svg>
                         Vote on Top.gg
                     </span>
-                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; border-radius:6px; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
+                    <a href="https://avocloud.net/discord" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px solid rgba(255,107,74,0.5); background:rgba(255,107,74,0.12); color:inherit; font-weight:500; font-size:0.875rem; text-decoration:none; transition:background 0.2s, border-color 0.2s;" onmouseover="this.style.background='rgba(255,107,74,0.22)';this.style.borderColor='rgba(255,147,121,0.7)';" onmouseout="this.style.background='rgba(255,107,74,0.12)';this.style.borderColor='rgba(255,107,74,0.5)';">
                         <!-- Lucide: users -->
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -511,7 +511,7 @@
             <a href="#instagram" class="dash-nav-item" style="opacity:0.5;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 Instagram
-                <span style="font-size:0.6rem;padding:1px 5px;border-radius:3px;background:var(--muted);color:var(--muted-foreground);margin-left:2px;font-weight:600;">UNAVAILABLE</span>
+                <span style="font-size:0.6rem;padding:1px 5px;background:var(--muted);color:var(--muted-foreground);margin-left:2px;font-weight:600;">UNAVAILABLE</span>
             </a>
 
             <span class="dash-nav-group-label">Automation</span>
@@ -538,6 +538,10 @@
             <a href="#auto-release" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M12 3H4a2 2 0 0 0-2 2v16.286a.71.71 0 0 0 1.212.502l2.202-2.202A2 2 0 0 1 6.828 19H20a2 2 0 0 0 2-2v-4"/><path d="M16 3h6v6"/><path d="m16 9 6-6"/></svg>
                 Auto-Release
+            </a>
+            <a href="#assistant" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                AI Assistant
             </a>
 
             <a href="https://baxi.avocloud.net/docs/" target="_blank" rel="noopener noreferrer" class="dash-nav-item">
@@ -843,7 +847,7 @@
                                                 <input type="checkbox" id="ai-cat-3">
                                                 <span class="text-sm"><strong>Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, slurs, targeted hate.</span></span>
                                             </label>
-                                            <div id="ai-cats-lock-overlay" style="display:none;position:absolute;inset:-4px;background:rgba(15,15,20,0.72);backdrop-filter:blur(1.5px);border:1px dashed var(--border,#444);border-radius:8px;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:10px;text-align:center;">
+                                            <div id="ai-cats-lock-overlay" style="display:none;position:absolute;inset:-4px;background:rgba(15,15,20,0.72);backdrop-filter:blur(1.5px);border:1px dashed var(--border,#444);z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:10px;text-align:center;">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted,#aaa);">
                                                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                                                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -1947,7 +1951,7 @@
                     </header>
                     <section>
                         <!-- How it works -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#FF6B4A) 25%,transparent);border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;">
+                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#FF6B4A) 25%,transparent);padding:14px 16px;margin-bottom:1.5rem;">
                             <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#FF6B4A);">How it works -  2 steps</p>
                             <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
                                 <li class="text-sm flex gap-3 items-start">
@@ -2364,14 +2368,14 @@
                                     <input type="file" id="welcomer-bg-upload" accept="image/png,image/jpeg,image/webp" class="w-full">
                                     <div id="welcomer-bg-preview" class="hidden mt-2">
                                         <img id="welcomer-bg-img" class="rounded max-h-32 object-cover" alt="Background preview">
-                                        <button type="button" class="btn-outline mt-1 text-xs" style="color:#ef4444;border-color:#ef4444;" onclick="removeWelcomerBg()">Remove background</button>
+                                        <button type="button" class="btn-outline mt-1 text-xs" style="color:#DC3838;border-color:#DC3838;" onclick="removeWelcomerBg()">Remove background</button>
                                     </div>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-color">Card overlay color:</label>
                                     <div class="flex items-center gap-2">
-                                        <input type="color" id="welcomer-card-color" value="#1a1a2e" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-card-color-hex').value=this.value">
-                                        <input type="text" id="welcomer-card-color-hex" value="#1a1a2e" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-card-color').value=this.value">
+                                        <input type="color" id="welcomer-card-color" value="#0A0A0A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-card-color-hex').value=this.value">
+                                        <input type="text" id="welcomer-card-color-hex" value="#0A0A0A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-card-color').value=this.value">
                                     </div>
                                 </div>
                             </div>
@@ -2406,8 +2410,8 @@
                             <div class="grid gap-2">
                                 <label for="welcomer-leave-color">Leave embed color:</label>
                                 <div class="flex items-center gap-2">
-                                    <input type="color" id="welcomer-leave-color" value="#FFC107" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-leave-color-hex').value=this.value">
-                                    <input type="text" id="welcomer-leave-color-hex" value="#FFC107" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-leave-color').value=this.value">
+                                    <input type="color" id="welcomer-leave-color" value="#E0A33A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-leave-color-hex').value=this.value">
+                                    <input type="text" id="welcomer-leave-color-hex" value="#E0A33A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-leave-color').value=this.value">
                                 </div>
                             </div>
 
@@ -2702,12 +2706,104 @@
                                     </button>
                                 </div>
                                 {% if not news_channels %}
-                                <p class="text-muted text-xs" style="color:var(--warn,#f59e0b);">No announcement channels found in this server.</p>
+                                <p class="text-muted text-xs" style="color:var(--warn,#E0A33A);">No announcement channels found in this server.</p>
                                 {% endif %}
                             </div>
 
                             <div class="flex gap-3">
                                 <button type="submit" id="auto-release-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
+                                    <span class="btn-text flex items-center gap-2">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <!-- AI Assistant -->
+            <section class="pb-16 dash-section" id="assistant">
+                <div class="section-label">AI ASSISTANT</div>
+                <div class="card">
+                    <header style="position:relative;">
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                            AI Assistant
+                        </h2>
+                        <p class="text-muted">Let members chat with Baxi by @mentioning the bot. Powered by a local AI model — replies appear right in the channel.</p>
+                    </header>
+                    <section>
+                        <form id="assistant-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="assistant-enabled" role="switch">
+                                    <span class="font-medium">Enable AI Assistant</span>
+                                </label>
+                                <p class="text-muted text-xs" style="margin-top:4px;">When on, Baxi answers any message that @mentions it.</p>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="form-group">
+                                <label class="text-xs text-muted">Channel mode</label>
+                                <select id="assistant-list-mode" class="select w-full" onchange="updateAssistantModeHint()">
+                                    <option value="blocklist">Blocklist — reply everywhere except listed channels</option>
+                                    <option value="whitelist">Whitelist — reply only in listed channels</option>
+                                </select>
+                                <p class="text-muted text-xs" id="assistant-mode-hint" style="margin-top:4px;"></p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Channels <span class="text-muted font-normal" id="assistant-ch-count">(0)</span></label>
+                                <div id="assistant-channels-list" class="grid gap-2"></div>
+                                <div id="assistant-channels-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                                    <div class="bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                                    </div>
+                                    <div class="flex max-w-xs flex-col gap-1">
+                                        <h3 class="text-base font-semibold tracking-tight">No Channels</h3>
+                                        <p class="text-muted text-sm">No channels added to the list yet.</p>
+                                    </div>
+                                </div>
+
+                                <div class="add-area mt-3" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;">
+                                    <div class="grid gap-1">
+                                        <label class="text-xs text-muted">Channel</label>
+                                        <select id="assistant-add-channel" class="select w-full">
+                                            <option value="">-  Select - </option>
+                                            {% for id, name in channels.items() %}
+                                            <option value="{{ id }}">#{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-primary" onclick="assistantAddChannel()" style="flex-shrink:0;align-self:end;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Hinzufügen
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="my-2">
+
+                            <div class="form-group">
+                                <label class="text-xs text-muted" for="assistant-cooldown">Per-user cooldown (seconds)</label>
+                                <input type="number" id="assistant-cooldown" class="input w-full" min="0" max="3600" value="10">
+                                <p class="text-muted text-xs" style="margin-top:4px;">Minimum time a single user must wait between assistant replies. 0 = no cooldown.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="flex items-center gap-2" style="cursor:pointer">
+                                    <input type="checkbox" id="assistant-insult-timeout" checked>
+                                    <span class="font-medium">Timeout on insults</span>
+                                </label>
+                                <p class="text-muted text-xs" style="margin-top:4px;">Time out a member for 1 minute if they insult Baxi or another member while talking to the assistant. Requires the bot to have the Timeout Members permission.</p>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="submit" id="assistant-save-btn" class="btn-primary submit-btn flex-1 flex items-center justify-center gap-2">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2770,8 +2866,8 @@
                                     <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
                                     <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclCopySecret(this)">Copy</button>
                                 </div>
-                                <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--color-error, #ef4444);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
-                                <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--color-surface-2,rgba(0,0,0,.08));border-radius:0.5rem;padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
+                                <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--color-error, #DC3838);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
+                                <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--color-surface-2,rgba(0,0,0,.08));padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
                                     Paste this secret into <code>plugins/DiscordGate/config.yml</code> on your Minecraft server:
                                     <pre style="margin:0.4rem 0 0.2rem;font-size:0.85em;"><code id="mcl-secret-hint-value">secret: "…"</code></pre>
                                     Then run <code>/dg reload</code> in-game or restart the server. Save these settings afterwards.
@@ -3294,10 +3390,10 @@
                     </header>
 
                     <!-- Instagram unavailable notice -->
-                    <div style="border:1px solid #f59e0b;background:rgba(245,158,11,0.08);border-radius:10px;display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    <div style="border:1px solid #E0A33A;background:rgba(224,163,58,0.08);display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                         <div>
-                            <p style="font-weight:600;color:#f59e0b;margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
+                            <p style="font-weight:600;color:#E0A33A;margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
                             <p style="font-size:0.875rem;color:var(--muted-foreground);line-height:1.55;">
                                 Instagram blocks all automated access from server infrastructure — including authenticated API requests.
                                 The official Meta Graph API requires a verified Business Portfolio, App Review, and approved permissions, which are gated behind a review process
@@ -3673,7 +3769,7 @@
                                 <div class="card tv-trigger-card">
                                     <header class="flex items-center justify-between">
                                         <h3 class="text-base font-semibold">Trigger channel</h3>
-                                        <button type="button" class="btn-outline tv-trigger-remove" style="color:#ef4444;border-color:#ef4444;">
+                                        <button type="button" class="btn-outline tv-trigger-remove" style="color:#DC3838;border-color:#DC3838;">
                                             <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                             <span class="btn-label">Remove</span>
                                         </button>
@@ -3921,7 +4017,7 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#18181b);border-radius:8px;border:1px solid var(--border,#27272a);">
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);">
                                 <p class="text-muted text-xs" style="margin:0;">
                                     <strong>Current count:</strong> <span id="counting-current-display">- </span> &nbsp;|&nbsp;
                                     <strong>High score:</strong> <span id="counting-highscore-display">- </span>
@@ -4132,9 +4228,9 @@
                                         <div><strong>Time:</strong> {{ log.time }}</div>
                                         <div><strong>Status:</strong>
                                             {% if log.success %}
-                                            <span style="color: #00C853;">Success</span>
+                                            <span style="color: #46A758;">Success</span>
                                             {% else %}
-                                            <span style="color: #FF5252;">Failed</span>
+                                            <span style="color: #DC3838;">Failed</span>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -4240,7 +4336,7 @@
                 'auditlog',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'classifier_training',
                 'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
-                'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release'
+                'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
             var sectionMap = {};
@@ -4706,6 +4802,20 @@
                 renderAutoReleaseChannels();
             }
 
+            // AI Assistant
+            if (data.assistant) {
+                document.getElementById('assistant-enabled').checked = data.assistant.enabled === true;
+                document.getElementById('assistant-list-mode').value =
+                    data.assistant.list_mode === 'whitelist' ? 'whitelist' : 'blocklist';
+                document.getElementById('assistant-cooldown').value = data.assistant.cooldown ?? 10;
+                _assistantChannels = Array.isArray(data.assistant.channels)
+                    ? data.assistant.channels.map(String)
+                    : [];
+                renderAssistantChannels();
+                updateAssistantModeHint();
+                document.getElementById('assistant-insult-timeout').checked = data.assistant.insult_timeout !== false;
+            }
+
             // MC Link
             if (data.mc_link) {
                 document.getElementById('mcl-enabled').checked = data.mc_link.enabled === true;
@@ -4802,12 +4912,12 @@
                                 <div>
                                     <h3 class="text-base font-semibold flex items-center gap-2">
                                         ${s.display_name || s.login}
-                                        <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:${platformColor};color:#fff;font-weight:600;letter-spacing:0.03em;">${platformLabel}</span>
+                                        <span style="font-size:0.65rem;padding:1px 6px;background:${platformColor};color:#fff;font-weight:600;letter-spacing:0.03em;">${platformLabel}</span>
                                     </h3>
                                     <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
                             </div>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="removeStreamer('${safeLogin}', '${platform}')">
+                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="removeStreamer('${safeLogin}', '${platform}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -4992,11 +5102,11 @@
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
                     + (ch.display_name || ch.channel_id)
-                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#ff0000;color:#fff;font-weight:600;">YouTube</span>'
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;background:#ff0000;color:#fff;font-weight:600;">YouTube</span>'
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">' + profileUrl.replace('https://', '') + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5157,11 +5267,11 @@
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
                     + (acc.display_name || acc.username)
-                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#010101;color:#fff;font-weight:600;">TikTok</span>'
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;background:#010101;color:#fff;font-weight:600;">TikTok</span>'
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5306,11 +5416,11 @@
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
                     + (acc.display_name || acc.username)
-                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#000;color:#fff;font-weight:600;">X</span>'
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;background:#000;color:#fff;font-weight:600;">X</span>'
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5444,9 +5554,9 @@
                 const tokenExpiresTs = acc.token_expires || 0;
                 const sevenDays = Math.floor(Date.now() / 1000) + 7 * 86400;
                 const tokenWarn = acc.token_expired
-                    ? '<span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#ef4444;color:#fff;font-weight:600;margin-left:4px;">TOKEN EXPIRED</span>'
+                    ? '<span style="font-size:0.65rem;padding:1px 6px;background:#DC3838;color:#fff;font-weight:600;margin-left:4px;">TOKEN EXPIRED</span>'
                     : (tokenExpiresTs && tokenExpiresTs < sevenDays
-                        ? '<span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#f59e0b;color:#fff;font-weight:600;margin-left:4px;">EXPIRING SOON</span>'
+                        ? '<span style="font-size:0.65rem;padding:1px 6px;background:#E0A33A;color:#fff;font-weight:600;margin-left:4px;">EXPIRING SOON</span>'
                         : '');
                 let channelOptions = '<option value="">-- Select a channel --</option>';
                 Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
@@ -5464,12 +5574,12 @@
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
                     + (acc.display_name || acc.username || igUserId)
-                    + ' <span style="font-size:0.65rem;padding:1px 6px;border-radius:4px;background:#e1306c;color:#fff;font-weight:600;">Instagram</span>'
+                    + ' <span style="font-size:0.65rem;padding:1px 6px;background:#e1306c;color:#fff;font-weight:600;">Instagram</span>'
                     + tokenWarn
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + (acc.username || igUserId) + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="igRemoveAccount(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="igRemoveAccount(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5567,7 +5677,7 @@
             moderate_members: 'Timeout Members', mention_everyone: 'Mention Everyone',
         };
         function ccEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-        function ccInfo(t) { return `<span title="${ccEsc(t)}" style="display:inline-flex;cursor:help;color:#8b8b94;margin-left:4px;vertical-align:middle;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>`; }
+        function ccInfo(t) { return `<span title="${ccEsc(t)}" style="display:inline-flex;cursor:help;color:#7E7E7E;margin-left:4px;vertical-align:middle;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>`; }
         const _CC_TARGET_INFO = "Command author = the person who typed the trigger. First @mentioned user = the first user mentioned in their message (e.g. for a '!warn @user' command). If 'mentioned' is chosen but nobody is mentioned, this action is skipped.";
         function ccActionLabel(t) {
             return { text: 'Send message / reply', add_role: 'Add role', remove_role: 'Remove role', delete_messages: 'Delete messages', react: 'Add reaction', dm: 'Send DM' }[t] || t;
@@ -5644,7 +5754,7 @@
             row.innerHTML = `
                 <header class="flex items-center justify-between">
                     <h4 class="text-sm font-semibold">${ccActionLabel(type)}</h4>
-                    <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
+                    <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
                         <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                 </header>
@@ -5737,7 +5847,7 @@
                 const actions = (Array.isArray(cmd.actions) && cmd.actions.length)
                     ? cmd.actions
                     : [{ type: 'text', reply: false }];
-                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:#26262b;border:1px solid #3c3c41;border-radius:6px;padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
+                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:#0A0A0A;border:1px solid #3c3c41;padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
 
                 const gate = cmd.gate || {};
                 const gateParts = [
@@ -5761,7 +5871,7 @@
                                 </svg>
                                 Edit
                             </button>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -5912,7 +6022,7 @@
                 prismPopover = document.createElement('div');
                 prismPopover.id = 'prism-popover';
                 prismPopover.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);';
-                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#1a1d24;border:1px solid #2a2d35;border-radius:18px;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
+                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#0A0A0A;border:1px solid #2a2a2a;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
                     <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -5938,32 +6048,32 @@
             filtered.forEach(u => {
                 const score      = u.score;
                 const isOptedOut = !!u.opted_out;
-                const scoreColor = isOptedOut ? '#6b7280' : (score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444');
-                const scoreBg    = isOptedOut ? 'rgba(107,114,128,.12)' : (score >= 70 ? 'rgba(34,197,94,.12)' : score >= 40 ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)');
-                const scoreBord  = isOptedOut ? 'rgba(107,114,128,.3)' : (score >= 70 ? 'rgba(34,197,94,.3)'  : score >= 40 ? 'rgba(245,158,11,.3)'  : 'rgba(239,68,68,.3)');
+                const scoreColor = isOptedOut ? '#7E7E7E' : (score >= 70 ? '#46A758' : score >= 40 ? '#E0A33A' : '#DC3838');
+                const scoreBg    = isOptedOut ? 'rgba(126,126,126,.12)' : (score >= 70 ? 'rgba(70,167,88,.12)' : score >= 40 ? 'rgba(224,163,58,.12)' : 'rgba(220,56,56,.12)');
+                const scoreBord  = isOptedOut ? 'rgba(126,126,126,.3)' : (score >= 70 ? 'rgba(70,167,88,.3)'  : score >= 40 ? 'rgba(224,163,58,.3)'  : 'rgba(220,56,56,.3)');
                 const scoreLabel = isOptedOut ? 'Opted Out' : (score >= 70 ? 'Low Risk' : score >= 40 ? 'Medium Risk' : 'High Risk');
-                const dotColor   = isOptedOut ? '#6b7280' : (u.manual_flag ? '#f59e0b' : scoreColor);
+                const dotColor   = isOptedOut ? '#7E7E7E' : (u.manual_flag ? '#E0A33A' : scoreColor);
 
                 const fallback = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
                 const avatarUrl = u.avatar_url || fallback;
 
                 const card = document.createElement('div');
-                card.style.cssText = 'background:#1a1d24;border:1px solid #2a2d35;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
+                card.style.cssText = 'background:#0A0A0A;border:1px solid #2a2a2a;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;';
                 card.onmouseenter = () => { card.style.borderColor = scoreBord; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; };
-                card.onmouseleave = () => { card.style.borderColor = '#2a2d35'; card.style.transform = ''; card.style.boxShadow = ''; };
+                card.onmouseleave = () => { card.style.borderColor = '#2a2a2a'; card.style.transform = ''; card.style.boxShadow = ''; };
 
                 let badges = '';
-                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280 !important;margin-top:6px;">Opt-Out</span>`;
-                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#f59e0b !important;margin-top:6px;">Manual Flag</span>`;
+                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7E7E7E !important;margin-top:6px;">Opt-Out</span>`;
+                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#E0A33A !important;margin-top:6px;">Manual Flag</span>`;
 
                 card.innerHTML = `
                     <div style="position:relative;margin-bottom:10px;">
                         <img src="${avatarUrl}" alt=""
                             style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};${isOptedOut ? 'opacity:0.5;filter:grayscale(60%);' : ''}"
                             onerror="this.src='${fallback}'">
-                        <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #1a1d24;display:block;"></span>
+                        <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #0A0A0A;display:block;"></span>
                     </div>
-                    <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#f0f0f0'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
+                    <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#FFFFFF'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
                     <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
                         <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
                         <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
@@ -5978,20 +6088,20 @@
                 card.addEventListener('click', () => {
                     const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
                     const manualSection = u.manual_flag ? `
-                        <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.28);">
+                        <div style="margin-top:14px;padding:12px 14px;background:rgba(224,163,58,.1);border:1px solid rgba(224,163,58,.28);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:#f59e0b !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:#E0A33A !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
                             </div>
                             <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:#fff !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
-                            <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(245,158,11,.08);border-radius:6px;font-style:italic;">${manualReason || 'No reason provided.'}</p>
+                            <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(224,163,58,.08);font-style:italic;">${manualReason || 'No reason provided.'}</p>
                         </div>` : '';
 
                     const optOutSection = isOptedOut ? `
-                        <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.28);">
+                        <div style="margin-top:14px;padding:12px 14px;background:rgba(126,126,126,.1);border:1px solid rgba(126,126,126,.28);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:#6b7280 !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7E7E7E" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:#7E7E7E !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
                             </div>
                             <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has opted out of Prism trust scoring. No score is being tracked. Moderation systems (chat filter, anti-spam, etc.) remain active.</p>
                         </div>` : '';
@@ -6010,7 +6120,7 @@
                                 <div style="font-size:0.68rem;color:#aaa !important;margin-top:3px;">ID: ${u.uid}</div>
                             </div>
                         </div>
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:${scoreBg};border:1px solid ${scoreBord};">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${scoreBg};border:1px solid ${scoreBord};">
                             <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
                             <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
                         </div>
@@ -6036,7 +6146,7 @@
                     b.style.color = '#888';
                     b.classList.remove('active');
                 });
-                btn.style.background = '#2a2d35';
+                btn.style.background = '#2a2a2a';
                 btn.style.color = '#ccc';
                 btn.classList.add('active');
                 renderPrismCards(_prismUsers);
@@ -6147,9 +6257,9 @@
         };
         const _TICKET_STYLE_CSS = {
             primary: 'background:#5865F2;color:#fff;',
-            secondary: 'background:#4f545c;color:#fff;',
-            success: 'background:#22c55e;color:#fff;',
-            danger: 'background:#ef4444;color:#fff;',
+            secondary: 'background:#7E7E7E;color:#fff;',
+            success: 'background:#46A758;color:#fff;',
+            danger: 'background:#DC3838;color:#fff;',
         };
 
         function renderTicketButtons() {
@@ -6171,7 +6281,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <div style="min-width:0;flex:1;">
-                            <h3 class="text-base font-semibold"><span style="padding:3px 10px;border-radius:5px;${previewCss}">${label}</span></h3>
+                            <h3 class="text-base font-semibold"><span style="padding:3px 10px;${previewCss}">${label}</span></h3>
                             <p class="text-muted text-xs" style="margin-top:4px;">${styleLabel}</p>
                         </div>
                         <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;align-items:center;">
@@ -6181,7 +6291,7 @@
                             <button type="button" class="btn-outline btn-move-down" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
-                            <button type="button" class="btn-outline btn-remove" style="color:#ef4444;border-color:#ef4444;">
+                            <button type="button" class="btn-outline btn-remove" style="color:#DC3838;border-color:#DC3838;">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -6978,9 +7088,9 @@
                 '<p class="text-muted text-xs" style="margin:0; line-height:1.4;">' + modReviewEscape(modReviewHint(item.kind)) + '</p>' +
                 '<div class="flex items-center gap-2" style="flex-wrap:wrap; margin-top:.15rem;">' +
                 labelSelect +
-                '<button type="button" class="btn-primary mod_review-approve" style="background:#22c55e; border-color:#22c55e;">' +
+                '<button type="button" class="btn-primary mod_review-approve" style="background:#46A758; border-color:#46A758;">' +
                 '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>Approve</button>' +
-                '<button type="button" class="btn-outline mod_review-reject" style="color:#ef4444; border-color:#ef4444;">' +
+                '<button type="button" class="btn-outline mod_review-reject" style="color:#DC3838; border-color:#DC3838;">' +
                 '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
                 '<span class="btn-label">Reject</span></button>' +
                 '</div>';
@@ -7219,7 +7329,7 @@
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             _cfBypassChannels.forEach(cid => {
                 const tag = document.createElement('div');
-                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);font-size:13px;';
                 tag.innerHTML = `<span>${nameMap[cid] || '#' + cid}</span><button type="button" onclick="cfBypassRemove('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 list.appendChild(tag);
             });
@@ -7249,7 +7359,7 @@
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             ids.forEach(id => {
                 const tag = document.createElement('div');
-                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#18181b);border:1px solid var(--border,#27272a);border-radius:6px;font-size:13px;';
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);font-size:13px;';
                 tag.innerHTML = `<span>${prefix}${nameMap[id] || id}</span><button type="button" onclick="${removeFn}('${id}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 list.appendChild(tag);
             });
@@ -7385,7 +7495,7 @@
                             <h3 class="text-base font-semibold">Step ${idx + 1}: At ${step.warns} warning${step.warns !== 1 ? 's' : ''} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" style="display:inline-block;vertical-align:-3px;"><path d="m9 18 6-6-6-6"/></svg> ${actionLabel}</h3>
                             <p class="text-muted text-xs">${step.action === 'timeout' ? `Timeout: ${durationMin} min &nbsp;&middot;&nbsp;` : ''}DM: ${step.dm ? 'Yes' : 'No'}</p>
                         </div>
-                        <button type="button" class="btn-outline btn-wc-remove" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;">
+                        <button type="button" class="btn-outline btn-wc-remove" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -7476,7 +7586,7 @@
                                     onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
                                 👍/👎 votes
                             </label>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="suggestionsRemoveChannel('${ch.id}')">
+                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="suggestionsRemoveChannel('${ch.id}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -7553,7 +7663,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <h3 class="text-base font-semibold">${chName}</h3>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
+                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -7588,6 +7698,86 @@
             const payload = { auto_release: { enabled, ignore_bots, channels: _autoReleaseChannels } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=auto_release&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    btn.disabled = false;
+                    btn.querySelector('.btn-text')?.classList.remove('hidden');
+                    btn.querySelector('.spinner')?.classList.add('hidden');
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── AI Assistant ───────────────────────────────────────────────────────
+        let _assistantChannels = [];
+
+        function updateAssistantModeHint() {
+            const mode = document.getElementById('assistant-list-mode').value;
+            const hint = document.getElementById('assistant-mode-hint');
+            if (!hint) return;
+            hint.textContent = mode === 'whitelist'
+                ? 'Baxi will only reply when mentioned in the channels listed below.'
+                : 'Baxi will reply when mentioned in every channel except those listed below.';
+        }
+
+        function renderAssistantChannels() {
+            const list = document.getElementById('assistant-channels-list');
+            const empty = document.getElementById('assistant-channels-empty');
+            const count = document.getElementById('assistant-ch-count');
+            list.innerHTML = '';
+            count.textContent = `(${_assistantChannels.length})`;
+            if (_assistantChannels.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            const sel = document.getElementById('assistant-add-channel');
+            const nameMap = {};
+            for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
+            _assistantChannels.forEach(cid => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const chName = nameMap[cid] || ('#' + cid);
+                card.innerHTML = `
+                    <header class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold">${chName}</h3>
+                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="assistantRemoveChannel('${cid}')">
+                            <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            <span class="btn-label">Remove</span>
+                        </button>
+                    </header>`;
+                list.appendChild(card);
+            });
+        }
+
+        function assistantAddChannel() {
+            const sel = document.getElementById('assistant-add-channel');
+            const val = sel.value;
+            if (!val) return;
+            if (_assistantChannels.includes(val)) { sel.value = ''; return; }
+            _assistantChannels.push(val);
+            sel.value = '';
+            renderAssistantChannels();
+        }
+
+        function assistantRemoveChannel(cid) {
+            _assistantChannels = _assistantChannels.filter(c => c !== cid);
+            renderAssistantChannels();
+        }
+
+        document.getElementById('assistant-form').onsubmit = function (event) {
+            event.preventDefault();
+            const btn = document.getElementById('assistant-save-btn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            const enabled = document.getElementById('assistant-enabled').checked;
+            const list_mode = document.getElementById('assistant-list-mode').value;
+            const cooldown = parseInt(document.getElementById('assistant-cooldown').value, 10) || 0;
+            const insult_timeout = document.getElementById('assistant-insult-timeout').checked;
+            const payload = { assistant: { enabled, list_mode, channels: _assistantChannels, cooldown, insult_timeout } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=assistant&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
@@ -7637,7 +7827,7 @@
                                 </svg>
                                 <span class="btn-label">Edit</span>
                             </button>
-                            <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
+                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;"
                                 onclick="stickyRemove('${cid}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -7779,7 +7969,7 @@
                 const entriesHtml = (panel.entries || []).map(e => {
                     return `<div class="rr-entry-row flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
                         <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
+                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
                             <span class="btn-text">Remove</span>
                             <svg viewBox="0 0 24 24" class="spinner hidden" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:loader-spin 0.9s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         </button>
@@ -7792,7 +7982,7 @@
                             <h3 class="text-base font-semibold">${_rrEscape(panel.title) || 'Panel'}</h3>
                             <p class="text-muted text-xs">Message ID: ${mid}</p>
                         </div>
-                        <button type="button" class="btn-outline" style="color:#ef4444;border-color:#ef4444;"
+                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;"
                             onclick="removeRRPanel('${mid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -7803,7 +7993,7 @@
                     </header>
                     <section>
                         <!-- Editable panel settings -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 5%,transparent);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:1rem;">
+                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 5%,transparent);border:1px solid var(--border);padding:12px;margin-bottom:1rem;">
                             <p class="text-sm font-medium mb-3">Panel settings</p>
                             <div class="grid gap-3">
                                 <div class="grid gap-1">
@@ -8473,7 +8663,7 @@
                 const removeBtn = document.createElement('button');
                 removeBtn.type = 'button';
                 removeBtn.className = 'btn-outline';
-                removeBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem; color: var(--color-danger, #ef4444);';
+                removeBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem; color: var(--color-danger, #DC3838);';
                 removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
                 removeBtn.title = 'Remove tier';
                 removeBtn.onclick = () => { _donationTiers.splice(idx, 1); renderDonationTiers(); };
@@ -8930,7 +9120,7 @@
         </header>
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="ttConfirmRemove()">Remove</button>
+            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="ttConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -8943,7 +9133,7 @@
         </header>
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-tw-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="twConfirmRemove()">Remove</button>
+            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="twConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -8956,7 +9146,7 @@
         </header>
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-ig-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="igConfirmRemove()">Remove</button>
+            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="igConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -8969,7 +9159,7 @@
         </header>
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-yvid-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="yvidConfirmRemove()">Remove</button>
+            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="yvidConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -8982,7 +9172,7 @@
         </header>
         <footer>
             <button class="btn-outline" onclick="document.getElementById('remove-streamer-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="confirmRemoveStreamer()">Remove</button>
+            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="confirmRemoveStreamer()">Remove</button>
         </footer>
     </div>
 </dialog>

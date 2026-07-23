@@ -24,7 +24,7 @@
         :root {
             --chat-bg: rgba(34, 34, 34, 0.8);
             --chat-border: 1px solid rgba(255, 255, 255, 0.1);
-            --chat-radius: 12px;
+            --chat-radius: 0px;
             --chat-spacing: 1.25rem;
             --avatar-size: 48px;
         }
@@ -121,19 +121,19 @@
             display: inline-flex;
             align-items: center;
             padding: 0.25rem 0.75rem;
-            border-radius: 20px;
+            
             font-size: 0.8rem;
             font-weight: 600;
         }
 
         .status-open {
             background: rgba(0, 200, 83, 0.2);
-            color: #00C853;
+            color: #46A758;
         }
 
         .status-closed {
             background: rgba(255, 82, 82, 0.2);
-            color: #FF5252;
+            color: #DC3838;
         }
 
         @media (max-width: 768px) {
@@ -331,7 +331,7 @@
                                 {% for attachment in entry.attachments %}
                                 <a href="{{ attachment_url }}{{ attachment }}" target="_blank" rel="noopener noreferrer">
                                     <img src="{{ attachment_url }}{{ attachment }}" alt="Attachment"
-                                        style="border-radius: 8px; border: var(--chat-border); max-width: 600px;">
+                                        style="border: var(--chat-border); max-width: 600px;">
                                 </a>
                                 {% endfor %}
                             </div>

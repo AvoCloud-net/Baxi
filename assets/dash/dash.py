@@ -3225,6 +3225,57 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Auto-Release settings saved!"})
 
+        elif system == "assistant":
+            data: dict = await quart.request.get_json()
+            asst = data.get("assistant")
+
+            if not isinstance(asst, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format."}), 400
+            if not isinstance(asst.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            list_mode = str(asst.get("list_mode", "blocklist"))
+            if list_mode not in ("whitelist", "blocklist"):
+                list_mode = "blocklist"
+
+            raw_channels = asst.get("channels", [])
+            if not isinstance(raw_channels, list):
+                return quart.jsonify({"success": False, "message": "'channels' must be a list."}), 400
+            channels: list[str] = []
+            for ch in raw_channels:
+                ch_id = str(ch).strip()
+                if re.fullmatch(r"\d{17,19}", ch_id) and ch_id not in channels:
+                    channels.append(ch_id)
+
+            try:
+                cooldown = int(asst.get("cooldown", 10))
+            except (TypeError, ValueError):
+                cooldown = 10
+            cooldown = max(0, min(cooldown, 3600))
+
+            settings = {
+                "enabled": asst["enabled"],
+                "list_mode": list_mode,
+                "channels": channels,
+                "cooldown": cooldown,
+                "insult_timeout": bool(asst.get("insult_timeout", True)),
+            }
+            save_data(int(guild_id), "assistant", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "assistant",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Assistant settings saved!"})
+
         elif system == "mc_link":
             data: dict = await quart.request.get_json()
             mcl = data.get("mc_link")

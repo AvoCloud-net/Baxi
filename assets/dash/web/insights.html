@@ -35,10 +35,11 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .stat-card {
+            border-radius: var(--avo-radius-md, 8px);
             position: relative;
             background: var(--card, var(--color-card));
             border: 1px solid var(--border, var(--color-border));
-            border-radius: 0.75rem; padding: 1.25rem 1.5rem;
+            padding: 1.25rem 1.5rem;
             display: flex; flex-direction: column; gap: 0.3rem;
         }
         .stat-card .label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.5; }
@@ -56,9 +57,9 @@
         .info-i .tip {
             position: absolute; bottom: 150%; right: -0.35rem;
             width: max-content; max-width: 230px;
-            background: var(--card, #1a1a24);
+            background: var(--card, #0A0A0A);
             border: 1px solid var(--border, var(--color-border));
-            border-radius: 0.55rem; padding: 0.55rem 0.7rem;
+            padding: 0.55rem 0.7rem;
             font-size: 0.72rem; font-weight: 500; line-height: 1.4;
             text-transform: none; letter-spacing: normal; text-align: left;
             color: var(--foreground, inherit); opacity: 0;
@@ -71,9 +72,10 @@
         .stat-card .sub   { font-size: 0.78rem; opacity: 0.45; }
 
         .chart-card {
+            border-radius: var(--avo-radius-md, 8px);
             background: var(--card, var(--color-card));
             border: 1px solid var(--border, var(--color-border));
-            border-radius: 0.75rem; padding: 1.5rem;
+            padding: 1.5rem;
         }
         .chart-card h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 1rem; opacity: 0.85; }
 
@@ -89,10 +91,10 @@
         .rank-count { font-size: 0.78rem; font-weight: 600; opacity: 0.6; white-space: nowrap; }
 
         .tag { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; }
-        .tag-warn { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; }
-        .tag-kick { background: color-mix(in srgb, #f97316 15%, transparent); color: #f97316; }
-        .tag-ban  { background: color-mix(in srgb, #ef4444 15%, transparent); color: #ef4444; }
-        .tag-mute { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; }
+        .tag-warn { background: color-mix(in srgb, #E0A33A 15%, transparent); color: #E0A33A; }
+        .tag-kick { background: color-mix(in srgb, #ED5333 15%, transparent); color: #ED5333; }
+        .tag-ban  { background: color-mix(in srgb, #DC3838 15%, transparent); color: #DC3838; }
+        .tag-mute { background: color-mix(in srgb, #7E7E7E 15%, transparent); color: #7E7E7E; }
 
         .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; opacity: 0.9; }
         .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.9rem; }
@@ -133,7 +135,7 @@
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
                 z-index: 600;
-                background: var(--card, #1a1a24);
+                background: var(--card, #0A0A0A);
                 border-top: 1px solid var(--border, rgba(255,255,255,0.1));
                 padding: 0.45rem 0.5rem env(safe-area-inset-bottom, 0.45rem);
                 gap: 0.3rem;
@@ -156,9 +158,9 @@
                 transition: background 0.12s, color 0.12s, border-color 0.12s;
             }
             #mobile-nav button:hover, #mobile-nav button:active {
-                background: var(--color-primary, #6366f1);
+                background: var(--color-primary, #FF6B4A);
                 color: #fff;
-                border-color: var(--color-primary, #6366f1);
+                border-color: var(--color-primary, #FF6B4A);
             }
             #mobile-nav .mnav-sep {
                 flex-shrink: 0;
@@ -238,7 +240,7 @@
         <button onclick="scrollToSection('sec-members')">Members</button>
         <button onclick="scrollToSection('sec-moderation')">Moderation</button>
         <div class="mnav-sep"></div>
-        <button onclick="location.href='/logout/'" style="color:#f87171;border-color:rgba(248,113,113,0.3);">Log-out</button>
+        <button onclick="location.href='/logout/'" style="color:#DC3838;border-color:rgba(220,56,56,0.3);">Log-out</button>
     </nav>
 
     <div id="dash-content-wrapper" class="max-w-6xl mx-auto px-4 sm:px-6">
@@ -276,13 +278,13 @@
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">How many members joined the server in this period.</span></span>
                     <span class="label">Joins</span>
-                    <span class="value" style="color:#22c55e" id="st-joins">{{ data.total_joins }}</span>
+                    <span class="value" style="color:#46A758" id="st-joins">{{ data.total_joins }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">How many members left or were removed in this period.</span></span>
                     <span class="label">Leaves</span>
-                    <span class="value" style="color:#ef4444" id="st-leaves">{{ data.total_leaves }}</span>
+                    <span class="value" style="color:#DC3838" id="st-leaves">{{ data.total_leaves }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
@@ -301,7 +303,7 @@
                     <span class="info-i" tabindex="0">i<span class="tip">An at-a-glance score (0–100) of server wellbeing. Higher means fewer mod actions and filter hits relative to your member count. Green is healthy, amber is okay, red needs attention.</span></span>
                     <span class="label">Health Score</span>
                     <span class="value" id="st-health">{{ data.health }}<span style="font-size:1rem;opacity:0.5;">/100</span></span>
-                    <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}#22c55e{% elif data.health>=40 %}#f59e0b{% else %}#ef4444{% endif %};"></div></div>
+                    <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}#46A758{% elif data.health>=40 %}#E0A33A{% else %}#DC3838{% endif %};"></div></div>
                 </div>
             </div>
 
@@ -316,7 +318,7 @@
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">Joins minus leaves. A positive number means your server grew in this period; negative means it shrank.</span></span>
                     <span class="label">Net Members</span>
-                    <span class="value" id="st-net" style="color:{% if data.net_members>=0 %}#22c55e{% else %}#ef4444{% endif %};">{% if data.net_members>=0 %}+{% endif %}{{ data.net_members }}</span>
+                    <span class="value" id="st-net" style="color:{% if data.net_members>=0 %}#46A758{% else %}#DC3838{% endif %};">{% if data.net_members>=0 %}+{% endif %}{{ data.net_members }}</span>
                     <span class="sub">joins − leaves</span>
                 </div>
                 <div class="stat-card">
@@ -418,19 +420,19 @@
             <div class="grid-auto" style="margin-bottom:1rem;">
                 <div class="stat-card">
                     <span class="label">Warns</span>
-                    <span class="value" style="color:#f59e0b" id="st-warn">{{ data.mod_counts.warn }}</span>
+                    <span class="value" style="color:#E0A33A" id="st-warn">{{ data.mod_counts.warn }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Kicks</span>
-                    <span class="value" style="color:#f97316" id="st-kick">{{ data.mod_counts.kick }}</span>
+                    <span class="value" style="color:#ED5333" id="st-kick">{{ data.mod_counts.kick }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Bans</span>
-                    <span class="value" style="color:#ef4444" id="st-ban">{{ data.mod_counts.ban }}</span>
+                    <span class="value" style="color:#DC3838" id="st-ban">{{ data.mod_counts.ban }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Mutes</span>
-                    <span class="value" style="color:#8b5cf6" id="st-mute">{{ data.mod_counts.mute }}</span>
+                    <span class="value" style="color:#7E7E7E" id="st-mute">{{ data.mod_counts.mute }}</span>
                 </div>
             </div>
             <div class="chart-card" style="margin-bottom:1rem;">
@@ -521,15 +523,18 @@
         }
 
         // ── Shared chart palette ─────────────────────────────────────────────
+        // avocloud v2: series run on the coral ramp + neutrals (monochrome
+        // blueprint look, BRANDING §3). Key names are the old colour words so
+        // every chart below keeps working; only the values are brand ramp steps.
         const C = {
-            blue:   '#6366f1', blueA:  'rgba(99,102,241,0.55)',  blueB: 'rgba(99,102,241,0.15)',
-            teal:   '#14b8a6', tealA:  'rgba(20,184,166,0.55)',  tealB: 'rgba(20,184,166,0.13)',
-            green:  '#22c55e', greenA: 'rgba(34,197,94,0.55)',   greenB:'rgba(34,197,94,0.13)',
-            red:    '#ef4444', redA:   'rgba(239,68,68,0.55)',   redB:  'rgba(239,68,68,0.12)',
-            amber:  '#f59e0b', amberA: 'rgba(245,158,11,0.55)',  amberB:'rgba(245,158,11,0.12)',
-            orange: '#f97316', orangeA:'rgba(249,115,22,0.55)',  orangeB:'rgba(249,115,22,0.12)',
-            purple: '#8b5cf6', purpleA:'rgba(139,92,246,0.55)',  purpleB:'rgba(139,92,246,0.12)',
-            lime:   '#84cc16',
+            blue:   '#FF6B4A', blueA:  'rgba(255,107,74,0.55)',  blueB: 'rgba(255,107,74,0.15)',
+            teal:   '#FF9379', tealA:  'rgba(255,147,121,0.55)', tealB: 'rgba(255,147,121,0.13)',
+            green:  '#FFB6A4', greenA: 'rgba(255,182,164,0.55)', greenB:'rgba(255,182,164,0.13)',
+            red:    '#C73D20', redA:   'rgba(199,61,32,0.55)',   redB:  'rgba(199,61,32,0.12)',
+            amber:  '#FF7A5C', amberA: 'rgba(255,122,92,0.55)',  amberB:'rgba(255,122,92,0.12)',
+            orange: '#ED5333', orangeA:'rgba(237,83,51,0.55)',   orangeB:'rgba(237,83,51,0.12)',
+            purple: '#7E7E7E', purpleA:'rgba(126,126,126,0.55)', purpleB:'rgba(126,126,126,0.12)',
+            lime:   '#BBBBBB',
         };
 
         let charts = {};
@@ -563,8 +568,8 @@
                 // Per-bar colour: ramp from teal (night) → blue (morning) → amber (afternoon) → indigo (evening)
                 const hourColors = hours.map((_,i) => {
                     if (i < 6)  return 'rgba(20,184,166,0.6)';
-                    if (i < 12) return 'rgba(99,102,241,0.65)';
-                    if (i < 18) return 'rgba(245,158,11,0.65)';
+                    if (i < 12) return 'rgba(255,107,74,0.65)';
+                    if (i < 18) return 'rgba(224,163,58,0.65)';
                     return 'rgba(139,92,246,0.65)';
                 });
                 charts.hourly = new Chart(ctxH, {
@@ -621,7 +626,7 @@
             // ── Filter category ──────────────────────────────────────────────
             const ctxCat = document.getElementById('chart-category');
             if (ctxCat) {
-                const catColors={phishing:C.red,nsfw:C.orange,toxicity:C.amber,hate:'#dc2626',doxxing:'#7c3aed',selfharm:C.purple,keyword:'#94a3b8'};
+                const catColors={phishing:C.red,nsfw:C.orange,toxicity:C.amber,hate:'#9C2E16',doxxing:'#BBBBBB',selfharm:C.purple,keyword:'#5A5A5A'};
                 const catKeys=Object.keys(d.category_counts);
                 if (catKeys.length) {
                     charts.category = new Chart(ctxCat, {
@@ -674,7 +679,7 @@
             set('st-mod100', d.mod_per_100);
 
             const net = document.getElementById('st-net');
-            if (net) { net.textContent = (d.net_members >= 0 ? '+' : '') + d.net_members; net.style.color = d.net_members >= 0 ? '#22c55e' : '#ef4444'; }
+            if (net) { net.textContent = (d.net_members >= 0 ? '+' : '') + d.net_members; net.style.color = d.net_members >= 0 ? '#46A758' : '#DC3838'; }
             set('st-peak', d.peak_hour === null || d.peak_hour === undefined ? '–' : String(d.peak_hour).padStart(2,'0') + ':00');
 
             if (d.ticket_stats) {
@@ -689,7 +694,7 @@
             set('st-mute',   d.mod_counts.mute);
 
             const bar = document.getElementById('health-fill');
-            if (bar) { bar.style.width=d.health+'%'; bar.style.background=d.health>=70?'#22c55e':d.health>=40?'#f59e0b':'#ef4444'; }
+            if (bar) { bar.style.width=d.health+'%'; bar.style.background=d.health>=70?'#46A758':d.health>=40?'#E0A33A':'#DC3838'; }
 
             const maxCh = d.top_active_channels?.[0]?.count || 1;
             const maxUsr = d.top_active_users?.[0]?.count || 1;

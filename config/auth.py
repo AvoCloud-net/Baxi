@@ -11,9 +11,11 @@ class Chatfilter:
     admin_key: str = "SAFE-TEXT-ADMIN-KEY"
     ai_key: str = "OPENWEBUI-API-KEY"
 
-class Ai:
-    uri: str = "http://localhost:8080/api/chat/completions" #NOT NEEDED
-    api_key: str = "OPENWEBUI-API-KEY" #NOT NEEDED
+class Assistant:
+    # Optional bearer token for the Ollama endpoint (config.config.Assistant.ollama_url).
+    # Plain local Ollama needs NO auth — leave empty. Only set this if your Ollama sits
+    # behind a reverse proxy that requires Authorization: Bearer <token>.
+    api_key: str = ""
 
 class Twitch:
     client_id: str = "YOUR-TWITCH-CLIENT-ID"

@@ -125,7 +125,7 @@
                                 <span class="highlight-yellow">{{data.uname}}</span>
                             </p>
                             <p class="text-muted text-sm" style="margin-top: 0.4rem;">
-                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.uid}}</code>
+                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.uid}}</code>
                             </p>
                             <p class="text-muted text-sm" style="margin-top: 0.25rem;">
                                 Account created: {{data.user_created_at}}
@@ -153,11 +153,11 @@
                                 <span class="highlight-yellow">{{data.sname}}</span>
                             </p>
                             <p class="text-muted text-sm" style="margin-top: 0.4rem;">
-                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.sid}}</code>
+                                ID: <code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.sid}}</code>
                             </p>
                             <p class="text-muted text-sm" style="margin-top: 0.25rem;">
                                 Channel: <span class="highlight-yellow">#{{data.cname}}</span>
-                                (<code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.cid}}</code>)
+                                (<code style="font-family: monospace; font-size: 0.85em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">{{data.cid}}</code>)
                             </p>
                         </section>
                     </div>
@@ -211,7 +211,7 @@
                     </header>
                     <section>
                         {% if data.false_positive or data.feedback %}
-                            <div class="update-badge" style="display:inline-flex;align-items:center;gap:0.4rem;background:color-mix(in srgb, var(--success, #22c55e) 15%, transparent);color:var(--success, #22c55e);">
+                            <div class="update-badge" style="display:inline-flex;align-items:center;gap:0.4rem;background:color-mix(in srgb, var(--success, #46A758) 15%, transparent);color:var(--success, #46A758);">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 Feedback submitted
                                 {% if data.feedback and data.feedback.admin %}

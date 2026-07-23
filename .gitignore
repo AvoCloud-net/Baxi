@@ -1,6 +1,9 @@
 graphify-out/
 CLAUDE.md
 
+node_modules/
+__pycache__/
+
 # SQLite store (migrated from JSON)
 baxi_data.db
 baxi_data.db-wal

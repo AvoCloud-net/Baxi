@@ -24,95 +24,38 @@
     {% if show_intro %}
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block"></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script>
+        // Arms the FOUC guard in main.css (html.gsap-ready .hw-fill) before first
+        // paint, and only when motion is allowed — see BRANDING.md §5.
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.documentElement.classList.add('gsap-ready');
+        }
+        // Watchdog: the splash must never be the reason the user waits. If the
+        // reveal script fails to load or throw, tear the overlay down anyway.
+        setTimeout(function () {
+            var s = document.getElementById('avo-splash');
+            if (s) s.remove();
+            var b = document.querySelector('.local-button-group');
+            if (b) b.style.opacity = '1';
+        }, 8000);
+    </script>
     <style>
         .local-button-group {
             opacity: 0;
             transition: opacity 0.5s ease;
         }
-        #avo-intro-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            background: oklch(0.09 0.015 280);
-            transition: opacity 0.7s ease;
-            color: #e8e4db;
-        }
-        #avo-intro-overlay.avo-fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .avo-tagline {
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: clamp(0.65rem, 2vw, 0.85rem);
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            opacity: 0;
-            transform: translateY(6px);
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.77,0,.18,1);
-        }
-        .avo-intro { display: inline-flex; align-items: center; }
-        .avo-icon-slot { display: inline-grid; flex-shrink: 0; }
-        .avo-icon-slot > * { grid-area: 1/1; display: flex; align-items: center; }
-        .avo-icon svg { height: clamp(1.5rem, 7vw, 5rem); width: auto; }
-        .avo-path {
-            stroke-dasharray: 200;
-            stroke-dashoffset: 200;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .avo-av, .avo-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: clamp(1.5rem, 7vw, 5rem);
-            letter-spacing: .04em;
-            white-space: nowrap;
-        }
-        .avo-av {
-            opacity: 0;
-            transform: translateX(6px);
-            transition: opacity .6s ease, transform .6s cubic-bezier(.77,0,.18,1);
-        }
-        .avo-text-wrap {
-            overflow: hidden;
-            max-width: 0;
-            display: flex;
-            align-items: baseline;
-            transition: max-width .7s cubic-bezier(.77,0,.18,1);
-        }
-        .avo-text {
-            opacity: 0;
-            transform: translateX(20px);
-            transition: transform .7s cubic-bezier(.77,0,.18,1), opacity .5s ease .05s;
-        }
-        .avo-dot { opacity: .55; font-family: 'Syne', sans-serif; font-weight: 800; font-size: inherit; letter-spacing: inherit; }
-        .avo-icon { transition: opacity .6s ease, transform .6s cubic-bezier(.77,0,.18,1); }
     </style>
     {% endif %}
 </head>
 
 <body>
     {% if show_intro %}
-    <div id="avo-intro-overlay">
-        <span class="avo-tagline">Developed by</span>
-        <div class="avo-intro">
-            <span class="avo-icon-slot">
-                <span class="avo-icon">
-                    <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="6">
-                        <path class="avo-path" d="M22 18 L12 18 L12 54 L22 54 M50 18 L60 18 L60 54 L50 54 M26 30 L33 36 L26 42" pathLength="200"/>
-                        <rect class="logo-cursor" x="40" y="28" width="4" height="16" rx="2"/>
-                    </svg>
-                </span>
-                <span class="avo-av">AV</span>
-            </span>
-            <span class="avo-text-wrap">
-                <span class="avo-text">OCLOUD<span class="avo-dot">.NET</span></span>
-            </span>
+    <div id="avo-splash">
+        <div class="hw" id="avo-splash-hw">
+            <!-- One line on purpose: whitespace between the spans would show up
+                 as gaps AND inside textContent, which must stay the clean word. -->
+            <div class="splash-word"><span class="hw-ch"><span class="hw-stroke" data-ch="A" aria-hidden="true"></span><span class="hw-fill">A</span></span><span class="hw-ch"><span class="hw-stroke" data-ch="V" aria-hidden="true"></span><span class="hw-fill">V</span></span><span class="hw-ch" data-round="1"><span class="hw-stroke" data-ch="O" aria-hidden="true"></span><span class="hw-fill">O</span></span><span class="hw-ch" data-round="1"><span class="hw-stroke" data-ch="C" aria-hidden="true"></span><span class="hw-fill">C</span></span><span class="hw-ch"><span class="hw-stroke" data-ch="L" aria-hidden="true"></span><span class="hw-fill">L</span></span><span class="hw-ch" data-round="1"><span class="hw-stroke" data-ch="O" aria-hidden="true"></span><span class="hw-fill">O</span></span><span class="hw-ch"><span class="hw-stroke" data-ch="U" aria-hidden="true"></span><span class="hw-fill">U</span></span><span class="hw-ch" data-round="1"><span class="hw-stroke" data-ch="D" aria-hidden="true"></span><span class="hw-fill">D</span></span><span class="hw-ch coral"><span class="hw-stroke" data-ch="." aria-hidden="true"></span><span class="hw-fill">.</span></span><span class="hw-ch coral"><span class="hw-stroke" data-ch="N" aria-hidden="true"></span><span class="hw-fill">N</span></span><span class="hw-ch coral"><span class="hw-stroke" data-ch="E" aria-hidden="true"></span><span class="hw-fill">E</span></span><span class="hw-ch coral"><span class="hw-stroke" data-ch="T" aria-hidden="true"></span><span class="hw-fill">T</span></span></div>
         </div>
     </div>
     {% endif %}
@@ -292,57 +235,143 @@
     
     {% if show_intro %}
     <script>
+        /* avocloud CAD construction reveal — vanilla port of brand/motion/Wordmark.tsx.
+           Same measured geometry, same timeline, same word (AVOCLOUD.NET).
+           Which letters get an inscribed ring and which run coral is carried by the
+           markup (data-round / .coral) instead of the component's ROUND and
+           CORAL_FROM constants.
+           Server gates this to once per login via session['show_intro']. */
         (function () {
-            var overlay = document.getElementById('avo-intro-overlay');
+            var SVG_NS = 'http://www.w3.org/2000/svg';
+            var overlay = document.getElementById('avo-splash');
             if (!overlay) return;
 
-            function playAvoIntro() {
-                var path    = overlay.querySelector('.avo-path');
-                var icon    = overlay.querySelector('.avo-icon');
-                var av      = overlay.querySelector('.avo-av');
-                var wrap    = overlay.querySelector('.avo-text-wrap');
-                var text    = overlay.querySelector('.avo-text');
-                var tagline = overlay.querySelector('.avo-tagline');
-
-                // Phase 1: typewriter SVG draw (1400ms)
-                path.style.transition = 'none';
-                path.style.strokeDashoffset = '200';
-                void path.getBoundingClientRect();
-                path.style.transition = 'stroke-dashoffset 1400ms cubic-bezier(.4,0,.2,1)';
-                path.style.strokeDashoffset = '0';
-
-                // Phase 2: icon fades out, AV + OCLOUD.NET + tagline slide in
-                setTimeout(function () {
-                    icon.style.opacity   = '0';
-                    icon.style.transform = 'translateX(-10px)';
-                    av.style.opacity     = '1';
-                    av.style.transform   = 'translateX(0)';
-                    setTimeout(function () {
-                        wrap.style.maxWidth     = '100vw';
-                        text.style.opacity      = '1';
-                        text.style.transform    = 'translateX(0)';
-                        tagline.style.opacity   = '0.35';
-                        tagline.style.transform = 'translateY(0)';
-                    }, 500);
-                }, 1500);
-
-                // Phase 3: hold, then fade out and remove; reveal button group
-                setTimeout(function () {
-                    overlay.classList.add('avo-fade-out');
-                    var btnGroup = document.querySelector('.local-button-group');
-                    if (btnGroup) btnGroup.style.opacity = '1';
-                    setTimeout(function () {
-                        overlay.remove();
-                    }, 700);
-                }, 3800);
+            function finish() {
+                overlay.classList.add('avo-fade-out');
+                var btnGroup = document.querySelector('.local-button-group');
+                if (btnGroup) btnGroup.style.opacity = '1';
+                setTimeout(function () { overlay.remove(); }, 700);
             }
 
-            // Wait specifically for Syne so AV width matches the SVG before animating
-            document.fonts.load("800 1em 'Syne'").then(function () {
-                requestAnimationFrame(function () {
-                    requestAnimationFrame(playAvoIntro);
+            // Reduced motion or no GSAP: straight to the app, no static hold.
+            if (matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap) {
+                overlay.remove();
+                var bg = document.querySelector('.local-button-group');
+                if (bg) bg.style.opacity = '1';
+                return;
+            }
+
+            /* Guides are measured from the real glyph boxes — never hardcode a
+               guide box, it drifts out of alignment as soon as the font or size
+               changes. */
+            function buildGuides(wrap) {
+                var chs = [].slice.call(wrap.querySelectorAll('.hw-ch'));
+                if (!chs.length) return null;
+                var wr = wrap.getBoundingClientRect();
+                var r = chs.map(function (c) {
+                    var b = c.getBoundingClientRect();
+                    return { left: b.left - wr.left, right: b.right - wr.left, top: b.top - wr.top, bottom: b.bottom - wr.top };
                 });
-            });
+                var tops = r.map(function (x) { return x.top; });
+                var bottoms = r.map(function (x) { return x.bottom; });
+                var lead = (r[0].bottom - r[0].top) * 0.11;
+                var capTop = Math.min.apply(null, tops) + lead;
+                var base = Math.max.apply(null, bottoms) - lead;
+                var midY = (capTop + base) / 2;
+                var left = r[0].left;
+                var right = r[r.length - 1].right;
+                var ext = wr.width * 0.05;
+
+                var lines = [];
+                [capTop, midY, base].forEach(function (y) {
+                    lines.push({ x1: left - ext, y1: y, x2: right + ext, y2: y });
+                });
+                lines.push({ x1: left, y1: capTop - ext * 0.5, x2: left, y2: base + ext * 0.5 });
+                lines.push({ x1: right, y1: capTop - ext * 0.5, x2: right, y2: base + ext * 0.5 });
+                for (var i = 0; i < r.length - 1; i++) {
+                    var x = (r[i].right + r[i + 1].left) / 2;
+                    lines.push({ x1: x, y1: capTop - ext * 0.25, x2: x, y2: base + ext * 0.25 });
+                }
+                lines.push({ x1: left, y1: capTop, x2: right, y2: base });
+                lines.push({ x1: right, y1: capTop, x2: left, y2: base });
+
+                // Dashed rings inscribing the round letters (O, C, D).
+                var circles = [];
+                chs.forEach(function (c, i) {
+                    if (c.dataset.round !== '1') return;
+                    circles.push({
+                        cx: (r[i].left + r[i].right) / 2,
+                        cy: (r[i].top + r[i].bottom) / 2,
+                        r: ((base - capTop) / 2) * 1.08,
+                        coral: c.classList.contains('coral')
+                    });
+                });
+
+                var svg = document.createElementNS(SVG_NS, 'svg');
+                svg.setAttribute('class', 'hw-guides');
+                svg.setAttribute('width', wr.width);
+                svg.setAttribute('height', wr.height);
+                svg.setAttribute('viewBox', '0 0 ' + wr.width + ' ' + wr.height);
+                svg.setAttribute('aria-hidden', 'true');
+                lines.forEach(function (l) {
+                    var el = document.createElementNS(SVG_NS, 'line');
+                    el.setAttribute('class', 'hw-line');
+                    el.setAttribute('x1', l.x1);
+                    el.setAttribute('y1', l.y1);
+                    el.setAttribute('x2', l.x2);
+                    el.setAttribute('y2', l.y2);
+                    el.setAttribute('pathLength', '1');
+                    el.setAttribute('vector-effect', 'non-scaling-stroke');
+                    svg.appendChild(el);
+                });
+                circles.forEach(function (c) {
+                    var el = document.createElementNS(SVG_NS, 'circle');
+                    el.setAttribute('class', 'hw-circ' + (c.coral ? ' coral' : ''));
+                    el.setAttribute('cx', c.cx);
+                    el.setAttribute('cy', c.cy);
+                    el.setAttribute('r', c.r);
+                    el.setAttribute('vector-effect', 'non-scaling-stroke');
+                    svg.appendChild(el);
+                });
+                wrap.insertBefore(svg, wrap.firstChild);
+                return svg;
+            }
+
+            function play() {
+                var wrap = document.getElementById('avo-splash-hw');
+                if (!wrap) return finish();
+                buildGuides(wrap);
+
+                var strokes = wrap.querySelectorAll('.hw-stroke');
+                var fills = wrap.querySelectorAll('.hw-fill');
+                var lines = wrap.querySelectorAll('.hw-line');
+                var circles = wrap.querySelectorAll('.hw-circ');
+
+                gsap.set(fills, { clipPath: 'inset(100% 0 0 0)' });
+                gsap.set(strokes, { opacity: 0, yPercent: 8 });
+                gsap.set(lines, { strokeDashoffset: 1, opacity: 0 });
+                gsap.set(circles, { opacity: 0, transformOrigin: '50% 50%' });
+
+                var tl = gsap.timeline({ delay: 0.15, onComplete: finish });
+                tl.set(lines, { opacity: 1 })
+                  .to(lines, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut', stagger: 0.025 }, 0)
+                  .fromTo(circles, { scale: 0.86 }, { opacity: 1, scale: 1, duration: 0.55, ease: 'power2.out', stagger: 0.06 }, 0.25)
+                  .to(strokes, { opacity: 1, yPercent: 0, duration: 0.4, ease: 'power2.out', stagger: 0.045 }, 0.4)
+                  .to(fills, { clipPath: 'inset(0% 0 0 0)', duration: 0.5, ease: 'power2.out', stagger: 0.055 }, 0.85)
+                  .to([lines, circles], { opacity: 0, duration: 0.7, ease: 'power2.inOut' }, 1.7)
+                  .to(strokes, { opacity: 0, duration: 0.7, ease: 'power2.inOut' }, 1.7);
+                tl.timeScale(0.6); // the 1.0 default reads as rushed for this moment
+            }
+
+            // Measure only once Syne is actually rendering, or the guides land on
+            // fallback-font metrics.
+            if (document.fonts && document.fonts.load) {
+                document.fonts.load("800 1em 'Syne'").then(function () {
+                    requestAnimationFrame(function () { requestAnimationFrame(play); });
+                }).catch(play);
+            } else {
+                play();
+            }
         })();
     </script>
     {% endif %}

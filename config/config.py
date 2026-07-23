@@ -5,10 +5,10 @@ class Discord:
     shard_count = 1  # Single shard for development/testing; use None for production auto-detect
     prefix = "b?"
     color         = discord.Color.from_rgb(255, 107, 74)   # #FF6B4A -  Coral (avocloud primary)
-    danger_color  = discord.Color.from_rgb(239, 68, 68)    # #ef4444 -  Red
-    warn_color    = discord.Color.from_rgb(245, 158, 11)   # #f59e0b -  Amber
-    success_color = discord.Color.from_rgb(34, 197, 94)    # #22c55e -  Green
-    info_color    = discord.Color.from_rgb(59, 130, 246)   # #3b82f6 -  Blue
+    danger_color  = discord.Color.from_rgb(220, 56, 56)    # #DC3838 -  Red    (brand v2 semantic)
+    warn_color    = discord.Color.from_rgb(224, 163, 58)   # #E0A33A -  Amber  (brand v2 semantic)
+    success_color = discord.Color.from_rgb(70, 167, 88)    # #46A758 -  Green  (brand v2 semantic)
+    info_color    = discord.Color.from_rgb(59, 130, 196)   # #3B82C4 -  Blue   (brand v2 semantic)
     version = "7.0.0"
     # Central avocloud channel that receives network-wide alerts (was the old Prism global
     # channel). User reports are mirrored here for operator oversight.
@@ -30,6 +30,40 @@ class Chatfilter:
     feedback_max_entries = 15  # FIFO cap on admin-corrected few-shot examples
     phishing_list_url = "https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.txt"
     phishing_list_source = "https://github.com/Discord-AntiScam/scam-links"
+
+
+class Assistant:
+	"""Baxi LLM assistant — replies when a user pings the bot in a message.
+	
+	Backed by a local Ollama server running a small model. Per-guild on/off +
+	channel whitelist/blocklist live in guild data (`datasys.default_data["assistant"]`);
+	the values here are network-wide defaults.
+	"""
+	# Ollama server base URL. "/api/chat" is appended by the module.
+	# Plain local Ollama needs no auth — set config.auth.Assistant.api_key only if
+	# your endpoint sits behind a bearer-token proxy.
+	ollama_url = "http://100.79.104.152:11434"
+	
+	# Default model. smollm2:1.7b = fastest/smallest, but its German is mediocre
+	# (fine for short casual replies, shaky on nuance / longer answers). If German
+	# quality disappoints, swap to one of these — same Ollama, one-line change:
+	#   "qwen2.5:3b"  → strong multilingual incl. German, best small all-rounder
+	#   "gemma2:2b"   → decent German, a bit larger than smollm
+	#   "llama3.2:3b" → solid multilingual alternative
+	model = "qwen2.5:3b"
+	
+	temperature    = 0.6      # etwas konsistenter, weniger Ausreißer
+	num_ctx        = 8192     # genug Platz für history_limit=6 + Systemprompt + Input
+	max_tokens     = 700      # reine Antwort (Chat-Thinking ist aus) — weniger abgeschnittene Antworten
+	request_timeout = 90      # ohne Thinking antwortet Qwen3 4B schnell; 90s fängt echte Hänger ab
+	history_limit  = 6        # passt, lassen
+	summary_history = 50      # passt, lassen
+	max_input_chars = 1500    # passt, lassen
+	default_cooldown = 10     # passt, lassen
+	insult_timeout_seconds = 60   # passt, lassen
+	insult_threshold = 0.7    # etwas sensibler, va. für DE-Nachrichten
+	daily_message_limit = 50      # max assistant replies per user per day (1 concurrent per user)
+	
 
 
 class Icons:
@@ -363,6 +397,13 @@ class datasys:
         "enabled": False,
         "channels": [],
         "ignore_bots": True,
+    },
+    "assistant": {
+        "enabled": False,
+        "list_mode": "blocklist",   # "whitelist" = only these channels | "blocklist" = all except these
+        "channels": [],             # channel ids the list_mode applies to
+        "cooldown": 10,             # per-user seconds between replies
+        "insult_timeout": True,     # timeout users who insult Baxi or another member
     },
     "mc_link": {
         "enabled": False,

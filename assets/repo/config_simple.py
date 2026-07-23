@@ -22,7 +22,7 @@ _REQUIRED_CONF_KEYS = [
     "chatfilter", "ticket", "serverlog", "warn_config", "antispam", "welcomer",
     "livestream", "youtube_videos", "tiktok", "twitter", "instagram", "stats_channels",
     "auto_roles", "temp_voice", "verify", "reaction_roles", "counting",
-    "flag_quiz", "suggestions", "leveling", "auto_release", "mc_link", "music", "donations",
+    "flag_quiz", "suggestions", "leveling", "auto_release", "assistant", "mc_link", "music", "donations",
 ]
 _missing_conf_keys = [k for k in _REQUIRED_CONF_KEYS if k not in _DD]
 if _missing_conf_keys:
@@ -701,6 +701,44 @@ def save_antiraid(gid: int, data: dict) -> None:
     db.ensure_guild(gid)
     db.execute(
         "INSERT INTO cfg_antiraid (guild_id,data) VALUES (?,?) "
+        "ON CONFLICT(guild_id) DO UPDATE SET data=excluded.data",
+        (gid, json.dumps(data)),
+    )
+
+
+# ── AI Assistant ──────────────────────────────────────────────────────────────
+# Stored as a single JSON blob: small flat config (enabled, list_mode, channels,
+# cooldown) that may grow; the blob keeps it schema-free like Anti-Raid.
+
+_ASSISTANT_DEF = _DD["assistant"]
+
+
+def _default_assistant() -> dict:
+    return json.loads(json.dumps(_ASSISTANT_DEF))
+
+
+def _merge_assistant(stored: dict) -> dict:
+    out = _default_assistant()
+    if isinstance(stored, dict):
+        out.update(stored)
+    return out
+
+
+def load_assistant(gid: int) -> dict:
+    rows = db.query("SELECT data FROM cfg_assistant WHERE guild_id=?", (gid,))
+    if not rows:
+        return _default_assistant()
+    try:
+        stored = json.loads(rows[0]["data"] or "{}")
+    except Exception:
+        stored = {}
+    return _merge_assistant(stored)
+
+
+def save_assistant(gid: int, data: dict) -> None:
+    db.ensure_guild(gid)
+    db.execute(
+        "INSERT INTO cfg_assistant (guild_id,data) VALUES (?,?) "
         "ON CONFLICT(guild_id) DO UPDATE SET data=excluded.data",
         (gid, json.dumps(data)),
     )
