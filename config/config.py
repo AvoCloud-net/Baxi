@@ -50,12 +50,15 @@ class Assistant:
 	#   "qwen2.5:3b"  → strong multilingual incl. German, best small all-rounder
 	#   "gemma2:2b"   → decent German, a bit larger than smollm
 	#   "llama3.2:3b" → solid multilingual alternative
-	model = "qwen2.5:3b"
+	model = "gemma3:4b"
 	
-	temperature    = 0.6      # etwas konsistenter, weniger Ausreißer
+	temperature    = 0.8      # etwas mehr Persönlichkeit/Frechheit, weniger steife Antworten
+	repeat_penalty = 1.25     # gegen "wiederholt sich" (Hauptregler bei kleinem Modell)
+	repeat_last_n  = 256      # Fensterbreite für repeat_penalty
+	presence_penalty = 0.4    # drängt zu neuen Formulierungen statt Schleifen
 	num_ctx        = 8192     # genug Platz für history_limit=6 + Systemprompt + Input
-	max_tokens     = 700      # reine Antwort (Chat-Thinking ist aus) — weniger abgeschnittene Antworten
-	request_timeout = 90      # ohne Thinking antwortet Qwen3 4B schnell; 90s fängt echte Hänger ab
+	max_tokens     = 2048     # qwen3 Thinking teilt sich das Budget mit der Antwort — großzügig, sonst wird vor der Antwort abgeschnitten
+	request_timeout = 120     # qwen3 Thinking läuft immer mit → mehr Zeit für echte Hänger
 	history_limit  = 6        # passt, lassen
 	summary_history = 50      # passt, lassen
 	max_input_chars = 1500    # passt, lassen
