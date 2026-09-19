@@ -1,8 +1,13 @@
 import aiohttp
 import asyncio
+import datetime
 import secrets as _secrets
 import time
+
+import discord
 from reds_simple_logger import Logger
+
+import config.config as config
 
 from assets.repo.standalone import load_mc_links as _standalone_load, save_mc_links as _standalone_save
 
@@ -108,18 +113,29 @@ def find_by_mc_name(guild_id: int, mc_name: str) -> tuple[int, dict] | None:
     return None
 
 
-async def resolve_token(api_url: str, secret: str, token: str) -> dict | None:
-    """GET /dg/token/{token} → {uuid, name} or None."""
+async def resolve_token(api_url: str, secret: str, token: str) -> tuple[dict | None, str | None]:
+    """GET /dg/token/{token} → (data, None) on success, (None, error) on failure.
+
+    error: "not_found" if the server does not know this code, "unauthorized" if the
+    shared secret does not match, else "unreachable". Collapsing all three into one
+    "invalid code" is what made a misconfigured api_url/secret look like a bad code.
+    """
     url = f"{api_url.rstrip('/')}/dg/token/{token.upper()}"
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                 if resp.status == 200:
-                    return await resp.json()
-                return None
+                    return await resp.json(), None
+                if resp.status == 404:
+                    return None, "not_found"
+                if resp.status in (401, 403):
+                    logger.error(f"[mc_link] resolve_token: {resp.status} from {url} — shared secret mismatch?")
+                    return None, "unauthorized"
+                logger.error(f"[mc_link] resolve_token: unexpected {resp.status} from {url}")
+                return None, "unreachable"
     except Exception as e:
-        logger.error(f"[mc_link] resolve_token failed: {e}")
-        return None
+        logger.error(f"[mc_link] resolve_token failed for {url}: {e}")
+        return None, "unreachable"
 
 
 async def fetch_online_players(api_url: str, secret: str) -> tuple[dict | None, str | None]:
@@ -139,6 +155,123 @@ async def fetch_online_players(api_url: str, secret: str) -> tuple[dict | None, 
     except Exception as e:
         logger.error(f"[mc_link] fetch_online_players failed: {e}")
         return None, "unreachable"
+
+
+async def fetch_server_stats(api_url: str, secret: str) -> dict | None:
+    """GET /dg/stats → the status-board payload, or None when the server is down.
+
+    None means "offline or unreachable" and the board renders as offline — that is
+    the whole point of the call, so a failure here is not logged as an error.
+    Plugins older than the /dg/stats endpoint answer 404; treated the same as down
+    apart from the marker, so the board can say "update your plugin" instead.
+    """
+    url = f"{api_url.rstrip('/')}/dg/stats"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers={"Authorization": f"Bearer {secret}"}, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data if isinstance(data, dict) else None
+                if resp.status == 404:
+                    return {"outdated": True}
+                return None
+    except Exception:
+        return None
+
+
+def format_uptime(seconds) -> str:
+    d, rem = divmod(int(seconds or 0), 86400)
+    h, rem = divmod(rem, 3600)
+    m = rem // 60
+    if d:
+        return f"{d}d {h}h {m}m"
+    if h:
+        return f"{h}h {m}m"
+    return f"{m}m"
+
+
+def render_status_embed(stats: dict | None, t: dict | None = None) -> discord.Embed:
+    """Render a /dg/stats payload as an embed.
+
+    Shared by the auto-updating status board (assets/tasks.py) and /mc info, so
+    both always show the same fields. `stats` is exactly what fetch_server_stats
+    returns: None = offline, {"outdated": True} = plugin too old.
+    `t` is the guild's lang["systems"]["mc_link"] subtree; English is the fallback.
+    """
+    t = t or {}
+    now = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+    footer = t.get("footer", "Baxi · avocloud.net")
+
+    if stats is None:
+        embed = discord.Embed(
+            title=f"{config.Icons.cross} {t.get('info_offline_title', 'Server offline')}",
+            description=t.get("info_offline_desc", "The Minecraft server is not reachable."),
+            color=config.Discord.danger_color,
+        )
+        embed.add_field(name=t.get("info_last_check", "Last check"), value=f"<t:{now}:R>", inline=True)
+        embed.set_footer(text=footer)
+        return embed
+
+    if stats.get("outdated"):
+        embed = discord.Embed(
+            title=f"{config.Icons.alert} {t.get('info_outdated_title', 'Plugin outdated')}",
+            description=t.get(
+                "info_outdated_desc",
+                "This server's DiscordGate plugin has no `/dg/stats` endpoint. Update it to see server stats.",
+            ),
+            color=config.Discord.warn_color,
+        )
+        embed.set_footer(text=footer)
+        return embed
+
+    players = stats.get("players", {}) or {}
+    count = int(players.get("count", 0))
+    max_p = int(players.get("max", 0))
+
+    embed = discord.Embed(
+        title=f"{config.Icons.check} {t.get('info_online_title', 'Server online')}",
+        color=config.Discord.success_color,
+    )
+    embed.add_field(name=t.get("info_players", "Players"), value=f"**{count}** / {max_p}", inline=True)
+    embed.add_field(name=t.get("info_uptime", "Uptime"), value=format_uptime(stats.get("uptime_seconds", 0)), inline=True)
+
+    platform = str(stats.get("platform") or "").strip()
+    version = str(stats.get("version") or "").strip()
+    if version:
+        embed.add_field(name=t.get("info_version", "Version"), value=f"{platform} {version}".strip(), inline=True)
+
+    # TPS is Paper-only and absent on Folia — show it only when reported.
+    tps = stats.get("tps")
+    if isinstance(tps, list) and tps:
+        mspt = stats.get("mspt")
+        value = f"**{tps[0]:.2f}** (1m)"
+        if mspt is not None:
+            value += f" · {mspt:.2f} ms/tick"
+        embed.add_field(name=t.get("info_performance", "Performance"), value=value, inline=True)
+
+    # ViaVersion range: which client versions can actually connect.
+    via = stats.get("via")
+    if isinstance(via, dict) and via.get("min_name") and via.get("max_name"):
+        if via["min_name"] == via["max_name"]:
+            clients = f"`{via['min_name']}`"
+        else:
+            clients = f"`{via['min_name']}` – `{via['max_name']}`"
+        embed.add_field(name=t.get("info_clients", "Clients"), value=clients, inline=True)
+
+    # Proxy-only: per-backend player split.
+    servers = stats.get("servers")
+    if isinstance(servers, list) and servers:
+        busy = [s for s in servers if int(s.get("players", 0)) > 0]
+        if busy:
+            embed.add_field(
+                name=t.get("info_backends", "Backends"),
+                value="\n".join(f"`{s.get('name', '?')}` — {s.get('players', 0)}" for s in busy[:10]),
+                inline=False,
+            )
+
+    embed.add_field(name=t.get("info_updated", "Updated"), value=f"<t:{now}:R>", inline=True)
+    embed.set_footer(text=footer)
+    return embed
 
 
 async def fetch_all_links(api_url: str, secret: str) -> list[dict] | None:

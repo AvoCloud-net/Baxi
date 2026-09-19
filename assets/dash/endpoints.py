@@ -21,10 +21,10 @@ def topgg_vote_endpoint(app: quart.Quart, bot: commands.AutoShardedBot):
         auth_header = request.headers.get("Authorization", "")
         expected = auth.TopGG.webhook_secret
         if not expected or expected == "YOUR-TOPGG-WEBHOOK-SECRET":
-            logger.warning("[TopGG Vote] Webhook secret not configured, rejecting request.")
+            logger.warn("[TopGG Vote] Webhook secret not configured, rejecting request.")
             return jsonify({"error": "Not configured"}), 503
         if auth_header != expected:
-            logger.warning("[TopGG Vote] Unauthorized vote webhook request.")
+            logger.warn("[TopGG Vote] Unauthorized vote webhook request.")
             return jsonify({"error": "Unauthorized"}), 401
 
         data = await request.get_json()
@@ -42,13 +42,13 @@ def topgg_vote_endpoint(app: quart.Quart, bot: commands.AutoShardedBot):
         vote_channel_id = auth.TopGG.vote_channel_id
 
         if not avocloud_guild_id or not vote_channel_id:
-            logger.warning("[TopGG Vote] avocloud_guild_id or vote_channel_id not configured.")
+            logger.warn("[TopGG Vote] avocloud_guild_id or vote_channel_id not configured.")
             return jsonify({"ok": True}), 200
 
         # Check if voter is a member of the avocloud.net Discord server
         avocloud_guild: discord.Guild | None = bot.get_guild(avocloud_guild_id)
         if avocloud_guild is None:
-            logger.warning("[TopGG Vote] Bot is not in avocloud guild.")
+            logger.warn("[TopGG Vote] Bot is not in avocloud guild.")
             return jsonify({"ok": True}), 200
 
         try:
@@ -71,7 +71,7 @@ def topgg_vote_endpoint(app: quart.Quart, bot: commands.AutoShardedBot):
 
         vote_channel: discord.TextChannel | None = bot.get_channel(vote_channel_id)  # type: ignore
         if vote_channel is None:
-            logger.warning(f"[TopGG Vote] Vote channel {vote_channel_id} not found.")
+            logger.warn(f"[TopGG Vote] Vote channel {vote_channel_id} not found.")
             return jsonify({"ok": True}), 200
 
         # Build the announcement embed

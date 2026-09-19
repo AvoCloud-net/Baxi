@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=block"></noscript>
@@ -88,7 +88,6 @@
             color: #fff;
             border: none;
             cursor: pointer;
-            transition: background var(--avo-dur-micro) var(--avo-ease-out);
             text-decoration: none;
         }
         .discord-btn:hover {
@@ -165,7 +164,6 @@
 </head>
 
 <body>
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">

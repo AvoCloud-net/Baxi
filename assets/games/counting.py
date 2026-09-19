@@ -20,7 +20,9 @@ def _is_milestone(n: int) -> bool:
     return n >= 100 and n % 100 == 0
 
 
-_MATH_RE = re.compile(r"^[\d\s+\-*/().^]+$")
+_MATH_RE = re.compile(r"^[\d\s+\-*/().^,a-zA-Z]+$")
+_SQRT_NAMES = {"sqrt", "wurzel"}
+_HELP_WORDS = {"help", "hilfe"}
 
 _SUPERSCRIPT = str.maketrans({
     "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4",
@@ -64,12 +66,22 @@ def _safe_eval(node):
         if op is None:
             raise ValueError("bad unary")
         return op(_safe_eval(node.operand))
+    if isinstance(node, ast.Call):
+        if not isinstance(node.func, ast.Name) or node.func.id.lower() not in _SQRT_NAMES:
+            raise ValueError("bad call")
+        if len(node.args) != 1 or node.keywords:
+            raise ValueError("bad call args")
+        arg = _safe_eval(node.args[0])
+        if arg < 0:
+            raise ValueError("negative sqrt")
+        return arg ** 0.5
     raise ValueError("bad node")
 
 
 def _normalize_expression(content: str) -> str:
     content = re.sub(r"([⁰¹²³⁴⁵⁶⁷⁸⁹]+)", lambda m: "**" + m.group(1).translate(_SUPERSCRIPT), content)
     content = content.replace("^", "**")
+    content = re.sub(r"[xX]", "*", content)
     return content
 
 
@@ -101,19 +113,39 @@ async def check_counting(message: discord.Message, bot: commands.AutoShardedBot)
     data: dict = dict(datasys.load_data(message.guild.id, "counting"))
 
     if not data.get("enabled", False):
+        logger.info(f"[counting debug] guild={message.guild.id} not enabled, skipping")
         return False
 
     channel_raw = str(data.get("channel", "") or "")
     if not channel_raw or not channel_raw.isdigit():
+        logger.info(f"[counting debug] guild={message.guild.id} no channel configured ({channel_raw!r})")
         return False
     channel_id = int(channel_raw)
     if message.channel.id != channel_id:
+        logger.info(
+            f"[counting debug] guild={message.guild.id} message in channel={message.channel.id} "
+            f"but configured channel={channel_id}, skipping"
+        )
         return False
 
     lang = datasys.load_lang_file(message.guild.id)
     t: dict = lang["games"]["counting"]
 
     content = message.content.strip()
+    logger.info(f"[counting debug] guild={message.guild.id} content={content!r} help_match={content.lower() in _HELP_WORDS}")
+
+    if content.lower() in _HELP_WORDS:
+        try:
+            help_embed = discord.Embed(
+                title=t["help_title"],
+                description=t["help_description"],
+                color=cfg.Discord.info_color,
+            )
+            help_embed.set_footer(text=t["footer"])
+            await message.channel.send(embed=help_embed)
+        except Exception as e:
+            logger.error(f"[counting debug] help embed failed: {e!r}")
+        return True
 
     user_number = _parse_count_expression(content)
     if user_number is None:

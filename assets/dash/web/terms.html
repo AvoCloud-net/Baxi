@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 
     <style>
         .legal-hero {
@@ -37,7 +37,7 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.3rem 0.85rem;
-            border-radius: 9999px;
+            border-radius: var(--avo-radius-sm, 6px);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
@@ -128,7 +128,7 @@
             font-size: 0.75rem;
             font-weight: 600;
             padding: 0.2rem 0.6rem;
-            border-radius: 9999px;
+            border-radius: var(--avo-radius-sm, 6px);
             background: color-mix(in srgb, var(--color-primary, #FF6B4A) 12%, transparent);
             color: var(--color-primary, #FF6B4A);
             margin-bottom: 0.5rem;
@@ -187,7 +187,6 @@
 </head>
 
 <body>
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">

@@ -48,6 +48,10 @@ def init(db_path: str | None = None) -> None:
 # never alters an existing table, so we add any missing columns here (idempotent).
 _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
     "cfg_mod_gate": [("use_safety_list", "INTEGER DEFAULT 1")],
+    "cfg_mc_link": [
+        ("status_channel", "TEXT DEFAULT ''"),
+        ("status_message_id", "TEXT DEFAULT ''"),
+    ],
 }
 
 
@@ -489,7 +493,9 @@ CREATE TABLE IF NOT EXISTS cfg_mc_link (
     dm_announcements      INTEGER DEFAULT 0,
     chat_enabled          INTEGER DEFAULT 0,
     chat_channel          TEXT    DEFAULT '',
-    chat_webhook_url      TEXT    DEFAULT ''
+    chat_webhook_url      TEXT    DEFAULT '',
+    status_channel        TEXT    DEFAULT '',
+    status_message_id     TEXT    DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS cfg_music (
@@ -514,27 +520,6 @@ CREATE TABLE IF NOT EXISTS cfg_music_source (
 CREATE TABLE IF NOT EXISTS cfg_music_radio_wl (
     guild_id INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
     pos INTEGER, value TEXT, PRIMARY KEY (guild_id, pos)
-);
-
-CREATE TABLE IF NOT EXISTS cfg_donations (
-    guild_id               INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
-    enabled                INTEGER DEFAULT 0,
-    provider               TEXT    DEFAULT 'stripe',
-    stripe_secret_key      TEXT    DEFAULT '',
-    stripe_webhook_secret  TEXT    DEFAULT '',
-    paypal_client_id       TEXT    DEFAULT '',
-    paypal_client_secret   TEXT    DEFAULT '',
-    page_text              TEXT    DEFAULT 'Support this server!',
-    success_text           TEXT    DEFAULT 'Thank you for your donation! Your role has been assigned.',
-    log_enabled            INTEGER DEFAULT 0,
-    log_channel            TEXT    DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS cfg_donation_tier (
-    guild_id  INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
-    pos       INTEGER,
-    tier_json TEXT,
-    PRIMARY KEY (guild_id, pos)
 );
 
 CREATE TABLE IF NOT EXISTS warnings (
@@ -795,11 +780,6 @@ CREATE TABLE IF NOT EXISTS globalchat_guilds (
 
 CREATE TABLE IF NOT EXISTS updates_channels (
     guild_id    TEXT PRIMARY KEY,
-    config_json TEXT
-);
-
-CREATE TABLE IF NOT EXISTS feature_access (
-    feature     TEXT PRIMARY KEY,
     config_json TEXT
 );
 

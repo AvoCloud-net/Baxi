@@ -115,7 +115,9 @@ async def _wait_and_log(proc: asyncio.subprocess.Process) -> None:
 def _train_sync() -> dict:
     from assets.message.safetext.feedback import list_entries, mark_all_trained
 
-    entries = list_entries(only_untrained=True)
+    # Every run trains a fresh adapter from the base model, so it must see ALL
+    # feedback — training only the untrained rows would discard earlier corrections.
+    entries = list_entries()
 
     # Only rows we can actually supervise the toxic head with.
     samples: list[tuple[str, list[float]]] = []
@@ -152,6 +154,10 @@ def _train_sync() -> dict:
 
     tokenizer = AutoTokenizer.from_pretrained(TOXIC_MODEL)
     model     = AutoModelForSequenceClassification.from_pretrained(TOXIC_MODEL)
+    # num_labels=1 without problem_type makes Trainer use MSE regression on the raw
+    # logit (pulls it to 0/1 -> sigmoid 0.50/0.73 -> every message ~0.5+). Inference
+    # applies sigmoid, so train with BCEWithLogits to match.
+    model.config.problem_type = "multi_label_classification"
 
     lora_cfg = LoraConfig(
         task_type=TaskType.SEQ_CLS,

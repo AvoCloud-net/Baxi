@@ -161,7 +161,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
                     if result:
                         started = True
                     else:
-                        logger.warning(f"[Music:{interaction.guild.id}] play_next returned None")
+                        logger.warn(f"[Music:{interaction.guild.id}] play_next returned None")
                         if player.queue:
                             player.queue.popleft()
             except Exception as e:

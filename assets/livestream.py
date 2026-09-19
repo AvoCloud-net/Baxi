@@ -715,7 +715,7 @@ class InstagramAPI:
         async with aiohttp.ClientSession(headers=self._HEADERS) as session:
             async with session.get(url, allow_redirects=True) as resp:
                 if resp.status != 200:
-                    logger.warning(f"[InstagramAPI] HTTP {resp.status} for @{handle}")
+                    logger.warn(f"[InstagramAPI] HTTP {resp.status} for @{handle}")
                     return None
                 payload = await resp.json(content_type=None)
         return payload.get("data", {}).get("user")
@@ -925,6 +925,8 @@ class TwitterAPI:
         self._guest_token: Optional[str] = None
         self._guest_token_ts: float = 0.0
         self._rest_id_cache: dict = {}   # screen_name(lower) -> rest_id
+        # True = cookies verified working, False = rejected by X, None = unknown / not configured
+        self.cookie_status: Optional[bool] = None
 
     @staticmethod
     def _cookies() -> Optional[tuple]:
@@ -940,6 +942,40 @@ class TwitterAPI:
         In guest mode (no cookies) X hides the timelines of small/new accounts.
         """
         return TwitterAPI._cookies() is not None
+
+    async def verify_cookies(self) -> Optional[bool]:
+        """Ping X with the configured cookies to see if they are still valid.
+
+        Returns True (valid), False (expired/invalid) or None (no cookies configured).
+        On a network error or an unexpected HTTP status the last known status is kept and
+        returned, so a flaky connection never triggers a false "expired" alert.
+        """
+        cookies = self._cookies()
+        if not cookies:
+            self.cookie_status = None
+            return None
+        at, ct0 = cookies
+        headers = {
+            "Authorization": f"Bearer {self._BEARER}",
+            "User-Agent": self._UA,
+            "Cookie": f"auth_token={at}; ct0={ct0}",
+            "x-csrf-token": ct0,
+        }
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
+                async with session.get(
+                    "https://api.twitter.com/1.1/account/verify_credentials.json",
+                    headers=headers,
+                ) as resp:
+                    if resp.status == 200:
+                        self.cookie_status = True
+                    elif resp.status in (401, 403):
+                        self.cookie_status = False
+                    else:
+                        logger.warn(f"[TwitterPosts] cookie check inconclusive: HTTP {resp.status}")
+        except Exception as e:
+            logger.warn(f"[TwitterPosts] cookie check failed: {e}")
+        return self.cookie_status
 
     async def _get_guest_token(self, session: aiohttp.ClientSession, force: bool = False) -> Optional[str]:
         # Guest tokens are valid for a few hours; reuse across checks.
@@ -986,12 +1022,13 @@ class TwitterAPI:
                     if resp.status in (401, 403):
                         if cookies:
                             logger.error(f"[TwitterPosts] {op} auth rejected ({resp.status}) — X cookies expired/invalid")
+                            self.cookie_status = False
                             return None
                         # guest token likely expired -> refresh and retry once
                         self._guest_token = None
                         continue
                     if resp.status == 429:
-                        logger.warning(f"[TwitterPosts] rate limited on {op}")
+                        logger.warn(f"[TwitterPosts] rate limited on {op}")
                         return None
                     if resp.status != 200:
                         logger.error(f"[TwitterPosts] {op} HTTP {resp.status}")

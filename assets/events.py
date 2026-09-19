@@ -50,6 +50,7 @@ from assets.tasks import (
     MusicIdleTask,
     Radio247Task,
     McLinkSyncTask,
+    McStatusBoardTask,
     ClassifierTrainTask,
 )
 from assets.giveaway import GiveawayTask
@@ -319,6 +320,12 @@ def events(bot: commands.AutoShardedBot, web):
             mc_link_sync_task.sync_links.start()
             share.task_instances["McLinkSync"] = mc_link_sync_task
             logger.debug.success("Minecraft link sync task started.")
+
+            logger.working("Starting McStatusBoard task...")
+            mc_status_board_task = McStatusBoardTask(bot)
+            mc_status_board_task.refresh_boards.start()
+            share.task_instances["McStatusBoard"] = mc_status_board_task
+            logger.debug.success("Minecraft status board task started.")
 
             # Music: enable discord.py voice debug logging
             import logging as _logging
@@ -787,7 +794,7 @@ def events(bot: commands.AutoShardedBot, web):
             a_id = after.channel.id if after.channel else None
             logger.info(f"[Music:VS] Bot voice state in guild {guild.id}: before={b_id} after={a_id} mute={after.mute} deaf={after.deaf} self_mute={after.self_mute} self_deaf={after.self_deaf}")
             if before.channel and not after.channel:
-                logger.warning(f"[Music:VS] Bot was disconnected from voice in guild {guild.id} (channel {b_id})")
+                logger.warn(f"[Music:VS] Bot was disconnected from voice in guild {guild.id} (channel {b_id})")
                 # Don't immediately pop the player — let MusicIdleTask handle cleanup with grace period
                 # This allows the bot to reconnect on transient errors (Discord 4006, etc)
 

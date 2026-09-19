@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 
     <style>
         :root {
@@ -39,10 +39,13 @@
             gap: var(--chat-spacing);
             margin: 2rem 0 0;
             padding: 1.5rem;
-            /* Glass tokens (BRANDING §6b) — dark tint, 7px, lit top edge. */
+            /* Glass tokens (BRANDING §6b) — dark tint, 7px, lit top edge. The
+               container carries the box radius; bubbles inside stay flat
+               (--chat-radius: 0) — round the container, not the contents
+               (BRANDING §9). */
             background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
             border: var(--chat-border);
-            border-radius: var(--chat-radius);
+            border-radius: var(--avo-radius-md, 8px);
             backdrop-filter: blur(var(--avo-glass-blur));
             -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             box-shadow: inset 0 1px 0 var(--avo-glass-edge);
@@ -76,7 +79,6 @@
             max-width: min(100%, 800px);
             width: fit-content;
             border: var(--chat-border);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .chat-header {
@@ -84,7 +86,7 @@
             justify-content: space-between;
             align-items: baseline;
             font-size: 0.85rem;
-            color: oklch(.5 0 0);
+            color: var(--avo-text-muted, #7E7E7E);
             margin-bottom: 0.25rem;
             gap: 1rem;
             flex-wrap: wrap;
@@ -106,33 +108,28 @@
 
         .chat-text {
             white-space: pre-wrap;
-            color: oklch(.5 0 0);
+            color: var(--avo-text-muted, #7E7E7E);
             font-size: 0.95rem;
             line-height: 1.5;
-        }
-
-        html:not(.dark) .chat-text,
-        html:not(.dark) .chat-header {
-            color: oklch(.35 0 0);
         }
 
         .ticket-status {
             display: inline-flex;
             align-items: center;
             padding: 0.25rem 0.75rem;
-            
+            border-radius: var(--avo-radius-sm, 6px);
             font-size: 0.8rem;
             font-weight: 600;
         }
 
         .status-open {
-            background: rgba(0, 200, 83, 0.2);
-            color: #46A758;
+            background: color-mix(in srgb, var(--avo-success) 15%, transparent);
+            color: var(--avo-success);
         }
 
         .status-closed {
-            background: rgba(255, 82, 82, 0.2);
-            color: #DC3838;
+            background: color-mix(in srgb, var(--avo-error) 15%, transparent);
+            color: var(--avo-error);
         }
 
         @media (max-width: 768px) {
@@ -144,7 +141,6 @@
 </head>
 
 <body>
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">

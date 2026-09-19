@@ -109,7 +109,7 @@ class UpdateStatsTask:
                     if resp.status == 200:
                         logger.debug.success(f"[TopGG] Stats posted: {guild_count} guilds")
                     else:
-                        logger.warning(f"[TopGG] Failed to post stats: HTTP {resp.status}")
+                        logger.warn(f"[TopGG] Failed to post stats: HTTP {resp.status}")
         except Exception as e:
             logger.error(f"[TopGG] Error posting stats: {e}")
 
@@ -1060,7 +1060,7 @@ class YouTubeVideoTask:
                 per_alert = str(ch_entry.get("alert_channel", "")).strip()
                 alert_channel_id = per_alert or global_alert_channel_id
                 if not alert_channel_id:
-                    logger.warning(f"[YouTubeVideos] No alert channel for {channel_id} in {guild.name}, skipping")
+                    logger.warn(f"[YouTubeVideos] No alert channel for {channel_id} in {guild.name}, skipping")
                     continue
 
                 if alert_channel_id not in resolved_channels:
@@ -1301,7 +1301,7 @@ class TikTokVideoTask:
                 per_alert = str(ch_entry.get("alert_channel", "")).strip()
                 alert_channel_id = per_alert or global_alert_channel_id
                 if not alert_channel_id:
-                    logger.warning(f"[TikTokVideos] No alert channel for @{username} in {guild.name}, skipping")
+                    logger.warn(f"[TikTokVideos] No alert channel for @{username} in {guild.name}, skipping")
                     continue
 
                 if alert_channel_id not in resolved_channels:
@@ -1432,20 +1432,72 @@ class TwitterPostTask:
 
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
+        self._cookies_ok: bool = True   # last reported state, so an alert fires only on change
 
     @tasks.loop(seconds=config.TwitterPosts.check_interval_seconds)
     async def check_posts(self):
         try:
             set_task_status("TwitterPosts", "running", "Checking X accounts for new posts...")
+            await self._check_cookies()
             await self._do_check()
             set_task_status("TwitterPosts", "ok", "X post check complete")
         except Exception as e:
             logger.error(f"[TwitterPosts] Unexpected error: {e}")
             set_task_status("TwitterPosts", "error", f"Unexpected error: {e}")
 
+    async def _check_cookies(self):
+        """Verify the X login cookies each cycle and alert the operator when they expire.
+
+        Alerts fire on state change only (working -> dead, dead -> working), so a dead
+        cookie does not spam the alert channel every 10 minutes.
+        """
+        status = await twitter_api.verify_cookies()
+        if status is None or status == self._cookies_ok:
+            return
+        self._cookies_ok = status
+
+        if status:
+            logger.debug.success("[TwitterPosts] X cookies valid again")
+            admin_log("success", "[TwitterPosts] X cookies are working again", source="TwitterPosts")
+            embed = discord.Embed(
+                title="X cookies restored",
+                description="X (Twitter) post tracking is authenticated again.",
+                color=config.Discord.success_color,
+            )
+        else:
+            logger.error("[TwitterPosts] X cookies expired/invalid — post tracking degraded")
+            admin_log("error", "[TwitterPosts] X cookies expired/invalid", source="TwitterPosts")
+            embed = discord.Embed(
+                title="X cookies expired",
+                description=(
+                    "X (Twitter) rejected the stored login cookies. Post tracking now only "
+                    "works for large accounts (guest mode) or not at all.\n\n"
+                    "**Fix:** log in to the X account in a browser, open DevTools → "
+                    "Application → Cookies → `https://x.com`, copy `auth_token` and `ct0` "
+                    "into `config/auth.py` (`class Twitter`) and restart the bot."
+                ),
+                color=config.Discord.danger_color,
+            )
+        embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+        await self._send_operator_alert(embed)
+
+    async def _send_operator_alert(self, embed: discord.Embed):
+        channel_id = getattr(getattr(auth, "Twitter", None), "alert_channel_id", 0) or 0
+        if not channel_id:
+            return
+        channel = self.bot.get_channel(int(channel_id))
+        if not isinstance(channel, discord.TextChannel):
+            logger.warn(f"[TwitterPosts] alert_channel_id {channel_id} not found or not a text channel")
+            return
+        try:
+            await channel.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException) as e:
+            logger.error(f"[TwitterPosts] Failed to send cookie alert: {e}")
+
     @check_posts.before_loop
     async def before_check_posts(self):
         await self.bot.wait_until_ready()
+        await self._check_cookies()
         await self._do_check()
 
     async def _do_check(self):
@@ -1504,7 +1556,7 @@ class TwitterPostTask:
                 per_alert = str(ch_entry.get("alert_channel", "")).strip()
                 alert_channel_id = per_alert or global_alert_channel_id
                 if not alert_channel_id:
-                    logger.warning(f"[TwitterPosts] No alert channel for @{username} in {guild.name}, skipping")
+                    logger.warn(f"[TwitterPosts] No alert channel for @{username} in {guild.name}, skipping")
                     continue
 
                 if alert_channel_id not in resolved_channels:
@@ -1688,11 +1740,11 @@ class InstagramTask:
             username     = ch_entry.get("username", ig_user_id)
 
             if not ig_user_id or not access_token:
-                logger.warning(f"[Instagram] Channel entry missing ig_user_id/access_token in {guild.name}, skipping")
+                logger.warn(f"[Instagram] Channel entry missing ig_user_id/access_token in {guild.name}, skipping")
                 continue
 
             if ch_entry.get("token_expired", False):
-                logger.warning(f"[Instagram] Token expired for @{username} in {guild.name}, skipping")
+                logger.warn(f"[Instagram] Token expired for @{username} in {guild.name}, skipping")
                 continue
 
             try:
@@ -1707,7 +1759,7 @@ class InstagramTask:
                         changed = True
                         logger.info(f"[Instagram] Refreshed token for @{username} in {guild.name}")
                     except IGBlocked:
-                        logger.warning(f"[Instagram] Token refresh failed (expired) for @{username} in {guild.name}")
+                        logger.warn(f"[Instagram] Token refresh failed (expired) for @{username} in {guild.name}")
                         ch_entry["token_expired"] = True
                         changed = True
                         continue
@@ -1717,16 +1769,16 @@ class InstagramTask:
                 content = await instagram_api.get_user_media(ig_user_id, access_token)
 
             except IGBlocked:
-                logger.warning(f"[Instagram] Token invalid for @{username} in {guild.name}, marking expired")
+                logger.warn(f"[Instagram] Token invalid for @{username} in {guild.name}, marking expired")
                 ch_entry["token_expired"] = True
                 changed = True
                 continue
             except IGRateLimited as e:
-                logger.warning(f"[Instagram] Rate-limited for @{username}: {e}, skipping rest of cycle")
+                logger.warn(f"[Instagram] Rate-limited for @{username}: {e}, skipping rest of cycle")
                 set_task_status("Instagram", "warn", "Rate-limited; backing off until next cycle")
                 break
             except IGNotFound:
-                logger.warning(f"[Instagram] @{username} not found (ig_user_id={ig_user_id}), skipping")
+                logger.warn(f"[Instagram] @{username} not found (ig_user_id={ig_user_id}), skipping")
                 continue
             except IGTransient as e:
                 logger.error(f"[Instagram] Transient error for @{username}: {e}")
@@ -1739,7 +1791,7 @@ class InstagramTask:
                 per_alert = str(ch_entry.get("alert_channel", "")).strip()
                 alert_channel_id = per_alert or global_alert_channel_id
                 if not alert_channel_id:
-                    logger.warning(f"[Instagram] No alert channel for @{username} in {guild.name}, skipping")
+                    logger.warn(f"[Instagram] No alert channel for @{username} in {guild.name}, skipping")
                     continue
 
                 if alert_channel_id not in resolved_channels:
@@ -1997,7 +2049,7 @@ class Radio247Task:
                     label, resolved_url = RADIO_PRESETS[stream_url]
                 else:
                     if not is_safe_radio_url(stream_url):
-                        logger.warning(f"[Radio247:{gid}] unsafe URL, skipping")
+                        logger.warn(f"[Radio247:{gid}] unsafe URL, skipping")
                         continue
                     label, resolved_url = stream_url, stream_url
 
@@ -2076,7 +2128,7 @@ class McLinkSyncTask:
                 logger.error(f"[McLinkSync] guild {guild.id} failed: {type(e).__name__}: {e}")
                 continue
             if stats is None:
-                logger.warning(f"[McLinkSync] guild {guild.id}: skipped (server unreachable or guard).")
+                logger.warn(f"[McLinkSync] guild {guild.id}: skipped (server unreachable or guard).")
                 continue
             synced += 1
             total_added += stats["added"]
@@ -2096,6 +2148,76 @@ class McLinkSyncTask:
         await self.bot.wait_until_ready()
         await self._sync_all()
 
+
+
+class McStatusBoardTask:
+    """Keep one self-updating status embed per guild in a chosen text channel.
+
+    Edits a single message rather than posting a new one, so the channel stays
+    clean and the board can live at the top of an #info channel. The message id is
+    persisted in the guild's mc_link config; if the message is gone (deleted, or
+    the channel changed) a fresh one is posted and the new id stored.
+
+    Refreshes every 2 minutes: fast enough that the player count is not visibly
+    stale, slow enough to stay far under Discord's per-channel edit limits.
+    """
+
+    def __init__(self, bot: commands.AutoShardedBot):
+        self.bot = bot
+
+    @tasks.loop(minutes=2)
+    async def refresh_boards(self):
+        await self._refresh_all()
+
+    async def _refresh_all(self):
+        from assets.mc_link import fetch_server_stats, render_status_embed
+
+        posted = 0
+        for guild in self.bot.guilds:
+            cfg = dict(datasys.load_data(guild.id, "mc_link"))
+            if not cfg.get("enabled", False):
+                continue
+            channel_id = str(cfg.get("status_channel", "")).strip()
+            api_url = str(cfg.get("api_url", "")).strip()
+            secret = str(cfg.get("api_secret", "")).strip()
+            if not channel_id or not api_url or not secret:
+                continue
+
+            channel = guild.get_channel(int(channel_id))
+            if channel is None:
+                continue
+
+            try:
+                t = datasys.load_lang_file(guild.id)["systems"]["mc_link"]
+                stats = await fetch_server_stats(api_url, secret)
+                embed = render_status_embed(stats, t)
+                await self._upsert(guild, cfg, channel, embed)
+                posted += 1
+            except discord.Forbidden:
+                logger.warn(f"[McStatusBoard] guild {guild.id}: missing permissions in #{channel}")
+            except Exception as e:
+                logger.error(f"[McStatusBoard] guild {guild.id} failed: {type(e).__name__}: {e}")
+
+        set_task_status("McStatusBoard", "ok", f"Refreshed {posted} board(s)")
+
+    async def _upsert(self, guild, cfg: dict, channel, embed: discord.Embed):
+        """Edit the stored message, or post a new one and remember its id."""
+        message_id = str(cfg.get("status_message_id", "")).strip()
+        if message_id:
+            try:
+                msg = await channel.fetch_message(int(message_id))
+                await msg.edit(embed=embed)
+                return
+            except (discord.NotFound, discord.HTTPException, ValueError):
+                pass  # fall through and re-post
+
+        msg = await channel.send(embed=embed)
+        cfg["status_message_id"] = str(msg.id)
+        datasys.save_data(guild.id, "mc_link", cfg)
+
+    @refresh_boards.before_loop
+    async def before_refresh_boards(self):
+        await self.bot.wait_until_ready()
 
 
 class ClassifierTrainTask:

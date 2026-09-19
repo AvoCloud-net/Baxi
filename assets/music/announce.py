@@ -34,7 +34,7 @@ def _ensure_tts_file(message: str, path: str) -> Optional[str]:
     try:
         from gtts import gTTS
     except ImportError:
-        logger.warning("[Announce] gTTS not installed — TTS announce disabled.")
+        logger.warn("[Announce] gTTS not installed — TTS announce disabled.")
         return None
     try:
         gTTS(text=message, lang="en").save(path)
@@ -70,7 +70,7 @@ async def _announce_in_vc(vc: discord.VoiceClient, path: str) -> None:
         try:
             await asyncio.wait_for(done.wait(), timeout=_PER_CHANNEL_TIMEOUT)
         except asyncio.TimeoutError:
-            logger.warning(f"[Announce] TTS playback timeout in guild={getattr(vc.guild, 'id', '?')}")
+            logger.warn(f"[Announce] TTS playback timeout in guild={getattr(vc.guild, 'id', '?')}")
     finally:
         try:
             await vc.disconnect(force=True)
@@ -99,7 +99,7 @@ async def announce_reboot_in_voice_channels(bot, message: str = REBOOT_MESSAGE) 
             timeout=_OVERALL_TIMEOUT,
         )
     except asyncio.TimeoutError:
-        logger.warning("[Announce] Overall reboot announce timed out")
+        logger.warn("[Announce] Overall reboot announce timed out")
 
     share.music_players.clear()
 
@@ -148,7 +148,7 @@ async def _notice_in_vc(vc: discord.VoiceClient, path: str, volume: float) -> No
         try:
             await asyncio.wait_for(done.wait(), timeout=_NOTICE_PER_CHANNEL_TIMEOUT)
         except asyncio.TimeoutError:
-            logger.warning(f"[Notice] TTS playback timeout in guild={gid}")
+            logger.warn(f"[Notice] TTS playback timeout in guild={gid}")
             try:
                 vc.stop()
             except Exception:
@@ -183,6 +183,6 @@ async def announce_restart_notice(bot, guild_id: Optional[int] = None,
             timeout=_NOTICE_OVERALL_TIMEOUT,
         )
     except asyncio.TimeoutError:
-        logger.warning("[Notice] Overall restart-notice timed out")
+        logger.warn("[Notice] Overall restart-notice timed out")
 
     return len(voice_clients)

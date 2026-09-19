@@ -66,6 +66,12 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         globalchat_message_data[str(gcmid)] = {
             "author_id": message.author.id,
             "author_name": message.author.name,
+            # Kept so the admin panel can show a readable global-chat feed instead of
+            # forcing an operator to paste message IDs blind. Same retention as the rest
+            # of the record: the garbage collector prunes stale gcmids by snowflake age.
+            "content": message.content[:1000],
+            "origin_gid": guild_id,
+            "origin_guild_name": message.guild.name if message.guild else "",
             "reply": reply,
             "referenceid": None,
             "messages": [],

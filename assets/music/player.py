@@ -65,7 +65,7 @@ class MusicPlayer:
                 guild = channel.guild
                 me = guild.me
                 if me and (me.voice and (me.voice.deaf or me.voice.mute)):
-                    logger.warning(f"[Music:{self.guild_id}] Bot is server-muted/deafened in this guild — audio output blocked.")
+                    logger.warn(f"[Music:{self.guild_id}] Bot is server-muted/deafened in this guild — audio output blocked.")
             except Exception:
                 pass
             logger.info(f"[Music:{self.guild_id}] Voice connection established")
@@ -86,7 +86,7 @@ class MusicPlayer:
 
     async def play_next(self) -> Optional[Track]:
         if not self.voice_client or not self.voice_client.is_connected():
-            logger.warning(f"[Music:{self.guild_id}] play_next called without active voice client")
+            logger.warn(f"[Music:{self.guild_id}] play_next called without active voice client")
             return None
         if not self.queue:
             self.current = None
@@ -107,7 +107,7 @@ class MusicPlayer:
                 fresh = await extract_track(track.webpage_url)
                 track.stream_url = fresh.stream_url
             except Exception as e:
-                logger.warning(f"[Music:{self.guild_id}] Failed to re-extract stream URL: {e}")
+                logger.warn(f"[Music:{self.guild_id}] Failed to re-extract stream URL: {e}")
                 # Continue with old URL — might still work
 
         try:
@@ -136,7 +136,7 @@ class MusicPlayer:
     def _after(self, error):
         logger.info(f"[Music:{self.guild_id}] _after fired (error={error!r})")
         if self._bot is None:
-            logger.warning(f"[Music:{self.guild_id}] _after: bot reference missing, cannot advance")
+            logger.warn(f"[Music:{self.guild_id}] _after: bot reference missing, cannot advance")
             return
         loop = self._bot.loop
         loop.call_soon_threadsafe(asyncio.ensure_future, self._advance(error))
@@ -191,5 +191,5 @@ class MusicPlayer:
                 if self.voice_client.is_connected():
                     await self.voice_client.disconnect(force=False)
             except Exception as e:
-                logger.warning(f"[Music:{self.guild_id}] Error during disconnect: {e}")
+                logger.warn(f"[Music:{self.guild_id}] Error during disconnect: {e}")
         self.voice_client = None

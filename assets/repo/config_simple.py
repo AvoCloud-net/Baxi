@@ -22,7 +22,7 @@ _REQUIRED_CONF_KEYS = [
     "chatfilter", "ticket", "serverlog", "warn_config", "antispam", "welcomer",
     "livestream", "youtube_videos", "tiktok", "twitter", "instagram", "stats_channels",
     "auto_roles", "temp_voice", "verify", "reaction_roles", "counting",
-    "flag_quiz", "suggestions", "leveling", "auto_release", "assistant", "mc_link", "music", "donations",
+    "flag_quiz", "suggestions", "leveling", "auto_release", "assistant", "mc_link", "music",
 ]
 _missing_conf_keys = [k for k in _REQUIRED_CONF_KEYS if k not in _DD]
 if _missing_conf_keys:
@@ -1009,6 +1009,15 @@ _MCL_BOOLS = {"enabled", "dm_on_link", "allow_self_unlink", "dm_announcements",
 _MCL_COLS = list(_MCL_DEF.keys())
 
 
+def _col(row, name: str, default):
+    """sqlite3.Row has no .get(); missing columns must not raise."""
+    try:
+        v = row[name]
+    except (IndexError, KeyError):
+        return default
+    return default if v is None else v
+
+
 def load_mc_link_cfg(gid: int) -> dict:
     rows = db.query("SELECT * FROM cfg_mc_link WHERE guild_id=?", (gid,))
     if not rows:
@@ -1027,6 +1036,10 @@ def load_mc_link_cfg(gid: int) -> dict:
         "chat_enabled":         bool(r["chat_enabled"]),
         "chat_channel":         str(r["chat_channel"]),
         "chat_webhook_url":     str(r["chat_webhook_url"]),
+        # Added after the table's initial release — a row written before the column
+        # migration ran has no key at all, so read defensively.
+        "status_channel":       str(_col(r, "status_channel", "")),
+        "status_message_id":    str(_col(r, "status_message_id", "")),
     }
 
 
@@ -1036,14 +1049,16 @@ def save_mc_link_cfg(gid: int, data: dict) -> None:
         "INSERT INTO cfg_mc_link "
         "(guild_id,enabled,api_url,api_secret,role_id,announce_channel,dm_on_link,"
         "allow_self_unlink,announcement_channel,dm_announcements,chat_enabled,"
-        "chat_channel,chat_webhook_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) "
+        "chat_channel,chat_webhook_url,status_channel,status_message_id) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
         "ON CONFLICT(guild_id) DO UPDATE SET "
         "enabled=excluded.enabled,api_url=excluded.api_url,api_secret=excluded.api_secret,"
         "role_id=excluded.role_id,announce_channel=excluded.announce_channel,"
         "dm_on_link=excluded.dm_on_link,allow_self_unlink=excluded.allow_self_unlink,"
         "announcement_channel=excluded.announcement_channel,"
         "dm_announcements=excluded.dm_announcements,chat_enabled=excluded.chat_enabled,"
-        "chat_channel=excluded.chat_channel,chat_webhook_url=excluded.chat_webhook_url",
+        "chat_channel=excluded.chat_channel,chat_webhook_url=excluded.chat_webhook_url,"
+        "status_channel=excluded.status_channel,status_message_id=excluded.status_message_id",
         (
             gid,
             _int(data.get("enabled", False)),
@@ -1058,6 +1073,8 @@ def save_mc_link_cfg(gid: int, data: dict) -> None:
             int(bool(data.get("chat_enabled", False))),
             str(data.get("chat_channel", "")),
             str(data.get("chat_webhook_url", "")),
+            str(data.get("status_channel", "")),
+            str(data.get("status_message_id", "")),
         ),
     )
 
@@ -1134,72 +1151,6 @@ def save_music(gid: int, data: dict) -> None:
             cx.execute(
                 "INSERT INTO cfg_music_radio_wl (guild_id,pos,value) VALUES (?,?,?)",
                 (gid, pos, json.dumps(v)),
-            )
-
-
-# ── Donations ─────────────────────────────────────────────────────────────────
-
-_DN_DEF = _DD["donations"]
-
-
-def load_donations(gid: int) -> dict:
-    rows = db.query("SELECT * FROM cfg_donations WHERE guild_id=?", (gid,))
-    if not rows:
-        return dict(_DN_DEF)
-    r = rows[0]
-    tier_rows = db.query(
-        "SELECT tier_json FROM cfg_donation_tier WHERE guild_id=? ORDER BY pos", (gid,)
-    )
-    tiers = [json.loads(t["tier_json"]) for t in tier_rows]
-    return {
-        "enabled":               bool(r["enabled"]),
-        "provider":              str(r["provider"]),
-        "stripe_secret_key":     str(r["stripe_secret_key"]),
-        "stripe_webhook_secret": str(r["stripe_webhook_secret"]),
-        "paypal_client_id":      str(r["paypal_client_id"]),
-        "paypal_client_secret":  str(r["paypal_client_secret"]),
-        "page_text":             str(r["page_text"]),
-        "success_text":          str(r["success_text"]),
-        "log_enabled":           bool(r["log_enabled"]),
-        "log_channel":           str(r["log_channel"]),
-        "tiers":                 tiers,
-    }
-
-
-def save_donations(gid: int, data: dict) -> None:
-    db.ensure_guild(gid)
-    with db.transaction() as cx:
-        cx.execute(
-            "INSERT INTO cfg_donations "
-            "(guild_id,enabled,provider,stripe_secret_key,stripe_webhook_secret,"
-            "paypal_client_id,paypal_client_secret,page_text,success_text,log_enabled,log_channel) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET "
-            "enabled=excluded.enabled,provider=excluded.provider,"
-            "stripe_secret_key=excluded.stripe_secret_key,"
-            "stripe_webhook_secret=excluded.stripe_webhook_secret,"
-            "paypal_client_id=excluded.paypal_client_id,"
-            "paypal_client_secret=excluded.paypal_client_secret,"
-            "page_text=excluded.page_text,success_text=excluded.success_text,"
-            "log_enabled=excluded.log_enabled,log_channel=excluded.log_channel",
-            (
-                gid,
-                _int(data.get("enabled", False)),
-                str(data.get("provider", "stripe")),
-                str(data.get("stripe_secret_key", "")),
-                str(data.get("stripe_webhook_secret", "")),
-                str(data.get("paypal_client_id", "")),
-                str(data.get("paypal_client_secret", "")),
-                str(data.get("page_text", _DN_DEF["page_text"])),
-                str(data.get("success_text", _DN_DEF["success_text"])),
-                int(bool(data.get("log_enabled", False))),
-                str(data.get("log_channel", "")),
-            ),
-        )
-        cx.execute("DELETE FROM cfg_donation_tier WHERE guild_id=?", (gid,))
-        for pos, t in enumerate(data.get("tiers", [])):
-            cx.execute(
-                "INSERT INTO cfg_donation_tier (guild_id,pos,tier_json) VALUES (?,?,?)",
-                (gid, pos, json.dumps(t)),
             )
 
 

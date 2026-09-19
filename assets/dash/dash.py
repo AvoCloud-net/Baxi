@@ -672,21 +672,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["name"] = guild.name
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
 
-            # Feature access: determine which features are enabled for this guild
-            try:
-                _feature_access: dict = dict(load_data(1001, "feature_access"))
-            except Exception:
-                _feature_access = {}
-            guild_conf["_feature_access"] = _feature_access
-
-            # Never send donation provider credentials to the browser. Replace them with
-            # boolean "is set" flags so the template can render a placeholder instead.
-            _don = guild_conf.get("donations")
-            if isinstance(_don, dict):
-                for _k in ("stripe_secret_key", "stripe_webhook_secret", "paypal_client_id", "paypal_client_secret"):
-                    _don[f"has_{_k}"] = bool(_don.get(_k))
-                    _don[_k] = ""
-
             channels = await guild.fetch_channels()
 
             text_channels = {
@@ -767,17 +752,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     except Exception:
                         user_on_avocloud = False
 
-            # Resolve per-feature access flags for this guild
-            _gid_str = str(guild.id)
-            def _feature_enabled(feature: str) -> bool:
-                fa = _feature_access.get(feature, {})
-                mode = fa.get("mode", "whitelist")
-                guilds = fa.get("guilds", [])
-                if mode == "whitelist":
-                    return _gid_str in guilds
-                else:  # blacklist
-                    return _gid_str not in guilds
-
             # Discord snowflake ids exceed JS Number.MAX_SAFE_INTEGER (2^53). Jinja's tojson
             # emits them as JSON numbers, and the dashboard's JSON.parse then rounds them —
             # so a <select>'s value no longer matches its option id and the field renders
@@ -810,7 +784,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 feature_adoption=get_feature_adoption(),
                 bot_id=bot.user.id,
                 user_on_avocloud=user_on_avocloud,
-                feature_donations=_feature_enabled("donations"),
             )
 
         except discord.NotFound:
@@ -844,29 +817,68 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             status = None
         return quart.jsonify({"success": True, "items": load_review_queue(int(guild_id), status)})
 
-    @app.route("/api/dash/classifier_status/", methods=["GET"])
-    async def dash_classifier_status():
-        guild_id = quart.request.args.get("dash_login")
-        if not guild_id:
-            return quart.jsonify({"success": False, "message": "Missing guild."}), 400
+    async def _dash_guild_admin(guild_id):
+        """Return (user, guild) if the logged-in user can manage *guild_id*, else None."""
         try:
             user = await discord_auth.fetch_user()
             guild = await bot.fetch_guild(int(guild_id))
             member = await guild.fetch_member(user.id)
-            if not member.guild_permissions.manage_guild:
-                return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+            if member.guild_permissions.manage_guild:
+                return user, guild
         except Exception:
-            return quart.jsonify({"success": False, "message": "Auth failed."}), 403
-        try:
-            from assets.message.safetext import feedback, finetune
-            return quart.jsonify({
-                "success": True,
-                "samples": feedback.stats(),
-                "min_samples": finetune.MIN_SAMPLES,
-                "training": finetune.read_status(),
-            })
-        except Exception as e:
-            return quart.jsonify({"success": False, "message": str(e)}), 500
+            pass
+        return None
+
+    @app.route("/api/dash/warnings/", methods=["GET"])
+    async def dash_warnings_list():
+        guild_id = quart.request.args.get("dash_login")
+        if not guild_id or not await _dash_guild_admin(guild_id):
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        warnings: dict = dict(load_data(int(guild_id), "warnings"))
+        cached = bot.get_guild(int(guild_id))
+        users = []
+        for uid, warns in warnings.items():
+            if not warns:
+                continue
+            m = cached.get_member(int(uid)) if cached and str(uid).isdigit() else None
+            users.append({"user_id": str(uid), "name": m.name if m else None, "warnings": warns})
+        users.sort(key=lambda u: len(u["warnings"]), reverse=True)
+        return quart.jsonify({"success": True, "users": users})
+
+    @app.route("/api/dash/warnings/remove/", methods=["POST"])
+    async def dash_warnings_remove():
+        guild_id = quart.request.args.get("dash_login")
+        auth = await _dash_guild_admin(guild_id) if guild_id else None
+        if not auth:
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        user, _ = auth
+        body: dict = await quart.request.get_json() or {}
+        uid = str(body.get("user_id", "")).strip()
+        warn_id = body.get("warn_id")
+        warnings: dict = dict(load_data(int(guild_id), "warnings"))
+        if not uid or uid not in warnings:
+            return quart.jsonify({"success": False, "message": "User has no warnings."}), 404
+
+        if warn_id:
+            from assets.message.warnings import remove_warning
+            if not await remove_warning(int(guild_id), int(uid), str(warn_id)):
+                return quart.jsonify({"success": False, "message": "Warning not found."}), 404
+            msg = "Warning removed."
+        else:
+            warnings.pop(uid)
+            save_data(int(guild_id), "warnings", warnings)
+            msg = "All warnings removed."
+
+        audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+        audit_log.append({
+            "type": "save",
+            "user": user.name,
+            "success": True,
+            "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+            "sys": "warnings",
+        })
+        save_data(int(guild_id), "audit_log", audit_log)
+        return quart.jsonify({"success": True, "message": msg})
 
     @app.route("/api/dash/save/", methods=["POST", "GET"])
     async def dash_api():
@@ -2939,11 +2951,21 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         elif system == "mod_review_resolve":
             data: dict = await quart.request.get_json()
             pos = data.get("pos")
-            action = data.get("action")          # "approve" | "reject"
-            label = data.get("label")            # optional override training label for deleted_msg
+            action = data.get("action")
 
-            if not isinstance(pos, int) or action not in ("approve", "reject"):
-                return quart.jsonify({"success": False, "message": "pos (int) and action (approve|reject) required."}), 400
+            # action -> (queue status stored, guild permission the staffer needs)
+            _REVIEW_ACTIONS = {
+                "allow":    ("rejected", None),            # flag was wrong: clear it, un-quarantine
+                "kick":     ("approved", "kick_members"),
+                "ban":      ("approved", "ban_members"),
+                "done":     ("approved", None),            # report handled
+                "dismiss":  ("rejected", None),            # report unfounded
+                "confirm":  ("approved", None),            # deleted msg really was bad -> train
+                "harmless": ("rejected", None),            # deleted msg was fine -> train SAFE
+            }
+
+            if not isinstance(pos, int) or action not in _REVIEW_ACTIONS:
+                return quart.jsonify({"success": False, "message": "pos (int) and a known action required."}), 400
 
             from assets.repo import load_review_queue, resolve_review_item
             items = load_review_queue(int(guild_id))
@@ -2951,23 +2973,51 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             if item is None:
                 return quart.jsonify({"success": False, "message": "Review item not found."}), 404
 
-            user = await discord_auth.fetch_user()
-            status = "approved" if action == "approve" else "rejected"
-            updated = resolve_review_item(int(guild_id), pos, status, resolved_by=user.name)
+            status, needed_perm = _REVIEW_ACTIONS[action]
+            if needed_perm and not getattr(guild_member.guild_permissions, needed_perm, False):
+                return quart.jsonify({"success": False, "message": f"You need the '{needed_perm}' permission for that."}), 403
 
+            user = await discord_auth.fetch_user()
             kind = item.get("kind")
             rc = dict(item.get("context", {}) or {})
+            target_id = int(item["user_id"])
+            target_name = item.get("user_name", str(target_id))
+            reason = f"Baxi review queue - {action} by {user.name}"
+            note = ""
+
+            # 1. The Discord-side action, if any.
+            try:
+                if action == "kick":
+                    await guild.kick(discord.Object(id=target_id), reason=reason)
+                    note = f"{target_name} was kicked."
+                elif action == "ban":
+                    await guild.ban(discord.Object(id=target_id), reason=reason, delete_message_seconds=0)
+                    note = f"{target_name} was banned."
+                elif action == "allow" and kind in ("join_gate", "prism_flag"):
+                    role_id = int(dict(load_data(int(guild_id), "mod_gate")).get("quarantine_role", 0) or 0)
+                    if role_id:
+                        member_obj = await guild.fetch_member(target_id)
+                        await member_obj.remove_roles(discord.Object(id=role_id), reason=reason)
+                        note = f"Quarantine role removed from {target_name}."
+                    else:
+                        note = f"{target_name} cleared."
+            except discord.NotFound:
+                note = f"{target_name} is no longer in this server - entry closed anyway."
+            except discord.Forbidden:
+                return quart.jsonify({"success": False, "message": "Baxi is missing permissions for that action (role hierarchy or missing kick/ban rights)."}), 403
+            except Exception as e:
+                return quart.jsonify({"success": False, "message": f"Action failed: {e}"}), 500
+
+            updated = resolve_review_item(int(guild_id), pos, status, resolved_by=user.name)
+
+            # 2. Learning / trust side-effects. Never block the resolve.
             try:
                 if kind == "deleted_msg":
-                    # Approve = confirmed bad → train as the (suggested) toxic label.
-                    # Reject  = not actually bad → teach the model SAFE (reduces false positives).
                     from assets.message.safetext import feedback
-                    if action == "approve":
-                        correct = str(label or rc.get("suggested_label", "2"))
-                        model_said = "SAFE"
+                    if action == "confirm":
+                        correct, model_said = str(rc.get("suggested_label", "2")), "SAFE"
                     else:
-                        correct = "SAFE"
-                        model_said = "unsafe"
+                        correct, model_said = "SAFE", "unsafe"
                     await feedback.submit(
                         log_id=f"review:{guild_id}:{pos}",
                         message=rc.get("message", ""),
@@ -2976,17 +3026,26 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         admin=user.name,
                         reason=f"mod review {action} (deleted_msg)",
                     )
-                elif kind in ("prism_flag", "join_gate") and action == "reject":
-                    # Staff says the PRISM flag was wrong → heal the trust score.
+                    note = "The chat filter learned from this message."
+                elif kind in ("prism_flag", "join_gate") and action == "allow":
                     import assets.trust as sentinel
                     sentinel.record_fp_correction(
-                        int(item["user_id"]), item.get("user_name", ""), int(guild_id),
-                        reason="Staff marked PRISM flag as false positive (review queue)",
+                        target_id, target_name, int(guild_id),
+                        reason="Staff allowed a flagged member (review queue)",
                     )
             except Exception as _re_err:
                 print(f"[mod_review_resolve] side-effect error: {_re_err}")
 
-            return quart.jsonify({"success": True, "item": updated})
+            audit_log_new: dict = {
+                "type": "save", "user": user.name, "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": f"mod_review:{action}",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "item": updated, "message": note or "Entry closed."})
 
         elif system == "counting":
             data: dict = await quart.request.get_json()
@@ -3296,6 +3355,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             chat_enabled = bool(mcl.get("chat_enabled", False))
             chat_channel = str(mcl.get("chat_channel", "")).strip()
             chat_webhook_new = str(mcl.get("chat_webhook_url", "")).strip()
+            status_channel = str(mcl.get("status_channel", "")).strip()
 
             # Keep existing secret/webhook if blank was submitted (placeholder shown)
             existing_conf = load_data(int(guild_id), "mc_link")
@@ -3312,6 +3372,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Invalid announcement channel ID."}), 400
             if chat_channel and not re.fullmatch(r"\d{17,19}", chat_channel):
                 return quart.jsonify({"success": False, "message": "Invalid chat channel ID."}), 400
+            if status_channel and not re.fullmatch(r"\d{17,19}", status_channel):
+                return quart.jsonify({"success": False, "message": "Invalid status channel ID."}), 400
             if chat_enabled and (not chat_channel or not chat_webhook_url):
                 return quart.jsonify({"success": False, "message": "Bridge channel and webhook URL are required when cross-chat is enabled."}), 400
             if chat_webhook_url and not re.match(r"^https://(?:canary\.|ptb\.)?discord\.com/api/webhooks/", chat_webhook_url, re.IGNORECASE):
@@ -3330,6 +3392,14 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "chat_enabled": chat_enabled,
                 "chat_channel": chat_channel,
                 "chat_webhook_url": chat_webhook_url,
+                "status_channel": status_channel,
+                # Preserved, not user-editable: the board's own message id. Reset when
+                # the channel changes so the task posts a fresh board there.
+                "status_message_id": (
+                    existing_conf.get("status_message_id", "")
+                    if status_channel == str(existing_conf.get("status_channel", "")).strip()
+                    else ""
+                ),
             }
             save_data(int(guild_id), "mc_link", settings)
 
@@ -3640,134 +3710,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
-
-        elif system == "donations":
-            from assets.crypto import encrypt_secret, decrypt_secret
-
-            data: dict = await quart.request.get_json()
-            don = data.get("donations")
-
-            if not isinstance(don, dict):
-                return quart.jsonify({"success": False, "message": "Invalid data format: 'donations' must be an object."}), 400
-            if not isinstance(don.get("enabled"), bool):
-                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
-
-            provider = str(don.get("provider", "stripe")).strip().lower()
-            if provider not in ("stripe", "paypal"):
-                return quart.jsonify({"success": False, "message": "provider must be 'stripe' or 'paypal'."}), 400
-
-            # Load existing settings so we can keep unchanged (blank-left) secrets.
-            existing: dict = dict(load_data(int(guild_id), "donations"))
-            _ex_sk = existing.get("stripe_secret_key", "") or ""
-            _ex_wh = existing.get("stripe_webhook_secret", "") or ""
-            _ex_pcid = existing.get("paypal_client_id", "") or ""
-            _ex_pcs = existing.get("paypal_client_secret", "") or ""
-
-            # Resolve each secret: non-empty input = new plaintext; empty input = keep stored.
-            sk_new = str(don.get("stripe_secret_key", "")).strip()
-            wh_new = str(don.get("stripe_webhook_secret", "")).strip()
-            pcid_new = str(don.get("paypal_client_id", "")).strip()
-            pcs_new = str(don.get("paypal_client_secret", "")).strip()
-
-            sk_plain = sk_new if sk_new else decrypt_secret(_ex_sk)
-            wh_plain = wh_new if wh_new else decrypt_secret(_ex_wh)
-            pcid_plain = pcid_new if pcid_new else decrypt_secret(_ex_pcid)
-            pcs_plain = pcs_new if pcs_new else decrypt_secret(_ex_pcs)
-
-            enabled = don["enabled"]
-            if enabled:
-                if provider == "stripe":
-                    if not sk_plain or not (sk_plain.startswith("sk_") or sk_plain.startswith("rk_")):
-                        return quart.jsonify({"success": False, "message": "Stripe Secret Key must start with 'sk_' or 'rk_'."}), 400
-                    if not wh_plain or not wh_plain.startswith("whsec_"):
-                        return quart.jsonify({"success": False, "message": "Stripe Webhook Secret must start with 'whsec_'."}), 400
-                elif provider == "paypal":
-                    if not pcid_plain:
-                        return quart.jsonify({"success": False, "message": "PayPal Client ID is required."}), 400
-                    if not pcs_plain:
-                        return quart.jsonify({"success": False, "message": "PayPal Client Secret is required."}), 400
-
-            # Validate tiers
-            raw_tiers = don.get("tiers", [])
-            if not isinstance(raw_tiers, list):
-                return quart.jsonify({"success": False, "message": "'tiers' must be a list."}), 400
-            cleaned_tiers: list[dict] = []
-            for t in raw_tiers:
-                if not isinstance(t, dict):
-                    continue
-                tier_type = str(t.get("type", "fixed"))
-                if tier_type not in ("fixed", "range"):
-                    return quart.jsonify({"success": False, "message": "Tier type must be 'fixed' or 'range'."}), 400
-                label = str(t.get("label", "")).strip()[:100]
-                if not label:
-                    return quart.jsonify({"success": False, "message": "Each tier must have a label."}), 400
-                role_id = str(t.get("role_id", "")).strip()
-                if not re.fullmatch(r"\d{17,19}", role_id):
-                    return quart.jsonify({"success": False, "message": f"Tier '{label}': Role ID does not match the Discord ID format."}), 400
-                tier_id = str(t.get("id", f"tier_{label}")).strip()[:64] or f"tier_{label}"
-                entry: dict = {"id": tier_id, "label": label, "type": tier_type, "amount": None, "amount_min": None, "amount_max": None, "role_id": role_id}
-                if tier_type == "fixed":
-                    try:
-                        amount = round(float(t["amount"]), 2)
-                        if amount < 0.50:
-                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Amount must be at least €0.50."}), 400
-                    except (TypeError, ValueError, KeyError):
-                        return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid amount."}), 400
-                    entry["amount"] = amount
-                else:
-                    try:
-                        amount_min = round(float(t["amount_min"]), 2)
-                        if amount_min < 0.50:
-                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Min amount must be at least €0.50."}), 400
-                    except (TypeError, ValueError, KeyError):
-                        return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid min amount."}), 400
-                    amount_max = None
-                    if t.get("amount_max") not in (None, ""):
-                        try:
-                            amount_max = round(float(t["amount_max"]), 2)
-                            if amount_max <= amount_min:
-                                return quart.jsonify({"success": False, "message": f"Tier '{label}': Max must be greater than min."}), 400
-                        except (TypeError, ValueError):
-                            return quart.jsonify({"success": False, "message": f"Tier '{label}': Invalid max amount."}), 400
-                    entry["amount_min"] = amount_min
-                    entry["amount_max"] = amount_max
-                cleaned_tiers.append(entry)
-
-            log_enabled = bool(don.get("log_enabled", False))
-            log_channel = str(don.get("log_channel", "")).strip()
-            if log_enabled and log_channel and not re.fullmatch(r"\d{17,19}", log_channel):
-                return quart.jsonify({"success": False, "message": "Announcement channel ID does not match the Discord ID format."}), 400
-
-            settings: dict = dict(existing)
-            settings["enabled"] = enabled
-            settings["provider"] = provider
-            # Encrypt only when a new plaintext value was supplied; otherwise keep the
-            # already-stored (already-encrypted) value verbatim.
-            settings["stripe_secret_key"] = encrypt_secret(sk_new) if sk_new else _ex_sk
-            settings["stripe_webhook_secret"] = encrypt_secret(wh_new) if wh_new else _ex_wh
-            settings["paypal_client_id"] = encrypt_secret(pcid_new) if pcid_new else _ex_pcid
-            settings["paypal_client_secret"] = encrypt_secret(pcs_new) if pcs_new else _ex_pcs
-            settings["page_text"] = str(don.get("page_text", "Support this server!")).strip()[:2000]
-            settings["success_text"] = str(don.get("success_text", "Thank you for your donation!")).strip()[:2000]
-            settings["log_enabled"] = log_enabled
-            settings["log_channel"] = log_channel
-            settings["tiers"] = cleaned_tiers
-
-            save_data(int(guild_id), "donations", settings)
-
-            user = await discord_auth.fetch_user()
-            audit_log_new: dict = {
-                "type": "save",
-                "user": user.name,
-                "success": True,
-                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
-                "sys": "donations",
-            }
-            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
-            audit_log.append(audit_log_new)
-            save_data(int(guild_id), "audit_log", audit_log)
-
-            return quart.jsonify({"success": True, "message": "Donation settings saved!"})
 
         return quart.jsonify({"success": True, "message": "Settings applied successfully."})
 
@@ -4433,7 +4375,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "add_reactions",
                         "read_message_history",
                     }
-                elif system in ("flag_quiz", "leveling", "youtube_alert", "notification", "donations_log", "verify_channel"):
+                elif system in ("flag_quiz", "leveling", "youtube_alert", "notification", "verify_channel"):
                     required_perms = {
                         "view_channel",
                         "send_messages",
@@ -4725,6 +4667,97 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "top_reported": top[:25],
         })
 
+    @app.route("/api/admin/globalchat")
+    @requires_authorization
+    async def admin_globalchat():
+        """Global-chat moderation view: recent messages, active bans, participating guilds.
+
+        The feed is built from the same in-memory record the bot writes when it relays a
+        message, so it needs no Discord API calls. Timestamps come off the snowflake of
+        the first relayed copy -  the record has no clock of its own for older entries.
+        """
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        limit = min(int(quart.request.args.get("limit", 100)), 500)
+
+        def _snowflake_ts(mid) -> str:
+            try:
+                ms = (int(mid) >> 22) + 1420070400000
+                return datetime.fromtimestamp(ms / 1000, _VIENNA).isoformat(timespec="seconds")
+            except (ValueError, TypeError):
+                return ""
+
+        feed = []
+        per_guild_count: dict = {}
+        for gcmid, entry in share.globalchat_message_data.items():
+            copies = entry.get("messages", []) or []
+            if not copies:
+                continue  # reply-stub records carry no message of their own
+            origin_gid = entry.get("origin_gid") or copies[0].get("gid")
+            if origin_gid:
+                per_guild_count[str(origin_gid)] = per_guild_count.get(str(origin_gid), 0) + 1
+            first_mid = copies[0].get("mid")
+            feed.append({
+                "gcmid": gcmid,
+                "author_id": str(entry.get("author_id", "")),
+                "author_name": entry.get("author_name", ""),
+                # Records written before the feed existed have no content -  the UI
+                # shows them as "content not recorded" rather than hiding them, since
+                # they are still deletable.
+                "content": entry.get("content", ""),
+                "origin_gid": str(origin_gid or ""),
+                "origin_guild_name": entry.get("origin_guild_name", ""),
+                "copies": len(copies),
+                "replies": len(entry.get("replies", []) or []),
+                "timestamp": _snowflake_ts(first_mid),
+                "sort": int(first_mid or 0),
+            })
+        feed.sort(key=lambda e: e["sort"], reverse=True)
+        feed = feed[:limit]
+        for e in feed:
+            e.pop("sort", None)
+            if not e["origin_guild_name"] and e["origin_gid"]:
+                g = bot.get_guild(int(e["origin_gid"])) if e["origin_gid"].isdigit() else None
+                e["origin_guild_name"] = g.name if g else e["origin_gid"]
+
+        bans = []
+        for uid, meta in dict(load_data(1001, "gc_ban")).items():
+            meta = meta if isinstance(meta, dict) else {}
+            bans.append({
+                "user_id": str(uid),
+                "name": meta.get("name", ""),
+                "reason": meta.get("reason", ""),
+                "by": meta.get("by", ""),
+                "date": meta.get("date", ""),
+            })
+        bans.sort(key=lambda b: b["date"], reverse=True)
+
+        guilds = []
+        for gid, cfg in dict(load_data(1001, "globalchat")).items():
+            g = bot.get_guild(int(gid)) if str(gid).isdigit() else None
+            cfg = cfg if isinstance(cfg, dict) else {}
+            ch_id = cfg.get("channel")
+            ch = g.get_channel(int(ch_id)) if (g and ch_id) else None
+            guilds.append({
+                "guild_id": str(gid),
+                "guild_name": g.name if g else "(bot not in guild)",
+                "members": g.member_count if g else 0,
+                "channel_id": str(ch_id or ""),
+                "channel_name": getattr(ch, "name", "") or "(unknown channel)",
+                "messages": per_guild_count.get(str(gid), 0),
+                "reachable": g is not None,
+            })
+        guilds.sort(key=lambda x: x["messages"], reverse=True)
+
+        return quart.jsonify({
+            "feed": feed,
+            "bans": bans,
+            "guilds": guilds,
+            "total_records": len(share.globalchat_message_data),
+        })
+
     @app.route("/api/admin/ai-feedback", methods=["POST"])
     @requires_authorization
     async def admin_ai_feedback():
@@ -4951,51 +4984,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             cache.clear()
         share.admin_log("info", f"Template cache cleared by {user.name}", source="AdminDash")
         return quart.jsonify({"success": True, "message": "Template cache cleared."})
-
-    @app.route("/api/admin/feature_access", methods=["GET"])
-    @requires_authorization
-    async def admin_feature_access_get():
-        """Returns the feature_access config from the global store."""
-        user, is_admin = await _require_bot_admin(discord_auth)
-        if not is_admin:
-            return quart.jsonify({"error": "Access denied"}), 403
-
-        try:
-            feature_access: dict = dict(load_data(1001, "feature_access"))
-        except Exception as e:
-            return quart.jsonify({"error": str(e)}), 500
-
-        return quart.jsonify({"success": True, "feature_access": feature_access})
-
-    @app.route("/api/admin/feature_access", methods=["POST"])
-    @requires_authorization
-    async def admin_feature_access_save():
-        """Saves the feature_access config into the global store."""
-        user, is_admin = await _require_bot_admin(discord_auth)
-        if not is_admin:
-            return quart.jsonify({"error": "Access denied"}), 403
-
-        payload: dict = await quart.request.get_json()
-        feature_access = payload.get("feature_access")
-        if not isinstance(feature_access, dict):
-            return quart.jsonify({"error": "Invalid payload"}), 400
-
-        # Validate structure
-        for feature, cfg in feature_access.items():
-            if not isinstance(cfg, dict):
-                return quart.jsonify({"error": f"Invalid config for feature '{feature}'"}), 400
-            if cfg.get("mode") not in ("whitelist", "blacklist"):
-                return quart.jsonify({"error": f"Invalid mode for '{feature}'. Must be 'whitelist' or 'blacklist'."}), 400
-            if not isinstance(cfg.get("guilds", []), list):
-                return quart.jsonify({"error": f"'guilds' must be a list for '{feature}'"}), 400
-
-        try:
-            save_data(1001, "feature_access", feature_access)
-        except Exception as e:
-            return quart.jsonify({"error": str(e)}), 500
-
-        share.admin_log("info", f"Feature access config updated by {user.name}", source="AdminDash")
-        return quart.jsonify({"success": True})
 
     @app.route("/api/admin/action", methods=["POST"])
     @requires_authorization
@@ -5274,6 +5262,56 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             del share.globalchat_message_data[message_id]
             share.admin_log("warning", f"GC message {message_id} deleted by {user.name} -  {deleted} copies removed", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Deleted {deleted} message copies. Failed: {failed}."})
+
+        elif action == "gc_ban":
+            # Nothing wrote gc_ban before this - the ban list could only be edited in the
+            # database by hand. The globalchat handler has always read it on every message.
+            user_id_str = str(data.get("user_id", "")).strip()
+            reason = str(data.get("reason", "")).strip() or "No reason given"
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            name = str(data.get("user_name", "")).strip()
+            if not name:
+                try:
+                    name = (await bot.fetch_user(int(user_id_str))).name
+                except Exception:
+                    name = user_id_str
+            bans: dict = dict(load_data(1001, "gc_ban"))
+            bans[user_id_str] = {
+                "name": name,
+                "reason": reason,
+                "by": user.name,
+                "date": datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M"),
+            }
+            save_data(1001, "gc_ban", bans)
+            share.admin_log("warning", f"Global chat: {name} ({user_id_str}) banned by {user.name}: {reason}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"{name} can no longer post in the global chat."})
+
+        elif action == "gc_unban":
+            user_id_str = str(data.get("user_id", "")).strip()
+            if not user_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+            bans: dict = dict(load_data(1001, "gc_ban"))
+            if user_id_str not in bans:
+                return quart.jsonify({"success": False, "message": "That user is not banned."}), 404
+            name = (bans[user_id_str] or {}).get("name", user_id_str)
+            del bans[user_id_str]
+            save_data(1001, "gc_ban", bans)
+            share.admin_log("success", f"Global chat: {name} ({user_id_str}) unbanned by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"{name} may post in the global chat again."})
+
+        elif action == "gc_guild_remove":
+            guild_id_str = str(data.get("guild_id", "")).strip()
+            if not guild_id_str.isdigit():
+                return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
+            gc_guilds: dict = dict(load_data(1001, "globalchat"))
+            if guild_id_str not in gc_guilds:
+                return quart.jsonify({"success": False, "message": "That server is not in the global chat."}), 404
+            del gc_guilds[guild_id_str]
+            save_data(1001, "globalchat", gc_guilds)
+            g = bot.get_guild(int(guild_id_str))
+            share.admin_log("warning", f"Global chat: server {g.name if g else guild_id_str} removed by {user.name}", source="AdminDash")
+            return quart.jsonify({"success": True, "message": f"{g.name if g else guild_id_str} removed from the global chat."})
 
         elif action == "run_task":
             _TASK_METHODS = {
@@ -6585,354 +6623,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             print(f"[TopGG Vote] ABORT: Forbidden while sending message: {e}. Bot needs Send Messages + Embed Links in #{vote_channel.name}")
         except Exception as e:
             print(f"[TopGG Vote] ABORT: Unexpected error sending message: {type(e).__name__}: {e}")
-
-        return quart.jsonify({"ok": True}), 200
-
-    # ─────────────────────────── DONATIONS ──────────────────────────────────
-
-    async def _assign_donation_role(guild_id: int, tier_id: str, discord_user_id: int, username: str, amount_eur: str) -> None:
-        """Assign the configured role after a successful donation and optionally announce it."""
-        donations: dict = dict(load_data(guild_id, "donations"))
-        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
-        if not tier:
-            print(f"[Donations] Tier '{tier_id}' not found for guild {guild_id}. Skipping role assignment.")
-            return
-        try:
-            g = await bot.fetch_guild(guild_id)
-            member = await g.fetch_member(discord_user_id)
-            role = g.get_role(int(tier["role_id"]))
-            if role:
-                await member.add_roles(role, reason=f"Donation: {tier['label']} (€{amount_eur})")
-                print(f"[Donations] Role '{role.name}' assigned to {username} ({discord_user_id}) in guild {guild_id}.")
-            else:
-                print(f"[Donations] Role {tier['role_id']} not found in guild {guild_id}.")
-        except discord.NotFound:
-            print(f"[Donations] Member {discord_user_id} not found in guild {guild_id}.")
-            return
-        except Exception as e:
-            print(f"[Donations] Role assignment failed: {e}")
-            return
-
-        # Optional announcement
-        if donations.get("log_enabled") and donations.get("log_channel"):
-            try:
-                ch = bot.get_channel(int(donations["log_channel"]))
-                if ch and isinstance(ch, discord.TextChannel):
-                    embed = discord.Embed(
-                        title="New Donation",
-                        description=f"**{username}** donated **€{amount_eur}** and received the **{tier['label']}** role!",
-                        color=discord.Color.from_rgb(34, 197, 94),
-                    )
-                    await ch.send(embed=embed)
-            except Exception as e:
-                print(f"[Donations] Announcement failed: {e}")
-
-    @app.route("/donate/<int:guild_id>/login")
-    async def donation_login(guild_id: int):
-        """Start Discord OAuth with a return URL back to the donation page."""
-        session["next_url"] = f"/donate/{guild_id}"
-        return await discord_auth.create_session(scope=["identify", "guilds"], permissions=0)
-
-    @app.route("/donate/<int:guild_id>")
-    async def donation_page(guild_id: int):
-        """Public-facing donation page -  no auth required to view."""
-        donations: dict = dict(load_data(guild_id, "donations"))
-        # Fill defaults so template never gets KeyError
-        for k, v in config.datasys.default_data.get("donations", {}).items():
-            donations.setdefault(k, v)
-
-        if not donations.get("enabled"):
-            return await render_template("error.html", message="Donations are not enabled for this server."), 404
-
-        try:
-            g = await bot.fetch_guild(guild_id)
-        except discord.NotFound:
-            return await render_template("error.html", message="Server not found."), 404
-        except Exception:
-            return await render_template("error.html", message="Could not load server information."), 500
-
-        discord_user = None
-        try:
-            discord_user = await discord_auth.fetch_user()
-        except Exception:
-            pass  # Not logged in -  show login button
-
-        success = quart.request.args.get("success") == "1"
-        tier_id = quart.request.args.get("tier")
-
-        return await render_template(
-            "donate.html",
-            guild=g,
-            donations=donations,
-            discord_user=discord_user,
-            success=success,
-            tier_id=tier_id,
-            web_url=config.Web.url,
-        )
-
-    @app.route("/api/donate/checkout/stripe/<int:guild_id>", methods=["POST"])
-    @requires_authorization
-    async def donation_stripe_checkout(guild_id: int):
-        """Create a Stripe Checkout Session and return the redirect URL."""
-        try:
-            import stripe as _stripe
-        except ImportError:
-            return quart.jsonify({"success": False, "message": "Stripe library not installed."}), 500
-
-        from assets.crypto import decrypt_secret
-
-        user = await discord_auth.fetch_user()
-        donations: dict = dict(load_data(guild_id, "donations"))
-
-        sk = decrypt_secret(donations.get("stripe_secret_key", ""))
-        if not sk:
-            return quart.jsonify({"success": False, "message": "Stripe not configured."}), 503
-
-        data: dict = await quart.request.get_json() or {}
-        tier_id = str(data.get("tier_id", ""))
-        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
-        if not tier:
-            return quart.jsonify({"success": False, "message": "Donation tier not found."}), 404
-
-        if tier["type"] == "fixed":
-            amount_eur = tier["amount"]
-        else:
-            try:
-                amount_eur = round(float(data.get("custom_amount", 0)), 2)
-            except (TypeError, ValueError):
-                return quart.jsonify({"success": False, "message": "Invalid amount."}), 400
-            if amount_eur < (tier.get("amount_min") or 0.50):
-                return quart.jsonify({"success": False, "message": f"Amount must be at least €{tier['amount_min']}."}), 400
-            if tier.get("amount_max") and amount_eur > tier["amount_max"]:
-                return quart.jsonify({"success": False, "message": f"Amount must be at most €{tier['amount_max']}."}), 400
-
-        amount_cents = int(round(amount_eur * 100))
-
-        _stripe.api_key = sk
-        try:
-            session_obj = _stripe.checkout.Session.create(
-                payment_method_types=["card"],
-                line_items=[{
-                    "price_data": {
-                        "currency": "eur",
-                        "unit_amount": amount_cents,
-                        "product_data": {"name": f"{tier['label']} – Server Donation"},
-                    },
-                    "quantity": 1,
-                }],
-                mode="payment",
-                success_url=f"https://{config.Web.url}/donate/{guild_id}?success=1&tier={tier_id}",
-                cancel_url=f"https://{config.Web.url}/donate/{guild_id}",
-                metadata={
-                    "guild_id": str(guild_id),
-                    "tier_id": tier_id,
-                    "discord_user_id": str(user.id),
-                    "discord_username": user.name,
-                    "amount_eur": str(amount_eur),
-                },
-            )
-        except Exception as e:
-            print(f"[Donations/Stripe] Checkout session creation failed: {e}")
-            return quart.jsonify({"success": False, "message": "Could not create payment session. Check your Stripe configuration."}), 500
-
-        return quart.jsonify({"success": True, "checkout_url": session_obj.url})
-
-    @app.route("/webhooks/stripe/<int:guild_id>", methods=["POST"])
-    async def stripe_webhook(guild_id: int):
-        """Receive Stripe webhook events and assign roles after successful payment."""
-        try:
-            import stripe as _stripe
-        except ImportError:
-            return quart.jsonify({"error": "Stripe not installed"}), 500
-
-        from assets.crypto import decrypt_secret
-
-        donations: dict = dict(load_data(guild_id, "donations"))
-        webhook_secret = decrypt_secret(donations.get("stripe_webhook_secret", ""))
-        if not webhook_secret:
-            return quart.jsonify({"error": "Not configured"}), 503
-
-        payload: bytes = await quart.request.get_data()
-        sig_header: str = quart.request.headers.get("Stripe-Signature", "")
-
-        try:
-            event = _stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-        except _stripe.error.SignatureVerificationError:
-            print(f"[Donations/Stripe] Bad webhook signature for guild {guild_id}.")
-            return quart.jsonify({"error": "Bad signature"}), 400
-        except ValueError:
-            return quart.jsonify({"error": "Bad payload"}), 400
-
-        if event["type"] == "checkout.session.completed":
-            import json as _json
-            # Parse the raw payload as JSON to avoid Stripe SDK object quirks.
-            try:
-                raw_event = _json.loads(payload.decode("utf-8"))
-                s_dict: dict = raw_event.get("data", {}).get("object", {}) or {}
-            except Exception as e:
-                print(f"[Donations/Stripe] Payload parse error: {e}")
-                s_dict = {}
-            meta: dict = s_dict.get("metadata") or {}
-            try:
-                g_id = int(meta.get("guild_id", 0))
-                t_id = str(meta.get("tier_id", ""))
-                u_id = int(meta.get("discord_user_id", 0))
-                uname = str(meta.get("discord_username", "Unknown"))
-                amt = str(meta.get("amount_eur", "?"))
-                print(f"[Donations/Stripe] Processing: guild={g_id}, tier={t_id}, user={u_id}, amount={amt}")
-                if g_id and t_id and u_id:
-                    await _assign_donation_role(g_id, t_id, u_id, uname, amt)
-                else:
-                    print(f"[Donations/Stripe] Missing metadata fields, skipping role assignment. meta={meta}")
-            except Exception as e:
-                print(f"[Donations/Stripe] Post-payment processing error: {type(e).__name__}: {e}")
-
-        return quart.jsonify({"ok": True}), 200
-
-    @app.route("/api/donate/checkout/paypal/<int:guild_id>", methods=["POST"])
-    @requires_authorization
-    async def donation_paypal_checkout(guild_id: int):
-        """Create a PayPal order and return the approval URL."""
-        import json as _json
-        import aiohttp
-
-        from assets.crypto import decrypt_secret
-
-        user = await discord_auth.fetch_user()
-        donations: dict = dict(load_data(guild_id, "donations"))
-
-        client_id = decrypt_secret(donations.get("paypal_client_id", ""))
-        client_secret = decrypt_secret(donations.get("paypal_client_secret", ""))
-        if not client_id or not client_secret:
-            return quart.jsonify({"success": False, "message": "PayPal not configured."}), 503
-
-        data: dict = await quart.request.get_json() or {}
-        tier_id = str(data.get("tier_id", ""))
-        tier = next((t for t in donations.get("tiers", []) if t["id"] == tier_id), None)
-        if not tier:
-            return quart.jsonify({"success": False, "message": "Donation tier not found."}), 404
-
-        if tier["type"] == "fixed":
-            amount_eur = tier["amount"]
-        else:
-            try:
-                amount_eur = round(float(data.get("custom_amount", 0)), 2)
-            except (TypeError, ValueError):
-                return quart.jsonify({"success": False, "message": "Invalid amount."}), 400
-            if amount_eur < (tier.get("amount_min") or 0.50):
-                return quart.jsonify({"success": False, "message": f"Amount must be at least €{tier['amount_min']}."}), 400
-            if tier.get("amount_max") and amount_eur > tier["amount_max"]:
-                return quart.jsonify({"success": False, "message": f"Amount must be at most €{tier['amount_max']}."}), 400
-
-        # Get PayPal access token
-        try:
-            async with aiohttp.ClientSession() as http:
-                async with http.post(
-                    "https://api-m.paypal.com/v1/oauth2/token",
-                    auth=aiohttp.BasicAuth(client_id, client_secret),
-                    data={"grant_type": "client_credentials"},
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                ) as resp:
-                    if resp.status != 200:
-                        return quart.jsonify({"success": False, "message": "PayPal authentication failed. Check your credentials."}), 500
-                    token_data = await resp.json()
-                    access_token = token_data["access_token"]
-
-                custom_id = _json.dumps({
-                    "guild_id": guild_id,
-                    "tier_id": tier_id,
-                    "discord_user_id": user.id,
-                    "discord_username": user.name,
-                    "amount_eur": str(amount_eur),
-                })
-
-                order_payload = {
-                    "intent": "CAPTURE",
-                    "purchase_units": [{
-                        "amount": {"currency_code": "EUR", "value": f"{amount_eur:.2f}"},
-                        "description": f"{tier['label']} – Server Donation",
-                        "custom_id": custom_id[:127],
-                    }],
-                    "application_context": {
-                        "return_url": f"https://{config.Web.url}/donate/{guild_id}?success=1&tier={tier_id}",
-                        "cancel_url": f"https://{config.Web.url}/donate/{guild_id}",
-                        "brand_name": "Server Donation",
-                        "landing_page": "BILLING",
-                        "user_action": "PAY_NOW",
-                    },
-                }
-
-                async with http.post(
-                    "https://api-m.paypal.com/v2/checkout/orders",
-                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {access_token}"},
-                    json=order_payload,
-                ) as resp2:
-                    if resp2.status not in (200, 201):
-                        body = await resp2.text()
-                        print(f"[Donations/PayPal] Order creation failed ({resp2.status}): {body}")
-                        return quart.jsonify({"success": False, "message": "Could not create PayPal order."}), 500
-                    order = await resp2.json()
-
-        except Exception as e:
-            print(f"[Donations/PayPal] Error: {e}")
-            return quart.jsonify({"success": False, "message": "PayPal request failed."}), 500
-
-        approve_url = next((l["href"] for l in order.get("links", []) if l.get("rel") == "approve"), None)
-        if not approve_url:
-            return quart.jsonify({"success": False, "message": "PayPal did not return an approval URL."}), 500
-
-        return quart.jsonify({"success": True, "checkout_url": approve_url})
-
-    @app.route("/webhooks/paypal/<int:guild_id>", methods=["POST"])
-    async def paypal_webhook(guild_id: int):
-        """Receive PayPal webhook events and assign roles after successful payment."""
-        import json as _json
-        import aiohttp
-
-        from assets.crypto import decrypt_secret
-
-        donations: dict = dict(load_data(guild_id, "donations"))
-        client_id = decrypt_secret(donations.get("paypal_client_id", ""))
-        client_secret = decrypt_secret(donations.get("paypal_client_secret", ""))
-        if not client_id or not client_secret:
-            return quart.jsonify({"error": "Not configured"}), 503
-
-        payload_bytes: bytes = await quart.request.get_data()
-        try:
-            payload: dict = _json.loads(payload_bytes)
-        except Exception:
-            return quart.jsonify({"error": "Bad payload"}), 400
-
-        # Verify webhook via PayPal
-        headers = dict(quart.request.headers)
-        verification_body = {
-            "auth_algo": headers.get("Paypal-Auth-Algo", ""),
-            "cert_url": headers.get("Paypal-Cert-Url", ""),
-            "transmission_id": headers.get("Paypal-Transmission-Id", ""),
-            "transmission_sig": headers.get("Paypal-Transmission-Sig", ""),
-            "transmission_time": headers.get("Paypal-Transmission-Time", ""),
-            "webhook_id": "",  # Not storing webhook ID per-guild; skip strict verification
-            "webhook_event": payload,
-        }
-        # Skip strict sig verification (webhook_id not stored), rely on custom_id to look up guild data
-        # For production, store the webhook_id in guild config and verify here
-
-        event_type = payload.get("event_type", "")
-        if event_type == "CHECKOUT.ORDER.APPROVED":
-            resource = payload.get("resource", {})
-            for unit in resource.get("purchase_units", []):
-                custom_id_raw = unit.get("custom_id", "")
-                try:
-                    meta = _json.loads(custom_id_raw)
-                    g_id = int(meta.get("guild_id", 0))
-                    t_id = str(meta.get("tier_id", ""))
-                    u_id = int(meta.get("discord_user_id", 0))
-                    uname = str(meta.get("discord_username", "Unknown"))
-                    amt = str(meta.get("amount_eur", "?"))
-                    if g_id and t_id and u_id:
-                        await _assign_donation_role(g_id, t_id, u_id, uname, amt)
-                except Exception as e:
-                    print(f"[Donations/PayPal] Post-payment processing error: {e}")
 
         return quart.jsonify({"ok": True}), 200
 

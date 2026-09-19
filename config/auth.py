@@ -34,6 +34,9 @@ class Twitter:
     # tracking stops working for smaller accounts.
     auth_token: str = ""
     ct0: str = ""
+    # Discord channel the bot posts to when the cookies above stop working (and when they
+    # start working again). Leave 0 to only write the alert to the admin log.
+    alert_channel_id: int = 0
 
 
 class TopGG:
@@ -54,10 +57,3 @@ class Meta:
 
 class Translate:
     api_key: str = "LIBRE-TRANSLATE-API-KEY" #NOT NEEDED
-
-class Donations:
-    # Fernet master key used to encrypt donation provider credentials (Stripe/PayPal) at rest.
-    # Generate once with:
-    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-    # NEVER change this after credentials have been saved -  stored keys become unreadable.
-    master_key: str = "GENERATE-A-FERNET-KEY"

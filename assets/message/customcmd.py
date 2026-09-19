@@ -161,9 +161,9 @@ async def _run_action(message: discord.Message, bot: commands.AutoShardedBot, ac
                 await target.send(response)
 
     except discord.Forbidden:
-        logger.warning(f"Custom command action '{atype}' forbidden in {message.guild.id}")
+        logger.warn(f"Custom command action '{atype}' forbidden in {message.guild.id}")
     except discord.HTTPException as e:
-        logger.warning(f"Custom command action '{atype}' failed: {e}")
+        logger.warn(f"Custom command action '{atype}' failed: {e}")
 
 
 async def check_custom_command(message: discord.Message, bot: commands.AutoShardedBot) -> bool:

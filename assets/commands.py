@@ -1181,10 +1181,18 @@ def mc_link_commands(bot: commands.AutoShardedBot):
 
             from assets.mc_link import is_linked, resolve_token, create_link_session
 
-            token_data = await resolve_token(api_url, secret, code.strip().upper())
+            token_data, code_err = await resolve_token(api_url, secret, code.strip().upper())
             if not token_data or "uuid" not in token_data:
+                # An unreachable or misconfigured server is not the player's fault —
+                # telling them "invalid code" sends them rejoining forever.
+                if code_err == "unauthorized":
+                    msg = t.get("code_unauthorized", "This server's link setup is misconfigured (wrong shared secret). Please contact an admin.")
+                elif code_err == "unreachable":
+                    msg = t.get("code_unreachable", "The Minecraft server is unreachable right now. Please try again later or contact an admin.")
+                else:
+                    msg = t["invalid_code"]
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {t['invalid_code']}", color=config.Discord.danger_color),
+                    embed=discord.Embed(description=f"{config.Icons.cross} {msg}", color=config.Discord.danger_color),
                     ephemeral=True,
                 )
 
@@ -1416,6 +1424,32 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 except Exception:
                     logger.exception("[mc_list_cmd] plain followup also failed")
 
+    @mc_group.command(name="info", description="Show Minecraft server status: players, uptime, TPS, version.")
+    async def mc_info_cmd(interaction: Interaction):
+        await interaction.response.defer()
+
+        if interaction.guild is None:
+            t = datasys.load_lang_file(1001)["systems"]["mc_link"]
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+            )
+
+        guild_id = interaction.guild.id
+        t = datasys.load_lang_file(guild_id)["systems"]["mc_link"]
+        guild_conf = _get_conf(guild_id)
+
+        err = _check_enabled(guild_conf, t)
+        if err:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+            )
+
+        from assets.mc_link import fetch_server_stats, render_status_embed
+
+        # None = offline, {"outdated": True} = plugin too old; the renderer covers both.
+        stats = await fetch_server_stats(guild_conf["api_url"].strip(), guild_conf["api_secret"].strip())
+        await interaction.followup.send(embed=render_status_embed(stats, t))
+
     @mc_group.command(name="status", description="Show your linked Minecraft account.")
     async def mc_status_cmd(interaction: Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -1456,6 +1490,84 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             embed.add_field(name="Bedrock account", value=bedrock_name, inline=True)
         embed.set_footer(text=t["footer"])
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @mc_group.command(name="whois", description="Look up who owns a Minecraft account, or which account a member has.")
+    @app_commands.describe(
+        user="Show this member's linked Minecraft account.",
+        mc_name="Show which member owns this Minecraft name.",
+    )
+    async def mc_whois_cmd(
+        interaction: Interaction,
+        user: discord.Member | None = None,
+        mc_name: str | None = None,
+    ):
+        await interaction.response.defer()
+
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(1001)
+            t = lang["systems"]["mc_link"]
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+            )
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t = lang["systems"]["mc_link"]
+
+        from assets.mc_link import is_linked, get_link, find_by_mc_name
+
+        # Neither given → look up the caller, which is the common case.
+        if user is None and mc_name is None:
+            user = interaction.user
+        elif user is not None and mc_name is not None:
+            return await interaction.followup.send(
+                embed=discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color),
+            )
+
+        if user is not None:
+            if not is_linked(guild_id, user.id):
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {t['whois_user_not_linked'].format(mention=user.mention)}",
+                        color=config.Discord.danger_color,
+                    ),
+                )
+            target_id, link = user.id, get_link(guild_id, user.id)
+        else:
+            match = find_by_mc_name(guild_id, mc_name)
+            if match is None:
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        description=f"{config.Icons.cross} {t['lookup_no_match'].format(mc_name=mc_name)}",
+                        color=config.Discord.danger_color,
+                    ),
+                )
+            target_id, link = match
+
+        resolved_name = link.get("name", "Unknown")
+        uuid = str(link.get("uuid", "") or "")
+        linked_at = link.get("linked_at", 0)
+
+        embed = discord.Embed(
+            title=t["whois_title"].format(mc_name=resolved_name),
+            color=config.Discord.info_color,
+        )
+        embed.add_field(name=t["whois_discord_field"], value=f"<@{target_id}>", inline=True)
+        embed.add_field(
+            name=t["whois_linked_field"],
+            value=f"<t:{linked_at}:R>" if linked_at else "—",
+            inline=True,
+        )
+        bedrock_name = link.get("bedrock_name")
+        if bedrock_name:
+            embed.add_field(name=t["whois_bedrock_field"], value=f"`{bedrock_name}`", inline=True)
+        if uuid:
+            embed.add_field(name="UUID", value=f"`{uuid}`", inline=False)
+            # mc-heads renders from the UUID, so it stays correct after a name change.
+            embed.set_thumbnail(url=f"https://mc-heads.net/avatar/{uuid}/128")
+
+        embed.set_footer(text=t["footer"])
+        await interaction.followup.send(embed=embed)
 
     @mc_admin_group.command(name="unlink", description="Force-unlink a Discord user's Minecraft account.")
     @app_commands.describe(user="The Discord user to unlink.")

@@ -421,6 +421,10 @@ class datasys:
         "chat_enabled": False,
         "chat_channel": "",
         "chat_webhook_url": "",
+        # Status board: the channel holding the self-updating embed, and the id of
+        # the message the task edits. The id is written by the task, not the user.
+        "status_channel": "",
+        "status_message_id": "",
     },
     "music": {
         "enabled": True,
@@ -435,19 +439,6 @@ class datasys:
         "radio_247_channel_id": "",
         "radio_247_text_channel_id": "",
         "radio_247_url": "",
-    },
-    "donations": {
-        "enabled": False,
-        "provider": "stripe",
-        "stripe_secret_key": "",
-        "stripe_webhook_secret": "",
-        "paypal_client_id": "",
-        "paypal_client_secret": "",
-        "page_text": "Support this server!",
-        "success_text": "Thank you for your donation! Your role has been assigned.",
-        "log_enabled": False,
-        "log_channel": "",
-        "tiers": [],
     },
 }
 

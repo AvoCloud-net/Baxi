@@ -21,7 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap"></noscript>
 
@@ -52,39 +52,16 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.3rem 0.85rem;
-            border-radius: 9999px;
+            border-radius: var(--avo-radius-sm, 6px);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
+        /* Loading gesture: the shared tick-ring spinner (main.css .avo-spinner),
+           sized up for a page-level loader (BRANDING §9). */
         #page-loader .loader-spinner {
             width: 2.5rem;
             height: 2.5rem;
-            border: 3px solid color-mix(in srgb, var(--color-primary, #FF6B4A) 20%, transparent);
-            border-top-color: var(--color-primary, #FF6B4A);
-            border-radius: 50%;
-            animation: loader-spin 0.9s linear infinite;
-        }
-        @keyframes loader-spin {
-            to { transform: rotate(360deg); }
-        }
-        #page-loader .loader-dots {
-            display: inline-flex;
-            gap: 0.35rem;
-            align-items: center;
-        }
-        #page-loader .loader-dots span {
-            width: 0.45rem;
-            height: 0.45rem;
-            border-radius: 50%;
-            background: var(--color-primary, #FF6B4A);
-            opacity: 0.3;
-            animation: loader-pulse 1.2s ease-in-out infinite;
-        }
-        #page-loader .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
-        #page-loader .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes loader-pulse {
-            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-            40% { opacity: 1; transform: scale(1); }
+            --avo-spinner-ring: 4px;
         }
 
         /* Nav search */
@@ -101,7 +78,6 @@
             border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
             border-radius: var(--radius-md, 0.5rem);
             padding: 0.3rem 0.7rem;
-            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .nav-search-wrap:focus-within {
             border-color: var(--color-primary, #FF6B4A);
@@ -121,10 +97,12 @@
             position: absolute;
             top: calc(100% + 6px);
             left: 0; right: 0;
-            background: var(--card, var(--background, canvas));
+            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
             border-radius: var(--radius-md, 0.5rem);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
             z-index: 9999;
             list-style: none; margin: 0; padding: 0.3rem;
             max-height: 340px; overflow-y: auto;
@@ -135,7 +113,6 @@
             padding: 0.45rem 0.7rem;
             border-radius: calc(var(--radius-md, 0.5rem) - 2px);
             cursor: pointer; font-size: 0.82rem; color: inherit;
-            transition: background var(--avo-dur-micro) var(--avo-ease-out);
         }
         .nav-search-item:hover,
         .nav-search-item.ns-active {
@@ -159,8 +136,12 @@
            hover only brightens the hairline to the user's risk colour — no lift,
            no drop shadow, matching the card language in main.css. */
         .prism-score-card {
-            background: #0A0A0A;
+            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
             border: 1px solid #2a2a2a;
+            border-radius: var(--avo-radius-md, 8px);
             padding: 16px 12px;
             display: flex;
             flex-direction: column;
@@ -168,20 +149,11 @@
             gap: 0;
             text-align: center;
             cursor: pointer;
-            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         .prism-score-card:hover {
             border-color: var(--score-border, #2a2a2a);
         }
 
-        /* Add-area: dashed border with wider gap between dashes */
-        .add-area {
-            
-            padding: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='0' ry='0' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/Svg%3E");
-        }
-        .add-area.mt-4 { margin-top: 1rem; }
-        .add-area.mt-3 { margin-top: 0.75rem; }
         /* Anti-Raid advanced disclosure */
         .antiraid-advanced > summary::-webkit-details-marker { display: none; }
         .antiraid-advanced > summary { user-select: none; }
@@ -255,7 +227,7 @@
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
             Baxi Dashboard
         </span>
-        <div class="loader-spinner"></div>
+        <div class="avo-spinner loader-spinner"></div>
         <p style="font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.03em;">Loading your data …</p>
     </div>
     <script>
@@ -267,7 +239,6 @@
         })();
     </script>
 
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -329,6 +300,15 @@
             </svg>
             Documentation
         </button>
+        <button onclick="openKofi()" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="M10 2v2"/>
+                <path d="M14 2v2"/>
+                <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>
+                <path d="M6 2v2"/>
+            </svg>
+            Support us
+        </button>
         <button onclick="location.href = '/logout/'" class="btn-lg-outline">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m16 17 5-5-5-5"/>
@@ -345,9 +325,10 @@
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 
-        <!-- Top.gg Vote Banner -  avocloud.net styled -->
-        <div style="position:relative; background:rgba(255,107,74,0.06); border:1px solid rgba(255,107,74,0.25); backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur)); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
-            <span aria-hidden="true" style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,var(--color-primary, #FF6B4A),#FF9379,#FF6B4A,var(--color-primary, #FF6B4A)); background-size:300% 100%; animation:gradient-move 8s ease infinite;"></span>
+        <!-- Top.gg Vote Banner -  avocloud.net styled. Coral is a spark, never
+             a section ground (BRANDING §3) — glass surface with a coral 2px
+             top edge (a static line, not an animated wash) instead. -->
+        <div style="position:relative; background:linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2)); border:1px solid rgba(255,107,74,0.25); border-top:2px solid var(--color-primary, #FF6B4A); backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur)); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
                     <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; background:rgba(255,147,121,0.12); border:1px solid rgba(255,147,121,0.3); color:#FF9379;">
@@ -394,13 +375,6 @@
                 {% endif %}
             </div>
         </div>
-        <style>
-            @keyframes gradient-move {
-                0%, 100% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-            }
-        </style>
-
         <!-- Quick-jump nav -->
         <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
             <a href="#home" class="dash-nav-item">
@@ -455,10 +429,6 @@
                 <svg viewBox="0 0 24 24"><path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 12.5 5 14l2.5-2.5"/><path d="M3 19.5 5 21l2.5-2.5"/></svg>
                 Review Queue
             </a>
-            <a href="#classifier_training" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
-                Classifier Training
-            </a>
 
             <span class="dash-nav-group-label">Community</span>
             <a href="#minigames" class="dash-nav-item">
@@ -497,12 +467,6 @@
                 <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
                 Tickets
             </a>
-            {% if feature_donations %}
-            <a href="#donations" class="dash-nav-item">
-                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Donations
-            </a>
-            {% endif %}
 
             <a href="#mc-link" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -1814,7 +1778,7 @@
                                 </svg>
                                 Review Queue
                             </h2>
-                            <p class="text-muted">Pending moderation items awaiting staff review.</p>
+                            <p class="text-muted">Everything Baxi flagged and left for you to decide. Each entry says what Baxi already did and what every button will do.</p>
                         </div>
                         <button type="button" class="btn-outline" onclick="modReviewRefresh()" style="flex-shrink:0;">
                             <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
@@ -1828,37 +1792,8 @@
                                 <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><path d="M20 6 9 17l-5-5"/></svg>
                             </div>
                             <h3 class="text-base font-semibold tracking-tight">All clear</h3>
-                            <p class="text-muted text-sm">There are no pending review items right now.</p>
+                            <p class="text-muted text-sm">Nothing is waiting for a decision right now.</p>
                         </div>
-                    </section>
-                </div>
-            </section>
-
-            <!-- Classifier Training -->
-            <section class="pb-16 dash-section" id="classifier_training">
-                <div class="section-label">CLASSIFIER TRAINING</div>
-                <div class="card">
-                    <header>
-                        <h2 class="text-xl font-semibold flex items-center gap-2">
-                            <svg class="lucide" viewBox="0 0 24 24">
-                                <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-                                <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-                            </svg>
-                            Classifier Training
-                        </h2>
-                        <p class="text-muted">Status of the moderation classifier that learns from staff feedback.</p>
-                    </header>
-                    <section class="grid gap-4">
-                        <div class="grid gap-2">
-                            <span class="text-muted text-xs">Samples ready</span>
-                            <span id="classifier-samples" class="text-2xl font-semibold">- / -</span>
-                            <p id="classifier-samples-hint" class="text-muted text-xs">Untrained, staff-confirmed samples vs the minimum needed to retrain.</p>
-                        </div>
-                        <div class="grid gap-2">
-                            <span class="text-muted text-xs">Training state</span>
-                            <span id="classifier-state" class="text-base font-medium">-</span>
-                        </div>
-                        <p class="text-muted text-sm">The classifier retrains automatically every day from staff-confirmed moderator deletions and review feedback. No manual action is required.</p>
                     </section>
                 </div>
             </section>
@@ -2144,199 +2079,27 @@
                         </form>
                     </section>
                 </div>
+
+                <div class="card mt-6">
+                    <header>
+                        <h2 class="text-xl font-semibold">Active warnings</h2>
+                        <p class="text-muted">Remove single warnings or clear all warnings of a user. Removing warnings also lowers the user's risk level for the chat filter.</p>
+                    </header>
+                    <section>
+                        <div id="wl-list" class="grid gap-3"></div>
+                        <div id="wl-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
+                            <div class="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                            </div>
+                            <div class="flex max-w-xs flex-col gap-1">
+                                <h3 class="text-base font-semibold tracking-tight">No active warnings</h3>
+                                <p class="text-muted text-sm">Nobody on this server has a warning right now.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </section>
 
-            <!-- ── Donations ─────────────────────────────────────────── -->
-            {% if feature_donations %}
-            <section class="pb-16 dash-section" id="donations">
-                <div class="section-label">DONATIONS</div>
-                <form id="donations-form">
-                    <div class="card">
-                        <header>
-                            <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <svg class="lucide" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                Donations
-                            </h2>
-                            <p class="text-muted">Let your community support your server via PayPal or Stripe. Roles are assigned automatically after a successful donation.</p>
-                        </header>
-                        <section>
-                            <!-- Enable toggle -->
-                            <div class="field">
-                                <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="donations-enabled" role="switch" {% if data.donations and data.donations.enabled %}checked{% endif %}>
-                                    <span class="font-medium">Enable Donations</span>
-                                </label>
-                            </div>
-
-                            <!-- Payment provider -->
-                            <div class="field">
-                                <label class="label" for="donations-provider">Payment Provider</label>
-                                <select id="donations-provider" class="select" style="max-width:240px">
-                                    <option value="stripe" {% if not data.donations or data.donations.provider == "stripe" %}selected{% endif %}>Stripe</option>
-                                    <option value="paypal" {% if data.donations and data.donations.provider == "paypal" %}selected{% endif %}>PayPal</option>
-                                </select>
-                            </div>
-
-                            <!-- Stripe credentials -->
-                            <div id="donations-stripe-fields" class="flex flex-col gap-4 mt-4">
-                                <div class="field">
-                                    <label class="label" for="donations-stripe-secret">Stripe Secret Key</label>
-                                    <input type="password" id="donations-stripe-secret" class="input"
-                                           value=""
-                                           placeholder="{% if data.donations and data.donations.has_stripe_secret_key %}•••••••• (stored -  leave blank to keep){% else %}sk_live_…{% endif %}"
-                                           autocomplete="new-password" spellcheck="false">
-                                    <p class="text-muted text-sm mt-1">Encrypted at rest. Found in your Stripe Dashboard under Developers → API Keys.</p>
-                                </div>
-                                <div class="field">
-                                    <label class="label" for="donations-stripe-webhook">Stripe Webhook Secret</label>
-                                    <input type="password" id="donations-stripe-webhook" class="input"
-                                           value=""
-                                           placeholder="{% if data.donations and data.donations.has_stripe_webhook_secret %}•••••••• (stored -  leave blank to keep){% else %}whsec_…{% endif %}"
-                                           autocomplete="new-password" spellcheck="false">
-                                    <p class="text-muted text-sm mt-1">
-                                        Webhook URL für das Stripe Dashboard:<br>
-                                        <code style="font-size:0.78rem; opacity:0.8">https://baxi.avocloud.net/webhooks/stripe/{{ guild.id }}</code><br>
-                                        Event: <code style="font-size:0.78rem; opacity:0.8">checkout.session.completed</code>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- PayPal credentials -->
-                            <div id="donations-paypal-fields" class="flex flex-col gap-4 mt-4" style="display:none">
-                                <div class="field">
-                                    <label class="label" for="donations-paypal-client-id">PayPal Client ID</label>
-                                    <input type="password" id="donations-paypal-client-id" class="input"
-                                           value=""
-                                           placeholder="{% if data.donations and data.donations.has_paypal_client_id %}•••••••• (stored -  leave blank to keep){% else %}PayPal Client ID{% endif %}"
-                                           autocomplete="new-password" spellcheck="false">
-                                </div>
-                                <div class="field">
-                                    <label class="label" for="donations-paypal-client-secret">PayPal Client Secret</label>
-                                    <input type="password" id="donations-paypal-client-secret" class="input"
-                                           value=""
-                                           placeholder="{% if data.donations and data.donations.has_paypal_client_secret %}•••••••• (stored -  leave blank to keep){% else %}PayPal Client Secret{% endif %}"
-                                           autocomplete="new-password" spellcheck="false">
-                                    <p class="text-muted text-sm mt-1">
-                                        Encrypted at rest. Webhook URL für das PayPal Developer Dashboard:<br>
-                                        <code style="font-size:0.78rem; opacity:0.8">https://baxi.avocloud.net/webhooks/paypal/{{ guild.id }}</code><br>
-                                        Event: <code style="font-size:0.78rem; opacity:0.8">CHECKOUT.ORDER.APPROVED</code>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <hr style="opacity:0.15; margin: 1.25rem 0">
-
-                            <!-- Page texts -->
-                            <div class="field">
-                                <label class="label" for="donations-page-text">Donation Page Text</label>
-                                <textarea id="donations-page-text" class="textarea" rows="3"
-                                          placeholder="Tell your community why donations help and what they're used for.">{{ data.donations.page_text if data.donations else 'Support this server!' }}</textarea>
-                                <p class="text-muted text-sm mt-1">Shown below the server name on the public donation page.</p>
-                            </div>
-                            <div class="field">
-                                <label class="label" for="donations-success-text">Success Text</label>
-                                <textarea id="donations-success-text" class="textarea" rows="2"
-                                          placeholder="Thank you for your support!">{{ data.donations.success_text if data.donations else 'Thank you for your donation! Your role has been assigned.' }}</textarea>
-                                <p class="text-muted text-sm mt-1">Shown after a successful payment.</p>
-                            </div>
-
-                            <hr style="opacity:0.15; margin: 1.25rem 0">
-
-                            <!-- Announcement channel -->
-                            <div class="field">
-                                <label class="flex items-center gap-3" style="cursor:pointer">
-                                    <input type="checkbox" id="donations-log-enabled" role="switch" {% if data.donations and data.donations.log_enabled %}checked{% endif %}>
-                                    <span class="font-medium">Post donation announcement in a channel</span>
-                                </label>
-                            </div>
-                            <div class="field" id="donations-log-channel-field" style="display:none">
-                                <label class="label" for="donations-log-channel">Announcement Channel ID</label>
-                                <input type="text" id="donations-log-channel" class="input"
-                                       value="{{ data.donations.log_channel if data.donations else '' }}"
-                                       placeholder="Channel ID (e.g. 123456789012345678)" style="max-width:280px">
-                                <div class="channel-perm-feedback hidden" id="feedback-donations-log"></div>
-                                <p class="text-muted text-sm mt-1">The bot will post an embed when someone donates.</p>
-                            </div>
-
-                            <hr style="opacity:0.15; margin: 1.25rem 0">
-
-                            <!-- Donation tiers -->
-                            <div class="field">
-                                <label class="label">Donation Tiers</label>
-                                <p class="text-muted text-sm mb-3">Each tier has a fixed price or a custom amount range, and a Discord role that is assigned automatically.</p>
-                                <div id="donations-tiers-list"></div>
-
-                                <!-- Add / Edit tier form -->
-                                <div class="card mt-3" style="border-style:dashed">
-                                    <header>
-                                        <h3 class="text-sm font-semibold" id="tier-form-title">Add Tier</h3>
-                                    </header>
-                                    <section>
-                                        <input type="hidden" id="tier-edit-index" value="">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div class="field">
-                                                <label class="label">Label</label>
-                                                <input type="text" id="tier-add-label" class="input" placeholder="e.g. Supporter">
-                                            </div>
-                                            <div class="field">
-                                                <label class="label">Type</label>
-                                                <select id="tier-add-type" class="select">
-                                                    <option value="fixed">Fixed Amount</option>
-                                                    <option value="range">Custom Range</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div id="tier-fixed-fields">
-                                            <div class="field">
-                                                <label class="label">Amount (EUR)</label>
-                                                <input type="number" id="tier-add-amount" class="input" min="0.50" step="0.01" placeholder="5.00" style="max-width:160px">
-                                            </div>
-                                        </div>
-                                        <div id="tier-range-fields" style="display:none">
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <div class="field">
-                                                    <label class="label">Min (EUR)</label>
-                                                    <input type="number" id="tier-add-min" class="input" min="0.50" step="0.01" placeholder="10.00">
-                                                </div>
-                                                <div class="field">
-                                                    <label class="label">Max (EUR, leer = unbegrenzt)</label>
-                                                    <input type="number" id="tier-add-max" class="input" min="0.51" step="0.01" placeholder="(optional)">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="field">
-                                            <label class="label">Discord Role</label>
-                                            <select id="tier-add-role" class="select">
-                                                <option value="">-- Select role --</option>
-                                                {% for role_id, role_name in roles.items() %}
-                                                <option value="{{ role_id }}">{{ role_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <p class="text-muted text-sm mt-1">Diese Rolle wird nach erfolgreicher Zahlung zugewiesen.</p>
-                                        </div>
-                                        <div class="flex gap-2 mt-2">
-                                            <button type="button" class="btn-primary" onclick="donationTierAdd()">
-                                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                                <span id="tier-btn-label">Add Tier</span>
-                                            </button>
-                                            <button type="button" id="tier-cancel-edit" class="btn-outline" style="display:none" onclick="donationTierCancelEdit()">Cancel</button>
-                                        </div>
-                                    </section>
-                                </div>
-                            </div>
-                        </section>
-                        <footer style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; padding:1rem 1.25rem">
-                            <button type="submit" class="btn-primary" style="width:100%; justify-content:center">Save Donations</button>
-                            <a href="https://baxi.avocloud.net/donate/{{ guild.id }}" target="_blank" rel="noopener noreferrer" class="btn-outline" style="width:100%; justify-content:center; text-decoration:none; display:flex; align-items:center; gap:0.375rem">
-                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                Preview Donation Page
-                            </a>
-                        </footer>
-                    </div>
-                </form>
-            </section>
-            {% endif %}
-            <!-- ── /Donations ─────────────────────────────────────────── -->
 
             <!-- Welcomer Config -->
             <section class="pb-16 dash-section" id="welcomer">
@@ -3013,6 +2776,21 @@
                                 <label class="text-sm font-medium" for="mcl-chat-webhook-url">Channel webhook URL <span class="text-muted">(required when enabled)</span></label>
                                 <p class="text-muted text-xs">Create one in the bridge channel: Edit Channel → Integrations → Webhooks → New Webhook → Copy URL. Lets MC players appear under their own Discord display name.</p>
                                 <input type="text" id="mcl-chat-webhook-url" class="input" placeholder="https://discord.com/api/webhooks/...">
+                            </div>
+
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">STATUS BOARD</div>
+                            <p class="text-muted text-xs">A single embed that keeps itself up to date every 2 minutes: online state, player count, uptime, server version, TPS and — if ViaVersion is installed — which client versions can connect. Baxi edits one message instead of posting new ones, so the channel stays clean. Requires DiscordGate <strong>1.5.0+</strong>.</p>
+
+                            <div class="grid gap-2">
+                                <label class="text-sm font-medium">Status channel</label>
+                                <p class="text-muted text-xs">Leave on <em>None</em> to disable the board. Baxi needs <strong>View Channel</strong>, <strong>Send Messages</strong> and <strong>Embed Links</strong> here. Changing the channel posts a fresh board there.</p>
+                                <select id="mcl-status-channel" class="input">
+                                    <option value="">— None —</option>
+                                    {% for channel_id, channel_name in channels.items() %}
+                                    <option value="{{ channel_id }}">#{{ channel_name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
                             <div class="card-actions">
@@ -4410,8 +4188,8 @@
                 'home',
                 'config-general',
                 'auditlog',
-                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'classifier_training',
-                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket'{% if feature_donations %}, 'donations'{% endif %}, 'mc-link',
+                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review',
+                'minigames', 'leveling', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
@@ -4906,6 +4684,7 @@
                 document.getElementById('mcl-chat-enabled').checked = data.mc_link.chat_enabled === true;
                 document.getElementById('mcl-chat-channel').value = data.mc_link.chat_channel || '';
                 document.getElementById('mcl-chat-webhook-url').value = data.mc_link.chat_webhook_url ? '••••••••' : '';
+                document.getElementById('mcl-status-channel').value = data.mc_link.status_channel || '';
             }
 
             // Sticky Messages
@@ -6101,7 +5880,7 @@
                 // glass blur and z-order from one place instead of a second
                 // hand-tuned copy. display is still toggled inline below.
                 prismPopover.className = 'popup';
-                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:#0A0A0A;border:1px solid #2a2a2a;padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6);">
+                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:linear-gradient(var(--avo-glass-tint),var(--avo-glass-tint-2));backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur));border:1px solid #2a2a2a;border-radius:var(--avo-radius-md, 8px);padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:inset 0 1px 0 var(--avo-glass-edge);">
                     <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -6155,8 +5934,8 @@
                         <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #0A0A0A;display:block;"></span>
                     </div>
                     <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#FFFFFF'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
-                    <div style="padding:3px 12px;border-radius:9999px;background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
-                        <span style="font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
+                    <div style="padding:3px 12px;border-radius:var(--avo-radius-sm, 6px);background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
+                        <span style="font-family:var(--avo-font-mono);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
                         <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
                     </div>
                     ${badges}
@@ -6566,6 +6345,7 @@
             const dm_announcements = document.getElementById('mcl-dm-announcements').checked;
             const chat_enabled = document.getElementById('mcl-chat-enabled').checked;
             const chat_channel = document.getElementById('mcl-chat-channel').value;
+            const status_channel = document.getElementById('mcl-status-channel').value;
             const chat_webhook_raw = document.getElementById('mcl-chat-webhook-url').value;
             const chat_webhook_url = chat_webhook_raw === '••••••••' ? null : chat_webhook_raw.trim();
             if (chat_enabled && !chat_channel) {
@@ -6576,7 +6356,7 @@
                 showSaveToast(false, 'Webhook URL must start with https://discord.com/api/webhooks/');
                 return;
             }
-            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink, announcement_channel, dm_announcements, chat_enabled, chat_channel, chat_webhook_url: chat_webhook_url !== null ? chat_webhook_url : '' } };
+            const payload = { mc_link: { enabled, api_url, api_secret: api_secret !== null ? api_secret : '', role_id, announce_channel, dm_on_link, allow_self_unlink, announcement_channel, dm_announcements, chat_enabled, chat_channel, chat_webhook_url: chat_webhook_url !== null ? chat_webhook_url : '', status_channel } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mc_link&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -7087,6 +6867,8 @@
         };
 
         // ── Review Queue ───────────────────────────────────────────────────────
+        // Every item is a thing Baxi noticed. The card says what Baxi already did,
+        // and each button spells out what it does — no abstract approve/reject.
         function modReviewEscape(s) {
             return String(s == null ? '' : s)
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -7094,7 +6876,7 @@
         }
 
         function modReviewBadge(kind) {
-            const labels = { join_gate: 'Join Gate', deleted_msg: 'Deleted Message', prism_flag: 'Safety Flag', user_report: 'User Report' };
+            const labels = { join_gate: 'Risky join', prism_flag: 'Safety flag', deleted_msg: 'Deleted message', user_report: 'User report' };
             return modReviewEscape(labels[kind] || kind || 'item');
         }
 
@@ -7103,15 +6885,43 @@
             return modReviewEscape(String(s).replace('T', ' ').slice(0, 16));
         }
 
-        function modReviewHint(kind) {
-            if (kind === 'deleted_msg')
-                return 'Approve trains the chat filter to catch messages like this in future. Reject marks it as harmless (the filter learns it is safe).';
-            if (kind === 'user_report')
-                return 'Approve marks this report as handled. Reject dismisses it. Either way it leaves the queue — take any moderation action (ban, warn) yourself.';
-            if (kind === 'join_gate' || kind === 'prism_flag')
-                return 'Approve confirms this flag was correct. Reject marks it a false positive.';
-            return 'Approve confirms this item. Reject dismisses it.';
+        // Plain-language summary of what Baxi already did to this user.
+        function modReviewDidLine(item) {
+            const ctx = item.context || {};
+            if (item.kind === 'join_gate' || item.kind === 'prism_flag') {
+                const a = ctx.action || 'notify';
+                if (a === 'kick') return 'Baxi kicked this member when they joined.';
+                if (a === 'quarantine' || a === 'approve') return 'Baxi gave this member the quarantine role — they stay locked out until you decide.';
+                return 'Baxi did not act. This is a heads-up only — the member is in the server as usual.';
+            }
+            if (item.kind === 'deleted_msg') return 'A moderator deleted this message. Baxi did not act on the author.';
+            if (item.kind === 'user_report') return 'A member reported this user. Baxi did not act.';
+            return '';
         }
+
+        // Buttons per item kind: what it is called, what it actually does.
+        function modReviewActions(kind) {
+            if (kind === 'join_gate' || kind === 'prism_flag') return [
+                { a: 'allow', l: 'Allow member', tone: 'ok',   h: 'Clears the flag and takes the quarantine role back off. The member stays in the server.' },
+                { a: 'kick',  l: 'Kick',         tone: 'warn', h: 'Removes the member from the server. They can come back with a new invite.' },
+                { a: 'ban',   l: 'Ban',          tone: 'bad',  h: 'Bans the member from the server for good.' }
+            ];
+            if (kind === 'user_report') return [
+                { a: 'done',    l: 'Mark handled', tone: 'ok',  h: 'Closes the report. Any punishment you hand out is your own call.' },
+                { a: 'dismiss', l: 'Dismiss',      tone: 'bad', h: 'Closes the report as unfounded. Nothing happens to the user.' }
+            ];
+            if (kind === 'deleted_msg') return [
+                { a: 'confirm',  l: 'Was rule-breaking', tone: 'ok',  h: 'Baxi’s chat filter learns to catch messages like this by itself.' },
+                { a: 'harmless', l: 'Was harmless',      tone: 'bad', h: 'Baxi learns this kind of message is fine and stops flagging it.' }
+            ];
+            return [{ a: 'done', l: 'Close', tone: 'ok', h: 'Removes this entry from the queue.' }];
+        }
+
+        const MOD_REVIEW_TONES = {
+            ok:   'background:#46A758; border-color:#46A758;',
+            warn: 'color:#E5A000; border-color:#E5A000;',
+            bad:  'color:#DC3838; border-color:#DC3838;'
+        };
 
         function modReviewRenderItem(item) {
             const card = document.createElement('div');
@@ -7119,42 +6929,43 @@
             card.style.cssText = 'padding:1.1rem 1.25rem; display:flex; flex-direction:column; gap:.85rem;';
             card.dataset.pos = item.pos;
             const ctx = item.context || {};
+
             let contextHtml = '';
             if (item.kind === 'deleted_msg') {
-                contextHtml +=
+                contextHtml =
                     '<div class="grid gap-1">' +
                     '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.message) + '</p>' +
-                    (ctx.deleted_by_name ? '<p class="text-muted text-xs">Deleted by ' + modReviewEscape(ctx.deleted_by_name) + '</p>' : '') +
+                    (ctx.deleted_by_name ? '<p class="text-muted text-xs">Deleted by ' + modReviewEscape(ctx.deleted_by_name) +
+                        (ctx.channel_name ? ' in #' + modReviewEscape(ctx.channel_name) : '') + '</p>' : '') +
                     '</div>';
             } else if (item.kind === 'user_report') {
                 const link = ctx.message_link ? ' · <a href="' + modReviewEscape(ctx.message_link) + '" target="_blank" rel="noopener">view message</a>' : '';
-                contextHtml +=
+                contextHtml =
                     '<div class="grid gap-1">' +
                     '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.reason) + '</p>' +
                     (ctx.message ? '<p class="text-muted text-xs" style="white-space:pre-wrap;word-break:break-word;">Reported message: ' + modReviewEscape(ctx.message) + '</p>' : '') +
                     '<p class="text-muted text-xs">Reported by ' + modReviewEscape(ctx.reporter_name) + link + '</p>' +
                     '</div>';
             } else {
-                const reasons = Array.isArray(ctx.reasons) ? ctx.reasons.join(', ') : (ctx.reasons || '');
-                contextHtml +=
+                const reasons = Array.isArray(ctx.reasons) ? ctx.reasons : (ctx.reasons ? [ctx.reasons] : []);
+                contextHtml =
                     '<div class="grid gap-1 text-xs text-muted">' +
-                    (reasons ? '<p>' + modReviewEscape(reasons) + '</p>' : '') +
+                    (reasons.length ? '<p>Why it was flagged: ' + modReviewEscape(reasons.join(', ')) + '</p>' : '') +
                     (ctx.account_age_days !== undefined ? '<p>Account age: ' + modReviewEscape(ctx.account_age_days) + ' days</p>' : '') +
-                    (ctx.safety_category ? '<p>Safety list: ' + modReviewEscape(ctx.safety_category) + '</p>' : '') +
+                    (ctx.safety_category ? '<p>On the network safety list: ' + modReviewEscape(ctx.safety_category) + '</p>' : '') +
                     '</div>';
             }
-            let labelSelect = '';
-            if (item.kind === 'deleted_msg') {
-                labelSelect =
-                    '<span class="text-muted text-xs" style="align-self:center;">Train as:</span>' +
-                    '<select class="select mod_review-label" style="flex:0 0 auto;width:auto;">' +
-                    '<option value="2">Toxic</option>' +
-                    '<option value="3">Hate</option>' +
-                    '<option value="1">NSFW</option>' +
-                    '<option value="4">Doxxing</option>' +
-                    '<option value="5">Self-harm</option>' +
-                    '</select>';
-            }
+
+            const actions = modReviewActions(item.kind);
+            const buttons = actions.map(function (act) {
+                const cls = act.tone === 'ok' ? 'btn-primary' : 'btn-outline';
+                return '<button type="button" class="' + cls + ' mod_review-act" data-action="' + act.a + '" ' +
+                       'style="' + MOD_REVIEW_TONES[act.tone] + '"><span class="btn-label">' + modReviewEscape(act.l) + '</span></button>';
+            }).join('');
+            const hints = actions.map(function (act) {
+                return '<li><strong>' + modReviewEscape(act.l) + '</strong> — ' + modReviewEscape(act.h) + '</li>';
+            }).join('');
+
             card.innerHTML =
                 '<header class="flex items-start justify-between gap-3" style="flex-wrap:wrap;">' +
                 '<div style="display:flex; flex-direction:column; gap:.35rem;">' +
@@ -7165,34 +6976,31 @@
                 '</div>' +
                 '</div>' +
                 '</header>' +
+                '<p class="text-sm" style="margin:0;"><strong>' + modReviewEscape(modReviewDidLine(item)) + '</strong></p>' +
                 contextHtml +
-                '<p class="text-muted text-xs" style="margin:0; line-height:1.4;">' + modReviewEscape(modReviewHint(item.kind)) + '</p>' +
-                '<div class="flex items-center gap-2" style="flex-wrap:wrap; margin-top:.15rem;">' +
-                labelSelect +
-                '<button type="button" class="btn-primary mod_review-approve" style="background:#46A758; border-color:#46A758;">' +
-                '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>Approve</button>' +
-                '<button type="button" class="btn-outline mod_review-reject" style="color:#DC3838; border-color:#DC3838;">' +
-                '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
-                '<span class="btn-label">Reject</span></button>' +
-                '</div>';
-            card.querySelector('.mod_review-approve').onclick = function () { modReviewResolve(card, item, 'approve'); };
-            card.querySelector('.mod_review-reject').onclick = function () { modReviewResolve(card, item, 'reject'); };
+                '<div class="flex items-center gap-2" style="flex-wrap:wrap; margin-top:.15rem;">' + buttons + '</div>' +
+                '<ul class="text-muted text-xs" style="margin:0; padding-left:1.1rem; display:grid; gap:.2rem;">' + hints + '</ul>';
+
+            card.querySelectorAll('.mod_review-act').forEach(function (btn) {
+                btn.onclick = function () { modReviewResolve(card, item, btn.dataset.action); };
+            });
             return card;
         }
 
         function modReviewResolve(card, item, action) {
-            const payload = { pos: parseInt(item.pos, 10), action: action };
-            const labelEl = card.querySelector('.mod_review-label');
-            if (labelEl) payload.label = labelEl.value;
+            if ((action === 'kick' || action === 'ban') &&
+                !window.confirm(action === 'ban'
+                    ? 'Ban ' + item.user_name + ' from this server?'
+                    : 'Kick ' + item.user_name + ' from this server?')) return;
             card.querySelectorAll('button').forEach(b => b.disabled = true);
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mod_review_resolve&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.send(JSON.stringify(payload));
+            xhr.send(JSON.stringify({ pos: parseInt(item.pos, 10), action: action }));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     let ok = false, msg = 'An unexpected error occurred.';
-                    try { const r = JSON.parse(xhr.responseText); ok = r.success; msg = r.message; }
+                    try { const r = JSON.parse(xhr.responseText); ok = r.success; msg = r.message || msg; }
                     catch (e) { ok = false; }
                     showSaveToast(ok, msg);
                     if (ok) {
@@ -7201,6 +7009,7 @@
                         if (list && !list.children.length) {
                             document.getElementById('mod_review-empty').classList.remove('hidden');
                         }
+                        modReviewSetPending(list ? list.children.length : 0);
                     } else {
                         card.querySelectorAll('button').forEach(b => b.disabled = false);
                     }
@@ -7208,10 +7017,33 @@
             };
         }
 
+        // Pending count, shown on the sidebar entry and the Home tile so a full
+        // queue is visible without opening the section.
+        function modReviewSetPending(n) {
+            window.modReviewPending = n;
+            const targets = [
+                document.querySelector('#dash-nav .dash-nav-item[href="#mod_review"]'),
+                document.querySelector('.hub-tile[data-target="mod_review"]')
+            ];
+            targets.forEach(function (el) {
+                if (!el) return;
+                let badge = el.querySelector('.queue-badge');
+                if (!n) { badge && badge.remove(); el.classList.remove('has-queue'); return; }
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'queue-badge';
+                    const body = el.querySelector('.hub-tile-body') || el;
+                    body.appendChild(badge);
+                }
+                badge.textContent = n > 99 ? '99+' : String(n);
+                badge.setAttribute('aria-label', n + ' item(s) waiting for review');
+                el.classList.add('has-queue');
+            });
+        }
+
         function modReviewRefresh() {
             const list = document.getElementById('mod_review-list');
             const empty = document.getElementById('mod_review-empty');
-            if (!list) return;
             const xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/dash/mod_review/?dash_login={{ data.dash_login }}&status=pending');
             xhr.send();
@@ -7220,40 +7052,98 @@
                     let items = [];
                     try { const r = JSON.parse(xhr.responseText); if (r.success && Array.isArray(r.items)) items = r.items; }
                     catch (e) { items = []; }
+                    modReviewSetPending(items.length);
+                    if (!list || !empty) return;
                     list.innerHTML = '';
-                    if (!items.length) {
-                        empty.classList.remove('hidden');
-                        return;
-                    }
+                    if (!items.length) { empty.classList.remove('hidden'); return; }
                     empty.classList.add('hidden');
                     items.forEach(function (it) { list.appendChild(modReviewRenderItem(it)); });
                 }
             };
         }
 
-        // ── Classifier Training ────────────────────────────────────────────────
-        function classifierStatusRefresh() {
+        // Count the queue once on load so the badge is there before you go looking.
+        window.addEventListener('load', modReviewRefresh);
+
+        // ── Active warnings ────────────────────────────────────────────────────
+        const _WL_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+
+        function _wlRemoveBtn(label, onClick) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'btn-outline';
+            b.style.cssText = 'color:#ef4444;border-color:#ef4444;';
+            b.innerHTML = _WL_TRASH + '<span class="btn-label"></span>';
+            b.querySelector('.btn-label').textContent = label;
+            b.onclick = onClick;
+            return b;
+        }
+
+        function warningsRemove(userId, warnId) {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/dash/classifier_status/?dash_login={{ data.dash_login }}');
-            xhr.send();
+            xhr.open('POST', '/api/dash/warnings/remove/?dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({ user_id: userId, warn_id: warnId || null }));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    try {
-                        const r = JSON.parse(xhr.responseText);
-                        if (!r.success) return;
-                        const samples = r.samples || {};
-                        const untrained = samples.untrained ?? 0;
-                        const min = r.min_samples ?? 0;
-                        document.getElementById('classifier-samples').textContent = untrained + ' / ' + min + ' samples ready';
-                        const total = samples.total ?? 0;
-                        document.getElementById('classifier-samples-hint').textContent =
-                            untrained + ' untrained of ' + total + ' total staff-confirmed samples. Needs ' + min + ' to retrain.';
-                        const state = (r.training && r.training.state) ? r.training.state : 'idle';
-                        document.getElementById('classifier-state').textContent = state;
-                    } catch (e) { /* leave placeholders */ }
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                    warningsRefresh();
                 }
             };
         }
+
+        function warningsRefresh() {
+            const list = document.getElementById('wl-list');
+            const empty = document.getElementById('wl-empty');
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/dash/warnings/?dash_login={{ data.dash_login }}');
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== XMLHttpRequest.DONE) return;
+                let users = [];
+                try { const r = JSON.parse(xhr.responseText); if (r.success && Array.isArray(r.users)) users = r.users; }
+                catch (e) { users = []; }
+                list.innerHTML = '';
+                empty.classList.toggle('hidden', users.length > 0);
+                users.forEach(function (u) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    const header = document.createElement('header');
+                    header.className = 'flex items-center justify-between';
+                    const info = document.createElement('div');
+                    const h3 = document.createElement('h3');
+                    h3.className = 'text-base font-semibold';
+                    h3.textContent = u.name || u.user_id;
+                    const sub = document.createElement('p');
+                    sub.className = 'text-muted text-xs';
+                    sub.textContent = u.user_id + ' · ' + u.warnings.length + ' warning' + (u.warnings.length !== 1 ? 's' : '');
+                    info.append(h3, sub);
+                    header.append(info, _wlRemoveBtn('Remove all', function () {
+                        if (confirm('Remove all warnings of ' + (u.name || u.user_id) + '?')) warningsRemove(u.user_id, null);
+                    }));
+                    const body = document.createElement('section');
+                    body.className = 'grid gap-2';
+                    u.warnings.forEach(function (w) {
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center justify-between gap-3';
+                        const txt = document.createElement('div');
+                        const reason = document.createElement('p');
+                        reason.className = 'text-sm';
+                        reason.textContent = w.reason || 'N/A';
+                        const meta = document.createElement('p');
+                        meta.className = 'text-muted text-xs';
+                        meta.textContent = '#' + w.id + ' · ' + (w.date || '?') + ' · by ' + (w.mod || '?');
+                        txt.append(reason, meta);
+                        row.append(txt, _wlRemoveBtn('Remove', function () { warningsRemove(u.user_id, w.id); }));
+                        body.appendChild(row);
+                    });
+                    card.append(header, body);
+                    list.appendChild(card);
+                });
+            };
+        }
+        window.addEventListener('load', warningsRefresh);
 
         // (Section data auto-loads via the router's showSection — see dashShowSection.)
 
@@ -8531,8 +8421,6 @@
             checkChannelPermissions('reaction_role_channel', v('rr-channel'),                 'feedback-rr-channel',                  null,                    null);
             // Stats Channels
             checkChannelPermissions('stats_category',    v('sc-category'),                    'feedback-stats-category',              'stats-channels-form',   'cat');
-            // Donations log
-            {% if feature_donations %}checkChannelPermissions('donations_log',     v('donations-log-channel'),          'feedback-donations-log',               null,                    null);{% endif %}
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -8564,12 +8452,6 @@
             on('sc-category',                    'stats_category',       'feedback-stats-category',             'stats-channels-form',  'cat');
             on('rr-channel',                     'reaction_role_channel','feedback-rr-channel',                 null,                   null);
             on('sticky-add-channel',             'sticky_messages',      'feedback-sticky-add-channel',         null,                   null);
-            {% if feature_donations %}
-            // Donations log is a text input -  check on blur
-            document.getElementById('donations-log-channel')?.addEventListener('blur', e => {
-                checkChannelPermissions('donations_log', e.target.value.trim(), 'feedback-donations-log', null, null);
-            });
-            {% endif %}
         });
 
         function checkBotRolePosition() {
@@ -8799,188 +8681,6 @@
             });
         })();
 
-        // ── Donations JS ─────────────────────────────────────────────────
-        {% if feature_donations %}
-        let _donationTiers = {{ (data.donations.tiers if data.donations else []) | tojson | safe }};
-        const _rolesMap = {};
-        {% for role_id, role_name in roles.items() %}_rolesMap["{{ role_id }}"] = {{ role_name | tojson | safe }};
-        {% endfor %}
-
-        function renderDonationTiers() {
-            const list = document.getElementById('donations-tiers-list');
-            if (!list) return;
-            list.innerHTML = '';
-            if (_donationTiers.length === 0) {
-                list.innerHTML = '<p class="text-muted text-sm">No tiers yet. Add one below.</p>';
-                return;
-            }
-            _donationTiers.forEach((tier, idx) => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-3 p-3 rounded-lg border mb-2';
-                row.style.cssText = 'border-color: color-mix(in srgb, currentColor 15%, transparent);';
-                const desc = tier.type === 'fixed'
-                    ? `€${Number(tier.amount).toFixed(2)} fixed`
-                    : `€${tier.amount_min}${tier.amount_max ? ' – €' + tier.amount_max : '+'} range`;
-                const roleName = _rolesMap[tier.role_id] || tier.role_id;
-                row.innerHTML = `
-                    <div style="flex:1; min-width:0">
-                        <span class="font-semibold text-sm">${tier.label}</span>
-                        <span class="text-muted text-sm ml-2">${desc}</span>
-                        <span class="text-muted text-sm ml-2">→ <strong>${roleName}</strong></span>
-                    </div>`;
-                const editBtn = document.createElement('button');
-                editBtn.type = 'button';
-                editBtn.className = 'btn-outline';
-                editBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem;';
-                editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-                editBtn.title = 'Edit tier';
-                editBtn.onclick = () => donationTierEdit(idx);
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'btn-outline';
-                removeBtn.style.cssText = 'padding:0.25rem 0.6rem; font-size:0.75rem; color: var(--color-danger, #DC3838);';
-                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                removeBtn.title = 'Remove tier';
-                removeBtn.onclick = () => { _donationTiers.splice(idx, 1); renderDonationTiers(); };
-                row.appendChild(editBtn);
-                row.appendChild(removeBtn);
-                list.appendChild(row);
-            });
-        }
-        renderDonationTiers();
-
-        function donationTierEdit(idx) {
-            const tier = _donationTiers[idx];
-            document.getElementById('tier-edit-index').value = idx;
-            document.getElementById('tier-add-label').value = tier.label;
-            document.getElementById('tier-add-type').value = tier.type;
-            document.getElementById('tier-add-type').dispatchEvent(new Event('change'));
-            if (tier.type === 'fixed') {
-                document.getElementById('tier-add-amount').value = tier.amount !== null ? tier.amount : '';
-            } else {
-                document.getElementById('tier-add-min').value = tier.amount_min !== null ? tier.amount_min : '';
-                document.getElementById('tier-add-max').value = tier.amount_max !== null ? tier.amount_max : '';
-            }
-            document.getElementById('tier-add-role').value = tier.role_id;
-            document.getElementById('tier-form-title').textContent = 'Edit Tier';
-            document.getElementById('tier-btn-label').textContent = 'Save Changes';
-            document.getElementById('tier-cancel-edit').style.display = '';
-            document.getElementById('tier-add-label').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function donationTierCancelEdit() {
-            document.getElementById('tier-edit-index').value = '';
-            document.getElementById('tier-add-label').value = '';
-            document.getElementById('tier-add-amount').value = '';
-            document.getElementById('tier-add-min').value = '';
-            document.getElementById('tier-add-max').value = '';
-            document.getElementById('tier-add-role').value = '';
-            document.getElementById('tier-form-title').textContent = 'Add Tier';
-            document.getElementById('tier-btn-label').textContent = 'Add Tier';
-            document.getElementById('tier-cancel-edit').style.display = 'none';
-        }
-
-        // Provider toggle
-        (function initDonationsUI() {
-            const providerSel = document.getElementById('donations-provider');
-            const stripeFields = document.getElementById('donations-stripe-fields');
-            const paypalFields = document.getElementById('donations-paypal-fields');
-            const logEnabled = document.getElementById('donations-log-enabled');
-            const logField = document.getElementById('donations-log-channel-field');
-            const tierType = document.getElementById('tier-add-type');
-            const fixedFields = document.getElementById('tier-fixed-fields');
-            const rangeFields = document.getElementById('tier-range-fields');
-
-            function updateProvider() {
-                const isStripe = providerSel.value === 'stripe';
-                stripeFields.style.display = isStripe ? '' : 'none';
-                paypalFields.style.display = isStripe ? 'none' : '';
-            }
-            updateProvider();
-            providerSel.addEventListener('change', updateProvider);
-
-            logField.style.display = logEnabled.checked ? '' : 'none';
-            logEnabled.addEventListener('change', () => {
-                logField.style.display = logEnabled.checked ? '' : 'none';
-            });
-
-            function updateTierType() {
-                const isFixed = tierType.value === 'fixed';
-                fixedFields.style.display = isFixed ? '' : 'none';
-                rangeFields.style.display = isFixed ? 'none' : '';
-            }
-            updateTierType();
-            tierType.addEventListener('change', updateTierType);
-        })();
-
-        function donationTierAdd() {
-            const label = document.getElementById('tier-add-label').value.trim();
-            const type = document.getElementById('tier-add-type').value;
-            const roleId = document.getElementById('tier-add-role').value;
-            const editIdxRaw = document.getElementById('tier-edit-index').value;
-            const isEdit = editIdxRaw !== '';
-
-            if (!label) { showSaveToast(false, 'Tier label is required.'); return; }
-            if (!roleId) { showSaveToast(false, 'Please select a role.'); return; }
-
-            const existingId = isEdit ? _donationTiers[parseInt(editIdxRaw)].id : 'tier_' + Date.now();
-            const tier = { id: existingId, label, type, amount: null, amount_min: null, amount_max: null, role_id: roleId };
-
-            if (type === 'fixed') {
-                const amount = parseFloat(document.getElementById('tier-add-amount').value);
-                if (isNaN(amount) || amount < 0.50) { showSaveToast(false, 'Fixed amount must be at least €0.50.'); return; }
-                tier.amount = amount;
-            } else {
-                const min = parseFloat(document.getElementById('tier-add-min').value);
-                if (isNaN(min) || min < 0.50) { showSaveToast(false, 'Min amount must be at least €0.50.'); return; }
-                const maxRaw = document.getElementById('tier-add-max').value;
-                const max = maxRaw ? parseFloat(maxRaw) : null;
-                if (max !== null && max <= min) { showSaveToast(false, 'Max must be greater than min.'); return; }
-                tier.amount_min = min;
-                tier.amount_max = max;
-            }
-
-            if (isEdit) {
-                _donationTiers[parseInt(editIdxRaw)] = tier;
-            } else {
-                _donationTiers.push(tier);
-            }
-            renderDonationTiers();
-            donationTierCancelEdit();
-        }
-
-        document.getElementById('donations-form').onsubmit = function (event) {
-            event.preventDefault();
-            const payload = { donations: {
-                enabled: document.getElementById('donations-enabled').checked,
-                provider: document.getElementById('donations-provider').value,
-                stripe_secret_key: document.getElementById('donations-stripe-secret').value,
-                stripe_webhook_secret: document.getElementById('donations-stripe-webhook').value,
-                paypal_client_id: document.getElementById('donations-paypal-client-id').value,
-                paypal_client_secret: document.getElementById('donations-paypal-client-secret').value,
-                page_text: document.getElementById('donations-page-text').value,
-                success_text: document.getElementById('donations-success-text').value,
-                log_enabled: document.getElementById('donations-log-enabled').checked,
-                log_channel: document.getElementById('donations-log-channel').value.trim(),
-                tiers: _donationTiers,
-            }};
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/dash/save/?system=donations&dash_login={{ data.dash_login }}');
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.send(JSON.stringify(payload));
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    try {
-                        const resp = JSON.parse(xhr.responseText);
-                        showSaveToast(resp.success, resp.message);
-                    } catch (e) {
-                        showSaveToast(false, 'An unexpected error occurred.');
-                    }
-                }
-            };
-        };
-        {% endif %}
-        // ── /Donations JS ────────────────────────────────────────────────
     </script>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
@@ -9115,7 +8815,6 @@
                 if (id === 'home') refreshHubStatus();
                 // Auto-load data-backed sections every time they are opened.
                 if (id === 'mod_review' && typeof modReviewRefresh === 'function') modReviewRefresh();
-                if (id === 'classifier_training' && typeof classifierStatusRefresh === 'function') classifierStatusRefresh();
                 if (!opts.noHash && location.hash !== '#' + id) {
                     history.pushState(null, '', '#' + id);
                 }
@@ -9292,6 +8991,30 @@
             });
         })();
     </script>
+
+<dialog id="kofi-dialog" class="dialog" aria-labelledby="kofi-dialog-title">
+    <div style="max-width:min(420px, 92vw);">
+        <header>
+            <h2 id="kofi-dialog-title">Support Baxi</h2>
+            <p>Baxi is free. Hosting is not. A tip keeps the lights on — thank you!</p>
+        </header>
+        <!-- src is set on first open so the Ko-fi widget is never loaded for people who don't ask for it -->
+        <iframe id="kofiframe" data-src="https://ko-fi.com/avocloudnet/?hidefeed=true&widget=true&embed=true&preview=true"
+                title="Ko-fi — avocloudnet" loading="lazy"
+                style="border:none;width:100%;height:min(712px, 65vh);border-radius:8px;background:#f9f9f9;"></iframe>
+        <footer>
+            <button class="btn-outline" onclick="document.getElementById('kofi-dialog').close()">Close</button>
+        </footer>
+    </div>
+</dialog>
+<script>
+    function openKofi() {
+        const dlg = document.getElementById('kofi-dialog');
+        const frame = document.getElementById('kofiframe');
+        if (!frame.src) frame.src = frame.dataset.src;
+        dlg.showModal();
+    }
+</script>
 
 <dialog id="remove-tt-dialog" class="dialog" aria-labelledby="remove-tt-dialog-title" aria-describedby="remove-tt-dialog-description">
     <div>

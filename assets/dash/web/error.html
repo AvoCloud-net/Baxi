@@ -15,11 +15,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 </head>
 
 <body>
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">

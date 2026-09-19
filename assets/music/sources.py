@@ -33,9 +33,9 @@ _YDL_OPTS = {
     "skip_download": True,
     "extract_flat": False,
     "source_address": "0.0.0.0",
-    # Avoid YouTube's "confirm you're not a bot" check on datacenter IPs. web first so real
-    # audio formats are available (music must download); tv as cookieless fallback.
-    "extractor_args": {"youtube": {"player_client": ["web_safari", "web", "tv"]}},
+    # web/web_safari/tv clients fail with "page needs to be reloaded" once an IP is
+    # bot-flagged (they need a PO token). android client still works cookieless.
+    "extractor_args": {"youtube": {"player_client": ["android", "web_safari", "web", "tv"]}},
 }
 
 # Optional auth cookies (Netscape format) for persistent bot checks — see livestream.py.

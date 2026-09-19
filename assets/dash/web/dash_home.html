@@ -17,7 +17,7 @@
     <style>@media (min-width: 900px) { body { padding-left: 0 !important; } }</style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap"></noscript>
     {% if show_intro %}
@@ -58,7 +58,6 @@
         </div>
     </div>
     {% endif %}
-    <div id="gradientbar"></div>
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -93,6 +92,15 @@
             </span>
         </button>
         <hr role="separator" />
+        <button onclick="openKofi()" class="btn-lg-outline">
+            <svg class="lucide" viewBox="0 0 24 24">
+                <path d="M10 2v2"/>
+                <path d="M14 2v2"/>
+                <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>
+                <path d="M6 2v2"/>
+            </svg>
+            Support us
+        </button>
         <button onclick="location.href = '/logout/'" class="btn-lg-outline">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m16 17 5-5-5-5"/>
@@ -310,6 +318,30 @@
             markGuildGridEnd();
         })();
     </script>
+
+<dialog id="kofi-dialog" class="dialog" aria-labelledby="kofi-dialog-title">
+    <div style="max-width:min(420px, 92vw);">
+        <header>
+            <h2 id="kofi-dialog-title">Support Baxi</h2>
+            <p>Baxi is free. Hosting is not. A tip keeps the lights on — thank you!</p>
+        </header>
+        <!-- src is set on first open so the Ko-fi widget is never loaded for people who don't ask for it -->
+        <iframe id="kofiframe" data-src="https://ko-fi.com/avocloudnet/?hidefeed=true&widget=true&embed=true&preview=true"
+                title="Ko-fi — avocloudnet" loading="lazy"
+                style="border:none;width:100%;height:min(712px, 65vh);border-radius:8px;background:#f9f9f9;"></iframe>
+        <footer>
+            <button class="btn-outline" onclick="document.getElementById('kofi-dialog').close()">Close</button>
+        </footer>
+    </div>
+</dialog>
+<script>
+    function openKofi() {
+        const dlg = document.getElementById('kofi-dialog');
+        const frame = document.getElementById('kofiframe');
+        if (!frame.src) frame.src = frame.dataset.src;
+        dlg.showModal();
+    }
+</script>
 
 </body>
 

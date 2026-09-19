@@ -498,11 +498,6 @@ Baxi runs several automated background tasks to maintain system health:
 - Separate files for: config, tickets, transcripts, users, stats, activity, mod events, filter events, temp actions, leveling, Prism trust, global chat
 - Automatic directory creation on guild join
 
-### Encryption
-- Fernet symmetric encryption for sensitive data (donation API keys, etc.)
-- Master key stored in `config/auth.py`
-- Legacy plaintext values auto-upgraded to encrypted on next save
-
 ### Logging
 - `reds_simple_logger` for structured logging with levels (info, debug, success, warning, error)
 - Admin log channel for internal event tracking

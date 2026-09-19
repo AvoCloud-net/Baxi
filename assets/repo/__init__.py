@@ -7,7 +7,7 @@ REGISTRY covers:
   transcripts, users, open_tickets, stats
 - Runtime keys: polls, sticky_messages, giveaways, warnings, custom_commands,
   suggestion_votes, flag_quiz_active, audit_log
-- 1001-bag keys: admins, ba_ban, gc_ban, globalchat, updates, feature_access
+- 1001-bag keys: admins, ba_ban, gc_ban, globalchat, updates
 - Read-only event lists: mod_events, filter_events
 
 Also exposes load_full_conf / save_full_conf for the "all" branch.
@@ -41,7 +41,6 @@ from assets.repo.config_simple import (
     load_assistant, save_assistant,
     load_mc_link_cfg, save_mc_link_cfg,
     load_music, save_music,
-    load_donations, save_donations,
     load_flag_quiz, save_flag_quiz,
 )
 from assets.repo.social import (
@@ -89,7 +88,6 @@ from assets.repo.global_store import (
     load_globalchat_bans, save_globalchat_bans,
     load_globalchat, save_globalchat,
     load_updates, save_updates,
-    load_feature_access, save_feature_access,
     is_1001_key, load_1001_key, save_1001_key,
 )
 
@@ -148,7 +146,6 @@ REGISTRY: dict[str, _FnPair] = {
     "assistant":        (load_assistant,          save_assistant),
     "mc_link":          (load_mc_link_cfg,        save_mc_link_cfg),
     "music":            (load_music,              save_music),
-    "donations":        (load_donations,          save_donations),
     "polls":            (load_polls,              save_polls),
     "sticky_messages":  (load_sticky_messages,    save_sticky_messages),
 
@@ -174,11 +171,10 @@ REGISTRY: dict[str, _FnPair] = {
     "gc_ban":         (load_globalchat_bans, save_globalchat_bans),
     "globalchat":     (load_globalchat,      save_globalchat),
     "updates":        (load_updates,         save_updates),
-    "feature_access": (load_feature_access,  save_feature_access),
 }
 
 # Keys whose loaders/savers take no gid argument (global tables)
-_GLOBAL_KEYS = {"admins", "ba_ban", "gc_ban", "globalchat", "updates", "feature_access"}
+_GLOBAL_KEYS = {"admins", "ba_ban", "gc_ban", "globalchat", "updates"}
 
 # Scalar guilds-row keys that don't have their own table
 _GUILDS_SCALAR_KEYS = {

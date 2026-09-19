@@ -1,6 +1,6 @@
 """
 assets/repo/global_store.py — sid-1001 bag: admins, ba_ban, gc_ban,
-globalchat, updates, feature_access.
+globalchat, updates.
 """
 from __future__ import annotations
 
@@ -146,23 +146,6 @@ def save_updates(data: dict) -> None:
             )
 
 
-# ── Feature access ────────────────────────────────────────────────────────────
-
-def load_feature_access() -> dict:
-    rows = db.query("SELECT feature, config_json FROM feature_access")
-    return {r["feature"]: json.loads(r["config_json"]) for r in rows}
-
-
-def save_feature_access(data: dict) -> None:
-    with db.transaction() as cx:
-        cx.execute("DELETE FROM feature_access")
-        for feat, v in data.items():
-            cx.execute(
-                "INSERT INTO feature_access (feature,config_json) VALUES (?,?)",
-                (str(feat), json.dumps(v)),
-            )
-
-
 # ── Helpers to route 1001 keys ────────────────────────────────────────────────
 
 _1001_KEY_MAP = {
@@ -171,7 +154,6 @@ _1001_KEY_MAP = {
     "gc_ban":         (load_globalchat_bans, save_globalchat_bans),
     "globalchat":     (load_globalchat,      save_globalchat),
     "updates":        (load_updates,         save_updates),
-    "feature_access": (load_feature_access,  save_feature_access),
 }
 
 
@@ -202,5 +184,3 @@ def save_1001_bag(bag: dict) -> None:
         save_globalchat(bag["globalchat"])
     if "updates" in bag:
         save_updates(bag["updates"])
-    if "feature_access" in bag:
-        save_feature_access(bag["feature_access"])

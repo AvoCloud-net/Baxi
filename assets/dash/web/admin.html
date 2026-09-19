@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#E8ECEF" media="(prefers-color-scheme: light)">
     <title>Baxi -  Admin Panel</title>
     <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
     <meta property="og:title" content="Avocloud.net -  Baxi Admin">
@@ -11,24 +14,39 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="https://avocloud.net/assets/js/theme.js"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap"></noscript>
     <style>
         /* ══ Admin design tokens ══════════════════════════════════ */
+        /* Everything here is mixed off --avo-text, so the panel follows the same
+           light/dark canvas as the guild dashboard instead of forcing black. */
         :root {
-            --adm-brand: #FF6B4A;
-            --adm-brand-2: #FF9379;
-            --adm-bg: #000000;
-            --adm-surface: rgba(255,255,255,.035);
-            --adm-surface-2: rgba(255,255,255,.06);
-            --adm-border: rgba(255,255,255,.08);
-            --adm-border-soft: rgba(255,255,255,.05);
-            --adm-radius: 0px;
+            /* Coral for small text/borders: --color-primary drops to coral-700
+               on the light band, which is what §3 asks for at body size. The
+               fills below use the ramp directly — a rule or a bar is not text. */
+            --adm-brand: var(--color-primary, #FF6B4A);
+            --adm-brand-2: var(--avo-coral-300);
+            --adm-surface:     color-mix(in srgb, var(--avo-text) 4%, transparent);
+            --adm-surface-2:   color-mix(in srgb, var(--avo-text) 7%, transparent);
+            --adm-border:      var(--border, color-mix(in srgb, var(--avo-text) 10%, transparent));
+            --adm-border-soft: color-mix(in srgb, var(--avo-text) 5%, transparent);
+            /* BRANDING §6: boxes (cards, panels) take 8px, controls take 6px,
+               everything else 0. 0 here was flatly off-spec and it also broke
+               the concentric corner crosshairs main.css draws on .card — those
+               are cut for a 5px inset inside an 8px radius. */
+            --adm-radius: var(--avo-radius-md, 8px);
             --adm-sidebar-w: 244px;
-            --adm-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+            --adm-shadow: none;
+            /* The rail is a floating glass plate inset from the viewport
+               edge — same shape as the kit's own dashboard demo
+               (`avo-plate avo-rail`), not a flush full-bleed panel. */
+            --rail-inset: 12px;
         }
 
         html { scroll-behavior: smooth; }
-        body { background: var(--adm-bg, #000000); }
+        /* No background here: html carries the canvas and the blueprint grid sits
+           between it and the content (main.css). Painting body hides the grid. */
 
         /* The ambient coral glow that used to live here is gone. Two viewport-
            sized radial gradients are a colour field, not a texture, and
@@ -40,11 +58,13 @@
         /* ══ Sidebar ══════════════════════════════════════════════ */
         .admin-sidebar {
             position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
+            top: var(--rail-inset);
+            left: var(--rail-inset);
+            height: calc(100vh - var(--rail-inset) * 2);
             width: var(--adm-sidebar-w);
             overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
             /* Glass, per BRANDING §6b: dark tint, mostly transparent, 7px.
                .96 alpha was an opaque panel wearing a blur — nothing came
                through it, which is the only reason a surface reads as glass. */
@@ -52,7 +72,8 @@
             backdrop-filter: blur(var(--avo-glass-blur));
             -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-            border-right: 1px solid var(--adm-border);
+            border: 1px solid var(--adm-border);
+            border-radius: var(--adm-radius);
             padding: 1rem 0.7rem 1.5rem;
             z-index: 200;
             display: flex;
@@ -61,56 +82,64 @@
             transition: transform var(--avo-dur-ui) var(--avo-ease-out);
         }
         .admin-sidebar::-webkit-scrollbar { width: 8px; }
-        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: var(--adm-surface-2); }
 
-        .admin-sidebar .nav-brand {
-            display:flex; align-items:center; gap:.55rem;
-            font-size: 0.95rem; font-weight: 700; letter-spacing: -.01em;
-            text-transform: none; opacity: 1;
-            padding: 0.45rem 0.55rem 1rem;
+        /* The wordmark is the shared .avocloud-logo from main.css — the panel is
+           part of the same product, so it wears the same mark, not an emoji. */
+        .admin-sidebar .nav-brand { padding: .45rem .55rem .1rem; opacity: 1; }
+        .admin-sidebar .nav-brand:hover { background: none; }
+        .admin-sidebar .nav-brand-sub {
+            font-family: var(--avo-font-mono);
+            font-size: .6rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+            opacity: .4; padding: 0 .6rem 1rem;
         }
-        .admin-sidebar .nav-brand .brand-logo {
-            width: 30px; height: 30px; flex-shrink:0;
-            display: grid; place-items: center; color: #fff; font-size: .95rem;
-            background: linear-gradient(135deg, var(--adm-brand), var(--adm-brand-2));
-            box-shadow: 0 4px 14px -4px rgba(255,107,74,.6);
-        }
-        .admin-sidebar .nav-brand small { display:block; font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; opacity:.4; margin-top:.1rem; }
 
         .nav-group-label {
+            display: flex; align-items: center; gap: 0.4em;
+            font-family: var(--avo-font-mono);
             font-size: 0.62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
             opacity: .35; padding: 0.85rem 0.6rem 0.3rem;
         }
+        .nav-group-label::before { content: '//'; color: var(--color-primary, #FF6B4A); flex-shrink: 0; }
+        /* Mono, uppercase, one fixed row height — a rail row is a control,
+           same scale as everything else in this surface (BRANDING §9
+           Navigation / "one row, one height"). */
         .admin-sidebar a {
             position: relative;
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            padding: 0.5rem 0.6rem;
-            
-            font-size: 0.82rem; font-weight: 500;
+            height: 36px;
+            padding: 0 0.6rem;
+            border-radius: var(--avo-radius-sm, 6px);
+            font-family: var(--avo-font-mono);
+            font-size: 0.75rem; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 0.04em;
             text-decoration: none;
             color: inherit;
             opacity: .68;
-            transition: opacity var(--avo-dur-micro) var(--avo-ease-out), background var(--avo-dur-micro) var(--avo-ease-out), color var(--avo-dur-micro) var(--avo-ease-out);
+            transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
         }
         .admin-sidebar a:hover { opacity: 1; background: var(--adm-surface-2); }
+        /* A coral 2px tick on the leading edge PLUS --fg text — colour is
+           never the only signal (BRANDING §9 Navigation). The label itself
+           does not turn coral; only the tick does. */
         .admin-sidebar a.active {
-            opacity: 1; color: #fff;
-            background: linear-gradient(90deg, rgba(255,107,74,.20), rgba(255,107,74,.06));
+            opacity: 1; color: var(--avo-text, #FFFFFF); background: var(--adm-surface-2);
         }
         .admin-sidebar a.active::before {
-            content:""; position:absolute; left:-.7rem; top:50%; transform:translateY(-50%);
-            width: 3px; height: 60%; border-radius: 0; background: var(--adm-brand);
+            content:""; position:absolute; left:-.7rem; top:50%;
+            width: 2px; height: 60%; background: var(--avo-coral-500);
+            transform: translateY(-50%) scaleY(1); transform-origin: center;
+            transition: transform var(--avo-dur-ui) var(--avo-ease-out);
         }
         .admin-sidebar a svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; opacity:.9; }
         .admin-sidebar .nav-sep { height:1px; background: var(--adm-border); margin: 0.6rem 0.4rem; }
 
         /* ══ Main + topbar ════════════════════════════════════════ */
         .admin-main {
-            margin-left: var(--adm-sidebar-w);
+            margin-left: calc(var(--adm-sidebar-w) + var(--rail-inset) * 2);
             padding: 0 2rem 4rem;
-            max-width: 1500px;
         }
         .admin-topbar {
             position: sticky; top: 0; z-index: 90;
@@ -126,20 +155,25 @@
         .nav-toggle {
             display: none;
             align-items: center; justify-content: center;
-            width: 38px; height: 38px; 
+            width: 38px; height: 38px;
+            border-radius: var(--avo-radius-sm, 6px);
             background: var(--adm-surface-2); border: 1px solid var(--adm-border);
             color: inherit; cursor: pointer; flex-shrink: 0;
         }
         .nav-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
         .sidebar-backdrop {
             display: none; position: fixed; inset: 0; z-index: 150;
-            background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+            background: rgba(0,0,0,.55);
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
         }
         .sidebar-backdrop.open { display: block; }
 
         /* ══ View switching ═══════════════════════════════════════ */
-        .admin-view { display: none; }
-        .admin-view.active { display: block; animation: viewIn .28s cubic-bezier(.4,0,.2,1); }
+        /* 2.5rem/40px was inline on all sixteen sections and is not a step on
+           the scale (BRANDING §6: 4·8·12·16·24·32·48·64). */
+        .admin-view { display: none; margin-bottom: var(--avo-space-6); }
+        .admin-view.active { display: block; animation: viewIn var(--avo-dur-ui) var(--avo-ease-out); }
         @keyframes viewIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
 
         /* ══ Cards ════════════════════════════════════════════════ */
@@ -148,37 +182,42 @@
             border: 1px solid var(--adm-border);
             border-radius: var(--adm-radius);
             box-shadow: var(--adm-shadow);
-            transition: border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
-        .card:hover { border-color: rgba(255,255,255,.13); }
+        .card:hover { border-color: var(--avo-border-strong); }
 
         /* ── Status badge ─────────────────────────────────────────── */
-        .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.22rem .58rem; border-radius:999px; font-weight:600; border:1px solid transparent; white-space:nowrap; }
-        .badge-ok     { background:rgba(70,167,88,.14); color:#46A758; border-color:rgba(70,167,88,.25); }
-        .badge-running{ background:rgba(255,107,74,.14); color:#FF6B4A; border-color:rgba(255,107,74,.25); }
-        .badge-error  { background:rgba(220,56,56,.14); color:#DC3838; border-color:rgba(220,56,56,.25); }
-        .badge-idle   { background:rgba(255,255,255,.06); color:#999; border-color:rgba(255,255,255,.1); }
-        .badge-live   { background:rgba(70,167,88,.14); color:#46A758; border-color:rgba(70,167,88,.25); }
-        .badge-offline{ background:rgba(220,56,56,.1); color:#888; border-color:rgba(255,255,255,.08); }
-        .badge-flagged{ background:rgba(220,56,56,.14); color:#DC3838; border-color:rgba(220,56,56,.25); }
-        .badge-auto   { background:rgba(237,83,51,.14); color:#ED5333; border-color:rgba(237,83,51,.25); }
-        .badge-clean  { background:rgba(70,167,88,.12); color:#46A758; border-color:rgba(70,167,88,.22); }
+        /* The pill is the one deliberately-rounded exception the system allows
+           (BRANDING §6, .avo-tag). Colours come from the semantic ramp — coral
+           is brand, it never *means* a state on its own (§3, §12). "Auto-
+           flagged" used coral-600 and read as a second danger red. */
+        .badge { display:inline-flex; align-items:center; gap:.3rem; font-family:var(--avo-font-mono); font-size:.68rem; letter-spacing:.04em; padding:.22rem .58rem; border-radius:var(--avo-radius-sm, 6px); font-weight:500; border:1px solid transparent; white-space:nowrap; }
+        .badge-ok     { background:color-mix(in srgb, var(--avo-success) 14%, transparent); color:var(--avo-success); border-color:color-mix(in srgb, var(--avo-success) 25%, transparent); }
+        .badge-running{ background:color-mix(in srgb, var(--avo-coral-500) 14%, transparent); color:var(--adm-brand); border-color:color-mix(in srgb, var(--avo-coral-500) 25%, transparent); }
+        .badge-error  { background:color-mix(in srgb, var(--avo-error) 14%, transparent); color:var(--avo-error); border-color:color-mix(in srgb, var(--avo-error) 25%, transparent); }
+        .badge-idle   { background:var(--adm-surface-2); color:var(--avo-text-muted); border-color:var(--adm-border); }
+        .badge-live   { background:color-mix(in srgb, var(--avo-success) 14%, transparent); color:var(--avo-success); border-color:color-mix(in srgb, var(--avo-success) 25%, transparent); }
+        .badge-offline{ background:var(--adm-surface-2); color:var(--avo-text-muted); border-color:var(--adm-border); }
+        .badge-flagged{ background:color-mix(in srgb, var(--avo-error) 14%, transparent); color:var(--avo-error); border-color:color-mix(in srgb, var(--avo-error) 25%, transparent); }
+        .badge-auto   { background:color-mix(in srgb, var(--avo-warning) 14%, transparent); color:var(--avo-warning); border-color:color-mix(in srgb, var(--avo-warning) 25%, transparent); }
+        .badge-clean  { background:color-mix(in srgb, var(--avo-success) 12%, transparent); color:var(--avo-success); border-color:color-mix(in srgb, var(--avo-success) 22%, transparent); }
 
         /* ── Score bar ───────────────────────────────────────────── */
-        .score-bar { height:4px; background: rgba(255,255,255,.08); overflow:hidden; }
+        .score-bar { height:4px; background: var(--adm-surface-2); overflow:hidden; border-radius: var(--avo-radius-sm, 6px); }
         .score-bar-fill { height:100%; transition: width var(--avo-dur-ui) var(--avo-ease-out); }
 
         /* ── Prism profile modal ─────────────────────────────────── */
         #prism-modal-backdrop {
             display: none; position: fixed; inset: 0; z-index: 999;
-            background: rgba(0,0,0,.65); backdrop-filter: blur(3px);
+            background: rgba(0,0,0,.65);
+            backdrop-filter: blur(var(--avo-glass-blur));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             align-items: center; justify-content: center;
         }
         #prism-modal-backdrop.open { display: flex; }
         #prism-modal {
-            background: var(--color-card, #0A0A0A);
-            border: 1px solid rgba(255,255,255,.1);
-            
+            background: var(--card, #0A0A0A);
+            border: 1px solid var(--adm-border);
+            border-radius: var(--avo-radius-md, 8px);
             width: min(820px, 95vw);
             max-height: 85vh;
             display: flex; flex-direction: column;
@@ -186,19 +225,19 @@
         }
         #prism-modal-header {
             padding: 1rem 1.25rem .75rem;
-            border-bottom: 1px solid rgba(255,255,255,.07);
+            border-bottom: 1px solid var(--adm-border);
             display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
         }
         #prism-modal-body { overflow-y: auto; padding: 1rem 1.25rem 1.25rem; flex: 1; }
         .prism-event-table { width:100%; border-collapse:collapse; font-size:.78rem; margin-top:.5rem; }
-        .prism-event-table th { text-align:left; padding:.3rem .5rem; opacity:.4; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.07); }
-        .prism-event-table td { padding:.4rem .5rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:top; }
+        .prism-event-table th { text-align:left; padding:.3rem .5rem; color:var(--avo-text-muted); font-family:var(--avo-font-mono); font-weight:500; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; border-bottom:1px solid var(--adm-border); }
+        .prism-event-table td { padding:.4rem .5rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:top; }
         .prism-event-table tr:last-child td { border-bottom: none; }
-        .sev-critical { color:#DC3838; }
-        .sev-severe   { color:#ED5333; }
-        .sev-high     { color:#E0A33A; }
-        .sev-medium   { color:#7E7E7E; }
-        .sev-low, .sev-minor, .sev-minimal { color:#7E7E7E; }
+        .sev-critical { color:var(--avo-error); }
+        .sev-severe   { color:var(--avo-error); }
+        .sev-high     { color:var(--avo-warning); }
+        .sev-medium   { color:var(--avo-text-muted); }
+        .sev-low, .sev-minor, .sev-minimal { color:var(--avo-text-muted); }
         .decayed-note { font-size:.68rem; opacity:.5; }
 
         /* ── Log stream ──────────────────────────────────────────── */
@@ -206,99 +245,167 @@
             border-radius: var(--avo-radius-md, 8px);
             height: 340px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: var(--avo-font-mono);
             font-size: .78rem;
             padding: .75rem;
-            
-            border: 1px solid var(--color-border, rgba(255,255,255,.08));
-            background: rgba(0,0,0,.25);
+            border: 1px solid var(--adm-border);
+            background: var(--adm-surface);
         }
-        .log-line { display:flex; gap:.75rem; padding:.15rem 0; border-bottom:1px solid rgba(255,255,255,.03); }
+        .log-line { display:flex; gap:.75rem; padding:.15rem 0; border-bottom:1px solid var(--adm-border-soft); }
         .log-time  { opacity:.4; min-width:60px; }
         .log-src   { opacity:.55; min-width:80px; }
-        .log-info    { color:#7E7E7E; }
-        .log-success { color:#46A758; }
-        .log-warning { color:#ED5333; }
-        .log-error   { color:#DC3838; }
+        .log-info    { color:var(--avo-text-muted); }
+        .log-success { color:var(--avo-success); }
+        .log-warning { color:var(--avo-warning); }
+        .log-error   { color:var(--avo-error); }
 
         /* source-specific source label coloring */
-        .log-src-Chatfilter  { color:#FF9379 !important; }
-        .log-src-AntiSpam    { color:#ED5333 !important; }
-        .log-src-MemberJoin  { color:#46A758 !important; }
-        .log-src-MemberLeave { color:#7E7E7E !important; }
-        .log-src-GuildJoin   { color:#3B82C4 !important; }
-        .log-src-AdminDash   { color:#E0A33A !important; }
-        .log-src-TempVoice   { color:#FF6B4A !important; }
-        .log-src-AutoRole    { color:#46A758 !important; }
+        .log-src-Chatfilter  { color:var(--avo-warning) !important; }
+        .log-src-AntiSpam    { color:var(--avo-error) !important; }
+        .log-src-MemberJoin  { color:var(--avo-success) !important; }
+        .log-src-MemberLeave { color:var(--avo-text-muted) !important; }
+        .log-src-GuildJoin   { color:var(--avo-info) !important; }
+        .log-src-AdminDash   { color:var(--avo-warning) !important; }
+        .log-src-TempVoice   { color:var(--adm-brand) !important; }
+        .log-src-AutoRole    { color:var(--avo-success) !important; }
 
-        /* ── Section label (now used as the per-view eyebrow heading) ── */
-        .section-badge {
-            display:flex; align-items:center; gap:.5rem;
-            font-size:1.15rem; font-weight:700; letter-spacing:-.01em; text-transform:none;
-            opacity:1; margin-bottom:1rem; padding-left:0;
+        /* Card headings, sized once here so the markup stays plain <h2>. */
+        .admin-main .card > header h2 { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
+        .admin-main .card > header p  { margin-top: .2rem; }
+        /* Typography belongs to the design system, not to a style= attribute
+           (BRANDING §5b). h1 already picks up Syne 800 from main.css. */
+        .admin-title { font-size: 1.4rem; margin: 0; }
+        .admin-subtitle { color: var(--avo-text-muted); font-size: .78rem; margin: .15rem 0 0; }
+        .admin-user-chip {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .25rem .5rem .25rem .25rem;
+            background: var(--adm-surface-2); border: 1px solid var(--adm-border);
+            border-radius: var(--avo-radius-sm, 6px);
         }
-        .section-badge::before {
-            content:""; width:4px; height:1.05em; flex-shrink:0;
-            background: linear-gradient(180deg, var(--adm-brand), var(--adm-brand-2));
+        .admin-user-chip img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .admin-user-chip span { font-size: .82rem; color: var(--avo-text-muted); }
+        /* A coral rule struck down the left edge, not a coral panel. Same
+           reason as the sidebar's active state (BRANDING §3). */
+        .adm-headline-panel {
+            background: var(--adm-surface);
+            border: 1px solid var(--adm-border);
+            border-left: 2px solid var(--avo-coral-500);
+            border-radius: var(--avo-radius-md, 8px);
+            padding: .75rem 1rem;
         }
+        /* Field label — the mono kicker at control scale (BRANDING §4). */
+        .adm-field-label {
+            display: block;
+            font-family: var(--avo-font-mono);
+            font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+            color: var(--avo-text-muted);
+        }
+        /* Same eyebrow, used as a section heading inside a card: one gap off
+           the space scale rather than the four hand-picked ones it replaced. */
+        .adm-eyebrow { display: block; margin-bottom: var(--avo-space-2); }
+        .adm-field { display: flex; flex-direction: column; gap: var(--avo-space-1); }
+        /* Empty / loading state inside a table (CLAUDE.md empty-state rules
+           scaled down to a single cell — the icon box would be absurd here). */
+        .admin-table td.is-empty { color: var(--avo-text-muted); font-family: var(--avo-font-mono); font-size: .75rem; padding: var(--avo-space-5) var(--avo-space-2); }
+
+        /* Global chat feed rows */
+        .gc-msg {
+            border: 1px solid var(--adm-border);
+            border-radius: var(--avo-radius-md, 8px);
+            background: var(--adm-surface);
+            padding: .75rem .9rem;
+            display: flex; flex-direction: column; gap: .45rem;
+        }
+        .gc-msg:hover { border-color: var(--avo-border-strong); }
+        .gc-msg-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .gc-author { background: none; border: none; padding: 0; cursor: pointer; color: inherit; font-weight: 600; font-size: .88rem; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--adm-border); }
+        .gc-author:hover { color: var(--color-primary, #FF6B4A); }
+        .gc-msg-meta { font-size: .72rem; opacity: .5; }
+        .gc-msg-body { font-size: .85rem; margin: 0; white-space: pre-wrap; word-break: break-word; }
+        .gc-msg-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+        .gc-msg-actions button { font-size: .72rem; }
 
         /* ── Stat number ─────────────────────────────────────────── */
-        .stat-num { font-size:2rem; font-weight:700; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+        /* Anton, the display face — big stat counters are exactly what §4
+           reserves it for. main.css does the same for .stat-tile-value. */
+        .stat-num { font-family:var(--avo-font-massive); font-size:2.25rem; font-weight:400; line-height:1; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
 
         /* ── Task grid ───────────────────────────────────────────── */
         .task-card {
             border:1px solid var(--adm-border);
-            
+            border-radius: var(--avo-radius-md, 8px);
             padding:.9rem 1.05rem;
             background:var(--adm-surface);
             display:flex;
             flex-direction:column;
             gap:.35rem;
-            transition:border-color var(--avo-dur-micro) var(--avo-ease-out);
         }
         /* Hairline only — no lift. A grid of cards that each jump on hover is
            the v1 gesture the card language replaced. */
-        .task-card:hover { border-color:rgba(255,255,255,.14); }
+        .task-card:hover { border-color:var(--avo-border-strong); }
 
         /* ── Action form ─────────────────────────────────────────── */
         .action-result {
             margin-top:.5rem; padding:.55rem .75rem; font-size:.8rem;
             display:none;
         }
-        .action-result.ok  { background:rgba(70,167,88,.12); color:#46A758; display:block; }
-        .action-result.err { background:rgba(220,56,56,.12); color:#DC3838; display:block; }
+        .action-result.ok  { background:color-mix(in srgb, var(--avo-success) 12%, transparent); color:var(--avo-success); border-left:2px solid var(--avo-success); border-radius:var(--avo-radius-sm, 6px); display:block; }
+        .action-result.err { background:color-mix(in srgb, var(--avo-error) 12%, transparent); color:var(--avo-error); border-left:2px solid var(--avo-error); border-radius:var(--avo-radius-sm, 6px); display:block; }
 
         /* ── Search table ────────────────────────────────────────── */
         .admin-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-        .admin-table th { text-align:left; padding:.5rem .6rem; opacity:.5; font-weight:600; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--adm-border); }
+        .admin-table th { text-align:left; padding:.5rem .6rem; color:var(--avo-text-muted); font-family:var(--avo-font-mono); font-weight:500; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; border-bottom:1px solid var(--adm-border); }
         .admin-table td { padding:.5rem .6rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:middle; }
         .admin-table tr:last-child td { border-bottom:none; }
-        .admin-table tbody tr { transition: background var(--avo-dur-micro) var(--avo-ease-out); }
-        .admin-table tbody tr:hover td { background:rgba(255,255,255,.035); }
+        .admin-table tbody tr:hover td { background:var(--adm-surface); }
+        /* Wide tables scroll in their own container. Half the sections carried
+           an inline overflow-x:auto and half did not; on a narrow viewport the
+           ones that did not pushed the card, not the page (body is
+           overflow-x:clip in main.css) and clipped their last columns instead.
+           One rule covers every table without touching a call site. */
+        .admin-main section:has(> table.admin-table),
+        .admin-main section:has(> div > table.admin-table),
+        #pm-events-wrap {
+            overflow-x: auto;
+        }
 
         /* ── Inputs / selects polish ─────────────────────────────── */
         .admin-main input[type=text], .admin-main input[type=number],
         .admin-main textarea, .admin-main .select, .admin-main select {
-            background: rgba(0,0,0,.22);
+            background: var(--adm-surface);
             border: 1px solid var(--adm-border);
-            
-            transition: border-color var(--avo-dur-micro) var(--avo-ease-out), box-shadow var(--avo-dur-micro) var(--avo-ease-out);
+            border-radius: var(--avo-radius-sm, 6px);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
         }
+        /* BRANDING §12: the focus ring is 2px coral at a 3px offset and it is
+           :focus-visible only. The old rule killed the outline outright and
+           replaced it with a soft glow — "outline: none on its own is a bug",
+           and a 3px shadow is not "at least as visible". The border shift
+           stays as the pointer-side affordance. */
         .admin-main input[type=text]:focus, .admin-main input[type=number]:focus,
         .admin-main textarea:focus, .admin-main .select:focus, .admin-main select:focus {
-            outline: none;
-            border-color: rgba(255,107,74,.55);
-            box-shadow: 0 0 0 3px rgba(255,107,74,.12);
+            border-color: var(--avo-coral-500);
+        }
+        .admin-main input:focus-visible, .admin-main textarea:focus-visible,
+        .admin-main select:focus-visible, .admin-sidebar a:focus-visible {
+            outline: 2px solid var(--avo-coral-500);
+            outline-offset: 3px;
         }
 
         /* ── Guild Activity tabs ─────────────────────────────────── */
+        /* Same active pattern as .dash-nav-item in main.css: coral label plus a
+           coral rule under it. The 20%-coral plate this replaced is the
+           background wash §3 forbids, and on the light band it also put small
+           coral-500 text on a pale coral field. */
         .ga-tab {
-            background:none; border:none; cursor:pointer; color:inherit; opacity:.55;
-            font-size:.75rem; padding:.25rem .55rem; 
-            transition: opacity var(--avo-dur-micro) var(--avo-ease-out),background var(--avo-dur-micro) var(--avo-ease-out);
+            background:none; border:none; cursor:pointer; color:var(--avo-text-muted);
+            font-family:var(--avo-font-mono); font-size:.72rem; letter-spacing:.04em;
+            padding:.3rem .55rem;
+            border-bottom:2px solid transparent;
         }
-        .ga-tab:hover { opacity:.85; background:rgba(255,255,255,.06); }
-        .ga-tab.active { opacity:1; background:rgba(255,107,74,.2); }
+        .ga-tab:hover { color:var(--adm-brand); }
+        .ga-tab.active { color:var(--adm-brand); border-bottom-color:var(--avo-coral-500); }
         .ga-cnt { font-size:.68rem; font-weight:700; margin-left:.2rem; }
         .ga-bar-cell { min-width:100px; }
 
@@ -306,7 +413,6 @@
         @media (max-width: 1024px) {
             .admin-sidebar {
                 transform: translateX(-100%);
-                box-shadow: 0 0 40px rgba(0,0,0,.5);
             }
             .admin-sidebar.open { transform: translateX(0); }
             .admin-main { margin-left: 0; padding: 0 1.25rem 4rem; }
@@ -316,22 +422,34 @@
         @media (max-width: 560px) {
             .admin-main { padding: 0 .85rem 3rem; }
             .admin-topbar { margin: 0 -.85rem 1.25rem; padding: .75rem .85rem; }
-            .stat-num { font-size: 1.6rem; }
-            .section-badge { font-size: 1.02rem; }
+            .stat-num { font-size: 1.75rem; }
         }
     </style>
 </head>
 
 <body>
-<div id="gradientbar"></div>
 
 <!-- Sidebar -->
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 <aside class="admin-sidebar" id="admin-sidebar">
-    <div class="nav-brand">
-        <span class="brand-logo">⚡</span>
-        <span>Baxi<small>Admin Panel</small></span>
-    </div>
+    <a class="avocloud-logo nav-brand" href="/" aria-label="AVOCLOUD.NET">
+        <span class="avocloud-logo__slot">
+            <span class="avocloud-logo__icon">
+                <svg viewBox="0 0 72 72" fill="none">
+                    <path d="M22 18 L12 18 L12 54 L22 54 M50 18 L60 18 L60 54 L50 54 M26 30 L33 36 L26 42"
+                        stroke="currentColor" stroke-width="6"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        pathLength="200"/>
+                    <rect class="logo-cursor" x="40" y="28" width="4" height="16" rx="2"/>
+                </svg>
+            </span>
+            <span class="avocloud-logo__av">AVO</span>
+        </span>
+        <span class="avocloud-logo__rest-wrap">
+            <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+        </span>
+    </a>
+    <div class="nav-brand-sub">Baxi · Admin Panel</div>
 
     <div class="nav-group-label">Overview</div>
     <a href="#section-status" data-view="section-status">
@@ -360,6 +478,10 @@
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Chatfilter Logs
     </a>
+    <a href="#section-globalchat" data-view="section-globalchat">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Global Chat
+    </a>
     <a href="#section-safetext" data-view="section-safetext">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v6c0 5 4 9 9 10 5-1 9-5 9-10V7z"/><path d="M9 12l2 2 4-4"/></svg>
         SafeText Model
@@ -378,10 +500,6 @@
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Guild Config
     </a>
-    <a href="#section-feature-access" data-view="section-feature-access">
-        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Feature Access
-    </a>
     <a href="#section-streamers" data-view="section-streamers">
         <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         Livestreamers
@@ -396,9 +514,9 @@
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         User Search
     </a>
-    <a href="#section-actions" data-view="section-actions">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-        Admin Actions
+    <a href="#section-system" data-view="section-system">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        System Ops
     </a>
 
     <div class="nav-sep"></div>
@@ -410,7 +528,7 @@
         <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Reload Templates
     </a>
-    <a href="/logout/" style="color:#DC3838; opacity:.6">
+    <a href="/logout/" style="color:var(--avo-error);">
         <svg viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
         Logout
     </a>
@@ -426,31 +544,32 @@
                 <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
             <div style="min-width:0;">
-                <h1 style="font-size:1.4rem; font-weight:700; margin:0; letter-spacing:-.02em;">{{ greeting }}</h1>
-                <p style="opacity:.45; font-size:.78rem; margin:.15rem 0 0;">Baxi Admin Panel · v{{ version }} · <span id="last-updated" style="opacity:.7;">–</span></p>
+                <h1 class="admin-title">{{ greeting }}</h1>
+                <p class="admin-subtitle">Baxi Admin Panel · v{{ version }} · <span id="last-updated">–</span></p>
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:.6rem;">
             <span class="badge badge-ok" style="font-size:.68rem;"><span style="font-size:.6rem;">●</span> Online</span>
-            <div style="display:flex; align-items:center; gap:.5rem; padding:.25rem .5rem .25rem .25rem; background:var(--adm-surface-2); border:1px solid var(--adm-border); border-radius:999px;">
-                <img src="{{ user.avatar_url }}" alt="{{ user.name }}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">
-                <span style="font-size:.82rem; opacity:.8;">{{ user.name }}</span>
+            <div class="admin-user-chip">
+                <img src="{{ user.avatar_url }}" alt="{{ user.name }}">
+                <span>{{ user.name }}</span>
             </div>
-            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.4rem; ">
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle theme" style="padding:.4rem;">
                 <svg id="theme-icon" viewBox="0 0 24 24"></svg>
             </button>
         </div>
     </div>
 
     <!-- ── QUICK ACTIONS ──────────────────────────────────────── -->
-    <section id="section-quick-actions" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
+    <section id="section-quick-actions" class="admin-view" data-view="section-status">
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
-                <h2 style="font-size:1rem; font-weight:600;">Quick Actions</h2>
+                <h2>Quick Actions</h2>
             </header>
             <section style="display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-top:.6rem;">
                 <button id="qa-twitter-btn" onclick="runTwitterNow()" class="btn-primary">
-                    ▶ Run X (Twitter) Post Check
+                    <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                    Run X (Twitter) Post Check
                 </button>
                 <span id="qa-twitter-status" style="font-size:.78rem; opacity:.55;"></span>
             </section>
@@ -458,8 +577,8 @@
     </section>
 
     <!-- ── SYSTEM STATUS ──────────────────────────────────────── -->
-    <section id="section-status" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
-        <div class="section-badge">System Status</div>
+    <section id="section-status" class="admin-view" data-view="section-status">
+        <div class="section-label">System Status</div>
         <div id="task-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <!-- populated by JS -->
             <div class="task-card" style="opacity:.4; font-size:.82rem;">Loading...</div>
@@ -467,32 +586,32 @@
     </section>
 
     <!-- ── SHARDS ─────────────────────────────────────────────── -->
-    <section id="section-shards" class="admin-view" data-view="section-status" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Shards</div>
+    <section id="section-shards" class="admin-view" data-view="section-status">
+        <div class="section-label">Shards</div>
         <div class="card">
-            <header><h2 style="font-size:1rem; font-weight:600;">Shard Latency</h2></header>
+            <header><h2>Shard Latency</h2></header>
             <section>
                 <div id="shard-list" style="display:flex; gap:.5rem; flex-wrap:wrap; font-size:.8rem;">
-                    <span style="opacity:.4;">Loading...</span>
+                    <span class="text-muted">Loading...</span>
                 </div>
             </section>
         </div>
     </section>
 
     <!-- ── LIVE LOGS ──────────────────────────────────────────── -->
-    <section id="section-logs" class="admin-view" data-view="section-logs" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Live Logs</div>
+    <section id="section-logs" class="admin-view" data-view="section-logs">
+        <div class="section-label">Live Logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600; display:flex; align-items:center; gap:.4rem;">
+                    <h2>
                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Live Log Stream
                     </h2>
                     <p class="text-muted" style="font-size:.78rem;">Auto-refreshes every 3 s · <span id="log-count">0</span> entries · <span id="log-visible-count">0</span> visible</p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
-                    <select id="log-source-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="applyLogFilter()">
+                    <select id="log-source-filter" class="select select-compact" onchange="applyLogFilter()">
                         <option value="">All sources</option>
                         <option value="Livestream">Livestream</option>
                         <option value="Chatfilter">Chatfilter</option>
@@ -510,7 +629,7 @@
                         <option value="GarbageCollector">GarbageCollector</option>
                         <option value="AdminDash">AdminDash</option>
                     </select>
-                    <select id="log-level-filter" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="applyLogFilter()">
+                    <select id="log-level-filter" class="select select-compact" onchange="applyLogFilter()">
                         <option value="">All levels</option>
                         <option value="success">Success</option>
                         <option value="info">Info</option>
@@ -528,31 +647,31 @@
     </section>
 
     <!-- ── GLOBAL STATS ───────────────────────────────────────── -->
-    <section id="section-stats" class="admin-view" data-view="section-stats" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Global Stats</div>
+    <section id="section-stats" class="admin-view" data-view="section-stats">
+        <div class="section-label">Global Stats</div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
-            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Guilds</h2></header><section><div class="stat-num" id="stat-guilds">–</div></section></div>
-            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Unique Users</h2></header><section><div class="stat-num" id="stat-users">–</div></section></div>
-            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Processed Messages</h2></header><section><div class="stat-num" id="stat-msgs">–</div></section></div>
-            <div class="card"><header><h2 style="font-size:.78rem;opacity:.5;">Phishing Domains</h2></header><section><div class="stat-num" id="stat-phishing">–</div></section></div>
+            <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Guilds</h2></header><section><div class="stat-num" id="stat-guilds">–</div></section></div>
+            <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Unique Users</h2></header><section><div class="stat-num" id="stat-users">–</div></section></div>
+            <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Processed Messages</h2></header><section><div class="stat-num" id="stat-msgs">–</div></section></div>
+            <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Phishing Domains</h2></header><section><div class="stat-num" id="stat-phishing">–</div></section></div>
         </div>
         <!-- Top Servers -->
         <div class="card" style="margin-top:1rem;">
-            <header><h2 style="font-size:1rem; font-weight:600;">Top 10 Servers</h2></header>
+            <header><h2>Top 10 Servers</h2></header>
             <section>
                 <table class="admin-table" id="top-servers-table">
                     <thead><tr><th>#</th><th>Name</th><th>Members</th></tr></thead>
-                    <tbody id="top-servers-body"><tr><td colspan="3" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="top-servers-body"><tr><td colspan="3" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
     </section>
 
     <!-- ── FEATURE ADOPTION ───────────────────────────────────── -->
-    <section id="section-adoption" class="admin-view" data-view="section-adoption" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Feature Adoption</div>
+    <section id="section-adoption" class="admin-view" data-view="section-adoption">
+        <div class="section-label">Feature Adoption</div>
         <div class="card">
-            <header><h2 style="font-size:1rem; font-weight:600;">Feature Usage across all Guilds</h2></header>
+            <header><h2>Feature Usage across all Guilds</h2></header>
             <section>
                 <div id="adoption-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <span style="opacity:.4; font-size:.82rem;">Loading...</span>
@@ -562,92 +681,119 @@
     </section>
 
     <!-- ── PRISM USERS ────────────────────────────────────────── -->
-    <section id="section-prism" class="admin-view" data-view="section-prism" style="margin-bottom:2.5rem;">
-        <div class="section-badge">User Reports</div>
+    <section id="section-prism" class="admin-view" data-view="section-prism">
+        <div class="section-label">User Reports</div>
 
         <!-- Manual network safety-list flag -->
-        <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card" style="margin-bottom:1.5rem;">
             <header>
-                <h2 style="font-size:1rem; font-weight:600;">Add user to the network safety list</h2>
+                <h2>Add user to the network safety list</h2>
                 <p class="text-muted" style="font-size:.78rem;">Flags a user network-wide. Participating servers screen joins against this list. Stores only the ID, a coarse category and your reason — no score or content.</p>
             </header>
             <section>
-                <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end;">
-                    <div style="display:flex; flex-direction:column; gap:.25rem;">
-                        <label style="font-size:.72rem; opacity:.7;">User ID</label>
-                        <input id="safety-uid" type="text" placeholder="123456789012345678" style="font-size:.8rem; padding:.4rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;">
+                <div class="add-area mt-3">
+                    <div style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:flex-end;">
+                        <div class="adm-field">
+                            <label class="adm-field-label" for="safety-uid">User ID</label>
+                            <input id="safety-uid" type="text" placeholder="123456789012345678" style="font-size:.8rem; padding:.4rem .6rem; width:200px;">
+                        </div>
+                        <div class="adm-field">
+                            <label class="adm-field-label" for="safety-category">Category</label>
+                            <select id="safety-category" class="select select-compact">
+                                <option value="raid">Raid</option>
+                                <option value="spam">Spam</option>
+                                <option value="hate">Hate</option>
+                                <option value="other" selected>Other</option>
+                            </select>
+                        </div>
+                        <div class="adm-field" style="flex:1; min-width:200px;">
+                            <label class="adm-field-label" for="safety-reason">Reason</label>
+                            <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; width:100%;">
+                        </div>
+                        <button onclick="safetyFlagSubmit()" class="btn-destructive">Flag user</button>
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:.25rem;">
-                        <label style="font-size:.72rem; opacity:.7;">Category</label>
-                        <select id="safety-category" class="select" style="font-size:.8rem; padding:.4rem .5rem; height:auto;">
-                            <option value="raid">Raid</option>
-                            <option value="spam">Spam</option>
-                            <option value="hate">Hate</option>
-                            <option value="other" selected>Other</option>
-                        </select>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:.25rem; flex:1; min-width:200px;">
-                        <label style="font-size:.72rem; opacity:.7;">Reason</label>
-                        <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:100%;">
-                    </div>
-                    <button onclick="safetyFlagSubmit()" class="btn-sm-outline" style="color:#DC3838; border-color:#DC3838;">Flag user</button>
                 </div>
             </section>
         </div>
 
         <!-- Most-reported users (spot network abusers) -->
-        <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card" style="margin-bottom:1.5rem;">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">Most reported users</h2>
+                    <h2>Most reported users</h2>
                     <p class="text-muted" style="font-size:.78rem;"><span id="reports-total">–</span> reports · <span id="reports-unique">–</span> distinct users</p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                    <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:210px;" oninput="filterReports()">
+                    <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; width:210px;" oninput="filterReports()">
                     <button onclick="loadReports()" class="btn-sm-outline">Refresh</button>
                 </div>
             </header>
             <section>
                 <table class="admin-table">
                     <thead><tr><th>User</th><th>Reports</th><th>Servers</th><th>Reasons</th><th></th></tr></thead>
-                    <tbody id="reports-top-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="reports-top-body"><tr><td colspan="5" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
 
         <!-- Recent individual reports -->
         <div class="card">
-            <header><h2 style="font-size:1rem; font-weight:600;">Recent reports</h2></header>
+            <header><h2>Recent reports</h2></header>
             <section>
                 <table class="admin-table">
                     <thead><tr><th>Reported</th><th>By</th><th>Server</th><th>Reason</th><th>When</th></tr></thead>
-                    <tbody id="reports-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="reports-body"><tr><td colspan="5" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
     </section>
 
     <!-- ── FLAGGED USERS ──────────────────────────────────────── -->
-    <section id="section-flagged" class="admin-view" data-view="section-flagged" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Flagged Users (users.json)</div>
+    <section id="section-flagged" class="admin-view" data-view="section-flagged">
+        <div class="section-label">Flagged Users (users.json)</div>
         <div class="card">
-            <header><h2 style="font-size:1rem; font-weight:600;">Globally Flagged Users</h2></header>
+            <header><h2>Globally Flagged Users</h2></header>
             <section>
                 <table class="admin-table">
                     <thead><tr><th>Name</th><th>ID</th><th>Reason</th><th>Date</th><th>Source</th><th>Actions</th></tr></thead>
-                    <tbody id="flagged-body"><tr><td colspan="6" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="flagged-body"><tr><td colspan="6" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:1.5rem;">
+    <!-- Flag User -->
+                <div class="card">
+                    <header><h2>Flag User</h2></header>
+                    <section>
+                        <div class="add-area mt-3">
+                            <input id="flag-uid" type="text" placeholder="User ID" class="w-full">
+                            <input id="flag-reason" type="text" placeholder="Reason" class="w-full">
+                            <button onclick="adminAction('flag_user')" class="btn-primary">Flag User</button>
+                        </div>
+                        <div id="flag-result" class="action-result"></div>
+                    </section>
+                </div>
+    <!-- Deflag User -->
+                <div class="card">
+                    <header><h2>Deflag User</h2></header>
+                    <section>
+                        <div class="add-area mt-3">
+                            <input id="deflag-uid" type="text" placeholder="User ID" class="w-full">
+                            <button onclick="adminAction('deflag_user')" class="btn-primary">Deflag User</button>
+                        </div>
+                        <div id="deflag-result" class="action-result"></div>
+                    </section>
+                </div>
         </div>
     </section>
 
     <!-- ── CHATFILTER LOGS ───────────────────────────────────── -->
-    <section id="section-cf-logs" class="admin-view" data-view="section-cf-logs" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Chatfilter Logs</div>
+    <section id="section-cf-logs" class="admin-view" data-view="section-cf-logs">
+        <div class="section-label">Chatfilter Logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">Chatfilter Violation Log</h2>
+                    <h2>Chatfilter Violation Log</h2>
                     <p class="text-muted" style="font-size:.78rem;">
                         <span id="cf-total">–</span> total ·
                         <span id="cf-filtered">–</span> filtered ·
@@ -656,14 +802,14 @@
                     </p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
-                    <select id="cf-filter-system" class="select" style="font-size:.78rem; padding:.3rem .5rem; height:auto;" onchange="loadCfLogs()">
+                    <select id="cf-filter-system" class="select select-compact" onchange="loadCfLogs()">
                         <option value="">All systems</option>
                         <option value="safetext">SafeText</option>
                         <option value="ai">AI</option>
                         <option value="phishing">Phishing</option>
                     </select>
                     <input id="cf-search" type="text" placeholder="Search user, guild, message…"
-                        style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:200px;"
+                        style="font-size:.78rem; padding:.3rem .6rem; width:200px;"
                         oninput="debounceCf()">
                     <button onclick="loadCfLogs()" class="btn-sm-outline">Search</button>
                 </div>
@@ -682,7 +828,7 @@
                         </tr>
                     </thead>
                     <tbody id="cf-body">
-                        <tr><td colspan="7" style="opacity:.4;">Loading…</td></tr>
+                        <tr><td colspan="7" class="is-empty">Loading…</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -695,7 +841,7 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:.4rem;">
                     <span style="font-size:.78rem; opacity:.5;">Per page:</span>
-                    <select id="cf-page-size" class="select" style="font-size:.78rem; padding:.25rem .4rem; height:auto;" onchange="cfPageSize=+this.value; cfPage=1; renderCfPage()">
+                    <select id="cf-page-size" class="select select-compact" onchange="cfPageSize=+this.value; cfPage=1; renderCfPage()">
                         <option value="25">25</option>
                         <option value="50" selected>50</option>
                         <option value="100">100</option>
@@ -706,12 +852,12 @@
     </section>
 
     <!-- ── SAFETEXT MODEL ─────────────────────────────────────── -->
-    <section id="section-safetext" class="admin-view" data-view="section-safetext" style="margin-bottom:2.5rem;">
-        <div class="section-badge">SafeText Model</div>
+    <section id="section-safetext" class="admin-view" data-view="section-safetext">
+        <div class="section-label">SafeText Model</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">Local Classifier</h2>
+                    <h2>Local Classifier</h2>
                     <p class="text-muted" style="font-size:.78rem;">
                         Toxic: <span id="st-toxic-model">–</span> ·
                         NSFW: <span id="st-nsfw-model">–</span> ·
@@ -725,13 +871,13 @@
                 </div>
             </header>
             <section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin-top:1rem;">
-                <div><div style="font-size:.7rem; opacity:.6;">Feedback total</div>
+                <div><div class="adm-field-label adm-eyebrow">Feedback total</div>
                     <div style="font-size:1.3rem; font-weight:600;" id="st-fb-total">–</div></div>
-                <div><div style="font-size:.7rem; opacity:.6;">Untrained</div>
+                <div><div class="adm-field-label adm-eyebrow">Untrained</div>
                     <div style="font-size:1.3rem; font-weight:600;" id="st-fb-untrained">–</div></div>
-                <div><div style="font-size:.7rem; opacity:.6;">Fine-tune state</div>
+                <div><div class="adm-field-label adm-eyebrow">Fine-tune state</div>
                     <div style="font-size:1rem; font-weight:600;" id="st-ft-state">–</div></div>
-                <div><div style="font-size:.7rem; opacity:.6;">Last finish</div>
+                <div><div class="adm-field-label adm-eyebrow">Last finish</div>
                     <div style="font-size:.85rem;" id="st-ft-finished">–</div></div>
             </section>
             <section style="margin-top:1rem; overflow-x:auto;">
@@ -741,7 +887,7 @@
                         <th>Stage</th><th>Flagged</th><th>Confidence</th><th>Correct label</th>
                     </tr></thead>
                     <tbody id="st-log-body">
-                        <tr><td colspan="8" style="opacity:.4;">Loading…</td></tr>
+                        <tr><td colspan="8" class="is-empty">Loading…</td></tr>
                     </tbody>
                 </table>
                 <p class="text-muted" style="font-size:.72rem; margin-top:.5rem;">
@@ -782,7 +928,7 @@
             const d = await r.json();
             _stEntries = d.entries || [];
             const body = document.getElementById('st-log-body');
-            if (!_stEntries.length) { body.innerHTML = '<tr><td colspan="8" style="opacity:.4;">No entries.</td></tr>'; return; }
+            if (!_stEntries.length) { body.innerHTML = '<tr><td colspan="8" class="is-empty">No entries.</td></tr>'; return; }
             body.innerHTML = _stEntries.map((e, idx) => {
                 const ts = new Date((e.ts||0)*1000).toLocaleString();
                 const conf = (e.confidence==null) ? '–' : Number(e.confidence).toFixed(3);
@@ -810,7 +956,7 @@
                     <td>${ts}</td><td>${guild}</td><td>${user}</td>
                     <td style="max-width:280px; word-break:break-word; opacity:.9;">${_stEsc(msg)}</td>
                     <td>${_stEsc(e.stage||'')}</td>
-                    <td>${e.flagged?'<span style="color:#DC3838;">yes</span>':'no'}</td>
+                    <td>${e.flagged?'<span style="color:var(--avo-error);">yes</span>':'no'}</td>
                     <td>${conf}</td>
                     <td style="white-space:nowrap;">${sel}</td>
                 </tr>`;
@@ -864,58 +1010,115 @@
     </script>
 
     <!-- ── ACTIVE STREAMERS ───────────────────────────────────── -->
-    <section id="section-streamers" class="admin-view" data-view="section-streamers" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Livestream Monitoring</div>
+    <section id="section-streamers" class="admin-view" data-view="section-streamers">
+        <div class="section-label">Livestream Monitoring</div>
         <div class="card">
-            <header><h2 style="font-size:1rem; font-weight:600;">Active Streamers being tracked</h2></header>
+            <header><h2>Active Streamers being tracked</h2></header>
             <section>
                 <table class="admin-table">
                     <thead><tr><th>Streamer</th><th>Guild</th><th>Status</th></tr></thead>
-                    <tbody id="streamers-body"><tr><td colspan="3" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="streamers-body"><tr><td colspan="3" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
     </section>
 
     <!-- ── ALL GUILDS ─────────────────────────────────────────── -->
-    <section id="section-guilds" class="admin-view" data-view="section-guilds" style="margin-bottom:2.5rem;">
-        <div class="section-badge">All Guilds</div>
+    <section id="section-guilds" class="admin-view" data-view="section-guilds">
+        <div class="section-label">All Guilds</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">Guild List</h2>
+                    <h2>Guild List</h2>
                     <p class="text-muted" style="font-size:.78rem;"><span id="guild-total">–</span> guilds total (showing top 50 by members)</p>
                 </div>
-                <input id="guild-search" type="text" placeholder="Filter guilds…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:180px;" oninput="filterGuilds()">
+                <input id="guild-search" type="text" placeholder="Filter guilds…" style="font-size:.78rem; padding:.3rem .6rem; width:180px;" oninput="filterGuilds()">
             </header>
             <section>
                 <table class="admin-table" id="guild-table">
                     <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Members</th><th>Actions</th></tr></thead>
-                    <tbody id="guild-body"><tr><td colspan="5" style="opacity:.4;">Loading...</td></tr></tbody>
+                    <tbody id="guild-body"><tr><td colspan="5" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:1.5rem;">
+    <!-- Search Server -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <header><h2>Search Server</h2></header>
+                    <section>
+                        <div class="grid gap-3">
+                            <div style="display:flex; gap:.5rem;">
+                                <input id="search-query" type="text" placeholder="Name, ID, or owner ID…" style="flex:1;">
+                                <button onclick="adminAction('search_server')" class="btn-primary">Search</button>
+                            </div>
+                            <div id="search-result" class="action-result"></div>
+                            <div id="search-table-wrap" style="display:none; overflow-x:auto;">
+                                <table class="admin-table" id="search-result-table">
+                                    <thead><tr><th>Name</th><th>ID</th><th>Members</th><th>Owner ID</th><th>Boosts</th><th>Terms</th><th>Lang</th><th>Actions</th></tr></thead>
+                                    <tbody id="search-result-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+    <!-- Bulk Config -->
+                <div class="card">
+                    <header><h2>Bulk Feature Config</h2></header>
+                    <section>
+                        <div class="grid gap-3">
+                            <select id="bulk-feature" class="select w-full">
+                                <option value="chatfilter">Chatfilter</option>
+                                <option value="antispam">Anti-Spam</option>
+                                <option value="ticket">Ticket</option>
+                                <option value="auto_roles">Auto Roles</option>
+                                <option value="temp_voice">Temp Voice</option>
+                                <option value="livestream">Livestream</option>
+                            </select>
+                            <div style="display:flex; gap:.5rem;">
+                                <select id="bulk-action" class="select" style="flex:1;">
+                                    <option value="enable">Enable</option>
+                                    <option value="disable">Disable</option>
+                                </select>
+                                <input id="bulk-percent" type="number" min="1" max="100" value="100" style="width:70px; text-align:center;" placeholder="%">
+                            </div>
+                            <button onclick="adminAction('bulk_config')" class="btn-primary">Apply Bulk Config</button>
+                            <div id="bulk-result" class="action-result"></div>
+                        </div>
+                    </section>
+                </div>
+    <!-- Leave Server -->
+                <div class="card">
+                    <header><h2>Leave Server</h2></header>
+                    <section>
+                        <div class="grid gap-3">
+                            <input id="leave-gid" type="text" placeholder="Guild ID" class="w-full">
+                            <button onclick="adminAction('leave_server')" class="btn-destructive">Leave Server</button>
+                            <div id="leave-result" class="action-result"></div>
+                        </div>
+                    </section>
+                </div>
         </div>
     </section>
 
     <!-- ── GUILD ACTIVITY ────────────────────────────────────────── -->
-    <section id="section-guild-activity" class="admin-view" data-view="section-guild-activity" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Guild Activity</div>
+    <section id="section-guild-activity" class="admin-view" data-view="section-guild-activity">
+        <div class="section-label">Guild Activity</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
-                    <h2 style="font-size:1rem; font-weight:600;">Server Activity Overview</h2>
+                    <h2>Server Activity Overview</h2>
                     <p class="text-muted" style="font-size:.78rem;">Based on user messages tracked by BaxiInsights · last 30 days · <span id="ga-updated" style="opacity:.5;">–</span></p>
                 </div>
                 <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
                     <!-- Status filter tabs -->
-                    <div style="display:flex; gap:.25rem; background:rgba(255,255,255,.05); padding:.2rem;">
+                    <div style="display:flex; gap:.25rem; background:var(--adm-surface); padding:.2rem;">
                         <button class="ga-tab active" data-filter="all" onclick="gaSetFilter('all')">All <span id="ga-cnt-all" class="ga-cnt">–</span></button>
-                        <button class="ga-tab" data-filter="active" onclick="gaSetFilter('active')">Active <span id="ga-cnt-active" class="ga-cnt" style="color:#46A758;">–</span></button>
-                        <button class="ga-tab" data-filter="idle" onclick="gaSetFilter('idle')">Idle <span id="ga-cnt-idle" class="ga-cnt" style="color:#ED5333;">–</span></button>
-                        <button class="ga-tab" data-filter="fading" onclick="gaSetFilter('fading')">Fading <span id="ga-cnt-fading" class="ga-cnt" style="color:#DC3838;">–</span></button>
-                        <button class="ga-tab" data-filter="dead" onclick="gaSetFilter('dead')">Dead <span id="ga-cnt-dead" class="ga-cnt" style="color:#555;">–</span></button>
+                        <button class="ga-tab" data-filter="active" onclick="gaSetFilter('active')">Active <span id="ga-cnt-active" class="ga-cnt" style="color:var(--avo-success);">–</span></button>
+                        <button class="ga-tab" data-filter="idle" onclick="gaSetFilter('idle')">Idle <span id="ga-cnt-idle" class="ga-cnt" style="color:var(--avo-warning);">–</span></button>
+                        <button class="ga-tab" data-filter="fading" onclick="gaSetFilter('fading')">Fading <span id="ga-cnt-fading" class="ga-cnt" style="color:var(--avo-error);">–</span></button>
+                        <button class="ga-tab" data-filter="dead" onclick="gaSetFilter('dead')">Dead <span id="ga-cnt-dead" class="ga-cnt" style="color:var(--avo-text-muted);">–</span></button>
                     </div>
-                    <input id="ga-search" type="text" placeholder="Filter name…" style="font-size:.78rem; padding:.3rem .6rem; border:1px solid var(--color-border,rgba(255,255,255,.1)); background:transparent; width:150px;" oninput="gaRender()">
+                    <input id="ga-search" type="text" placeholder="Filter name…" style="font-size:.78rem; padding:.3rem .6rem; width:150px;" oninput="gaRender()">
                 </div>
             </header>
             <!-- Summary bar -->
@@ -934,18 +1137,18 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody id="ga-body"><tr><td colspan="8" style="opacity:.4;">Loading…</td></tr></tbody>
+                    <tbody id="ga-body"><tr><td colspan="8" class="is-empty">Loading…</td></tr></tbody>
                 </table>
             </section>
         </div>
     </section>
 
     <!-- ── GUILD CONFIG VIEWER ──────────────────────────────────── -->
-    <section id="section-guild-config" class="admin-view" data-view="section-guild-config" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Guild Config Viewer</div>
+    <section id="section-guild-config" class="admin-view" data-view="section-guild-config">
+        <div class="section-label">Guild Config Viewer</div>
         <div class="card">
             <header>
-                <h2 style="font-size:1rem; font-weight:600;">Guild Settings Inspector</h2>
+                <h2>Guild Settings Inspector</h2>
                 <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Enter a Guild ID to inspect its full feature configuration.</p>
             </header>
             <section>
@@ -956,7 +1159,7 @@
                 <div id="gc-inspect-error" class="action-result" style="display:none;"></div>
                 <div id="gc-inspect-wrap" style="display:none;">
                     <!-- Guild header -->
-                    <div id="gc-header" style="display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); margin-bottom:1.25rem; flex-wrap:wrap;">
+                    <div id="gc-header" class="adm-headline-panel" style="display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
                         <div style="flex:1; min-width:0;">
                             <div id="gc-guild-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="gc-guild-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
@@ -964,49 +1167,26 @@
                         <div id="gc-meta" style="display:flex; gap:1rem; flex-wrap:wrap; font-size:.78rem; opacity:.65;"></div>
                     </div>
                     <!-- Feature status chips -->
-                    <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Feature Status</div>
+                    <div class="adm-field-label adm-eyebrow">Feature Status</div>
                     <div id="gc-features" style="display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.5rem;"></div>
                     <!-- Detailed config sections -->
-                    <div id="gc-details" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:.75rem; margin-bottom:1.25rem;"></div>
+                    <div id="gc-details" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:.75rem; margin-bottom:1.5rem;"></div>
                     <!-- Raw JSON toggle -->
                     <details style="margin-top:.5rem;">
                         <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON</summary>
-                        <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:rgba(0,0,0,.3); padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
+                        <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:var(--adm-surface); padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
                     </details>
                 </div>
             </section>
         </div>
     </section>
 
-    <!-- ── FEATURE ACCESS ────────────────────────────────────── -->
-    <section id="section-feature-access" class="admin-view" data-view="section-feature-access" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Feature Access</div>
-        <div class="card">
-            <header>
-                <h2 style="font-size:1rem; font-weight:600;">Feature Access Control</h2>
-                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Control which guilds can access specific features. Whitelist = only listed guilds. Blacklist = all except listed guilds.</p>
-            </header>
-            <section>
-                <div id="fa-loading" style="font-size:.82rem; opacity:.4;">Loading…</div>
-                <div id="fa-error" class="action-result" style="display:none;"></div>
-                <div id="fa-body" style="display:none;">
-                    <!-- Feature rows rendered by JS -->
-                    <div id="fa-features-list" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
-                    <div style="margin-top:1.25rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
-                        <button onclick="faSave()" class="btn-primary">Save Changes</button>
-                        <div id="fa-save-result" class="action-result" style="display:inline-block;"></div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </section>
-
     <!-- ── USER SEARCH & DATA MANAGEMENT ───────────────────────── -->
-    <section id="section-user-gdpr" class="admin-view" data-view="section-user-gdpr" style="margin-bottom:2.5rem;">
-        <div class="section-badge">User Search &amp; Data Management</div>
+    <section id="section-user-gdpr" class="admin-view" data-view="section-user-gdpr">
+        <div class="section-label">User Search &amp; Data Management</div>
         <div class="card">
             <header>
-                <h2 style="font-size:1rem; font-weight:600;">User Search</h2>
+                <h2>User Search</h2>
                 <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Search by name or Discord User-ID across all systems: Prism, Flags, Chatfilter, Warnings, Temp-Actions, Tickets, Transcripts, Global Bans.</p>
             </header>
             <section>
@@ -1017,17 +1197,17 @@
                 <div id="user-search-result" class="action-result"></div>
                 <div id="user-search-wrap" style="display:none;">
                     <!-- Found user header -->
-                    <div id="user-search-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; padding:.75rem 1rem; background:rgba(255,107,74,.08); border:1px solid rgba(255,107,74,.2); margin-bottom:1rem;">
+                    <div id="user-search-header" class="adm-headline-panel" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem;">
                         <div>
                             <div id="user-search-name" style="font-size:1rem; font-weight:700;"></div>
                             <div id="user-search-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
                         </div>
                         <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                            <button id="btn-send-data" onclick="sendUserData()" class="btn-sm-outline" style="color:#3B82C4;" title="Send all stored data to the user via DM">
+                            <button id="btn-send-data" onclick="sendUserData()" class="btn-sm-outline" style="color:var(--avo-info);" title="Send all stored data to the user via DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                 Send Data via DM
                             </button>
-                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn-sm-outline" style="color:#DC3838;" title="Delete all user data and send a DM">
+                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn-sm-outline" style="color:var(--avo-error);" title="Delete all user data and send a DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                 Delete All Data
                             </button>
@@ -1040,175 +1220,155 @@
         </div>
     </section>
 
-    <!-- ── ADMIN ACTIONS ──────────────────────────────────────── -->
-    <section id="section-actions" class="admin-view" data-view="section-actions" style="margin-bottom:2.5rem;">
-        <div class="section-badge">Admin Actions</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- ── GLOBAL CHAT ────────────────────────────────────────── -->
+    <section id="section-globalchat" class="admin-view" data-view="section-globalchat">
+        <div class="section-label">Global Chat</div>
 
-            <!-- Flag User -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Flag User</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <input id="flag-uid" type="text" placeholder="User ID" class="w-full">
-                        <input id="flag-reason" type="text" placeholder="Reason" class="w-full">
-                        <button onclick="adminAction('flag_user')" class="btn-primary">Flag User</button>
-                        <div id="flag-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Deflag User -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Deflag User</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <input id="deflag-uid" type="text" placeholder="User ID" class="w-full">
-                        <button onclick="adminAction('deflag_user')" class="btn-primary">Deflag User</button>
-                        <div id="deflag-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Bulk Config -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Bulk Feature Config</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <select id="bulk-feature" class="select w-full">
-                            <option value="chatfilter">Chatfilter</option>
-                            <option value="antispam">Anti-Spam</option>
-                            <option value="ticket">Ticket</option>
-                            <option value="auto_roles">Auto Roles</option>
-                            <option value="temp_voice">Temp Voice</option>
-                            <option value="livestream">Livestream</option>
-                        </select>
-                        <div style="display:flex; gap:.5rem;">
-                            <select id="bulk-action" class="select" style="flex:1;">
-                                <option value="enable">Enable</option>
-                                <option value="disable">Disable</option>
-                            </select>
-                            <input id="bulk-percent" type="number" min="1" max="100" value="100" style="width:70px; text-align:center;" placeholder="%">
-                        </div>
-                        <button onclick="adminAction('bulk_config')" class="btn-primary">Apply Bulk Config</button>
-                        <div id="bulk-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Restart Notice TTS -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Restart Notice TTS</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <p style="opacity:.6; font-size:.78rem; margin:0;">Pauses any active music and plays a louder TTS notice in voice channels Baxi is in. Bot does <strong>not</strong> exit. Leave Guild ID empty to target every server. Leave Message empty for the default text.</p>
-                        <input id="notice-gid" type="text" placeholder="Guild ID (leave empty for all servers)" class="w-full">
-                        <textarea id="notice-msg" rows="3" maxlength="1000" placeholder="Custom TTS message (leave empty for default: 'Hey everyone. Just a quick heads-up — I am currently restarting…')" class="w-full" style="resize:vertical;"></textarea>
-                        <div style="display:flex; gap:.5rem; align-items:center;">
-                            <label style="font-size:.78rem; opacity:.7;">Volume:</label>
-                            <input id="notice-vol" type="number" step="0.1" min="0.5" max="4.0" value="2.0" style="width:80px; text-align:center;">
-                            <span style="opacity:.45; font-size:.7rem;">(1.0 = normal, 2.0 = louder)</span>
-                        </div>
-                        <button onclick="adminAction('restart_notice')" class="btn-primary">Play TTS Notice</button>
-                        <div id="notice-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Reboot Bot -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Reboot Bot</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <p style="opacity:.6; font-size:.78rem; margin:0;">Plays a TTS reboot announcement in every voice channel Baxi is currently in, then exits the process. Your container/service must be configured to auto-restart.</p>
-                        <button onclick="adminAction('reboot')" class="btn-primary" style="background:rgba(220,56,56,.8);">Reboot Bot Now</button>
-                        <div id="reboot-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Leave Server -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Leave Server</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <input id="leave-gid" type="text" placeholder="Guild ID" class="w-full">
-                        <button onclick="adminAction('leave_server')" class="btn-primary" style="background:rgba(220,56,56,.8);">Leave Server</button>
-                        <div id="leave-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Search Server -->
-            <div class="card" style="grid-column: 1 / -1;">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Search Server</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <div style="display:flex; gap:.5rem;">
-                            <input id="search-query" type="text" placeholder="Name, ID, or owner ID…" style="flex:1;">
-                            <button onclick="adminAction('search_server')" class="btn-primary">Search</button>
-                        </div>
-                        <div id="search-result" class="action-result"></div>
-                        <div id="search-table-wrap" style="display:none; overflow-x:auto;">
-                            <table class="admin-table" id="search-result-table">
-                                <thead><tr><th>Name</th><th>ID</th><th>Members</th><th>Owner ID</th><th>Boosts</th><th>Terms</th><th>Lang</th><th>Actions</th></tr></thead>
-                                <tbody id="search-result-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Delete GC Message -->
-            <div class="card">
-                <header><h2 style="font-size:.95rem; font-weight:600;">Delete Global Chat Message</h2></header>
-                <section>
-                    <div class="grid gap-3">
-                        <input id="gc-mid" type="text" placeholder="Message ID (from footer)" class="w-full">
-                        <button onclick="adminAction('gc_delete')" class="btn-primary" style="background:rgba(220,56,56,.8);">Delete GC Message</button>
-                        <div id="gc-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Send Notification -->
-            <div class="card" style="grid-column: 1 / -1;">
-                <header>
-                    <h2 style="font-size:.95rem; font-weight:600;">Send Notification</h2>
-                    <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Sends a Baxi embed to the notification channel of every server (or a specific one). Leave Guild ID empty to broadcast to all.</p>
-                </header>
-                <section>
-                    <div class="grid gap-3">
-                        <div style="display:flex; gap:.5rem;">
-                            <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
-                            <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
-                        </div>
-                        <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--color-surface,#0A0A0A); border:1px solid rgba(255,255,255,.1); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
-                        <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
-
-                        <!-- Progress UI (hidden until job starts) -->
-                        <div id="notif-progress-wrap" style="display:none;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.35rem;">
-                                <span style="font-size:.8rem; opacity:.7;">Sending…</span>
-                                <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
-                            </div>
-                            <div style="background:rgba(255,255,255,.08); border-radius:99px; height:8px; overflow:hidden;">
-                                <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#C73D20,#FF9379); border-radius:99px; transition: width var(--avo-dur-ui) var(--avo-ease-out);"></div>
-                            </div>
-                        </div>
-
-                        <!-- Failed servers list (hidden until done) -->
-                        <div id="notif-failed-wrap" style="display:none;">
-                            <div style="font-size:.75rem; font-weight:600; opacity:.5; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Nicht gesendet</div>
-                            <div id="notif-failed-list" style="display:flex; flex-direction:column; gap:.3rem; max-height:220px; overflow-y:auto;"></div>
-                        </div>
-
-                        <div id="notif-result" class="action-result"></div>
-                    </div>
-                </section>
-            </div>
-
+        <!-- Live feed -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2>Recent messages</h2>
+                    <p class="text-muted" style="font-size:.78rem;">
+                        <span id="gcf-count">–</span> shown of <span id="gcf-total">–</span> tracked ·
+                        deleting removes every relayed copy across all servers.
+                    </p>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <input id="gcf-search" type="text" placeholder="Search text / author / server…" style="font-size:.78rem; padding:.3rem .6rem; width:230px;" oninput="gcRenderFeed()">
+                    <button onclick="gcLoad()" class="btn-sm-outline">Refresh</button>
+                </div>
+            </header>
+            <section>
+                <div id="gcf-filter-chip" style="display:none; margin-bottom:.6rem; font-size:.78rem;">
+                    Showing only messages by <strong id="gcf-filter-name"></strong>
+                    <button onclick="gcClearAuthor()" class="btn-sm-outline" style="font-size:.7rem; margin-left:.5rem;">Show all</button>
+                </div>
+                <div id="gcf-list" style="display:flex; flex-direction:column; gap:.6rem;">
+                    <div style="opacity:.4; font-size:.82rem;">Loading…</div>
+                </div>
+            </section>
         </div>
+
+        <!-- Bans -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header>
+                <h2>Global chat bans</h2>
+                <p class="text-muted" style="font-size:.78rem;">A banned user's messages are refused before they are relayed. Applies to every server in the network.</p>
+            </header>
+            <section>
+                <table class="admin-table">
+                    <thead><tr><th>User</th><th>ID</th><th>Reason</th><th>By</th><th>When</th><th></th></tr></thead>
+                    <tbody id="gcb-body"><tr><td colspan="6" class="is-empty">Loading…</td></tr></tbody>
+                </table>
+                <div class="add-area mt-3">
+                    <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                        <input id="gcb-uid" type="text" placeholder="User ID" style="width:190px;">
+                        <input id="gcb-reason" type="text" placeholder="Reason" style="flex:1; min-width:180px;">
+                        <button onclick="gcBanManual()" class="btn-primary">Ban from global chat</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Participating servers -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header>
+                <h2>Participating servers</h2>
+                <p class="text-muted" style="font-size:.78rem;">Servers with a global chat channel configured. Removing one stops relaying to and from it -  it does not make Baxi leave the server.</p>
+            </header>
+            <section>
+                <table class="admin-table">
+                    <thead><tr><th>Server</th><th>ID</th><th>Channel</th><th>Members</th><th>Messages</th><th></th></tr></thead>
+                    <tbody id="gcg-body"><tr><td colspan="6" class="is-empty">Loading…</td></tr></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Delete GC Message -->
+                    <div class="card">
+                        <header><h2>Delete Global Chat Message</h2></header>
+                        <section>
+                            <div class="grid gap-3">
+                                <input id="gc-mid" type="text" placeholder="Message ID (from footer)" class="w-full">
+                                <button onclick="adminAction('gc_delete')" class="btn-destructive">Delete GC Message</button>
+                                <div id="gc-result" class="action-result"></div>
+                            </div>
+                        </section>
+                    </div>
+    </section>
+
+    <!-- ── SYSTEM ─────────────────────────────────────────────── -->
+    <section id="section-system" class="admin-view" data-view="section-system">
+        <div class="section-label">System</div>
+        <p class="text-muted" style="font-size:.82rem; margin:-.5rem 0 1.25rem;">Bot-wide operations. Everything here hits every server at once unless you scope it to a guild ID.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Restart Notice TTS -->
+                        <div class="card">
+                            <header><h2>Restart Notice TTS</h2></header>
+                            <section>
+                                <div class="grid gap-3">
+                                    <p style="opacity:.6; font-size:.78rem; margin:0;">Pauses any active music and plays a louder TTS notice in voice channels Baxi is in. Bot does <strong>not</strong> exit. Leave Guild ID empty to target every server. Leave Message empty for the default text.</p>
+                                    <input id="notice-gid" type="text" placeholder="Guild ID (leave empty for all servers)" class="w-full">
+                                    <textarea id="notice-msg" rows="3" maxlength="1000" placeholder="Custom TTS message (leave empty for default: 'Hey everyone. Just a quick heads-up — I am currently restarting…')" class="w-full" style="resize:vertical;"></textarea>
+                                    <div style="display:flex; gap:.5rem; align-items:center;">
+                                        <label style="font-size:.78rem; opacity:.7;">Volume:</label>
+                                        <input id="notice-vol" type="number" step="0.1" min="0.5" max="4.0" value="2.0" style="width:80px; text-align:center;">
+                                        <span style="opacity:.45; font-size:.7rem;">(1.0 = normal, 2.0 = louder)</span>
+                                    </div>
+                                    <button onclick="adminAction('restart_notice')" class="btn-primary">Play TTS Notice</button>
+                                    <div id="notice-result" class="action-result"></div>
+                                </div>
+                            </section>
+                        </div>
+            <!-- Reboot Bot -->
+                        <div class="card">
+                            <header><h2>Reboot Bot</h2></header>
+                            <section>
+                                <div class="grid gap-3">
+                                    <p style="opacity:.6; font-size:.78rem; margin:0;">Plays a TTS reboot announcement in every voice channel Baxi is currently in, then exits the process. Your container/service must be configured to auto-restart.</p>
+                                    <button onclick="adminAction('reboot')" class="btn-destructive">Reboot Bot Now</button>
+                                    <div id="reboot-result" class="action-result"></div>
+                                </div>
+                            </section>
+                        </div>
+        </div>
+        <!-- Send Notification -->
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <header>
+                            <h2>Send Notification</h2>
+                            <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Sends a Baxi embed to the notification channel of every server (or a specific one). Leave Guild ID empty to broadcast to all.</p>
+                        </header>
+                        <section>
+                            <div class="grid gap-3">
+                                <div style="display:flex; gap:.5rem;">
+                                    <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
+                                    <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
+                                </div>
+                                <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
+                                <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
+
+                                <!-- Progress UI (hidden until job starts) -->
+                                <div id="notif-progress-wrap" style="display:none;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.35rem;">
+                                        <span style="font-size:.8rem; opacity:.7;">Sending…</span>
+                                        <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
+                                    </div>
+                                    <div style="background:var(--adm-surface-2); border-radius:var(--avo-radius-sm, 6px); height:8px; overflow:hidden;">
+                                        <div id="notif-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,var(--avo-coral-700),var(--avo-coral-500)); border-radius:var(--avo-radius-sm, 6px); transition: width var(--avo-dur-ui) var(--avo-ease-out);"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Failed servers list (hidden until done) -->
+                                <div id="notif-failed-wrap" style="display:none;">
+                                    <div class="adm-field-label adm-eyebrow">Not sent</div>
+                                    <div id="notif-failed-list" style="display:flex; flex-direction:column; gap:.3rem; max-height:220px; overflow-y:auto;"></div>
+                                </div>
+
+                                <div id="notif-result" class="action-result"></div>
+                            </div>
+                        </section>
+                    </div>
     </section>
 
 </div>
@@ -1235,31 +1395,31 @@
         <div id="prism-modal-body">
             <!-- Meta grid -->
             <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.5rem .75rem; margin-bottom:1rem;">
-                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Account age</div><div id="pm-age" style="font-size:.85rem; margin-top:.1rem;"></div></div>
-                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Account created</div><div id="pm-created" style="font-size:.85rem; margin-top:.1rem;"></div></div>
-                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">First seen by Prism</div><div id="pm-first" style="font-size:.85rem; margin-top:.1rem;"></div></div>
-                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Last seen</div><div id="pm-last" style="font-size:.85rem; margin-top:.1rem;"></div></div>
-                <div><div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em;">Total events</div><div id="pm-evt-count" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div class="adm-field-label adm-eyebrow">Account age</div><div id="pm-age" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div class="adm-field-label adm-eyebrow">Account created</div><div id="pm-created" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div class="adm-field-label adm-eyebrow">First seen by Prism</div><div id="pm-first" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div class="adm-field-label adm-eyebrow">Last seen</div><div id="pm-last" style="font-size:.85rem; margin-top:.1rem;"></div></div>
+                <div><div class="adm-field-label adm-eyebrow">Total events</div><div id="pm-evt-count" style="font-size:.85rem; margin-top:.1rem;"></div></div>
             </div>
             <!-- AI Summary -->
             <div style="margin-bottom:1rem;">
                 <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem;">
-                    <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; flex:1;">AI Risk Summary</div>
-                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:var(--color-primary,#FF6B4A);" title="Request a new AI summary for this user">↻ Re-analyze</button>
+                    <div class="adm-field-label adm-eyebrow" style="flex:1;">AI Risk Summary</div>
+                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:var(--color-primary, #FF6B4A);" title="Request a new AI summary for this user">↻ Re-analyze</button>
                 </div>
                 <div id="pm-summary-wrap" style="display:none;">
-                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:rgba(255,255,255,.04); border-left:2px solid rgba(255,107,74,.5); color:inherit; opacity:.85;"></div>
+                    <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:var(--adm-surface); border-left:2px solid var(--avo-coral-500); border-radius:var(--avo-radius-sm, 6px); color:inherit;"></div>
                     <div id="pm-summary-ts" style="font-size:.65rem; opacity:.3; margin-top:.3rem;"></div>
                 </div>
                 <div id="pm-summary-empty" style="font-size:.78rem; opacity:.35; font-style:italic;">No summary generated yet.</div>
             </div>
             <!-- Risk Signals -->
             <div id="pm-signals-wrap" style="display:none; margin-bottom:1rem;">
-                <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem;">Risk Signals</div>
+                <div class="adm-field-label adm-eyebrow">Risk Signals</div>
                 <div id="pm-signals" style="display:flex; flex-wrap:wrap; gap:.35rem;"></div>
             </div>
             <!-- Events table -->
-            <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem;">Event History</div>
+            <div class="adm-field-label adm-eyebrow">Event History</div>
             <div id="pm-events-wrap">
                 <table class="prism-event-table">
                     <thead><tr><th>#</th><th>Type</th><th>Severity</th><th>Impact</th><th>Reason</th><th>Guild ID</th><th>Date</th><th></th></tr></thead>
@@ -1296,9 +1456,9 @@ function scoreBadge(score) {
 }
 
 function scoreBarColor(score) {
-    if (score <= 30) return '#DC3838';
-    if (score <= 60) return '#ED5333';
-    return '#46A758';
+    if (score <= 30) return 'var(--avo-error)';
+    if (score <= 60) return 'var(--avo-warning)';
+    return 'var(--avo-success)';
 }
 
 function taskBadge(status) {
@@ -1310,7 +1470,15 @@ function setResult(id, msg, ok) {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = 'action-result ' + (ok ? 'ok' : 'err');
-    el.textContent = msg;
+    // Error state carries a mono ERR serial (BRANDING §9 Status/error) —
+    // never just a coloured strip with no label.
+    if (ok) { el.textContent = msg; return; }
+    el.innerHTML = '';
+    const serial = document.createElement('span');
+    serial.style.cssText = 'font-family:var(--avo-font-mono);font-weight:700;margin-right:.5em;';
+    serial.textContent = 'ERR';
+    el.appendChild(serial);
+    el.appendChild(document.createTextNode(msg));
 }
 
 // ── Log Stream ────────────────────────────────────────────────
@@ -1447,7 +1615,7 @@ function renderTopServers() {
     const top = adminData.stats?.top_servers || {};
     const body = document.getElementById('top-servers-body');
     const entries = Object.entries(top);
-    if (!entries.length) { body.innerHTML = '<tr><td colspan="3" style="opacity:.4;">No data</td></tr>'; return; }
+    if (!entries.length) { body.innerHTML = '<tr><td colspan="3" class="is-empty">No data</td></tr>'; return; }
     body.innerHTML = entries.map(([name, count], i) =>
         `<tr><td style="opacity:.4;">${i+1}</td><td>${escHtml(name)}</td><td>${fmt(count)}</td></tr>`
     ).join('');
@@ -1479,11 +1647,11 @@ function renderTasks() {
 function renderShards() {
     const shards = adminData.shard_info || [];
     const el = document.getElementById('shard-list');
-    if (!shards.length) { el.innerHTML = '<span style="opacity:.4;">No shard info</span>'; return; }
+    if (!shards.length) { el.innerHTML = '<span class="text-muted">No shard info</span>'; return; }
     el.innerHTML = shards.map(s => {
         const lat = s.latency !== null ? `${s.latency} ms` : '–';
-        const color = s.closed ? '#DC3838' : (s.latency > 200 ? '#ED5333' : '#46A758');
-        return `<span style="background:rgba(255,255,255,.05); padding:.3rem .6rem; font-size:.78rem;">
+        const color = s.closed ? 'var(--avo-error)' : (s.latency > 200 ? 'var(--avo-warning)' : 'var(--avo-success)');
+        return `<span style="background:var(--adm-surface); padding:.3rem .6rem; font-size:.78rem;">
             <span style="color:${color}; font-weight:700;">●</span> Shard ${s.id} · ${lat}${s.closed ? ' · closed':''}
         </span>`;
     }).join('');
@@ -1510,7 +1678,7 @@ function renderAdoption() {
                 <span style="opacity:.55;">${pct}%</span>
             </div>
             <div class="score-bar">
-                <div class="score-bar-fill" style="width:${pct}%; background:var(--color-primary, #FF6B4A);"></div>
+                <div class="score-bar-fill" style="width:${pct}%; background:var(--avo-coral-500);"></div>
             </div>
         </div>
     `).join('');
@@ -1533,7 +1701,7 @@ async function loadReports() {
         document.getElementById('reports-unique').textContent = fmt(j.unique_reported || 0);
         renderReports();
     } catch (e) {
-        document.getElementById('reports-body').innerHTML = '<tr><td colspan="5" style="opacity:.4;">Failed to load.</td></tr>';
+        document.getElementById('reports-body').innerHTML = '<tr><td colspan="5" class="is-empty">Failed to load.</td></tr>';
     }
 }
 
@@ -1581,8 +1749,8 @@ function renderReports() {
         <td style="font-weight:700;">${t.count}</td>
         <td style="opacity:.7;">${t.guilds}</td>
         <td style="opacity:.6; font-size:.74rem; max-width:340px;">${escHtml((t.reasons||[]).slice(0,3).join(' · '))}</td>
-        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838; border-color:#DC3838;" title="Add to network safety list">Flag</button></td>
-    </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports yet.</td></tr>';
+        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error); border-color:var(--avo-error);" title="Add to network safety list">Flag</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" class="is-empty">No reports yet.</td></tr>';
 
     // Recent reports
     const recent = (_reportsData.reports || []).filter(match);
@@ -1592,9 +1760,9 @@ function renderReports() {
             <div style="opacity:.4; font-size:.7rem;">${escHtml(r.reported_id)}</div></td>
         <td style="opacity:.8; font-size:.78rem;">${escHtml(r.reporter_name||'?')}</td>
         <td style="opacity:.7; font-size:.78rem;">${escHtml(r.guild_name||r.guild_id)}</td>
-        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:var(--color-primary,#FF6B4A);">msg</a>` : ''}</td>
+        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:var(--color-primary, #FF6B4A);">msg</a>` : ''}</td>
         <td style="opacity:.5; font-size:.72rem;">${(r.timestamp||'').replace('T',' ').slice(0,16)}</td>
-    </tr>`).join('') : '<tr><td colspan="5" style="opacity:.4;">No reports match.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="5" class="is-empty">No reports match.</td></tr>';
 }
 
 async function runTask(taskKey) {
@@ -1614,10 +1782,10 @@ async function runTwitterNow() {
     btn.textContent = prevLabel;
     if (r.ok) {
         const ts = new Date().toLocaleTimeString();
-        status.style.color = '#46A758';
+        status.style.color = 'var(--avo-success)';
         status.textContent = `✓ Triggered at ${ts} — check the logs (grep "TwitterPosts") for the result.`;
     } else {
-        status.style.color = '#DC3838';
+        status.style.color = 'var(--avo-error)';
         status.textContent = '✗ ' + (r.message || 'Failed to trigger task.');
     }
 }
@@ -1668,14 +1836,14 @@ async function reanalyzeCurrentUser() {
 function renderFlagged() {
     const users = adminData.flagged_users || [];
     const body = document.getElementById('flagged-body');
-    if (!users.length) { body.innerHTML = '<tr><td colspan="6" style="opacity:.4;">No flagged users</td></tr>'; return; }
+    if (!users.length) { body.innerHTML = '<tr><td colspan="6" class="is-empty">No flagged users</td></tr>'; return; }
     body.innerHTML = users.map(u => `<tr>
         <td style="font-weight:600;">${escHtml(u.name||'Unknown')}</td>
         <td style="opacity:.5; font-size:.75rem;">${u.uid || u.id}</td>
         <td>${escHtml(u.reason||'–')}</td>
         <td style="opacity:.5;">${u.entry_date||'–'}</td>
         <td>${u.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}</td>
-        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:#46A758;">Deflag</button></td>
+        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-success);">Deflag</button></td>
     </tr>`).join('');
 }
 
@@ -1684,7 +1852,7 @@ function renderFlagged() {
 function renderStreamers() {
     const streamers = adminData.active_streamers || [];
     const body = document.getElementById('streamers-body');
-    if (!streamers.length) { body.innerHTML = '<tr><td colspan="3" style="opacity:.4;">No streamers tracked</td></tr>'; return; }
+    if (!streamers.length) { body.innerHTML = '<tr><td colspan="3" class="is-empty">No streamers tracked</td></tr>'; return; }
     body.innerHTML = streamers.map(s => `<tr>
         <td style="font-weight:600;">${escHtml(s.display_name)} <span style="opacity:.4; font-size:.75rem;">(${escHtml(s.login)})</span></td>
         <td>${escHtml(s.guild_name)} <span style="opacity:.4; font-size:.73rem;">${s.guild_id}</span></td>
@@ -1704,7 +1872,7 @@ function filterGuilds() {
     const q = document.getElementById('guild-search').value.toLowerCase();
     const guilds = q ? allGuilds.filter(g => g.name.toLowerCase().includes(q) || g.id.includes(q)) : allGuilds;
     const body = document.getElementById('guild-body');
-    if (!guilds.length) { body.innerHTML = '<tr><td colspan="5" style="opacity:.4;">No guilds</td></tr>'; return; }
+    if (!guilds.length) { body.innerHTML = '<tr><td colspan="5" class="is-empty">No guilds</td></tr>'; return; }
     body.innerHTML = guilds.map((g, i) => `<tr>
         <td style="opacity:.4;">${i+1}</td>
         <td>
@@ -1714,7 +1882,7 @@ function filterGuilds() {
         <td style="opacity:.5; font-size:.75rem;">${g.id}</td>
         <td>${fmt(g.member_count)}</td>
         <td>
-            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838;">Leave</button>
+            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error);">Leave</button>
         </td>
     </tr>`).join('');
 }
@@ -1773,8 +1941,8 @@ async function searchUser() {
             ? (p.risk_signals.map(s => `<span class="badge badge-auto" style="font-size:.68rem;">${escHtml(s)}</span>`).join(' '))
             : '';
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid rgba(255,107,74,.25); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem;">Prism Profile</div>
+        <div class="adm-headline-panel">
+            <div class="adm-field-label adm-eyebrow">Prism Profile</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center; margin-bottom:.6rem;">
                 <span>Score: ${scoreBadge(p.score)}</span>
                 <span style="opacity:.6;">Events: <b>${p.event_count}</b></span>
@@ -1799,9 +1967,9 @@ async function searchUser() {
         const f = r.data.flagged_entry;
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(220,56,56,.25); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Global Flag Entry</div>
+            <div class="adm-field-label adm-eyebrow">Global Flag Entry</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
-                <span style="opacity:.7;">Reason: <span style="color:#ED5333;">${escHtml(f.reason||'- ')}</span></span>
+                <span style="opacity:.7;">Reason: <span style="color:var(--avo-warning);">${escHtml(f.reason||'- ')}</span></span>
                 <span style="opacity:.5; font-size:.75rem;">Date: ${escHtml(f.entry_date||'- ')}</span>
                 ${f.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}
             </div>
@@ -1812,14 +1980,14 @@ async function searchUser() {
     if (r.data.gc_ban !== null && r.data.gc_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(220,56,56,.35); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Global Chat Ban (gc_ban)</div>
+            <div class="adm-field-label adm-eyebrow">Global Chat Ban (gc_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.gc_ban))}</div>
         </div>`);
     }
     if (r.data.ba_ban !== null && r.data.ba_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(220,56,56,.35); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Bot-Wide Ban (ba_ban)</div>
+            <div class="adm-field-label adm-eyebrow">Bot-Wide Ban (ba_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.ba_ban))}</div>
         </div>`);
     }
@@ -1836,7 +2004,7 @@ async function searchUser() {
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(255,147,121,.2); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Chatfilter Violations (${viol.length})</div>
+            <div class="adm-field-label adm-eyebrow">Chatfilter Violations (${viol.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
                     <thead><tr><th>Time</th><th>Server</th><th>Channel</th><th>Reason</th><th>Message</th></tr></thead>
@@ -1861,7 +2029,7 @@ async function searchUser() {
         ).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(237,83,51,.2); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Warnings (${totalWarns} across ${gw.length} server${gw.length!==1?'s':''})</div>
+            <div class="adm-field-label adm-eyebrow">Warnings (${totalWarns} across ${gw.length} server${gw.length!==1?'s':''})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
                     <thead><tr><th>Date</th><th>Server</th><th>Reason</th><th>Moderator</th><th>ID</th></tr></thead>
@@ -1882,7 +2050,7 @@ async function searchUser() {
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(237,83,51,.25); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Active Temp Actions (${ta.length})</div>
+            <div class="adm-field-label adm-eyebrow">Active Temp Actions (${ta.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
                     <thead><tr><th>Type</th><th>Server</th><th>Reason</th><th>Expires</th></tr></thead>
@@ -1907,7 +2075,7 @@ async function searchUser() {
         }).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(96,165,250,.2); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Open Tickets (${ot.length})</div>
+            <div class="adm-field-label adm-eyebrow">Open Tickets (${ot.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
                     <thead><tr><th>Server</th><th>Title</th><th>Initial Message</th><th>Status</th><th>Created</th></tr></thead>
@@ -1931,7 +2099,7 @@ async function searchUser() {
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(52,211,153,.2); padding:.75rem 1rem;">
-            <div style="font-size:.68rem; opacity:.4; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">Closed Ticket Transcripts (${tr.length})</div>
+            <div class="adm-field-label adm-eyebrow">Closed Ticket Transcripts (${tr.length})</div>
             <div style="overflow-x:auto;">
                 <table class="admin-table" style="font-size:.76rem;">
                     <thead><tr><th>Title</th><th>Initial Message</th><th>Server ID</th><th>Closed By</th><th>Closed On</th><th>Msgs</th><th></th></tr></thead>
@@ -1977,6 +2145,181 @@ async function sendUserData() {
 }
 
 // ── Admin Actions ─────────────────────────────────────────────
+
+// ── Global Chat ───────────────────────────────────────────────
+// One feed of what the network actually relayed, with the moderation actions
+// attached to the message instead of behind a "paste the message ID" form.
+
+let gcData = { feed: [], bans: [], guilds: [] };
+let gcAuthorFilter = null;
+
+async function gcLoad() {
+    try {
+        const res = await fetch('/api/admin/globalchat');
+        if (!res.ok) return;
+        gcData = await res.json();
+    } catch (e) { return; }
+    document.getElementById('gcf-total').textContent = fmt(gcData.total_records || 0);
+    gcRenderFeed();
+    gcRenderBans();
+    gcRenderGuilds();
+}
+
+function gcFmtTime(s) {
+    if (!s) return '–';
+    return escHtml(String(s).replace('T', ' ').slice(0, 16));
+}
+
+/* Lucide glyphs for the row actions. Inline SVG rather than a character so the
+   stroke joins are right and the icon can step forward on hover with the rest
+   of the button gesture (BRANDING §5b). */
+const _ico = d => `<svg class="lucide" viewBox="0 0 24 24" style="width:13px;height:13px;flex-shrink:0;">${d}</svg>`;
+const ICO_TRASH = _ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>');
+const ICO_USER_X = _ico('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/>');
+const ICO_USER_CHECK = _ico('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>');
+const ICO_HISTORY = _ico('<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/>');
+
+function gcRenderFeed() {
+    const list = document.getElementById('gcf-list');
+    if (!list) return;
+    const q = (document.getElementById('gcf-search').value || '').toLowerCase();
+    let items = gcData.feed || [];
+    if (gcAuthorFilter) items = items.filter(m => m.author_id === gcAuthorFilter);
+    if (q) items = items.filter(m =>
+        (m.content || '').toLowerCase().includes(q) ||
+        (m.author_name || '').toLowerCase().includes(q) ||
+        (m.origin_guild_name || '').toLowerCase().includes(q) ||
+        m.author_id === q || m.gcmid === q);
+
+    document.getElementById('gcf-count').textContent = fmt(items.length);
+    const chip = document.getElementById('gcf-filter-chip');
+    chip.style.display = gcAuthorFilter ? 'block' : 'none';
+    if (gcAuthorFilter) {
+        const who = (gcData.feed.find(m => m.author_id === gcAuthorFilter) || {}).author_name || gcAuthorFilter;
+        document.getElementById('gcf-filter-name').textContent = who;
+    }
+
+    if (!items.length) {
+        list.innerHTML = `
+        <div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center">
+            <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
+                <svg class="lucide" viewBox="0 0 24 24" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <h3 class="text-base font-semibold tracking-tight">No messages</h3>
+            <p class="text-muted text-sm">Nothing in the relayed feed matches this filter.</p>
+        </div>`;
+        return;
+    }
+    const banned = new Set((gcData.bans || []).map(b => b.user_id));
+    list.innerHTML = items.map(m => `
+        <div class="gc-msg" data-gcmid="${escHtml(m.gcmid)}">
+            <div class="gc-msg-head">
+                <button class="gc-author" data-author="${escHtml(m.author_id)}" title="Show only this author's messages">${escHtml(m.author_name || m.author_id)}</button>
+                ${banned.has(m.author_id) ? '<span class="badge badge-flagged">banned</span>' : ''}
+                <span class="gc-msg-meta">${escHtml(m.origin_guild_name || '?')} · ${gcFmtTime(m.timestamp)} · ${m.copies} cop${m.copies === 1 ? 'y' : 'ies'}${m.replies ? ' · ' + m.replies + ' replies' : ''}</span>
+            </div>
+            <p class="gc-msg-body">${m.content ? escHtml(m.content) : '<span style="opacity:.4;">Content not recorded (relayed before the feed existed) — deletion still works.</span>'}</p>
+            <div class="gc-msg-actions">
+                <button class="btn-sm-outline gc-del" data-gcmid="${escHtml(m.gcmid)}" style="color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Delete everywhere</span></button>
+                ${banned.has(m.author_id)
+                    ? `<button class="btn-sm-outline gc-unban" data-author="${escHtml(m.author_id)}" style="color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban author</span></button>`
+                    : `<button class="btn-sm-outline gc-ban" data-author="${escHtml(m.author_id)}" data-name="${escHtml(m.author_name || '')}" style="color:var(--avo-warning);">${ICO_USER_X}<span class="btn-label">Ban author</span></button>`}
+                <button class="btn-sm-outline gc-history" data-author="${escHtml(m.author_id)}">${ICO_HISTORY}<span class="btn-label">Author history</span></button>
+            </div>
+        </div>`).join('');
+}
+
+function gcRenderBans() {
+    const body = document.getElementById('gcb-body');
+    const bans = gcData.bans || [];
+    if (!bans.length) {
+        body.innerHTML = '<tr><td colspan="6" class="is-empty">Nobody is banned from the global chat.</td></tr>';
+        return;
+    }
+    body.innerHTML = bans.map(b => `<tr>
+        <td style="font-weight:600;">${escHtml(b.name || '–')}</td>
+        <td style="opacity:.5; font-size:.75rem;">${escHtml(b.user_id)}</td>
+        <td>${escHtml(b.reason || '–')}</td>
+        <td style="opacity:.6;">${escHtml(b.by || '–')}</td>
+        <td style="opacity:.5; font-size:.75rem;">${escHtml(b.date || '–')}</td>
+        <td><button class="btn-sm-outline gc-unban" data-author="${escHtml(b.user_id)}" style="font-size:.72rem; color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban</span></button></td>
+    </tr>`).join('');
+}
+
+function gcRenderGuilds() {
+    const body = document.getElementById('gcg-body');
+    const guilds = gcData.guilds || [];
+    if (!guilds.length) {
+        body.innerHTML = '<tr><td colspan="6" class="is-empty">No server has the global chat set up.</td></tr>';
+        return;
+    }
+    body.innerHTML = guilds.map(g => `<tr>
+        <td style="font-weight:600;">${escHtml(g.guild_name)}${g.reachable ? '' : ' <span class="badge badge-offline">unreachable</span>'}</td>
+        <td style="opacity:.5; font-size:.75rem;">${escHtml(g.guild_id)}</td>
+        <td style="opacity:.7;">#${escHtml(g.channel_name)}</td>
+        <td>${fmt(g.members)}</td>
+        <td>${fmt(g.messages)}</td>
+        <td><button class="btn-sm-outline gc-guild-remove" data-gid="${escHtml(g.guild_id)}" data-name="${escHtml(g.guild_name)}" style="font-size:.72rem; color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Remove</span></button></td>
+    </tr>`).join('');
+}
+
+function gcClearAuthor() { gcAuthorFilter = null; gcRenderFeed(); }
+
+// Delegated so message text never has to survive a round-trip through an
+// inline onclick attribute.
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    if (btn.classList.contains('gc-author') || btn.classList.contains('gc-history')) {
+        gcAuthorFilter = btn.dataset.author;
+        document.getElementById('gcf-search').value = '';
+        gcRenderFeed();
+        return;
+    }
+    if (btn.classList.contains('gc-del')) {
+        if (!confirm('Delete this message from every server it was relayed to?')) return;
+        btn.disabled = true;
+        const r = await doAction({ action: 'gc_delete', message_id: btn.dataset.gcmid });
+        alert(r.message);
+        if (r.ok) gcLoad();
+        else btn.disabled = false;
+        return;
+    }
+    if (btn.classList.contains('gc-ban')) {
+        const reason = prompt('Ban ' + (btn.dataset.name || btn.dataset.author) + ' from the global chat.\nReason:');
+        if (reason === null) return;
+        const r = await doAction({ action: 'gc_ban', user_id: btn.dataset.author, user_name: btn.dataset.name, reason });
+        alert(r.message);
+        if (r.ok) gcLoad();
+        return;
+    }
+    if (btn.classList.contains('gc-unban')) {
+        const r = await doAction({ action: 'gc_unban', user_id: btn.dataset.author });
+        alert(r.message);
+        if (r.ok) gcLoad();
+        return;
+    }
+    if (btn.classList.contains('gc-guild-remove')) {
+        if (!confirm('Remove "' + btn.dataset.name + '" from the global chat? Baxi stays in the server.')) return;
+        const r = await doAction({ action: 'gc_guild_remove', guild_id: btn.dataset.gid });
+        alert(r.message);
+        if (r.ok) gcLoad();
+    }
+});
+
+async function gcBanManual() {
+    const uid = document.getElementById('gcb-uid').value.trim();
+    const reason = document.getElementById('gcb-reason').value.trim();
+    if (!/^\d{17,20}$/.test(uid)) { alert('Enter a valid Discord user ID.'); return; }
+    const r = await doAction({ action: 'gc_ban', user_id: uid, reason });
+    alert(r.message);
+    if (r.ok) {
+        document.getElementById('gcb-uid').value = '';
+        document.getElementById('gcb-reason').value = '';
+        gcLoad();
+    }
+}
 
 async function doAction(payload) {
     const res = await fetch('/api/admin/action', {
@@ -2061,7 +2404,7 @@ async function adminAction(action) {
             <td style="opacity:.5;">${g.boost_count}</td>
             <td>${g.terms ? '✅' : '❌'}</td>
             <td style="opacity:.5;">${g.lang}</td>
-            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:#DC3838;">Leave</button></td>
+            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error);">Leave</button></td>
         </tr>`).join('');
     } else if (action === 'gc_delete') {
         payload.message_id = document.getElementById('gc-mid').value.trim();
@@ -2136,8 +2479,8 @@ async function adminAction(action) {
                     const failed = data.failed_guilds || [];
                     const failedCount = failed.length;
                     progressBar.style.background = failedCount === 0
-                        ? 'linear-gradient(90deg,#46A758,#46A758)'
-                        : 'linear-gradient(90deg,#C73D20,#FF9379)';
+                        ? 'linear-gradient(90deg,var(--avo-success),var(--avo-success))'
+                        : 'linear-gradient(90deg,var(--avo-coral-700),var(--avo-coral-300))';
                     setResult('notif-result',
                         `Gesendet: ${sent}/${ttl} Server. Fehlgeschlagen: ${failedCount}.`,
                         failedCount === 0);
@@ -2145,7 +2488,7 @@ async function adminAction(action) {
                         failedWrap.style.display = 'block';
                         failedList.innerHTML = failed.map(g => `
                             <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:rgba(220,56,56,.07); border:1px solid rgba(220,56,56,.15); ">
-                                <span style="font-size:.78rem; font-weight:600; color:#DC3838;">${escHtml(g.name)}</span>
+                                <span style="font-size:.78rem; font-weight:600; color:var(--avo-error);">${escHtml(g.name)}</span>
                                 <span style="font-size:.7rem; opacity:.45;">${escHtml(g.id)}</span>
                                 <span style="font-size:.72rem; opacity:.6; margin-left:auto;">${escHtml(g.reason)}</span>
                             </div>`).join('');
@@ -2223,7 +2566,7 @@ async function viewPrismProfile(uid) {
     };
     if (p.risk_signals && p.risk_signals.length) {
         signalsEl.innerHTML = p.risk_signals.map(s =>
-            `<span style="font-size:.7rem; padding:.2rem .5rem; background:rgba(224,163,58,.15); color:#E0A33A; border:1px solid rgba(224,163,58,.25);">${SIGNAL_LABELS[s] || s}</span>`
+            `<span style="font-size:.7rem; padding:.2rem .5rem; background:rgba(224,163,58,.15); color:var(--avo-warning); border:1px solid rgba(224,163,58,.25);">${SIGNAL_LABELS[s] || s}</span>`
         ).join('');
         signalsWrap.style.display = '';
     } else {
@@ -2237,7 +2580,7 @@ async function viewPrismProfile(uid) {
         tbody.innerHTML = p.events.map((ev, i) => {
             const sevCls   = SEV_CLASS[ev.severity] || '';
             const decayed  = ev.decayed ? '<span class="decayed-note"> (½ decay)</span>' : '';
-            const weight   = ev.weight >= 0 ? `<span style="color:#46A758;">+${ev.weight}</span>` : `<span style="color:#DC3838;">${ev.weight}</span>`;
+            const weight   = ev.weight >= 0 ? `<span style="color:var(--avo-success);">+${ev.weight}</span>` : `<span style="color:var(--avo-error);">${ev.weight}</span>`;
             const tsEsc    = escHtml(ev.timestamp || '');
             return `<tr>
                 <td style="opacity:.35;">${p.event_count - i}</td>
@@ -2247,7 +2590,7 @@ async function viewPrismProfile(uid) {
                 <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '- ')}</td>
                 <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '- '}</td>
                 <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
-                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:#DC3838; padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
+                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:var(--avo-error); padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
             </tr>`;
         }).join('');
     }
@@ -2275,9 +2618,9 @@ document.addEventListener('keydown', e => {
 // ── Chatfilter Logs ───────────────────────────────────────────
 
 const CF_SYSTEM_BADGE = {
-    'SafeText': '<span class="badge" style="background:rgba(255,107,74,.15);color:#FF6B4A;">SafeText</span>',
-    'AI':       '<span class="badge" style="background:rgba(255,107,74,.15);color:#FF9379;">AI</span>',
-    'Phishing': '<span class="badge" style="background:rgba(220,56,56,.15);color:#DC3838;">Phishing</span>',
+    'SafeText': '<span class="badge badge-running">SafeText</span>',
+    'AI':       '<span class="badge badge-auto">AI</span>',
+    'Phishing': '<span class="badge badge-error">Phishing</span>',
 };
 
 let cfDebounceTimer = null;
@@ -2313,7 +2656,7 @@ function renderCfPage() {
     document.getElementById('cf-next').disabled = cfPage >= maxPage;
 
     if (!slice.length) {
-        body.innerHTML = '<tr><td colspan="7" style="opacity:.4;">No entries found</td></tr>';
+        body.innerHTML = '<tr><td colspan="7" class="is-empty">No entries found</td></tr>';
         return;
     }
 
@@ -2350,7 +2693,7 @@ async function loadCfLogs() {
     if (search) url += '&search=' + encodeURIComponent(search);
 
     const body = document.getElementById('cf-body');
-    body.innerHTML = '<tr><td colspan="7" style="opacity:.4;">Loading…</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="is-empty">Loading…</td></tr>';
 
     try {
         const res = await fetch(url);
@@ -2362,7 +2705,10 @@ async function loadCfLogs() {
         cfPage = 1;
         renderCfPage();
     } catch(err) {
-        body.innerHTML = `<tr><td colspan="7" style="color:#DC3838;">Error loading logs: ${escHtml(String(err))}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="7" style="border-left:2px solid var(--avo-error);color:var(--avo-error);">` +
+            `<span style="font-family:var(--avo-font-mono);font-weight:700;margin-right:.5em;">ERR</span>` +
+            `Error loading logs: ${escHtml(String(err))} ` +
+            `<button class="btn-sm-outline" style="margin-left:.5em;" onclick="loadCfLogs()">Retry</button></td></tr>`;
     }
 }
 
@@ -2374,10 +2720,10 @@ let gaSortCol = 'msg_30d';
 let gaSortAsc = false;
 
 const GA_STATUS = {
-    active:  { label:'Active',  color:'#46A758', bg:'rgba(70,167,88,.15)'  },
-    idle:    { label:'Idle',    color:'#ED5333', bg:'rgba(237,83,51,.15)' },
-    fading:  { label:'Fading',  color:'#DC3838', bg:'rgba(220,56,56,.15)'  },
-    dead:    { label:'Dead',    color:'#555',    bg:'rgba(255,255,255,.06)' },
+    active:  { label:'Active',  color:'var(--avo-success)', bg:'rgba(70,167,88,.15)'  },
+    idle:    { label:'Idle',    color:'var(--avo-warning)', bg:'rgba(237,83,51,.15)' },
+    fading:  { label:'Fading',  color:'var(--avo-error)', bg:'rgba(220,56,56,.15)'  },
+    dead:    { label:'Dead',    color:'var(--avo-text-muted)',    bg:'var(--adm-surface-2)' },
 };
 
 async function loadGuildActivity() {
@@ -2439,7 +2785,7 @@ function gaRender() {
 
     const body = document.getElementById('ga-body');
     if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="8" style="opacity:.4;">No guilds match this filter.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" class="is-empty">No guilds match this filter.</td></tr>`;
         return;
     }
 
@@ -2449,7 +2795,7 @@ function gaRender() {
             ? `<span title="${r.last_active}">${daysSince(r.last_active)}</span>`
             : '<span style="opacity:.3;">never</span>';
         const bar = r.pct > 0
-            ? `<div style="height:5px;background:rgba(255,255,255,.07);overflow:hidden;min-width:80px;">
+            ? `<div style="height:5px;background:var(--adm-surface-2);overflow:hidden;min-width:80px;">
                 <div style="height:100%;width:${r.pct}%;background:${st.color};opacity:.8;"></div>
                </div>
                <span style="font-size:.68rem;opacity:.45;margin-left:.35rem;">${r.pct}%</span>`
@@ -2506,27 +2852,27 @@ function gcIsEnabled(key, val) {
 function gcFeatureChip(key, val) {
     const name = GC_FEATURE_NAMES[key] || key;
     const on = gcIsEnabled(key, val);
-    const color = on ? 'rgba(70,167,88,.15)' : 'rgba(255,255,255,.06)';
-    const tc = on ? '#46A758' : '#666';
+    const color = on ? 'rgba(70,167,88,.15)' : 'var(--adm-surface-2)';
+    const tc = on ? 'var(--avo-success)' : 'var(--avo-text-muted)';
     const dot = on ? '●' : '○';
-    return `<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:600;background:${color};color:${tc};" title="${on?'Enabled':'Disabled'}">${dot} ${name}</span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:var(--avo-radius-sm, 6px);font-size:.72rem;font-weight:600;background:${color};color:${tc};" title="${on?'Enabled':'Disabled'}">${dot} ${name}</span>`;
 }
 
 function gcDetailCard(title, rows) {
     if (!rows.length) return '';
     const rowsHtml = rows.map(([label, value]) =>
-        `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.78rem;">
+        `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;padding:.3rem 0;border-bottom:1px solid var(--adm-border-soft);font-size:.78rem;">
             <span style="opacity:.5;flex-shrink:0;">${label}</span>
             <span style="text-align:right;word-break:break-all;max-width:60%;">${value}</span>
         </div>`
     ).join('');
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:.75rem 1rem;">
-        <div style="font-size:.72rem;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">${title}</div>
+    return `<div style="background:var(--adm-surface);border:1px solid var(--adm-border);padding:.75rem 1rem;">
+        <div class="adm-field-label adm-eyebrow">${title}</div>
         ${rowsHtml}
     </div>`;
 }
 
-function gcBool(v) { return v ? '<span style="color:#46A758;">Yes</span>' : '<span style="color:#888;">No</span>'; }
+function gcBool(v) { return v ? '<span style="color:var(--avo-success);">Yes</span>' : '<span style="color:var(--avo-text-muted);">No</span>'; }
 function gcCount(arr) { return Array.isArray(arr) ? arr.length : (arr ? Object.keys(arr).length : 0); }
 
 function renderGuildConfig(r) {
@@ -2796,6 +3142,8 @@ function showView(viewKey, push) {
         a.classList.toggle('active', a.dataset.view === viewKey);
     });
 
+    if (viewKey === 'section-globalchat' && typeof gcLoad === 'function') gcLoad();
+
     if (push !== false && location.hash !== '#' + viewKey) {
         history.replaceState(null, '', '#' + viewKey);
     }
@@ -2828,139 +3176,6 @@ window.addEventListener('hashchange', () => {
     showView((location.hash || '').replace('#', '') || DEFAULT_VIEW, false);
 });
 
-// ── Feature Access ────────────────────────────────────────────────────────
-const FA_FEATURES = [
-    { key: 'donations', label: 'Donations', desc: 'PayPal / Stripe donation pages and tier role assignment.' },
-];
-
-let _faData = {};
-
-async function faLoad() {
-    try {
-        const r = await fetch('/api/admin/feature_access');
-        const j = await r.json();
-        if (!j.success) throw new Error(j.error || 'Unknown error');
-        _faData = j.feature_access || {};
-        faRender();
-        document.getElementById('fa-loading').style.display = 'none';
-        document.getElementById('fa-body').style.display = '';
-    } catch (e) {
-        document.getElementById('fa-loading').style.display = 'none';
-        const el = document.getElementById('fa-error');
-        el.textContent = 'Failed to load: ' + e.message;
-        el.className = 'action-result err';
-        el.style.display = 'block';
-    }
-}
-
-function faRender() {
-    const list = document.getElementById('fa-features-list');
-    list.innerHTML = '';
-    FA_FEATURES.forEach(feat => {
-        const cfg = _faData[feat.key] || { mode: 'whitelist', guilds: [] };
-        const isWhitelist = cfg.mode !== 'blacklist';
-
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'border:1px solid rgba(255,255,255,.08); padding:1rem 1.25rem; background:rgba(255,255,255,.02);';
-
-        wrap.innerHTML = `
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem;">
-                <div>
-                    <div style="font-weight:600; font-size:.9rem;">${feat.label}</div>
-                    <div style="font-size:.75rem; opacity:.45; margin-top:.15rem;">${feat.desc}</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:.5rem; flex-shrink:0;">
-                    <span style="font-size:.75rem; opacity:.5;">Mode:</span>
-                    <select id="fa-mode-${feat.key}" class="select" style="font-size:.78rem; padding:.25rem .5rem; height:auto;">
-                        <option value="whitelist" ${isWhitelist ? 'selected' : ''}>Whitelist</option>
-                        <option value="blacklist" ${!isWhitelist ? 'selected' : ''}>Blacklist</option>
-                    </select>
-                </div>
-            </div>
-            <div style="font-size:.72rem; opacity:.4; text-transform:uppercase; letter-spacing:.07em; margin-bottom:.4rem;">
-                Guild IDs (<span id="fa-count-${feat.key}">${cfg.guilds.length}</span>)
-            </div>
-            <div id="fa-chips-${feat.key}" style="display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.6rem;"></div>
-            <div style="display:flex; gap:.4rem; align-items:center;">
-                <input id="fa-input-${feat.key}" type="text" placeholder="Add Guild ID…"
-                    style="flex:1; max-width:260px; font-size:.8rem; padding:.3rem .6rem;"
-                    onkeydown="if(event.key==='Enter'){faAddGuild('${feat.key}');event.preventDefault();}">
-                <button type="button" onclick="faAddGuild('${feat.key}')" class="btn-sm-outline" style="font-size:.78rem;">Add</button>
-            </div>
-        `;
-        list.appendChild(wrap);
-
-        // Render existing chips
-        faRenderChips(feat.key, cfg.guilds);
-    });
-}
-
-function faRenderChips(featureKey, guilds) {
-    const container = document.getElementById(`fa-chips-${featureKey}`);
-    const countEl = document.getElementById(`fa-count-${featureKey}`);
-    container.innerHTML = '';
-    guilds.forEach((gid, idx) => {
-        const chip = document.createElement('span');
-        chip.style.cssText = 'display:inline-flex; align-items:center; gap:.3rem; background:rgba(255,107,74,.15); border:1px solid rgba(255,107,74,.3); border-radius:999px; padding:.2rem .55rem; font-size:.75rem;';
-        chip.innerHTML = `${gid} <button type="button" onclick="faRemoveGuild('${featureKey}',${idx})" style="background:none;border:none;cursor:pointer;opacity:.6;color:inherit;padding:0;font-size:.85rem;line-height:1;" title="Remove">×</button>`;
-        container.appendChild(chip);
-    });
-    if (guilds.length === 0) {
-        container.innerHTML = '<span style="font-size:.75rem; opacity:.35; font-style:italic;">No guilds listed.</span>';
-    }
-    if (countEl) countEl.textContent = guilds.length;
-}
-
-function faAddGuild(featureKey) {
-    const input = document.getElementById(`fa-input-${featureKey}`);
-    const val = input.value.trim();
-    if (!val || !/^\d+$/.test(val)) { input.style.borderColor = '#DC3838'; return; }
-    input.style.borderColor = '';
-    if (!_faData[featureKey]) _faData[featureKey] = { mode: 'whitelist', guilds: [] };
-    if (_faData[featureKey].guilds.includes(val)) { input.value = ''; return; }
-    _faData[featureKey].guilds.push(val);
-    faRenderChips(featureKey, _faData[featureKey].guilds);
-    input.value = '';
-}
-
-function faRemoveGuild(featureKey, idx) {
-    if (!_faData[featureKey]) return;
-    _faData[featureKey].guilds.splice(idx, 1);
-    faRenderChips(featureKey, _faData[featureKey].guilds);
-}
-
-async function faSave() {
-    // Sync mode selects into _faData
-    FA_FEATURES.forEach(feat => {
-        const modeEl = document.getElementById(`fa-mode-${feat.key}`);
-        if (!_faData[feat.key]) _faData[feat.key] = { mode: 'whitelist', guilds: [] };
-        _faData[feat.key].mode = modeEl ? modeEl.value : 'whitelist';
-    });
-
-    const resultEl = document.getElementById('fa-save-result');
-    resultEl.className = 'action-result';
-    resultEl.style.display = 'none';
-    try {
-        const r = await fetch('/api/admin/feature_access', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ feature_access: _faData }),
-        });
-        const j = await r.json();
-        if (!j.success) throw new Error(j.error || 'Unknown error');
-        resultEl.textContent = 'Saved.';
-        resultEl.className = 'action-result ok';
-        resultEl.style.display = 'inline-block';
-        setTimeout(() => { resultEl.style.display = 'none'; }, 3000);
-    } catch (e) {
-        resultEl.textContent = 'Error: ' + e.message;
-        resultEl.className = 'action-result err';
-        resultEl.style.display = 'inline-block';
-    }
-}
-
-// Load feature access data on page load
-faLoad();
 </script>
 
 </body>

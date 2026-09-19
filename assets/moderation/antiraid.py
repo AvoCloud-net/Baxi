@@ -336,7 +336,7 @@ class AntiRaid:
 
         await self._alert(guild, cfg, bot, engaged=True)
         admin_log("error", f"Anti-Raid: LOCKDOWN @ {guild.name} -  {reason}", source="AntiRaid")
-        logger.warning(f"[AntiRaid] Lockdown engaged @ {guild.name}: {reason}")
+        logger.warn(f"[AntiRaid] Lockdown engaged @ {guild.name}: {reason}")
 
     async def _lift(self, guild: discord.Guild, bot: commands.AutoShardedBot) -> None:
         s = _st(guild.id)
