@@ -291,7 +291,8 @@ class datasys:
     "livestream": {
         "enabled": False,
         "streamers": [],
-        "category_id": ""
+        "category_id": "",
+        "ping_role": ""
     },
     "youtube_videos": {
         "enabled": False,
@@ -366,6 +367,16 @@ class datasys:
         "high_score": 0,
         "last_user_id": 0,
         "no_double_count": True,
+        "react_correct": True,
+        "react_wrong": True,
+    },
+    "one_word_story": {
+        "enabled": False,
+        "channel": "",
+        "words": [],
+        "last_user_id": 0,
+        "high_score": 0,
+        "no_double_turn": True,
         "react_correct": True,
         "react_wrong": True,
     },

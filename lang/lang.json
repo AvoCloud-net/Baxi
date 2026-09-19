@@ -532,6 +532,18 @@
     "help_title": "🔢 Counting Game – Hilfe",
     "help_description": "Zähle einfach hoch (nächste Zahl in der Kette). Du kannst auch eine Rechnung schreiben, deren Ergebnis die nächste Zahl ist – Punkt-vor-Strich und Potenz-vor-Punkt werden berücksichtigt.\n\n**Erlaubte Operationen:**\n`+`  Addition (`5 + 5`)\n`-`  Subtraktion (`12 - 2`)\n`*` oder `x`  Multiplikation (`2 * 5`)\n`/`  Division (`20 / 2`)\n`^` oder `**`  Potenz (`3^2`, auch als ³²)\n`sqrt(x)` oder `wurzel(x)`  Quadratwurzel (`sqrt(25)`, `wurzel(25)`)\n`()`  Klammern zum Gruppieren\n\nBeispiel: `sqrt(16) + 2^2` ergibt **8**."
       },
+      "one_word_story": {
+        "title": "GAME // ONE WORD STORY",
+        "double_turn": "<:x_:1492987102353166587> **{user}** kann nicht zweimal hintereinander dran sein! Warte auf jemand anderen.",
+        "footer": "Baxi · One Word Story",
+        "story_title": "One Word Story",
+        "story_not_enabled": "<:x_:1492987102353166587> One Word Story ist auf diesem Server nicht aktiviert.",
+        "wrong_channel": "Dieser Befehl funktioniert nur im One Word Story Channel.",
+        "story_empty": "*Die Geschichte ist noch leer – schreib das erste Wort!*",
+        "story_description": "**Wörter bisher:** {count} · **Längste Geschichte:** {high}\n**Channel:** {channel}\n\n{story}",
+        "help_title": "One Word Story – Hilfe",
+        "help_description": "Baut gemeinsam eine Geschichte auf – jede Nachricht darf nur **ein einziges Wort** sein. Das Wort wird an die Geschichte angehängt. Man kann nicht zweimal hintereinander dran sein. Ein Mod kann die Geschichte über das Dashboard abschließen und zurücksetzen."
+      },
       "guessing": {
         "title": "GAME // GUESS",
         "description_correct": "{user}, du hast die Zahl richtig geraten!\nWir beginnen mit einer neuen Zahl, diese wurde zwischen 1 und {max_value} generiert.\nViel Erfolg!"
@@ -1100,6 +1112,18 @@
         "milestone": "<:trophy:1492978643646026006> **Milestone reached!** The count has hit **{count}**!",
     "help_title": "🔢 Counting Game – Help",
     "help_description": "Just count up (the next number in the chain). You can also write a calculation whose result is the next number – order of operations (exponents before multiplication/division before addition/subtraction) is respected.\n\n**Allowed operations:**\n`+`  Addition (`5 + 5`)\n`-`  Subtraction (`12 - 2`)\n`*` or `x`  Multiplication (`2 * 5`)\n`/`  Division (`20 / 2`)\n`^` or `**`  Power (`3^2`, also as ³²)\n`sqrt(x)` or `wurzel(x)`  Square root (`sqrt(25)`, `wurzel(25)`)\n`()`  Parentheses for grouping\n\nExample: `sqrt(16) + 2^2` equals **8**."
+      },
+      "one_word_story": {
+        "title": "GAME // ONE WORD STORY",
+        "double_turn": "<:x_:1492987102353166587> **{user}** cannot take two turns in a row! Wait for someone else.",
+        "footer": "Baxi · One Word Story",
+        "story_title": "One Word Story",
+        "story_not_enabled": "<:x_:1492987102353166587> One Word Story is not enabled on this server.",
+        "wrong_channel": "This command only works in the One Word Story channel.",
+        "story_empty": "*The story is still empty – write the first word!*",
+        "story_description": "**Words so far:** {count} · **Longest story:** {high}\n**Channel:** {channel}\n\n{story}",
+        "help_title": "One Word Story – Help",
+        "help_description": "Build a story together – each message may only be **a single word**. That word gets appended to the story. You cannot take two turns in a row. A mod can finish and reset the story from the dashboard."
       },
       "guessing": {
         "title": "GAME // GUESS",

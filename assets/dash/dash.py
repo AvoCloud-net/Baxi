@@ -3110,6 +3110,90 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Count was reset to 0."})
 
+        elif system == "one_word_story":
+            data: dict = await quart.request.get_json()
+            ows = data.get("one_word_story")
+
+            if not isinstance(ows, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'one_word_story' must be an object."}), 400
+
+            if not isinstance(ows.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(ows.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+
+            existing: dict = dict(load_data(int(guild_id), "one_word_story"))
+            settings = {
+                "enabled": ows["enabled"],
+                "channel": channel_raw if channel_raw else "",
+                "no_double_turn": bool(ows.get("no_double_turn", True)),
+                "react_correct": bool(ows.get("react_correct", True)),
+                "react_wrong": bool(ows.get("react_wrong", True)),
+                # preserve runtime state
+                "words": existing.get("words", []),
+                "high_score": existing.get("high_score", 0),
+                "last_user_id": existing.get("last_user_id", 0),
+            }
+
+            save_data(int(guild_id), "one_word_story", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "one_word_story",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "One Word Story settings saved!"})
+
+        elif system == "one_word_story_end":
+            existing: dict = dict(load_data(int(guild_id), "one_word_story"))
+            words: list = list(existing.get("words", []))
+
+            if words:
+                story_text = " ".join(words)
+                if len(story_text) > 3800:
+                    story_text = story_text[:3800] + " […]"
+                channel_raw = str(existing.get("channel", "") or "")
+                if channel_raw.isdigit():
+                    channel = bot.get_channel(int(channel_raw))
+                    if channel is not None:
+                        embed = discord.Embed(
+                            title="One Word Story — The End",
+                            description=story_text,
+                            color=config.Discord.color,
+                        )
+                        embed.set_footer(text=f"Baxi · One Word Story · {len(words)} words")
+                        try:
+                            await channel.send(embed=embed)
+                        except (discord.Forbidden, discord.HTTPException):
+                            pass
+
+            existing["words"] = []
+            existing["last_user_id"] = 0
+            save_data(int(guild_id), "one_word_story", existing)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "one_word_story_end",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": f"Story ended ({len(words)} words) and posted."})
+
         elif system == "leveling":
             data: dict = await quart.request.get_json()
             lev = data.get("leveling")

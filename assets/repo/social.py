@@ -140,6 +140,7 @@ def load_livestream(gid: int) -> dict:
         "enabled":     bool(r["enabled"]),
         "streamers":   streamers,
         "category_id": str(r["category_id"] or ""),
+        "ping_role":   str(r["ping_role"] or ""),
     }
 
 
@@ -147,9 +148,15 @@ def save_livestream(gid: int, data: dict) -> None:
     db.ensure_guild(gid)
     with db.transaction() as cx:
         cx.execute(
-            "INSERT INTO cfg_livestream (guild_id,enabled,category_id) VALUES (?,?,?) "
-            "ON CONFLICT(guild_id) DO UPDATE SET enabled=excluded.enabled,category_id=excluded.category_id",
-            (gid, int(bool(data.get("enabled", False))), str(data.get("category_id", ""))),
+            "INSERT INTO cfg_livestream (guild_id,enabled,category_id,ping_role) VALUES (?,?,?,?) "
+            "ON CONFLICT(guild_id) DO UPDATE SET enabled=excluded.enabled,category_id=excluded.category_id,"
+            "ping_role=excluded.ping_role",
+            (
+                gid,
+                int(bool(data.get("enabled", False))),
+                str(data.get("category_id", "")),
+                str(data.get("ping_role", "")),
+            ),
         )
         cx.execute("DELETE FROM cfg_livestream_streamer WHERE guild_id=?", (gid,))
         for pos, s in enumerate(data.get("streamers", [])):

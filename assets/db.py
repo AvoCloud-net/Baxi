@@ -52,6 +52,7 @@ _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("status_channel", "TEXT DEFAULT ''"),
         ("status_message_id", "TEXT DEFAULT ''"),
     ],
+    "cfg_livestream": [("ping_role", "TEXT DEFAULT ''")],
 }
 
 
@@ -262,7 +263,8 @@ CREATE TABLE IF NOT EXISTS cfg_welcomer (
 CREATE TABLE IF NOT EXISTS cfg_livestream (
     guild_id    INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
     enabled     INTEGER DEFAULT 0,
-    category_id TEXT    DEFAULT ''
+    category_id TEXT    DEFAULT '',
+    ping_role   TEXT    DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS cfg_livestream_streamer (

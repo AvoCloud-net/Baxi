@@ -74,7 +74,11 @@ def load_data(
         scalars = repo.load_guild_scalars(int(sid))
         return scalars.get(sys, copy.deepcopy(_DD.get(sys, {})))
 
-    # Default fallback (new features, unknown keys)
+    # Default fallback (new features, unknown keys) — check guild_misc
+    # (where save_data's catch-all persists them) before falling back to default.
+    stored = repo.load_misc(int(sid), sys)
+    if stored is not None:
+        return stored
     if sys in _DD:
         return copy.deepcopy(_DD[sys])
     return {}

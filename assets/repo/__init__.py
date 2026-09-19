@@ -257,8 +257,9 @@ def load_full_conf(gid: int) -> dict:
             continue  # already handled above
         pair = REGISTRY.get(key)
         if pair is None or pair[0] is None:
-            # Not in registry or inline-only — use default
-            out[key] = copy.deepcopy(_DD[key])
+            # Not in registry or inline-only — check guild_misc catch-all, else default
+            stored = load_misc(gid, key)
+            out[key] = stored if stored is not None else copy.deepcopy(_DD[key])
             continue
         try:
             out[key] = pair[0](gid)

@@ -1097,6 +1097,52 @@ def leveling_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
+    @bot.tree.command(name="onewordstory", description="Show the current One Word Story so far")
+    async def onewordstory_cmd(interaction: discord.Interaction):
+        await interaction.response.defer()
+        if interaction.guild is None:
+            lang = datasys.load_lang_file(0)
+            await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
+            return
+
+        guild_id = interaction.guild.id
+        lang = datasys.load_lang_file(guild_id)
+        t: dict = lang["games"]["one_word_story"]
+
+        data: dict = dict(datasys.load_data(guild_id, "one_word_story"))
+        if not data.get("enabled", False):
+            await interaction.edit_original_response(embed=Embed(
+                title=t["story_title"],
+                description=t["story_not_enabled"],
+                color=config.Discord.danger_color,
+            ))
+            return
+
+        channel_raw = str(data.get("channel", "") or "")
+        if channel_raw.isdigit() and interaction.channel_id != int(channel_raw):
+            await interaction.edit_original_response(content=t["wrong_channel"])
+            return
+
+        words: list = list(data.get("words", []))
+        story_text = " ".join(words) if words else t["story_empty"]
+        if len(story_text) > 3800:
+            story_text = "[...] " + story_text[-3800:]
+
+        channel = interaction.guild.get_channel(int(channel_raw)) if channel_raw.isdigit() else None
+
+        embed = Embed(
+            title=t["story_title"],
+            description=t["story_description"].format(
+                count=len(words),
+                high=data.get("high_score", 0),
+                channel=channel.mention if channel else "-",
+                story=story_text,
+            ),
+            color=config.Discord.color,
+        )
+        embed.set_footer(text=t["footer"])
+        await interaction.edit_original_response(embed=embed)
+
 
 def mc_link_commands(bot: commands.AutoShardedBot):
     logger.debug.info("MC link commands loaded.")

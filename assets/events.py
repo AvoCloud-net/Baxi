@@ -25,6 +25,7 @@ import assets.message.reactionroles as reactionroles
 import assets.message.serverlog as serverlog
 from assets.message import tempvoice
 import assets.games.counting as counting_game
+import assets.games.onewordstory as onewordstory_game
 import assets.games.quiz as quiz_game
 import assets.leveling as leveling_sys
 import assets.suggestions as suggestions_sys
@@ -993,6 +994,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
         # Minigames (dedicated channels – skip further pipeline if matched)
         if await counting_game.check_counting(message, bot):
+            return
+        if await onewordstory_game.check_onewordstory(message, bot):
             return
         if await quiz_game.check_answer(message, bot):
             return

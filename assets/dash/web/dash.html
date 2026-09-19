@@ -3881,6 +3881,82 @@
                     </section>
                 </div>
 
+                <!-- One Word Story -->
+                <div class="card mb-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            One Word Story
+                        </h2>
+                        <p class="text-muted">Your community writes a story together, one word per message. Two turns in a row by the same person are rejected.</p>
+                    </header>
+                    <section>
+                        <form id="onewordstory-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="onewordstory-enabled" role="switch">
+                                    <span class="font-medium">Enable One Word Story</span>
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="onewordstory-channel">Channel:</label>
+                                <select id="onewordstory-channel" class="select w-full">
+                                    <option value="">-  Select a channel - </option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-onewordstory-channel"></div>
+                                <p class="text-muted text-xs">The channel where the story is written.</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="onewordstory-no-double">
+                                    <input type="checkbox" id="onewordstory-no-double">
+                                    Prevent the same person from taking two turns in a row
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="onewordstory-react-correct">
+                                    <input type="checkbox" id="onewordstory-react-correct">
+                                    React on accepted word
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="onewordstory-react-wrong">
+                                    <input type="checkbox" id="onewordstory-react-wrong">
+                                    React on rejected message
+                                </label>
+                            </div>
+
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);">
+                                <p class="text-muted text-xs" style="margin:0;">
+                                    <strong>Words so far:</strong> <span id="onewordstory-length-display">- </span> &nbsp;|&nbsp;
+                                    <strong>Longest story:</strong> <span id="onewordstory-highscore-display">- </span>
+                                </p>
+                                <p class="text-muted text-xs" style="margin:0;word-break:break-word;" id="onewordstory-preview-display"></p>
+                            </div>
+
+                            <div class="card-actions">
+                                <button type="submit" class="btn-primary submit-btn">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                </button>
+                                <button type="button" id="onewordstory-end-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                    <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>
+                                    End story
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
                 <!-- Flag Quiz -->
                 <div class="card">
                     <header>
@@ -4602,6 +4678,20 @@
                 document.getElementById('counting-react-wrong').checked = data.counting.react_wrong !== false;
                 document.getElementById('counting-current-display').textContent = data.counting.current_count ?? 0;
                 document.getElementById('counting-highscore-display').textContent = data.counting.high_score ?? 0;
+            }
+
+            // One Word Story
+            if (data.one_word_story) {
+                const ows = data.one_word_story;
+                document.getElementById('onewordstory-enabled').checked = ows.enabled === true;
+                document.getElementById('onewordstory-channel').value = (ows.channel && String(ows.channel) !== '0') ? String(ows.channel) : '';
+                document.getElementById('onewordstory-no-double').checked = ows.no_double_turn !== false;
+                document.getElementById('onewordstory-react-correct').checked = ows.react_correct !== false;
+                document.getElementById('onewordstory-react-wrong').checked = ows.react_wrong !== false;
+                const owsWords = Array.isArray(ows.words) ? ows.words : [];
+                document.getElementById('onewordstory-length-display').textContent = owsWords.length;
+                document.getElementById('onewordstory-highscore-display').textContent = ows.high_score ?? 0;
+                document.getElementById('onewordstory-preview-display').textContent = owsWords.length ? owsWords.join(' ') : '';
             }
 
             // Flag Quiz
@@ -7185,6 +7275,47 @@
             };
         };
 
+        // ── One Word Story ─────────────────────────────────────────────────────
+        document.getElementById('onewordstory-form').onsubmit = function (event) {
+            event.preventDefault();
+            const enabled = document.getElementById('onewordstory-enabled').checked;
+            const channel = document.getElementById('onewordstory-channel').value;
+            const no_double_turn = document.getElementById('onewordstory-no-double').checked;
+            const react_correct = document.getElementById('onewordstory-react-correct').checked;
+            const react_wrong = document.getElementById('onewordstory-react-wrong').checked;
+            const payload = { one_word_story: { enabled, channel, no_double_turn, react_correct, react_wrong } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=one_word_story&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        document.getElementById('onewordstory-end-btn').onclick = function () {
+            if (!confirm('End the story now? The full story will be posted in the game channel and the counter resets.')) return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=one_word_story_end&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({}));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        showSaveToast(r.success, r.message);
+                        if (r.success) {
+                            document.getElementById('onewordstory-length-display').textContent = '0';
+                            document.getElementById('onewordstory-preview-display').textContent = '';
+                        }
+                    } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
         // ── Level System ───────────────────────────────────────────────────────
         document.getElementById('leveling-announcement').addEventListener('change', function () {
             document.getElementById('leveling-channel-row').style.display = this.value === 'channel' ? '' : 'none';
@@ -8411,6 +8542,7 @@
             checkChannelPermissions('suggestions_log',   v('suggestions-auto-forward-channel'),'feedback-suggestions-forward',        'suggestions-form',      'fwd_ch');
             // Counting
             checkChannelPermissions('counting',          v('counting-channel'),               'feedback-counting-channel',            'counting-form',         'ch');
+            checkChannelPermissions('onewordstory',      v('onewordstory-channel'),           'feedback-onewordstory-channel',        'onewordstory-form',     'ch');
             // Flag Quiz
             checkChannelPermissions('flag_quiz',         v('flagquiz-channel'),               'feedback-flagquiz-channel',            'flagquiz-form',         'ch');
             // Leveling
@@ -8446,6 +8578,7 @@
             on('suggestions-log-channel',        'suggestions_log',      'feedback-suggestions-log',            'suggestions-form',     'log_ch');
             on('suggestions-auto-forward-channel','suggestions_log',     'feedback-suggestions-forward',        'suggestions-form',     'fwd_ch');
             on('counting-channel',               'counting',             'feedback-counting-channel',           'counting-form',        'ch');
+            on('onewordstory-channel',           'onewordstory',         'feedback-onewordstory-channel',       'onewordstory-form',    'ch');
             on('flagquiz-channel',               'flag_quiz',            'feedback-flagquiz-channel',           'flagquiz-form',        'ch');
             on('leveling-announcement-channel',  'leveling',             'feedback-leveling-channel',           'leveling-form',        'ch');
             on('notification-channel',           'notification',         'feedback-notification-channel',       'general-form',         'notif_ch');
