@@ -916,8 +916,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             data: dict = await quart.request.get_json()
             chatfilter = data.get("chatfilter")
 
-            print(chatfilter)
-
             if not isinstance(chatfilter, dict):
                 return quart.jsonify({"success": False, "message": "Invalid data format: 'chatfilter' must be an object."}), 400
 
@@ -986,6 +984,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             ]
             guild_conf["phishing_filter"] = bool(chatfilter.get("phishing_filter", False))
             guild_conf["warn_on_violation"] = bool(chatfilter.get("warn_on_violation", False))
+            sensitivity = str(chatfilter.get("sensitivity", guild_conf.get("sensitivity", "medium")))
+            if sensitivity not in ("low", "medium", "high"):
+                return quart.jsonify({"success": False, "message": "'sensitivity' must be 'low', 'medium' or 'high'."}), 400
+            guild_conf["sensitivity"] = sensitivity
+            guild_conf["exempt_staff"] = bool(chatfilter.get("exempt_staff", guild_conf.get("exempt_staff", True)))
+            was_opted_in = bool(guild_conf.get("training_opt_in", False))
+            guild_conf["training_opt_in"] = bool(chatfilter.get("training_opt_in", was_opted_in))
+            if was_opted_in and not guild_conf["training_opt_in"]:
+                try:
+                    from assets.message.safetext import samples as _samples
+                    await asyncio.to_thread(_samples.delete_guild, int(guild_id))
+                except Exception as _e:
+                    print(f"SafeText sample opt-out cleanup failed: {_e}")
             if raw_ai_cats is not None:
                 guild_conf["ai_categories"] = {
                     k: bool(raw_ai_cats.get(k, True)) for k in ("1", "2", "3", "4", "5")
@@ -3025,6 +3036,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         correct_label=correct,
                         admin=user.name,
                         reason=f"mod review {action} (deleted_msg)",
+                        guild_id=int(guild_id),
                     )
                     note = "The chat filter learned from this message."
                 elif kind in ("prism_flag", "join_gate") and action == "allow":
@@ -4848,7 +4860,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         """Submit an admin correction for a chatfilter log entry.
 
         Body JSON: {"log_id": str, "correct": "SAFE"|"UNSAFE", "reason": str?}
-        Writes to the SafeText feedback store for LoRA fine-tuning."""
+        Writes to the SafeText feedback store; applies network-wide as an override."""
         user, is_admin = await _require_bot_admin(discord_auth)
         if not is_admin:
             return quart.jsonify({"error": "Access denied"}), 403
@@ -4871,7 +4883,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         model_said = str(entry.get("system") or entry.get("reason") or "UNSAFE")
         # Map "UNSAFE" confirmation onto the concrete category the model picked.
         if correct == "UNSAFE":
-            raw_reason = str(entry.get("reason", "")).strip()
+            raw_reason = str(entry.get("reason_code") or entry.get("reason", "")).strip()
             if raw_reason in {"1", "2", "3", "4", "5"}:
                 correct_label = f"AI-{raw_reason}"
             else:

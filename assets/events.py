@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import re
 import datetime
 from zoneinfo import ZoneInfo
 
@@ -52,7 +51,6 @@ from assets.tasks import (
     Radio247Task,
     McLinkSyncTask,
     McStatusBoardTask,
-    ClassifierTrainTask,
 )
 from assets.giveaway import GiveawayTask
 from assets.poll import PollTask
@@ -249,6 +247,10 @@ def events(bot: commands.AutoShardedBot, web):
             share.task_instances["AntiRaid"] = anti_raid_task
             logger.debug.success("Anti-Raid task started.")
 
+            # Chatfilter model loads in the background; rules-only until it is ready.
+            from assets.message.safetext import models as _safetext_models
+            asyncio.create_task(_safetext_models.warmup())
+
             logger.working("Starting PhishingList task...")
             phishing_list_task = PhishingListTask()
             phishing_list_task.update_phishing_list.start()
@@ -261,12 +263,6 @@ def events(bot: commands.AutoShardedBot, web):
             gc_task.collect.start()
             share.task_instances["GarbageCollector"] = gc_task
             logger.debug.success("Garbage collector task started.")
-
-            logger.working("Starting ClassifierTrain task...")
-            classifier_train_task = ClassifierTrainTask()
-            classifier_train_task.train.start()
-            share.task_instances["ClassifierTrain"] = classifier_train_task
-            logger.debug.success("Classifier self-training task started.")
 
             logger.working("Starting YouTubeVideos task...")
             yt_video_task = YouTubeVideoTask(bot)
@@ -576,6 +572,11 @@ def events(bot: commands.AutoShardedBot, web):
             return
         if before.content == after.content:
             return
+        # Re-check edits (post clean, edit to abuse). The edit is still logged below.
+        try:
+            await run_chatfilter(after, bot)
+        except Exception as _cf_err:
+            logger.error(f"[Chatfilter] edit check failed: {_cf_err}")
         await serverlog.send_log(
             bot, after.guild.id, "message_edit",
             serverlog.build_message_edit(before, after),
@@ -987,6 +988,16 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if mod_result.stop:
             return
 
+        gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
+        guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))
+        is_globalchat = _is_globalchat_channel(message, gc_data)
+
+        # Chatfilter first, so minigame / suggestion / custom-command channels are covered too.
+        if await run_chatfilter(
+            message, bot, risk_ctx=risk_ctx, guild_terms=guild_terms, is_globalchat=is_globalchat,
+        ):
+            return
+
         # Custom commands check
         handled = await customcmd.check_custom_command(message, bot)
         if handled:
@@ -1007,51 +1018,8 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         # Level system -  award XP for this message
         asyncio.create_task(leveling_sys.process_xp(message, bot))
 
-        gc_data: dict = dict(datasys.load_data(1001, "globalchat"))
-        guild_terms: bool = bool(load_data(sid=message.guild.id, sys="terms"))
         guild_id: int = message.guild.id if message.guild is not None else 0
         lang = datasys.load_lang_file(guild_id)
-        chatfilter_data: dict = dict(datasys.load_data(message.guild.id, "chatfilter"))
-        chatfilter_instance = chatfilter.Chatfilter()
-
-        # Fetch recent channel history for AI context (only when AI system is active)
-        ai_history: list[dict] | None = None
-        if chatfilter_data.get("system", "SafeText").lower() == "ai":
-            try:
-                ai_history = []
-                chatfilter_logs_cache: dict | None = None
-                async for hist_msg in message.channel.history(limit=8, before=message):
-                    if (
-                        hist_msg.author.bot
-                        and hist_msg.embeds
-                        and hist_msg.embeds[0].footer.text == "Baxi Security - avocloud.net"
-                    ):
-                        embed_desc = hist_msg.embeds[0].description or ""
-                        restid_match = re.search(r"id_chatfilter=([a-f0-9]+)", embed_desc)
-                        if restid_match:
-                            restid = restid_match.group(1)
-                            if chatfilter_logs_cache is None:
-                                chatfilter_logs_cache = dict(datasys.load_data(1001, "chatfilter_log"))
-                            log_entry = chatfilter_logs_cache.get(restid)
-                            if log_entry:
-                                ai_history.append({
-                                    "author": log_entry["uname"],
-                                    "content": f"[deleted by chatfilter: {log_entry['message']}]",
-                                })
-                    else:
-                        ai_history.append({
-                            "author":  hist_msg.author.name,
-                            "content": hist_msg.clean_content,
-                        })
-                ai_history.reverse()  # oldest first
-            except Exception:
-                ai_history = None
-
-        chatfilter_req: dict = await chatfilter_instance.check(
-            message=message.clean_content, gid=message.guild.id, cid=message.channel.id,
-            user_id=message.author.id, history=ai_history,
-            strictness=risk_ctx.strictness if risk_ctx is not None else 1.0,
-        )
 
         tickets: dict = dict(datasys.load_data(message.guild.id, "open_tickets"))
 
@@ -1097,71 +1065,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             )
             datasys.save_data(message.guild.id, "open_tickets", tickets)
             return
-        _cf_reason = str(chatfilter_req["reason"]).lower()
-        if _cf_reason in {"s11", "5"}:
-            if not guild_terms:
-                return
-            dm_channel = message.author.dm_channel
-            if dm_channel is None:
-                dm_channel = await message.author.create_dm()
-
-            embed = discord.Embed(
-                title="SYS // NOTICE",
-                description="We saw that your message mentioned **self-harm**, **suicide**, or **disordered eating**, and we want you to know something really important: **you are not alone**. So many people struggle with these feelings, and it's okay to feel overwhelmed sometimes. What you're going through matters, and it's completely okay to ask for help- because you deserve support and kindness.\n\n"
-                "If you ever feel like talking to someone, whether it's a **friend**, **family member**, or a **mental health professional**, please don't hesitate. **You don't have to carry this by yourself.** There are people who care deeply and want to be there for you.\n\n"
-                "For immediate support, you can reach out to the **International Suicide Prevention Lifeline** at **+1-800-273-8255** (this number also connects you to help worldwide), or visit https://www.iasp.info/resources/Crisis_Centres/ to find a crisis center near you.\n\n"
-                "If you're in **Austria** or **Germany**, here are some local resources you can contact anytime:\n"
-                "- Austria: Telefonseelsorge -  142 (free & confidential) | https://www.telefonseelsorge.at/\n"
-                "- Germany: Telefonseelsorge -  0800 111 0 111 or 0800 111 0 222 (free & confidential) | https://www.telefonseelsorge.de/",
-                color=config.Discord.danger_color,
-            )
-
-            if (
-                str(message.guild.id) in gc_data
-                and message.channel.id == gc_data[str(message.guild.id)]["channel"]
-            ):
-                embed = discord.Embed(
-                    description=lang["systems"]["globalchat"]["error"]["s11-not-sent"],
-                    color=config.Discord.danger_color,
-                )
-                await message.channel.send(embed=embed)
-
-            await dm_channel.send(embed=embed)
-            return
-
-        if (
-            bool(chatfilter_data.get("enabled", False))
-            and message.channel.id not in chatfilter_data.get("bypass", [])
-        ):
-
-            if chatfilter_req["flagged"] is True:
-                if not guild_terms:
-                    return
-                else:
-                    await del_chatfilter(
-                        message=message, reason=chatfilter_req["reason"], bot=bot,
-                        cf_system=chatfilter_data.get("system", "SafeText"),
-                    )
-                    if chatfilter_data.get("warn_on_violation") and isinstance(message.author, discord.Member) and not message.author.bot:
-                        try:
-                            from assets.message.warnings import add_warning
-                            await add_warning(
-                                guild_id=message.guild.id,
-                                user=message.author,
-                                moderator=bot.user,
-                                reason=f"Chatfilter: {chatfilter_req['reason']}",
-                                bot=bot,
-                                channel=message.channel,
-                            )
-                        except Exception as _warn_err:
-                            logger.error(f"[Chatfilter] warn_on_violation failed: {_warn_err}")
-
-        # (Removed: the old "Prism silent scan" that ran the model and recorded cross-server
-        #  behavioral data even when the chatfilter was disabled — beyond stated functionality.)
-
-        if str(message.guild.id) in gc_data and message.channel.id == int(
-            gc_data[str(message.guild.id)]["channel"]
-        ):
+        if is_globalchat:
             if not guild_terms:
                 embed = discord.Embed(
                     description=str(lang["systems"]["terms"]["description"]).format(
@@ -1172,19 +1076,141 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                 embed.set_footer(text="Baxi · avocloud.net")
                 await message.reply(embed=embed)
                 return
-            if chatfilter_req["flagged"] is True:
-                await del_chatfilter(
-                    message=message, reason=chatfilter_req["reason"], bot=bot,
-                    cf_system=chatfilter_data.get("system", "SafeText"),
-                )
-                return
-            else:
-                return await globalchat.globalchat(
-                    bot=bot, message=message, gc_data=gc_data
-                )
+            return await globalchat.globalchat(
+                bot=bot, message=message, gc_data=gc_data
+            )
 
     except Exception as e:
-        print(e)
+        logger.error(f"process_message error: {type(e).__name__}: {e}")
+
+
+def _is_globalchat_channel(message: discord.Message, gc_data: dict) -> bool:
+    entry = gc_data.get(str(message.guild.id)) if message.guild else None
+    return bool(entry) and str(message.channel.id) == str(entry.get("channel", ""))
+
+
+# Support DMs for self-harm messages: at most one per user per window.
+_SUPPORT_DM_COOLDOWN = 6 * 3600
+_support_dm_sent: dict[int, float] = {}
+
+
+async def _send_support_dm(user: discord.abc.User) -> None:
+    now = asyncio.get_running_loop().time()
+    last = _support_dm_sent.get(user.id)
+    if last is not None and now - last < _SUPPORT_DM_COOLDOWN:
+        return
+    if len(_support_dm_sent) > 5000:
+        for uid, ts in list(_support_dm_sent.items()):
+            if now - ts >= _SUPPORT_DM_COOLDOWN:
+                del _support_dm_sent[uid]
+    _support_dm_sent[user.id] = now
+    embed = discord.Embed(
+        title="SYS // NOTICE",
+        description="We saw that your message mentioned **self-harm**, **suicide**, or **disordered eating**, and we want you to know something really important: **you are not alone**. So many people struggle with these feelings, and it's okay to feel overwhelmed sometimes. What you're going through matters, and it's completely okay to ask for help- because you deserve support and kindness.\n\n"
+        "If you ever feel like talking to someone, whether it's a **friend**, **family member**, or a **mental health professional**, please don't hesitate. **You don't have to carry this by yourself.** There are people who care deeply and want to be there for you.\n\n"
+        "For immediate support, you can reach out to the **International Suicide Prevention Lifeline** at **+1-800-273-8255** (this number also connects you to help worldwide), or visit https://www.iasp.info/resources/Crisis_Centres/ to find a crisis center near you.\n\n"
+        "If you're in **Austria** or **Germany**, here are some local resources you can contact anytime:\n"
+        "- Austria: Telefonseelsorge -  142 (free & confidential) | https://www.telefonseelsorge.at/\n"
+        "- Germany: Telefonseelsorge -  0800 111 0 111 or 0800 111 0 222 (free & confidential) | https://www.telefonseelsorge.de/",
+        color=config.Discord.danger_color,
+    )
+    try:
+        await user.send(embed=embed)
+    except (discord.Forbidden, discord.HTTPException):
+        pass  # DMs closed
+
+
+async def run_chatfilter(
+    message: discord.Message,
+    bot: commands.AutoShardedBot,
+    *,
+    risk_ctx=None,
+    guild_terms: bool | None = None,
+    is_globalchat: bool | None = None,
+) -> bool:
+    """Check *message* and act on the verdict. Returns True when the message must not
+    be processed further (it was removed, or it is a self-harm message in the global
+    chat that must not be relayed)."""
+    assert message.guild is not None
+    guild_id = message.guild.id
+    cf: dict = dict(datasys.load_data(guild_id, "chatfilter"))
+    if is_globalchat is None:
+        is_globalchat = _is_globalchat_channel(message, dict(datasys.load_data(1001, "globalchat")))
+    if not (cf.get("enabled", False) or is_globalchat):
+        return False
+    if guild_terms is None:
+        guild_terms = bool(load_data(sid=guild_id, sys="terms"))
+    if not guild_terms:
+        return False
+    # Ticket conversations stay unfiltered (staff need the full transcript).
+    if str(message.channel.id) in dict(datasys.load_data(guild_id, "open_tickets")):
+        return False
+    # Moderators quote rule violations and moderate with strong words; exempt them
+    # (not in the global chat, which is shared with other servers).
+    if (
+        not is_globalchat and cf.get("exempt_staff", True)
+        and isinstance(message.author, discord.Member)
+        and message.author.guild_permissions.manage_messages
+    ):
+        return False
+    content = message.clean_content
+    if not content.strip():
+        return False
+
+    targeted = message.reference is not None or any(
+        not m.bot and m.id != message.author.id for m in message.mentions
+    )
+    result: dict = await chatfilter.Chatfilter().check(
+        message=content, gid=guild_id, cid=message.channel.id, user_id=message.author.id,
+        strictness=risk_ctx.strictness if risk_ctx is not None else 1.0,
+        parent_id=getattr(message.channel, "parent_id", None),
+        targeted_hint=targeted, is_globalchat=is_globalchat,
+    )
+
+    # Opt-in: noteworthy messages feed the (anonymised) training queue.
+    try:
+        from assets.message.safetext import samples as _samples
+        if _samples.enabled_for(cf):
+            await asyncio.to_thread(
+                _samples.record, gid=guild_id, text=content,
+                lang=str(datasys.load_data(guild_id, "lang") or "en"), result=result,
+            )
+    except Exception as _sample_err:
+        logger.error(f"[Chatfilter] sample record failed: {_sample_err}")
+
+    if result.get("support"):
+        await _send_support_dm(message.author)
+        if is_globalchat:
+            lang = datasys.load_lang_file(guild_id)
+            await message.channel.send(embed=discord.Embed(
+                description=lang["systems"]["globalchat"]["error"]["s11-not-sent"],
+                color=config.Discord.danger_color,
+            ))
+            return True
+        return False
+
+    if not result.get("flagged"):
+        return False
+
+    await del_chatfilter(message=message, reason=result["reason"], bot=bot,
+                         cf_system=cf.get("system", "AI"))
+    if (
+        cf.get("enabled") and cf.get("warn_on_violation")
+        and isinstance(message.author, discord.Member) and not message.author.bot
+    ):
+        try:
+            from assets.message.warnings import add_warning
+            await add_warning(
+                guild_id=guild_id,
+                user=message.author,
+                moderator=bot.user,
+                reason=f"Chatfilter: {result['reason']}",
+                bot=bot,
+                channel=message.channel,
+            )
+        except Exception as _warn_err:
+            logger.error(f"[Chatfilter] warn_on_violation failed: {_warn_err}")
+    return True
 
 
 async def del_chatfilter(
@@ -1210,7 +1236,7 @@ async def del_chatfilter(
         "2": "Insults / Toxicity",
         "3": "Hate Speech / Discrimination",
         "4": "Doxxing / Personal Data",
-        "5": "Suicide / Self-Harm",
+        "5": "Encouraging Self-Harm",
         # Legacy llama-guard codes (kept for existing logs)
         "S3":  "S3 - Sex-Related Crimes",
         "S4":  "S4 - Child Sexual Exploitation",
@@ -1229,7 +1255,7 @@ async def del_chatfilter(
             user=f"{message.author.mention}",
             id=f"{id}",
             link=f"https://baxi.avocloud.net?id_chatfilter={id}",
-            reason=f"{reason_list.get(reason)}",
+            reason=f"{reason_list.get(reason, reason)}",
         ),
         color=config.Discord.danger_color,
     ).set_footer(text=lang["systems"]["chatfilter"]["footer"])
@@ -1271,7 +1297,8 @@ async def del_chatfilter(
         "cname": str(cname),
         "timestamp": str(formatted_time),
         "user_created_at": str(formatted_time_user),
-        "reason": str(reason_list[reason]),
+        "reason": str(reason_list.get(reason, reason)),
+        "reason_code": str(reason),
         "message": str(message.content),
         "system": detected_system,
     }

@@ -64,7 +64,6 @@ class Assistant:
 	max_input_chars = 1500    # passt, lassen
 	default_cooldown = 10     # passt, lassen
 	insult_timeout_seconds = 60   # passt, lassen
-	insult_threshold = 0.7    # etwas sensibler, va. für DE-Nachrichten
 	daily_message_limit = 50      # max assistant replies per user per day (1 concurrent per user)
 	
 
@@ -180,6 +179,9 @@ class datasys:
         "system": "AI",
         "phishing_filter": False,
         "warn_on_violation": False,
+        "sensitivity": "medium",
+        "exempt_staff": True,
+        "training_opt_in": False,
         "ai_categories": {
             "1": True,
             "2": True,

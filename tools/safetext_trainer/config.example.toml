@@ -1,0 +1,30 @@
+# Copy to config.toml (git-ignored) and fill in.
+
+# Work dir for downloads / candidate models (~2 GB each). Keep it out of synced folders.
+# work_dir = "~/.cache/baxi-safetext-trainer"
+
+[server]
+# sftp (recommended) | ftps | ftp (unencrypted - needs allow_insecure_ftp = true)
+protocol = "sftp"
+host = "baxi.example.net"
+port = 22
+user = "baxi"
+# Leave empty to be asked at start, or set the env var BAXI_TRAINER_PASSWORD.
+password = ""
+# SFTP only: private key instead of a password
+# key_file = "/home/you/.ssh/id_rsa"
+# Path of Baxi's data/safetext directory on the server (as the FTP/SFTP user sees it)
+remote_dir = "/opt/baxi/data/safetext"
+# allow_insecure_ftp = false
+
+[training]
+# Values below are the defaults - only set what you want to change.
+# min_new_labels = 50      # refuse to train with fewer labels
+# epochs = 2
+# batch_size = 16          # lower to 8 if the GPU runs out of memory
+# learning_rate = 2e-4
+# lora_r = 16
+# max_len = 128
+# replay_factor = 4        # replay examples per own label (keeps old knowledge)
+# new_label_weight = 3     # how often each own label is repeated per epoch
+# keep_versions = 3        # model versions kept on the server

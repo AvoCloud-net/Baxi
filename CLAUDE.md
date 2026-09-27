@@ -53,7 +53,7 @@ Classes using `discord.ext.tasks` loops: `GCDH_Task` (global chat data sync, 15s
 - `static/` -  CSS/JS/image assets
 
 ### Message Processing (`assets/message/`)
-Feature modules: `chatfilter.py` (SafeText + Llama Guard AI + phishing), `globalchat.py`, `welcomer.py`, `antispam.py`, `auto_slowmode.py`, `reactionroles.py`, `warnings.py`, `customcmd.py`.
+Feature modules: `chatfilter.py` (entry point for the local SafeText pipeline in `safetext/`: normalisation, phishing, doxxing, DE/EN lexicons + `textdetox/xlmr-large-toxicity-classifier`), `globalchat.py`, `welcomer.py`, `antispam.py`, `auto_slowmode.py`, `reactionroles.py`, `warnings.py`, `customcmd.py`.
 
 ### Games (`assets/games/`)
 `counting.py` -  counting game logic. `quiz.py` -  flag quiz logic.

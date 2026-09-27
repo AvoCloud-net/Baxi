@@ -1,0 +1,11 @@
+# Install PyTorch with CUDA first, matching your driver, e.g.:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124
+torch>=2.2
+transformers>=4.40
+peft>=0.10
+sentencepiece
+protobuf
+pandas
+pyarrow
+paramiko
+reds_simple_logger

@@ -854,31 +854,77 @@
     <!-- ── SAFETEXT MODEL ─────────────────────────────────────── -->
     <section id="section-safetext" class="admin-view" data-view="section-safetext">
         <div class="section-label">SafeText Model</div>
+        <div class="card" style="margin-bottom:1rem;">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2>Training Queue</h2>
+                    <p class="text-muted" style="font-size:.78rem;">
+                        Anonymised samples from servers that opted in. Label them - the offline trainer
+                        (<code>tools/safetext_trainer</code>) learns from your labels.
+                    </p>
+                </div>
+                <div style="display:flex; gap:1.25rem; font-size:.8rem;">
+                    <span>Open: <strong id="stq-open">–</strong></span>
+                    <span>Labelled: <strong id="stq-labelled">–</strong></span>
+                </div>
+            </header>
+            <div id="stq-empty" class="text-muted" style="display:none; padding:1.5rem 0; text-align:center; font-size:.85rem;">
+                Nothing to label right now.
+            </div>
+            <div id="stq-card" style="display:none; margin-top:1rem;">
+                <div style="font-size:1.05rem; line-height:1.5; padding:1rem; border:1px solid var(--border,#333); border-radius:8px; word-break:break-word; white-space:pre-wrap;" id="stq-text"></div>
+                <p class="text-muted" style="font-size:.75rem; margin-top:.5rem;" id="stq-meta"></p>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem;">
+                    <button class="btn-sm-outline" onclick="stqLabel('SAFE')" title="S">✓ Okay <kbd>S</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('2')" title="2" style="color:#ef4444;border-color:#ef4444;">Insult / toxic <kbd>2</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('3')" title="3" style="color:#ef4444;border-color:#ef4444;">Hate <kbd>3</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('1')" title="1" style="color:#ef4444;border-color:#ef4444;">NSFW <kbd>1</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('5')" title="5" style="color:#ef4444;border-color:#ef4444;">Self-harm incite <kbd>5</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('4')" title="4" style="color:#ef4444;border-color:#ef4444;">Personal data <kbd>4</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqLabel('DISCARD')" title="D">Discard <kbd>D</kbd></button>
+                    <button class="btn-sm-outline" onclick="stqSkip()" title="Space">Skip <kbd>Space</kbd></button>
+                </div>
+                <p class="text-muted" style="font-size:.72rem; margin-top:.5rem;">
+                    Judge the message as the filter should: <strong>Okay</strong> = must not be removed
+                    (cursing, banter, quotes, reports). <strong>Discard</strong> = unusable (spam, no context, still personal data).
+                </p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem;">
+            <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+                <div>
+                    <h2>Model Versions</h2>
+                    <p class="text-muted" style="font-size:.78rem;">Loaded: <span id="stm-loaded">–</span></p>
+                </div>
+                <button class="btn-sm-outline" onclick="stmActivate(null)">Use base model</button>
+            </header>
+            <div style="overflow-x:auto; margin-top:.75rem;">
+                <table class="admin-table">
+                    <thead><tr><th>Version</th><th>Created</th><th>Labels</th><th>HateCheck DE (caught / wrong)</th><th>HateCheck EN (caught / wrong)</th><th>Discord set (caught / wrong)</th><th></th></tr></thead>
+                    <tbody id="stm-body"><tr><td colspan="7" class="is-empty">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
                     <h2>Local Classifier</h2>
                     <p class="text-muted" style="font-size:.78rem;">
-                        Toxic: <span id="st-toxic-model">–</span> ·
-                        NSFW: <span id="st-nsfw-model">–</span> ·
-                        LoRA: <span id="st-lora">–</span> ·
+                        Model: <span id="st-toxic-model">–</span> ·
                         <button onclick="loadSafeTextStatus()" style="background:none; border:none; cursor:pointer; font-size:.78rem; opacity:.6; text-decoration:underline; padding:0;">Refresh</button>
                     </p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                    <button class="btn-sm-outline" onclick="safetextReload()">Reload Models</button>
-                    <button class="btn-sm-outline" onclick="safetextFinetune()">Start Fine-tune</button>
+                    <button class="btn-sm-outline" onclick="safetextReload()">Reload Model &amp; Lists</button>
                 </div>
             </header>
             <section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin-top:1rem;">
                 <div><div class="adm-field-label adm-eyebrow">Feedback total</div>
                     <div style="font-size:1.3rem; font-weight:600;" id="st-fb-total">–</div></div>
-                <div><div class="adm-field-label adm-eyebrow">Untrained</div>
-                    <div style="font-size:1.3rem; font-weight:600;" id="st-fb-untrained">–</div></div>
-                <div><div class="adm-field-label adm-eyebrow">Fine-tune state</div>
-                    <div style="font-size:1rem; font-weight:600;" id="st-ft-state">–</div></div>
-                <div><div class="adm-field-label adm-eyebrow">Last finish</div>
-                    <div style="font-size:.85rem;" id="st-ft-finished">–</div></div>
+                <div><div class="adm-field-label adm-eyebrow">Active overrides</div>
+                    <div style="font-size:1.3rem; font-weight:600;" id="st-overrides">–</div></div>
             </section>
             <section style="margin-top:1rem; overflow-x:auto;">
                 <table class="admin-table" id="st-log-table">
@@ -894,7 +940,8 @@
                     Use the dropdown in the right column to correct the classifier's verdict.
                     <strong>SAFE</strong> = the message was fine, model over-blocked.
                     <strong>AI-2</strong> = insult/toxic, <strong>AI-3</strong> = hate speech.
-                    Submitting adds a training sample; the fine-tune button consumes untrained samples (≥8 needed for categories 2/3).
+                    A correction takes effect immediately for this exact message, in any spelling
+                    (case, leetspeak, spacing). Only flagged or borderline messages keep their text.
                 </p>
             </section>
         </div>
@@ -906,13 +953,8 @@
             if (!r.ok) return;
             const d = await r.json();
             document.getElementById('st-toxic-model').textContent = d.models?.toxic || '–';
-            document.getElementById('st-nsfw-model').textContent  = d.models?.nsfw  || '–';
-            document.getElementById('st-lora').textContent        = d.lora_present ? 'present' : 'base model';
             document.getElementById('st-fb-total').textContent    = d.feedback?.total ?? '–';
-            document.getElementById('st-fb-untrained').textContent= d.feedback?.untrained ?? '–';
-            document.getElementById('st-ft-state').textContent    = d.finetune?.state || 'idle';
-            document.getElementById('st-ft-finished').textContent = d.finetune?.finished_at
-                ? new Date(d.finetune.finished_at * 1000).toLocaleString() : '–';
+            document.getElementById('st-overrides').textContent   = d.overrides ?? '–';
         } catch (e) { console.error(e); }
     }
     function _stEsc(s) {
@@ -982,7 +1024,7 @@
             });
             const d = await r.json();
             if (d.ok) {
-                alert(`Saved. Untrained samples: ${d.untrained}`);
+                alert('Saved - applies to this message from now on.');
                 loadSafeTextStatus();
                 loadSafeTextLog();
             } else {
@@ -990,21 +1032,96 @@
             }
         } catch (err) { alert('Request failed: '+err); }
     }
-    async function safetextFinetune() {
-        if (!confirm('Start LoRA fine-tune job?')) return;
-        const r = await fetch('/api/safetext/finetune', {method:'POST'});
-        const d = await r.json();
-        alert(d.ok ? ('Started, pid='+d.pid) : ('Error: '+(d.error||'unknown')));
-        loadSafeTextStatus();
-    }
     async function safetextReload() {
         const r = await fetch('/api/safetext/reload', {method:'POST'});
         const d = await r.json();
-        alert(d.ok ? 'Models will reload on next classify.' : 'Reload failed.');
+        alert(d.ok ? 'Model and word lists will reload on next message.' : 'Reload failed.');
     }
+    // ── training queue ──
+    let _stqSample = null;
+    const _stqSkipped = new Set();
+    async function stqLoad() {
+        try {
+            const r = await fetch('/api/safetext/samples/next?skip=' + encodeURIComponent([..._stqSkipped].join(',')));
+            if (!r.ok) return;
+            const d = await r.json();
+            document.getElementById('stq-open').textContent = d.stats?.unlabelled ?? '–';
+            document.getElementById('stq-labelled').textContent = d.stats?.labelled ?? '–';
+            _stqSample = d.sample;
+            document.getElementById('stq-card').style.display = _stqSample ? '' : 'none';
+            document.getElementById('stq-empty').style.display = _stqSample ? 'none' : '';
+            if (!_stqSample) return;
+            document.getElementById('stq-text').textContent = _stqSample.text;
+            const tox = (_stqSample.toxicity == null) ? '–' : Number(_stqSample.toxicity).toFixed(3);
+            document.getElementById('stq-meta').textContent =
+                `Filter said: ${_stqSample.verdict}${_stqSample.stage ? ' (' + _stqSample.stage + ')' : ''} · score ${tox} · ${_stqSample.lang} · ${new Date(_stqSample.ts * 1000).toLocaleString()}`;
+        } catch (e) { console.error(e); }
+    }
+    async function stqLabel(label) {
+        if (!_stqSample) return;
+        const id = _stqSample.id;
+        _stqSample = null;
+        try {
+            const r = await fetch('/api/safetext/samples/label', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, label}),
+            });
+            if (!r.ok) { const d = await r.json().catch(() => ({})); alert('Error: ' + (d.error || r.status)); }
+        } catch (e) { alert('Request failed: ' + e); }
+        stqLoad();
+    }
+    function stqSkip() { if (_stqSample) { _stqSkipped.add(_stqSample.id); stqLoad(); } }
+    document.addEventListener('keydown', (e) => {
+        const view = document.getElementById('section-safetext');
+        if (!_stqSample || !view || view.offsetParent === null) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+        const k = e.key.toLowerCase();
+        const map = {s: 'SAFE', d: 'DISCARD', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5'};
+        if (map[k]) { e.preventDefault(); stqLabel(map[k]); }
+        else if (k === ' ') { e.preventDefault(); stqSkip(); }
+    });
+
+    // ── model versions ──
+    function _stmPair(m) {
+        return m ? `${m.recall ?? '–'}% / ${m.fp_rate ?? '–'}%` : '–';
+    }
+    async function stmLoad() {
+        try {
+            const r = await fetch('/api/safetext/models');
+            if (!r.ok) return;
+            const d = await r.json();
+            const active = d.active?.version || null;
+            document.getElementById('stm-loaded').textContent = d.loaded_from || '(not loaded yet)';
+            const rows = (d.versions || []).map(v => {
+                const m = v.metrics || {};
+                const isActive = v.version === active;
+                return `<tr>
+                    <td>${_stEsc(v.version)}${isActive ? ' <strong>(active)</strong>' : ''}</td>
+                    <td>${v.created_at ? new Date(v.created_at * 1000).toLocaleString() : '–'}</td>
+                    <td>${v.samples ?? '–'}</td>
+                    <td>${_stmPair(m.hatecheck_de)}</td><td>${_stmPair(m.hatecheck_en)}</td><td>${_stmPair(m.discord)}</td>
+                    <td>${isActive ? '' : `<button class="btn-sm-outline" onclick="stmActivate('${_stEsc(v.version)}')">Activate</button>`}</td>
+                </tr>`;
+            });
+            document.getElementById('stm-body').innerHTML = rows.length ? rows.join('')
+                : '<tr><td colspan="7" class="is-empty">No trained versions yet - the base model is in use.</td></tr>';
+        } catch (e) { console.error(e); }
+    }
+    async function stmActivate(version) {
+        if (!confirm(version ? `Activate model ${version}?` : 'Switch back to the base model?')) return;
+        const r = await fetch('/api/safetext/models/activate', {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({version}),
+        });
+        const d = await r.json();
+        alert(d.ok ? 'Done - the bot switches within a minute.' : 'Error: ' + (d.error || 'unknown'));
+        stmLoad();
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         loadSafeTextStatus();
         loadSafeTextLog();
+        stqLoad();
+        stmLoad();
         setInterval(loadSafeTextStatus, 15000);
     });
     </script>
@@ -2902,6 +3019,7 @@ function renderGuildConfig(r) {
         cards.push(gcDetailCard('Chatfilter', [
             ['Enabled', gcBool(cf.enabled)],
             ['Phishing Filter', gcBool(cf.phishing_filter)],
+            ['Sensitivity', cf.sensitivity || 'medium'],
             ['AI Categories', enabledCats],
         ]));
     }

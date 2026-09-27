@@ -832,6 +832,11 @@ class GarbageCollectorTask:
         try:
             set_task_status("GarbageCollector", "running", "Cleaning log entries older than 30 days...")
             removed = self._do_collect()
+            try:
+                from assets.message.safetext import samples as _samples
+                removed["chatfilter training samples"] = await asyncio.to_thread(_samples.prune)
+            except Exception as _e:
+                logger.error(f"[GC] sample prune failed: {_e}")
             parts = [f"{v} {k}" for k, v in removed.items() if v > 0]
             summary = " · ".join(parts) if parts else "nothing to clean"
             logger.debug.success(f"[GC] Cleanup complete: {summary}")
@@ -2218,40 +2223,3 @@ class McStatusBoardTask:
     @refresh_boards.before_loop
     async def before_refresh_boards(self):
         await self.bot.wait_until_ready()
-
-
-class ClassifierTrainTask:
-    """Daily self-training pass for the SafeText chatfilter.
-
-    Folds staff-confirmed training samples (from moderator deletions and feedback
-    corrections) into a LoRA fine-tune once enough have accumulated. Fully local -
-    no external LLM. The fine-tune runs in a subprocess and reloads the model on success.
-    """
-
-    @tasks.loop(hours=24)
-    async def train(self):
-        try:
-            from assets.message.safetext import feedback, finetune
-            st = feedback.stats()
-            untrained = st.get("untrained", 0)
-            if untrained < finetune.MIN_SAMPLES:
-                set_task_status(
-                    "ClassifierTrain", "ok",
-                    f"{untrained}/{finetune.MIN_SAMPLES} samples -  waiting for more",
-                )
-                return
-            set_task_status("ClassifierTrain", "running", f"Fine-tuning on {untrained} new samples...")
-            res = await finetune.start_job()
-            if res.get("ok"):
-                set_task_status("ClassifierTrain", "ok", f"Training started (pid {res.get('pid')})")
-                logger.debug.success(f"[ClassifierTrain] Fine-tune started on {untrained} samples")
-            else:
-                set_task_status("ClassifierTrain", "error", f"Could not start: {res.get('error')}")
-        except Exception as e:
-            logger.error(f"[ClassifierTrain] Error: {e}")
-            set_task_status("ClassifierTrain", "error", f"Error: {e}")
-
-    @train.before_loop
-    async def before_train(self):
-        # Stagger 5 min after start so it never competes with boot-time model loading.
-        await asyncio.sleep(300)

@@ -1,12 +1,6 @@
-"""Chatfilter entry point.
+"""Chatfilter entry point: resolves the guild config and runs the SafeText pipeline.
 
-Thin wrapper over the local SafeText pipeline. External HTTP calls to the
-legacy SafeText keyword API and Ollama AI are gone — all classification now
-happens in-process via transformers models plus local regex stages.
-
-The `Chatfilter.check` signature is preserved so callers in events.py do not
-need to change. The `history` kwarg is accepted but unused (kept for API
-compatibility; the classifier is stateless).
+All classification happens in-process (see assets/message/safetext/pipeline.py).
 """
 from typing import Any, Dict
 
@@ -18,7 +12,7 @@ from assets.message.safetext import check as pipeline_check
 logger = Logger()
 
 
-# Category labels retained for dashboard parity with the old Ollama prompt.
+# Category labels shown in the dashboard.
 AI_CATEGORIES: Dict[str, str] = {
     "1": "NSFW / Explicit Content",
     "2": "Insults / Toxicity",
@@ -31,23 +25,17 @@ AI_CATEGORIES: Dict[str, str] = {
 class Chatfilter:
     async def check(
         self,
-        message:    str,
-        gid:        int,
-        cid:        int,
-        user_id:    int = 0,
-        history:    list[dict] | None = None,   # unused, kept for compat
-        strictness: float = 1.0,                # risk-weight from RiskContext
+        message:       str,
+        gid:           int,
+        cid:           int,
+        user_id:       int = 0,
+        strictness:    float = 1.0,     # risk-weight from RiskContext
+        parent_id:     int | None = None,  # parent channel of a thread
+        targeted_hint: bool = False,    # reply or member mention
+        is_globalchat: bool = False,
     ) -> Dict[str, Any]:
 
         chatfilter_data: dict = dict(datasys.load_data(gid, "chatfilter"))
-
-        # Channel bypass whitelist
-        bypass = [str(c) for c in chatfilter_data.get("bypass", [])]
-        if bypass and str(cid) in bypass:
-            return {"code": "safe", "flagged": False, "distance": None,
-                    "reason": "no_issues_detected", "json": {}}
-
-        guild_lang: str = str(datasys.load_data(gid, "lang") or "en")
 
         raw_categories: dict = chatfilter_data.get(
             "ai_categories",
@@ -55,10 +43,20 @@ class Chatfilter:
         )
         enabled_categories: set[str] = {k for k, v in raw_categories.items() if v}
 
-        # "AI" (default) = rule-based + ML models. "SafeText" = rule-based only.
-        system = str(chatfilter_data.get("system", "AI"))
-        if system != "AI":
-            enabled_categories -= {"1", "2", "3"}
+        if is_globalchat:
+            # The global chat is shared by every server: no guild may weaken it.
+            chatfilter_data = {**chatfilter_data, "phishing_filter": True}
+            enabled_categories = set(AI_CATEGORIES)
+        else:
+            bypass = {str(c) for c in chatfilter_data.get("bypass", [])}
+            if str(cid) in bypass or (parent_id is not None and str(parent_id) in bypass):
+                return {"code": "safe", "flagged": False, "distance": None,
+                        "reason": "no_issues_detected", "json": {}}
+
+        guild_lang: str = str(datasys.load_data(gid, "lang") or "en")
+
+        # "AI" (default) = rules + toxicity model. "SafeText" = rules only.
+        use_ml = is_globalchat or str(chatfilter_data.get("system", "AI")) == "AI"
 
         return await pipeline_check(
             message=message,
@@ -69,4 +67,6 @@ class Chatfilter:
             guild_lang=guild_lang,
             enabled_categories=enabled_categories,
             strictness=strictness,
+            use_ml=use_ml,
+            targeted_hint=targeted_hint,
         )

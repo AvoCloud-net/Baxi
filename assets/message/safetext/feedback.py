@@ -1,7 +1,9 @@
 """Admin feedback store for SafeText classifications.
 
-Entries here drive LoRA fine-tuning of the toxic model. Each record captures
-the original message, what the model said, and the admin-corrected label.
+Each record captures the original message, what the pipeline said, and the
+admin-corrected label. Corrections act as exact-match overrides (see
+`override_for`) and are kept as a labelled dataset for evaluating or
+fine-tuning future models offline.
 """
 import asyncio
 import json
@@ -10,8 +12,6 @@ from pathlib import Path
 from typing import Optional
 
 from reds_simple_logger import Logger
-
-from assets.message.safetext.logstore import LOG_FILE, read_recent
 
 logger = Logger()
 
@@ -27,8 +27,12 @@ async def submit(
     correct_label: str,
     admin: str,
     reason: Optional[str] = None,
+    guild_id: Optional[int] = None,
 ) -> dict:
-    """Append a correction. Returns {"ok": True, "count": N, "untrained": U}."""
+    """Append a correction. Returns {"ok": True, "count": N, "untrained": U}.
+
+    *guild_id*: corrections from a server's own moderators only apply to that
+    server. Without it (bot admins) the correction applies network-wide."""
     entry = {
         "ts":            int(time.time()),
         "log_id":        log_id,
@@ -38,6 +42,7 @@ async def submit(
         "admin":         admin,
         "reason":        reason or "",
         "trained":       False,
+        "guild_id":      str(guild_id) if guild_id is not None else None,
     }
 
     async with _lock:
@@ -81,6 +86,41 @@ def list_entries(only_untrained: bool = False) -> list[dict]:
     return entries
 
 
+_overrides: dict[tuple[str | None, str], str] = {}
+_overrides_mtime: float | None = None
+
+
+def override_for(key: str, guild_id: int | None = None) -> Optional[str]:
+    """Confirmed label ("SAFE" or "1".."5") for a normalised message key.
+
+    Corrections apply immediately and exactly: once a message is marked safe (or
+    harmful), the same message - in any spelling that normalises to the same key -
+    gets that verdict. A server's own correction beats a network-wide one; within
+    a scope the newest correction wins."""
+    global _overrides, _overrides_mtime
+    try:
+        mtime = FEEDBACK_FILE.stat().st_mtime
+    except OSError:
+        return None
+    if mtime != _overrides_mtime:
+        from assets.message.safetext.normalize import normalize
+        table: dict[str, str] = {}
+        for e in _read_all():
+            msg = str(e.get("message", "")).strip()
+            label = str(e.get("correct_label", "")).strip().upper().removeprefix("AI-")
+            if msg and label in {"SAFE", "1", "2", "3", "4", "5"}:
+                table[(e.get("guild_id"), normalize(msg).key)] = label
+        _overrides, _overrides_mtime = table, mtime
+    if guild_id is not None and (hit := _overrides.get((str(guild_id), key))):
+        return hit
+    return _overrides.get((None, key))
+
+
+def override_count() -> int:
+    override_for("")  # refresh the table if the file changed
+    return len(_overrides)
+
+
 def stats() -> dict:
     entries = _read_all()
     return {
@@ -88,18 +128,3 @@ def stats() -> dict:
         "untrained": sum(1 for e in entries if not e.get("trained")),
     }
 
-
-def mark_all_trained() -> int:
-    """Flip trained=True for all entries. Returns count flipped."""
-    entries = _read_all()
-    changed = 0
-    for e in entries:
-        if not e.get("trained"):
-            e["trained"] = True
-            changed += 1
-    tmp = FEEDBACK_FILE.with_suffix(".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
-        for e in entries:
-            fh.write(json.dumps(e, ensure_ascii=False) + "\n")
-    tmp.replace(FEEDBACK_FILE)
-    return changed

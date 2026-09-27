@@ -9,3 +9,11 @@ baxi_data.db
 baxi_data.db-wal
 baxi_data.db-shm
 data_backup_pre_sqlite/
+
+# Chatfilter runtime data (chat samples, logs, model versions) - never commit
+data/safetext/*.jsonl
+data/safetext/models/
+data/safetext/model/
+# Local trainer config (credentials) and work dir
+tools/safetext_trainer/config.toml
+tools/safetext_trainer/work/

@@ -327,25 +327,18 @@ def _chunk(text: str, size: int = 1990) -> list[str]:
     return chunks
 
 
-_INSULT_LABELS = ("toxic", "severe_toxic", "insult", "threat", "identity_hate")
-
-
 async def _is_insult(prompt: str) -> bool:
-    """Insult detection via the existing multilingual ML toxicity model (NOT the chat
-    LLM — gemma2 wildly over-flagged benign messages). Benign text scores ~0 here, so a
-    conservative threshold avoids false-positive timeouts while still catching real
-    insults/slurs in any language."""
+    """Insult detection via the SafeText pipeline (NOT the chat LLM — gemma2 wildly
+    over-flagged benign messages). Uses the same lexicon + model logic as the chatfilter,
+    so plain cursing ("fuck, how does X work?") does not count, only insults, threats
+    and hate aimed at Baxi or another member."""
     try:
-        from assets.message.safetext import models as _toxmodels
-        scores = await _toxmodels.classify_toxic(prompt)
+        from assets.message.safetext.pipeline import is_insult
+        if await is_insult(prompt):
+            logger.info("[Assistant] insult detected — will timeout")
+            return True
     except Exception as e:
         logger.error(f"[Assistant] toxicity model error: {type(e).__name__}: {e}")
-        return False
-    score = max((scores.get(lbl, 0.0) for lbl in _INSULT_LABELS), default=0.0)
-    threshold = getattr(config.Assistant, "insult_threshold", 0.75)
-    if score >= threshold:
-        logger.info(f"[Assistant] insult score={score:.2f} (>= {threshold}) — will timeout")
-        return True
     return False
 
 

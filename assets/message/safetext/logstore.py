@@ -1,11 +1,11 @@
 """SafeText classification log (append-only JSONL).
 
-Raw messages are NEVER stored by default — only SHA-256 hashes — to stay
-compliant with DSGVO. When an admin marks an entry for feedback, the original
-message must be re-supplied at that point via the dashboard (see feedback
-module).
+Only written for guilds that enabled the chatfilter (or the global chat). The raw
+message is kept only when it is relevant for admin review - flagged, support
+case, or a toxicity score of at least REVIEW_SCORE - everything else is stored
+as a SHA-256 prefix (DSGVO data minimisation).
 
-Set `SAFETEXT_LOG_RAW=1` in config to store raw messages (dev only).
+Set the env var `SAFETEXT_LOG_RAW=1` to store every raw message (dev only).
 """
 import hashlib
 import json
@@ -21,7 +21,11 @@ logger = Logger()
 
 LOG_FILE = Path("data/safetext/log.jsonl")
 MAX_LINES = 10_000  # rotate when exceeded
+REVIEW_SCORE = 0.30
+_LOG_RAW = os.environ.get("SAFETEXT_LOG_RAW") == "1"
+_ROTATE_EVERY = 500  # check file length every N writes, not on every message
 _write_lock = Lock()
+_writes_since_rotate = 0
 
 
 def _hash(text: str) -> str:
@@ -56,14 +60,20 @@ def record(
     }
     if message is not None:
         entry["msg_hash"] = _hash(message)
-        entry["message"] = message
+        review_worthy = flagged or bool(result.get("support")) or (confidence or 0.0) >= REVIEW_SCORE
+        if _LOG_RAW or review_worthy:
+            entry["message"] = message
 
     try:
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        global _writes_since_rotate
         with _write_lock:
             with LOG_FILE.open("a", encoding="utf-8") as fh:
                 fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
-            _rotate_if_needed()
+            _writes_since_rotate += 1
+            if _writes_since_rotate >= _ROTATE_EVERY:
+                _writes_since_rotate = 0
+                _rotate_if_needed()
     except OSError as e:
         logger.error(f"SafeText log write failed: {e}")
 

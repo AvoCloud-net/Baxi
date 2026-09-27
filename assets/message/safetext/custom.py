@@ -1,39 +1,48 @@
-"""Custom per-guild badword / goodword matcher.
+"""Per-guild custom badwords / goodwords.
 
-`c_badwords` -> flag message on match.
-`c_goodwords` -> whitelist, skips further checks when matched.
+`c_badwords`  -> message is flagged on match. Matched on the normalised text,
+                 so "b a d", "b4d" and zero-width tricks no longer slip through.
+`c_goodwords` -> words the guild considers harmless. They are *masked* before the
+                 lexicon and model stages run - they no longer whitelist the whole
+                 message (previously "<goodword> kys" passed unchecked).
 
 Values may be a list of strings (preferred) or a comma-separated string.
-Compiled regex is cached per-(guild_id, kind, revision) by id() of the source
-list so edits take effect without a bot restart.
 """
 import re
-from typing import Iterable, Optional
+from functools import lru_cache
+from typing import Optional
+
+from assets.message.safetext.normalize import Normalized, compile_phrases, search
 
 
-def _as_list(value) -> list[str]:
+def _as_tuple(value) -> tuple[str, ...]:
     if value is None:
-        return []
+        return ()
     if isinstance(value, str):
-        return [v.strip() for v in value.split(",") if v.strip()]
+        value = value.split(",")
     if isinstance(value, (list, tuple)):
-        return [str(v).strip() for v in value if str(v).strip()]
-    return []
+        return tuple(sorted({str(v).strip() for v in value if str(v).strip()}))
+    return ()
 
 
-def _compile(words: Iterable[str]) -> list[re.Pattern]:
-    return [re.compile(rf"\b{re.escape(w)}\b", re.IGNORECASE) for w in words]
+@lru_cache(maxsize=512)
+def _compiled(words: tuple[str, ...]) -> Optional[re.Pattern]:
+    return compile_phrases(words)
 
 
-def match_badword(text: str, c_badwords) -> Optional[str]:
-    for pat in _compile(_as_list(c_badwords)):
-        if m := pat.search(text):
-            return m.group(0)
-    return None
+@lru_cache(maxsize=512)
+def _raw_compiled(words: tuple[str, ...]) -> Optional[re.Pattern]:
+    if not words:
+        return None
+    body = "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+    return re.compile(rf"\b(?:{body})\b", re.IGNORECASE)
 
 
-def match_goodword(text: str, c_goodwords) -> Optional[str]:
-    for pat in _compile(_as_list(c_goodwords)):
-        if m := pat.search(text):
-            return m.group(0)
-    return None
+def match_badword(norm: Normalized, c_badwords) -> Optional[str]:
+    return search(_compiled(_as_tuple(c_badwords)), norm)
+
+
+def mask_goodwords(text: str, c_goodwords) -> str:
+    """Remove guild-whitelisted words from *text* (case-insensitive, whole words)."""
+    pattern = _raw_compiled(_as_tuple(c_goodwords))
+    return pattern.sub(" ", text) if pattern else text

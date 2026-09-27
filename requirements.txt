@@ -12,6 +12,4 @@ gTTS
 cryptography
 transformers>=4.40
 torch>=2.0
-peft>=0.10
-accelerate>=0.30
 sentencepiece

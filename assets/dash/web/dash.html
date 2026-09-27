@@ -786,7 +786,7 @@
                                             <div>
                                                 <span class="block text-sm font-medium">Smart filter <span class="text-muted font-normal">(recommended)</span></span>
                                                 <span class="block text-xs text-muted">
-                                                    Catches phishing links, insults, hate speech, NSFW content, personal data (doxxing) and self-harm keywords. Understands context and multiple languages.
+                                                    Everything the basic filter does, plus a language model (German, English and more) that recognises insults and hate speech without a fixed word list. Cursing is not treated as an insult unless it is aimed at someone.
                                                 </span>
                                             </div>
                                         </label>
@@ -796,11 +796,39 @@
                                             <div>
                                                 <span class="block text-sm font-medium">Basic filter</span>
                                                 <span class="block text-xs text-muted">
-                                                    Catches phishing links, your custom word lists, personal data and self-harm keywords. Faster but misses context-dependent insults and hate speech.
+                                                    Word lists only: phishing links, your custom words, personal data, self-harm phrases, slurs, threats, severe insults and explicit terms. Obfuscated spellings (k.y.s, l33t, spacing) are still caught. Misses insults that are not on a list.
                                                 </span>
                                             </div>
                                         </label>
                                     </fieldset>
+                                </div>
+
+                                <div class="grid gap-2">
+                                    <label class="block text-sm font-medium">Sensitivity:</label>
+                                    <fieldset class="grid gap-3">
+                                        <label class="radio-label">
+                                            <input type="radio" name="chatfilter-sensitivity" value="low" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">Relaxed</span>
+                                                <span class="block text-xs text-muted">Only clear, severe insults aimed at someone, threats, slurs and scams. Good for adult communities with rough banter.</span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="chatfilter-sensitivity" value="medium" class="mt-1 h-4 w-4" checked>
+                                            <div>
+                                                <span class="block text-sm font-medium">Balanced <span class="text-muted font-normal">(recommended)</span></span>
+                                                <span class="block text-xs text-muted">Insults aimed at someone - also "you guys", "the mods", "everyone here" -, rude commands ("stfu"), severe insults, hate, threats and explicit content. Cursing on its own ("damn, lost again"), self-talk ("I'm such an idiot"), quotes, reports ("he called me …") and friendly banter ("du opfer xD", "you're insane at this game") are allowed.</span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="chatfilter-sensitivity" value="high" class="mt-1 h-4 w-4">
+                                            <div>
+                                                <span class="block text-sm font-medium">Strict</span>
+                                                <span class="block text-xs text-muted">Also removes curse words and mild insults even when nobody is addressed, and "lol"/"xD" no longer excuses teasing. Good for kid-friendly servers.</span>
+                                            </div>
+                                        </label>
+                                    </fieldset>
+                                    <p class="text-xs text-muted">New or already-warned members are checked one level stricter.</p>
                                 </div>
 
                                 <div class="grid gap-2">
@@ -833,13 +861,6 @@
                                                 <input type="checkbox" id="ai-cat-3">
                                                 <span class="text-sm"><strong>Hate Speech / Discrimination</strong> <span class="text-muted">-  racism, slurs, targeted hate.</span></span>
                                             </label>
-                                            <div id="ai-cats-lock-overlay" style="display:none;position:absolute;inset:-4px;background:rgba(15,15,20,0.72);backdrop-filter:blur(1.5px);border:1px dashed var(--border,#444);z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:10px;text-align:center;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted,#aaa);">
-                                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                                </svg>
-                                                <span class="text-xs" style="color:var(--text-muted,#bbb);font-weight:500;">Only available with the Smart filter.</span>
-                                            </div>
                                         </div>
                                         <label for="ai-cat-4">
                                             <input type="checkbox" id="ai-cat-4">
@@ -847,7 +868,7 @@
                                         </label>
                                         <label for="ai-cat-5">
                                             <input type="checkbox" id="ai-cat-5">
-                                            <span class="text-sm"><strong>Suicide / Self-Harm</strong> <span class="text-muted">-  self-harm keywords and phrases.</span></span>
+                                            <span class="text-sm"><strong>Suicide / Self-Harm</strong> <span class="text-muted">-  removes messages telling others to hurt themselves. Members talking about their own struggles are not removed and get a private message with help resources.</span></span>
                                         </label>
                                     </div>
                                 </div>
@@ -860,6 +881,26 @@
                                     <p class="text-xs text-muted mt-1">
                                         Detects and blocks known Discord phishing &amp; scam links. Updated every 12 hours from
                                         <a href="https://github.com/Discord-AntiScam/scam-links" target="_blank" rel="noopener noreferrer" class="underline">Discord-AntiScam/scam-links</a> on GitHub.
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="flex items-center gap-3" style="cursor:pointer">
+                                        <input type="checkbox" id="chatfilter-exempt-staff">
+                                        <span class="font-medium">Don't filter moderators</span>
+                                    </label>
+                                    <p class="text-xs text-muted mt-1">
+                                        Members with the "Manage Messages" permission are not checked, so quoting a rule violation or moderating with strong words is never deleted. The global chat always filters everyone.
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="flex items-center gap-3" style="cursor:pointer">
+                                        <input type="checkbox" id="chatfilter-training-opt-in">
+                                        <span class="font-medium">Help improve the filter</span>
+                                    </label>
+                                    <p class="text-xs text-muted mt-1">
+                                        Messages where the filter had to make a close call - removed messages and suspicious messages aimed at someone or at a group - are stored anonymously (no user names or IDs; e-mails, phone numbers and mentions removed), so Baxi staff can review them and train a better model. Everyday chat and plain cursing are not stored. At most 200 per day; unreviewed samples are deleted after 30 days; turning this off deletes all samples from this server.
                                     </p>
                                 </div>
 
@@ -4366,6 +4407,8 @@
                 renderTags('c_badwords', data.chatfilter.c_badwords || []);
                 document.getElementById('chatfilter-phishing').checked = data.chatfilter.phishing_filter === true;
                 document.getElementById('chatfilter-warn-on-violation').checked = data.chatfilter.warn_on_violation === true;
+                document.getElementById('chatfilter-exempt-staff').checked = data.chatfilter.exempt_staff !== false;
+                document.getElementById('chatfilter-training-opt-in').checked = data.chatfilter.training_opt_in === true;
                 // Populate AI category checkboxes
                 const cats = data.chatfilter.ai_categories || {};
                 for (let i = 1; i <= 5; i++) {
@@ -4374,22 +4417,9 @@
                 }
                 _cfBypassChannels = Array.isArray(data.chatfilter.bypass) ? data.chatfilter.bypass.map(String) : [];
                 renderCfBypass();
+                const sensRadio = document.querySelector(`input[name="chatfilter-sensitivity"][value="${data.chatfilter.sensitivity || 'medium'}"]`);
+                if (sensRadio) sensRadio.checked = true;
             }
-            // Cats 1-3 require Smart filter. Show lock overlay when Basic is selected.
-            function updateAiCategoriesVisibility() {
-                const selected = document.querySelector('input[name="chatfilter-system"]:checked')?.value || 'AI';
-                const mlOn = selected === 'AI';
-                for (let i = 1; i <= 3; i++) {
-                    const cb = document.getElementById(`ai-cat-${i}`);
-                    if (cb) cb.disabled = !mlOn;
-                }
-                const overlay = document.getElementById('ai-cats-lock-overlay');
-                if (overlay) overlay.style.display = mlOn ? 'none' : 'flex';
-            }
-            document.querySelectorAll('input[name="chatfilter-system"]').forEach(r => {
-                r.addEventListener('change', updateAiCategoriesVisibility);
-            });
-            updateAiCategoriesVisibility();
             document.getElementById("general-lang").value = data.lang || 'en';
             document.getElementById("general-nick").value = nick || '';
             if (data.terms !== undefined) {
@@ -6133,12 +6163,15 @@
             const badWords = getTags('c_badwords');
             const phishing = document.getElementById('chatfilter-phishing').checked;
             const warn_on_violation = document.getElementById('chatfilter-warn-on-violation').checked;
+            const sensitivity = document.querySelector('input[name="chatfilter-sensitivity"]:checked')?.value || 'medium';
+            const exempt_staff = document.getElementById('chatfilter-exempt-staff').checked;
+            const training_opt_in = document.getElementById('chatfilter-training-opt-in').checked;
             const ai_categories = {};
             for (let i = 1; i <= 5; i++) {
                 const cb = document.getElementById(`ai-cat-${i}`);
                 ai_categories[String(i)] = cb ? cb.checked : true;
             }
-            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [..._cfBypassChannels], phishing_filter: phishing, warn_on_violation, ai_categories } };
+            const payload = { chatfilter: { enabled, system, c_goodwords: goodWords, c_badwords: badWords, bypass: [..._cfBypassChannels], phishing_filter: phishing, warn_on_violation, sensitivity, exempt_staff, training_opt_in, ai_categories } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=chatfilter&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

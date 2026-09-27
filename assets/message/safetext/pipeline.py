@@ -1,79 +1,219 @@
 """SafeText pipeline orchestrator.
 
-Stages in order:
-  1. phishing URL match                   -> code "phishing"
-  2. custom c_goodwords (whitelist)       -> short-circuit SAFE
-  3. custom c_badwords                    -> code "custom"
-  4. doxxing regex                        -> category 4
-  5. suicide phrase list                  -> category 5
-  6. NSFW model                           -> category 1
-  7. multilingual toxic / hate model      -> category 2 or 3
+Stages in order (first hit wins):
+  1. phishing (blocklist incl. parent domains, IDN spoof, typosquat) -> "phishing"
+  2. guild goodwords are masked, text is normalised (anti-evasion)
+  3. confirmed feedback for this exact (normalised) message (guild, then global)
+  4. guild badwords                                              -> "custom"
+  5. doxxing                                                     -> cat 4
+  6. context: clauses that only *mention* abuse are set aside (victim reports,
+     counter speech, questions about words - see context.py)
+  7. self-harm: inciting others -> cat 5 (removed)
+                about oneself  -> support DM, message stays      -> "5s"
+  8. threats                                                     -> cat 2
+  9. slurs / extremist phrases, hostility against a group        -> cat 3
+ 10. explicit sexual content                                     -> cat 1
+ 11. severe insults, rude commands ("halt die fresse")           -> cat 2
+ 12. toxicity model + context signals                            -> cat 3 / cat 2
 
-Returns chatfilter-compatible dict:
-  {code, flagged, distance, reason, json}
+Stage 12 never trusts the model score alone. The model rates any rough language
+as toxic ("scheiße, verloren" ~ "du hurensohn"), so a message is only flagged when
+the score is backed by *who it is aimed at* (second person, plural address,
+people in the chat, reply, mention), an insult from the lexicon, or a protected
+group. Insults that are negated ("du bist nicht dumm") or aimed at the speaker
+("ich bin so ein idiot") do not count. Curse words are masked, together with
+group names (the model rates "we should look up to these Muslims" as toxic), and
+the text re-scored before a score-only decision, so "you're fucking awesome" passes.
+Joke markers ("haha", "jk", "xD") excuse mild banter at low/medium sensitivity,
+praise markers ("genial", "gg", "wie hast du das geschafft", 🔥) at every level
+("bist du dumm, das ist ja genial!") - never severe insults, slurs, threats or hate.
+
+Sensitivity (per guild: low / medium / high) picks the thresholds; the author's
+risk standing moves it one level up (risky) or down (trusted).
+
+Returns the chatfilter result dict: {code, flagged, distance, reason, json[, support]}.
 """
+from __future__ import annotations
+
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from reds_simple_logger import Logger
 
-from assets.message.safetext import custom, doxxing, mildwords, models, suicide_words
+from assets.message.safetext import (
+    context, custom, doxxing, feedback, lexicon, mildwords, models, phishing,
+)
 from assets.message.safetext.logstore import record
-from assets.share import admin_log as _admin_log, phishing_url_list
+from assets.message.safetext.normalize import Normalized, normalize, search
+from assets.share import admin_log as _admin_log
 
 logger = Logger()
 
+LEVELS = ("low", "medium", "high")
 
-# ── thresholds ───────────────────────────────────────────────────────────────
-TOXIC_THRESHOLD       = 0.60
-HATE_THRESHOLD        = 0.55
-OBSCENE_THRESHOLD     = 0.70   # obscene label from multilingual-toxic model → cat 1
-
-TOXIC_LABELS          = {"toxic", "severe_toxic", "insult", "threat"}
-HATE_LABELS           = {"identity_hate"}
-OBSCENE_LABELS        = {"obscene"}
+# Model thresholds per sensitivity (toxic probability, see models.py).
+# targeted:  score needed when the message addresses someone
+# profanity: score needed for a curse word with nobody addressed (None = allowed).
+#            Only high sensitivity filters cursing - and only real curse words, never
+#            "any high score" (the model scores "kill den healer zuerst" as toxic).
+# group:     score needed when a protected group is referenced -> hate
+THRESHOLDS = {
+    "low":    {"targeted": 0.99, "profanity": None,  "group": 0.99},
+    "medium": {"targeted": 0.95, "profanity": None,  "group": 0.97},
+    "high":   {"targeted": 0.90, "profanity": 0.90,  "group": 0.90},
+}
+# Score the counterfactual ("... people ...") must keep for group hate.
+_COUNTERFACTUAL = {"low": 0.9, "medium": 0.7, "high": 0.5}
+_LETTER = re.compile(r"[^\W\d_]")
 
 
 # ── result helpers ───────────────────────────────────────────────────────────
-def _safe() -> Dict[str, Any]:
-    return {"code": "safe", "flagged": False, "distance": None,
-            "reason": "no_issues_detected", "json": {}}
+def _safe(reason: str = "no_issues_detected", **extra) -> Dict[str, Any]:
+    return {"code": "safe", "flagged": False, "distance": None, "reason": reason, "json": extra}
 
 
-def _flagged(code: str, reason: str, cat: str, extra: dict) -> Dict[str, Any]:
-    payload = {"status": "unsafe", "category": cat, **extra}
-    return {"code": code, "flagged": True, "distance": None,
-            "reason": reason, "json": payload}
+def _flagged(cat: str, **extra) -> Dict[str, Any]:
+    return {"code": f"ai-{cat}", "flagged": True, "distance": None, "reason": cat,
+            "json": {"status": "unsafe", "category": cat, **extra}}
 
 
-# ── phishing ─────────────────────────────────────────────────────────────────
-_URL_PATTERN = re.compile(
-    r"https?://([^\s/]+)"
-    r"|(?<![.\w])([a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+)(?![.\w])"
-)
+def _level(chatfilter_data: dict, strictness: float) -> str:
+    base = str(chatfilter_data.get("sensitivity", "medium")).lower()
+    idx = LEVELS.index(base) if base in LEVELS else 1
+    if strictness > 1.2:
+        idx += 1
+    elif strictness < 0.9:
+        idx -= 1
+    return LEVELS[max(0, min(len(LEVELS) - 1, idx))]
 
 
-def _check_phishing(text: str) -> Optional[Dict[str, Any]]:
-    if not phishing_url_list:
-        return None
-    for m in _URL_PATTERN.finditer(text):
-        raw = (m.group(1) or m.group(2)).lower()
-        domain = raw.split("/")[0].split(":")[0].lstrip("www.")
-        if domain in phishing_url_list:
-            return {"code": "phishing", "flagged": True, "distance": None,
-                    "reason": "phishing", "json": {"domain": domain}}
+# ── rule stages shared by check() and is_insult() ────────────────────────────
+def _rule_stage(norm: Normalized, level: str, targeted: bool, joke: bool,
+                enabled: set[str]) -> Dict[str, Any] | None:
+    pats = lexicon.patterns()
+
+    if "2" in enabled and (hit := search(pats.threats, norm)):
+        return _flagged("2", label="threat", match=hit)
+    if enabled & {"2", "3"} and (hit := lexicon.find_violent_intent(norm)):
+        cat = "3" if "3" in enabled and search(pats.groups, norm) else "2"
+        if cat in enabled:
+            return _flagged(cat, label="violent_intent", match=hit)
+
+    if "3" in enabled:
+        if hit := search(pats.hate, norm):
+            return _flagged("3", label="slur", match=hit)
+        if hit := lexicon.find_group_hate(norm):
+            return _flagged("3", label="group_hostility", match=hit)
+
+    if "1" in enabled and level != "low" and (hit := search(pats.sexual, norm)):
+        return _flagged("1", label="sexual", match=hit)
+
+    if "2" in enabled:
+        # Severe insults count without a target, except at low sensitivity - but not
+        # when the speaker calls themselves one ("ich war früher echt ein wichser").
+        hit = lexicon.search_unnegated(pats.insults_severe, [pats.insults_severe_self], norm)
+        if hit and (level != "low" or targeted):
+            return _flagged("2", label="severe_insult", match=hit)
+        # Rude commands address the reader by themselves; a joke excuses them at low.
+        # "told to fuck off" / "got to fuck off" is an infinitive, not a command.
+        hit = lexicon.search_unnegated(pats.insults_directed, [pats.insults_directed_inf], norm)
+        if hit and not (level == "low" and joke):
+            return _flagged("2", label="rude_command", match=hit)
+        if (hit := search(pats.curse_at_people, norm)) and not (level == "low" and joke):
+            return _flagged("2", label="curse_at_people", match=hit)
     return None
 
 
+# ── lexicon insults (work with or without the model) ─────────────────────────
+def _mild_insult(norm: Normalized, level: str, targeted: bool, lenient: bool,
+                 tox: float | None) -> tuple[str | None, bool]:
+    """(insult word if it counts, whether an insult was excused as negated/self-aimed/idiom)."""
+    pats = lexicon.patterns()
+    maskers = [pats.insults_mild_negated, pats.insults_mild_self, pats.idioms]
+    mild = lexicon.search_unnegated(pats.insults_mild, maskers, norm)
+    excused = not mild and any(
+        m is not None and any(m.search(v) for v in norm.variants) for m in maskers
+    )
+    if not mild or lenient:
+        return None, excused
+    # Aimed at someone; at low sensitivity the model must agree (without it: skip).
+    if targeted and (level != "low" or (tox is not None and tox >= 0.9)):
+        return mild, excused
+    if level == "high":
+        return mild, excused
+    return None, excused
+
+
+def _insult_result(match: str, tox: float | None, signals: dict) -> Dict[str, Any]:
+    extra = {"confidence": round(tox, 4)} if tox is not None else {}
+    return _flagged("2", label="insult", match=match, **extra, **signals)
+
+
+# ── model stage ──────────────────────────────────────────────────────────────
+async def _model_stage(norm: Normalized, level: str, targeted: bool, joke: bool,
+                       enabled: set[str], praise: bool = False,
+                       ) -> tuple[Dict[str, Any] | None, float | None]:
+    pats = lexicon.patterns()
+    text = norm.ml_text
+    if len(_LETTER.findall(text)) < 2 or mildwords.is_only_mild(text):
+        return None, None
+
+    lenient = praise or (joke and level != "high")
+    tox = await models.toxicity(text)
+    if tox is None:          # model unavailable -> lexicon insults only
+        if "2" in enabled and (mild := _mild_insult(norm, level, targeted, lenient, None)[0]):
+            return _insult_result(mild, None, {"targeted": targeted, "level": level}), None
+        return None, None
+    thr = THRESHOLDS[level]
+    # An insult that is negated or self-aimed explains a high score by itself, so the
+    # score-only path must not flag it either ("du bist kein idiot", "i'm such an idiot").
+    mild, excused_insult = _mild_insult(norm, level, targeted, lenient, tox)
+    group = search(pats.groups, norm)
+
+    neutral_word = "Menschen" if pats.groups_natural_de.search(text) else "people"
+
+    async def neutralized() -> float:
+        """Score with curse words removed and group names swapped for a neutral noun -
+        what is left is the attitude, not the vocabulary."""
+        masked = pats.groups_natural.sub(
+            neutral_word, pats.condemn_terms.sub(" ", pats.profanity.sub(" ", text)))
+        if masked == text:
+            return tox
+        if len(_LETTER.findall(masked)) < 2:
+            return 0.0
+        return await models.toxicity(masked) or 0.0
+
+    signals = {"toxicity": round(tox, 4), "targeted": targeted, "level": level}
+
+    # Hate: the model reacts to group names themselves ("we should look up to these
+    # Muslims" scores 0.999), so a high score is only trusted if it survives a
+    # counterfactual - the same sentence about "people" in general is still hostile
+    # ("Alle Schwarzen sind abstoßend" -> "Alle Menschen sind abstoßend").
+    if "3" in enabled and group and tox >= thr["group"] and not lexicon.negated_near_group(norm):
+        cf = await neutralized()
+        if cf >= _COUNTERFACTUAL[level]:
+            return _flagged("3", label="group_hate", group=group, confidence=round(tox, 4),
+                            counterfactual=round(cf, 4), **signals), tox
+
+    if "2" not in enabled:
+        return None, tox
+
+    if mild:
+        return _insult_result(mild, tox, signals), tox
+
+    # Score-only decisions: re-score without curse words first.
+    if targeted and not lenient and not excused_insult and tox >= thr["targeted"]:
+        eff = await neutralized()
+        if eff >= thr["targeted"]:
+            return _flagged("2", label="toxic_targeted", confidence=round(eff, 4),
+                            **signals), tox
+    if thr["profanity"] is not None and tox >= thr["profanity"] and pats.profanity.search(text):
+        return _flagged("2", label="profanity", confidence=round(tox, 4), **signals), tox
+
+    return None, tox
+
+
 # ── main entry ───────────────────────────────────────────────────────────────
-def _scaled(threshold: float, strictness: float) -> float:
-    """Risk-weight a model threshold. strictness>1 lowers it (flag more, for risky users);
-    strictness<1 raises it (flag less, benefit of the doubt for trusted users)."""
-    if strictness == 1.0:
-        return threshold
-    return max(0.30, min(0.97, threshold / strictness))
-
-
 async def check(
     message: str,
     gid: int,
@@ -83,117 +223,117 @@ async def check(
     guild_lang: str,
     enabled_categories: set[str],
     strictness: float = 1.0,
+    use_ml: bool = True,
+    targeted_hint: bool = False,
 ) -> Dict[str, Any]:
-    """Run the full SafeText pipeline. Returns a chatfilter result dict.
+    """Run the full SafeText pipeline and return a chatfilter result dict.
 
-    *strictness* risk-weights the ML thresholds based on the author's PRISM standing."""
+    *targeted_hint*: the message is a reply or mentions a member (known only to
+    the caller). *use_ml*: False for the rules-only "SafeText" system."""
+    enabled = set(enabled_categories)
+    level = _level(chatfilter_data, strictness)
+    pats = lexicon.patterns()
 
-    nsfw_score: float | None = None
-    toxic_scores: dict[str, float] = {}
-    obscene_thr = _scaled(OBSCENE_THRESHOLD, strictness)
-    hate_thr    = _scaled(HATE_THRESHOLD, strictness)
-    toxic_thr   = _scaled(TOXIC_THRESHOLD, strictness)
+    def done(stage: str, res: Dict[str, Any], confidence: float | None = None):
+        return _finalize(gid, user_id, stage, res, confidence=confidence, message=message)
 
     # 1. phishing
     if chatfilter_data.get("phishing_filter", False):
-        if res := _check_phishing(message):
-            return _finalize(gid, user_id, "phishing", res, message=message)
+        if hit := phishing.check(message):
+            return done("phishing", {"code": "phishing", "flagged": True, "distance": None,
+                                     "reason": "phishing", "json": hit})
 
-    # 2. goodword whitelist — short-circuit to safe
-    goodword_hit = custom.match_goodword(message, chatfilter_data.get("c_goodwords"))
-    if goodword_hit:
-        res = _safe()
-        res["reason"] = f"goodword:{goodword_hit}"
-        return _finalize(gid, user_id, "goodword", res, message=message)
+    # 2. goodwords masked, then normalise
+    text = custom.mask_goodwords(message, chatfilter_data.get("c_goodwords"))
+    full = normalize(text)
 
-    # 3. custom badwords
-    if badword := custom.match_badword(message, chatfilter_data.get("c_badwords")):
-        res = {
-            "code": "safetext-filter",
-            "flagged": True,
-            "distance": "0",
-            "reason": "custom",
-            "json": {"word": badword, "code": "custom"},
-        }
-        return _finalize(gid, user_id, "custom", res, message=message)
+    # 3. confirmed verdict for this exact message
+    if override := feedback.override_for(full.key, gid):
+        if override == "SAFE":
+            return done("override", _safe("override"))
+        if override in enabled:
+            return done("override", _flagged(override, label="override"))
 
-    # 4. doxxing (category 4)
-    if "4" in enabled_categories:
-        if dox := doxxing.detect(message):
-            res = _flagged("ai-4", "4", "4", {"kind": dox["kind"]})
-            return _finalize(gid, user_id, "doxxing", res, message=message)
+    # 4. guild badwords (explicit guild rule - applies even inside quotes)
+    if badword := custom.match_badword(full, chatfilter_data.get("c_badwords")):
+        return done("custom", {"code": "safetext-filter", "flagged": True, "distance": "0",
+                               "reason": "custom", "json": {"word": badword, "code": "custom"}})
 
-    # 5. suicide (category 5)
-    if "5" in enabled_categories:
-        if sui := suicide_words.detect(message, lang=guild_lang):
-            res = _flagged("ai-5", "5", "5", {"match": sui["match"], "lang": sui["lang"]})
-            return _finalize(gid, user_id, "suicide_keyword", res, message=message)
+    # 5. doxxing
+    if "4" in enabled and (dox := doxxing.detect(text)):
+        return done("doxxing", _flagged("4", kind=dox["kind"]))
 
-    # 5b. mild-word guard — a message that is *only* a mild expletive ("damn",
-    # "hell", "verdammt", …) is not an insult. Skip the toxic/hate model so the
-    # model's false positives don't flag it (and, via the PRISM silent scan, leak
-    # into network-wide trust scoring). "damn idiot" still has "idiot" left over,
-    # so it falls through to the model as usual.
-    if mildwords.is_only_mild(message):
-        res = _safe()
-        res["reason"] = "mild_word"
-        return _finalize(gid, user_id, "mild_word", res, message=message)
+    # 6. context: judge only what is actually said, not what is quoted or reported
+    ctx = context.analyze(text)
+    norm = normalize(ctx.eval_text) if ctx.eval_text != text else full
+    extra = {"mentions_only": list(ctx.dropped)} if ctx.dropped else {}
 
-    # 6+7. multilingual toxic model — covers obscene (cat 1), toxic/hate (cat 2, 3)
-    wants_nsfw  = "1" in enabled_categories
-    wants_toxic = "2" in enabled_categories
-    wants_hate  = "3" in enabled_categories
-    if wants_nsfw or wants_toxic or wants_hate:
+    # 7. self-harm
+    if "5" in enabled:
+        if hit := search(pats.self_harm_incite, norm):
+            return done("self_harm_incite", _flagged("5", label="incite", match=hit))
+        if hit := search(pats.self_harm_self, full):
+            res = _safe("5s", match=hit)
+            res["support"] = True
+            return done("self_harm_support", res)
+
+    targeted = targeted_hint or lexicon.addresses_someone(norm)
+
+    # 8.-11. rules
+    if res := _rule_stage(norm, level, targeted, ctx.joke, enabled):
+        res["json"].update(extra)
+        return done(res["json"].get("label", "rules"), res)
+
+    # 12. model (rules-only "SafeText" system: lexicon insults without the model)
+    tox: float | None = None
+    if not use_ml and "2" in enabled:
+        lenient = ctx.praise or (ctx.joke and level != "high")
+        if mild := _mild_insult(norm, level, targeted, lenient, None)[0]:
+            res = _insult_result(mild, None, {"targeted": targeted, "level": level})
+            res["json"].update(extra)
+            return done("insult", res)
+    if use_ml and enabled & {"2", "3"} and norm.ml_text:
         try:
-            toxic_scores = await models.classify_toxic(message)
+            res, tox = await _model_stage(norm, level, targeted, ctx.joke, enabled, ctx.praise)
         except Exception as e:
-            logger.error(f"SafeText | toxic model error: {e}")
-            toxic_scores = {}
+            logger.error(f"SafeText | model stage error: {type(e).__name__}: {e}")
+            res = None
+        if res is not None:
+            res["json"].update(extra)
+            return done("model", res, confidence=tox)
 
-        if wants_nsfw:
-            obscene_score = max((toxic_scores.get(l, 0.0) for l in OBSCENE_LABELS), default=0.0)
-            nsfw_score = obscene_score
-            if obscene_score >= obscene_thr:
-                res = _flagged("ai-1", "1", "1", {"confidence": round(obscene_score, 4)})
-                return _finalize(gid, user_id, "nsfw", res, confidence=obscene_score, message=message)
-
-        hate_score  = max((toxic_scores.get(l, 0.0) for l in HATE_LABELS), default=0.0)
-        toxic_score = max((toxic_scores.get(l, 0.0) for l in TOXIC_LABELS), default=0.0)
-
-        if wants_hate and hate_score >= hate_thr:
-            top = max(HATE_LABELS, key=lambda l: toxic_scores.get(l, 0.0))
-            res = _flagged("ai-3", "3", "3", {
-                "label": top, "confidence": round(hate_score, 4), "scores": toxic_scores
-            })
-            return _finalize(gid, user_id, "hate", res, confidence=hate_score, message=message)
-
-        if wants_toxic and toxic_score >= toxic_thr:
-            top = max(TOXIC_LABELS, key=lambda l: toxic_scores.get(l, 0.0))
-            res = _flagged("ai-2", "2", "2", {
-                "label": top, "confidence": round(toxic_score, 4), "scores": toxic_scores
-            })
-            return _finalize(gid, user_id, "toxic", res, confidence=toxic_score, message=message)
-
-    res = _safe()
-    res["json"] = {"nsfw": nsfw_score, "toxic_scores": toxic_scores}
-    return _finalize(gid, user_id, "clean", res, message=message)
+    group = bool(search(pats.groups, norm))
+    return done("clean", _safe(toxicity=tox, targeted=targeted, group=group, level=level,
+                               joke=ctx.joke, **extra), confidence=tox)
 
 
-# ── logging shims ────────────────────────────────────────────────────────────
+async def is_insult(text: str, level: str = "medium") -> bool:
+    """Is *text* an insult / threat / hate aimed at the addressee? For messages that
+    are directed at someone by construction (e.g. talking to the assistant). No
+    logging, no guild config."""
+    pats = lexicon.patterns()
+    ctx = context.analyze(text)
+    norm = normalize(ctx.eval_text)
+    enabled = {"2", "3"}
+    if search(pats.self_harm_incite, norm) or _rule_stage(norm, level, True, ctx.joke, enabled):
+        return True
+    res, _ = await _model_stage(norm, level, True, ctx.joke, enabled, ctx.praise)
+    return res is not None
+
+
+# ── logging ──────────────────────────────────────────────────────────────────
 def _finalize(gid: int, user_id: int, stage: str, res: Dict[str, Any],
               confidence: float | None = None, message: str | None = None) -> Dict[str, Any]:
     flagged = bool(res.get("flagged"))
-    verdict = "unsafe" if flagged else "safe"
     reason = res.get("reason", "?")
-    conf_str = f" conf={round(confidence,4)}" if confidence is not None else ""
-    logger.info(
-        f"SafeText | model: classified ({verdict}), stage={stage} reason={reason} "
-        f"user={user_id} guild={gid}{conf_str}"
-    )
+    if flagged or res.get("support"):
+        conf_str = f" conf={round(confidence, 4)}" if confidence is not None else ""
+        logger.info(f"SafeText | {'unsafe' if flagged else 'support'} stage={stage} "
+                    f"reason={reason} user={user_id} guild={gid}{conf_str}")
     if flagged:
         _admin_log("warning",
-            f"SafeText [{stage}] flagged - user={user_id} guild={gid} reason={reason} conf={confidence}",
-            source="Chatfilter")
+                   f"SafeText [{stage}] flagged - user={user_id} guild={gid} reason={reason} "
+                   f"conf={confidence}", source="Chatfilter")
     log_id = record(gid=gid, user_id=user_id, stage=stage, flagged=flagged,
                     result=res, confidence=confidence, message=message)
     res.setdefault("json", {})["log_id"] = log_id
