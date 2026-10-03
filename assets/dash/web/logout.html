@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baxi Dashboard -  Logged Out</title>
-    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="Avocloud.net -  Baxi">
     <meta property="og:description" content="You have been logged out of the Baxi dashboard.">
     <meta property="og:url" content="https://baxi.avocloud.net/logs/">
     <meta property="og:color" content="#FF6B4A">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 </head>
@@ -46,14 +46,14 @@
     </nav>
 
     <div class="button-group local-button-group" data-orientation="vertical">
-        <button onclick="window.open('https://avocloud.net', '_blank')" class="btn-lg-outline">
+        <button onclick="window.open('https://avocloud.net', '_blank')" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
                 <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             </svg>
             Home
         </button>
-        <button onclick="location.href = '/login/'" class="btn-lg-outline">
+        <button onclick="location.href = '/login/'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m10 17 5-5-5-5"/>
                 <path d="M15 12H3"/>
@@ -85,7 +85,7 @@
                         <p class="text-muted">Thank you for using the Baxi Dashboard.</p>
                     </header>
                     <section>
-                        <button onclick="location.href = '/login/'" class="btn-primary w-full">
+                        <button onclick="location.href = '/login/'" class="btn w-full" data-variant="primary" data-size="default">
                             Log back in
                         </button>
                     </section>

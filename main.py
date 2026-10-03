@@ -24,6 +24,7 @@ _migrate.run()
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands, tempvoice_commands
 from assets.giveaway import giveaway_commands
 from assets.poll import poll_commands, PollButton, PollCloseButton
+from assets.dash.cdn import cdn_context
 from assets.dash.log import highlight_word
 
 from assets.data import set_bot
@@ -89,7 +90,7 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 @web.context_processor
 def _inject_static_version():
-    """Cache-bust static assets by appending file mtime as ?v=<int>."""
+    """Template globals: static cache-bust (file mtime as ?v=<int>) and the pinned CDN URLs."""
     static_dir = config.Web.static_folder
     versions = {}
     try:
@@ -99,7 +100,7 @@ def _inject_static_version():
                 versions[fname] = int(os.path.getmtime(fpath))
     except Exception:
         pass
-    return {"static_versions": versions}
+    return {"static_versions": versions, **cdn_context()}
 
 
 @web.errorhandler(404)

@@ -8,15 +8,15 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#E8ECEF" media="(prefers-color-scheme: light)">
     <title>Baxi -  Admin Panel</title>
-    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="Avocloud.net -  Baxi Admin">
     <meta property="og:color" content="#FF6B4A">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap"></noscript>
     <style>
         /* ══ Admin design tokens ══════════════════════════════════ */
         /* Everything here is mixed off --avo-text, so the panel follows the same
@@ -567,7 +567,7 @@
                 <h2>Quick Actions</h2>
             </header>
             <section style="display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-top:.6rem;">
-                <button id="qa-twitter-btn" onclick="runTwitterNow()" class="btn-primary">
+                <button id="qa-twitter-btn" onclick="runTwitterNow()" class="btn" data-variant="primary" data-size="default">
                     <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><polygon points="6 3 20 12 6 21 6 3"/></svg>
                     Run X (Twitter) Post Check
                 </button>
@@ -636,8 +636,8 @@
                         <option value="warning">Warning</option>
                         <option value="error">Error</option>
                     </select>
-                    <button onclick="clearLogView()" class="btn-sm-outline">Clear view</button>
-                    <button id="autoscroll-btn" onclick="logAutoScroll=!logAutoScroll; this.textContent=logAutoScroll?'Auto-scroll ON':'Auto-scroll OFF'" class="btn-sm-outline">Auto-scroll ON</button>
+                    <button onclick="clearLogView()" class="btn" data-variant="outline" data-size="sm">Clear view</button>
+                    <button id="autoscroll-btn" onclick="logAutoScroll=!logAutoScroll; this.textContent=logAutoScroll?'Auto-scroll ON':'Auto-scroll OFF'" class="btn" data-variant="outline" data-size="sm">Auto-scroll ON</button>
                 </div>
             </header>
             <section>
@@ -710,7 +710,7 @@
                             <label class="adm-field-label" for="safety-reason">Reason</label>
                             <input id="safety-reason" type="text" placeholder="Why this user is on the list…" style="font-size:.8rem; padding:.4rem .6rem; width:100%;">
                         </div>
-                        <button onclick="safetyFlagSubmit()" class="btn-destructive">Flag user</button>
+                        <button onclick="safetyFlagSubmit()" class="btn" data-variant="destructive" data-size="default">Flag user</button>
                     </div>
                 </div>
             </section>
@@ -725,7 +725,7 @@
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
                     <input id="reports-search" type="text" placeholder="Search user / server / reason…" style="font-size:.78rem; padding:.3rem .6rem; width:210px;" oninput="filterReports()">
-                    <button onclick="loadReports()" class="btn-sm-outline">Refresh</button>
+                    <button onclick="loadReports()" class="btn" data-variant="outline" data-size="sm">Refresh</button>
                 </div>
             </header>
             <section>
@@ -768,7 +768,7 @@
                         <div class="add-area mt-3">
                             <input id="flag-uid" type="text" placeholder="User ID" class="w-full">
                             <input id="flag-reason" type="text" placeholder="Reason" class="w-full">
-                            <button onclick="adminAction('flag_user')" class="btn-primary">Flag User</button>
+                            <button onclick="adminAction('flag_user')" class="btn" data-variant="primary" data-size="default">Flag User</button>
                         </div>
                         <div id="flag-result" class="action-result"></div>
                     </section>
@@ -779,7 +779,7 @@
                     <section>
                         <div class="add-area mt-3">
                             <input id="deflag-uid" type="text" placeholder="User ID" class="w-full">
-                            <button onclick="adminAction('deflag_user')" class="btn-primary">Deflag User</button>
+                            <button onclick="adminAction('deflag_user')" class="btn" data-variant="primary" data-size="default">Deflag User</button>
                         </div>
                         <div id="deflag-result" class="action-result"></div>
                     </section>
@@ -811,7 +811,7 @@
                     <input id="cf-search" type="text" placeholder="Search user, guild, message…"
                         style="font-size:.78rem; padding:.3rem .6rem; width:200px;"
                         oninput="debounceCf()">
-                    <button onclick="loadCfLogs()" class="btn-sm-outline">Search</button>
+                    <button onclick="loadCfLogs()" class="btn" data-variant="outline" data-size="sm">Search</button>
                 </div>
             </header>
             <section style="overflow-x:auto;">
@@ -835,9 +835,9 @@
             <!-- Pagination controls -->
             <footer style="display:flex; align-items:center; justify-content:space-between; padding:.75rem 0 0; flex-wrap:wrap; gap:.5rem;">
                 <div style="display:flex; align-items:center; gap:.4rem;">
-                    <button id="cf-prev" onclick="cfChangePage(-1)" class="btn-sm-outline" disabled>← Prev</button>
+                    <button id="cf-prev" onclick="cfChangePage(-1)" class="btn" data-variant="outline" data-size="sm" disabled>← Prev</button>
                     <span id="cf-page-badge" style="font-size:.78rem; opacity:.6; padding:0 .3rem;">–</span>
-                    <button id="cf-next" onclick="cfChangePage(1)" class="btn-sm-outline" disabled>Next →</button>
+                    <button id="cf-next" onclick="cfChangePage(1)" class="btn" data-variant="outline" data-size="sm" disabled>Next →</button>
                 </div>
                 <div style="display:flex; align-items:center; gap:.4rem;">
                     <span style="font-size:.78rem; opacity:.5;">Per page:</span>
@@ -875,14 +875,14 @@
                 <div style="font-size:1.05rem; line-height:1.5; padding:1rem; border:1px solid var(--border,#333); border-radius:8px; word-break:break-word; white-space:pre-wrap;" id="stq-text"></div>
                 <p class="text-muted" style="font-size:.75rem; margin-top:.5rem;" id="stq-meta"></p>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem;">
-                    <button class="btn-sm-outline" onclick="stqLabel('SAFE')" title="S">✓ Okay <kbd>S</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('2')" title="2" style="color:#ef4444;border-color:#ef4444;">Insult / toxic <kbd>2</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('3')" title="3" style="color:#ef4444;border-color:#ef4444;">Hate <kbd>3</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('1')" title="1" style="color:#ef4444;border-color:#ef4444;">NSFW <kbd>1</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('5')" title="5" style="color:#ef4444;border-color:#ef4444;">Self-harm incite <kbd>5</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('4')" title="4" style="color:#ef4444;border-color:#ef4444;">Personal data <kbd>4</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqLabel('DISCARD')" title="D">Discard <kbd>D</kbd></button>
-                    <button class="btn-sm-outline" onclick="stqSkip()" title="Space">Skip <kbd>Space</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('SAFE')" title="S">✓ Okay <kbd>S</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('2')" title="2" style="color:#ef4444;border-color:#ef4444;">Insult / toxic <kbd>2</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('3')" title="3" style="color:#ef4444;border-color:#ef4444;">Hate <kbd>3</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('1')" title="1" style="color:#ef4444;border-color:#ef4444;">NSFW <kbd>1</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('5')" title="5" style="color:#ef4444;border-color:#ef4444;">Self-harm incite <kbd>5</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('4')" title="4" style="color:#ef4444;border-color:#ef4444;">Personal data <kbd>4</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqLabel('DISCARD')" title="D">Discard <kbd>D</kbd></button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="stqSkip()" title="Space">Skip <kbd>Space</kbd></button>
                 </div>
                 <p class="text-muted" style="font-size:.72rem; margin-top:.5rem;">
                     Judge the message as the filter should: <strong>Okay</strong> = must not be removed
@@ -897,7 +897,7 @@
                     <h2>Model Versions</h2>
                     <p class="text-muted" style="font-size:.78rem;">Loaded: <span id="stm-loaded">–</span></p>
                 </div>
-                <button class="btn-sm-outline" onclick="stmActivate(null)">Use base model</button>
+                <button class="btn" data-variant="outline" data-size="sm" onclick="stmActivate(null)">Use base model</button>
             </header>
             <div style="overflow-x:auto; margin-top:.75rem;">
                 <table class="admin-table">
@@ -917,7 +917,7 @@
                     </p>
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                    <button class="btn-sm-outline" onclick="safetextReload()">Reload Model &amp; Lists</button>
+                    <button class="btn" data-variant="outline" data-size="sm" onclick="safetextReload()">Reload Model &amp; Lists</button>
                 </div>
             </header>
             <section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin-top:1rem;">
@@ -990,7 +990,7 @@
                         <option value="AI-4">AI-4 doxxing</option>
                         <option value="AI-5">AI-5 self-harm</option>
                     </select>
-                    <button class="btn-sm-outline" style="font-size:.7rem; margin-left:4px;"
+                    <button class="btn" data-variant="outline" data-size="sm" style="font-size:.7rem; margin-left:4px;"
                         data-idx="${idx}" data-logid="${logId}" data-model="${_stEsc(modelSaid)}"
                         onclick="safetextMark(this)">Mark</button>`
                     : `<span style="opacity:.4;font-size:.7rem;">no raw msg</span>`;
@@ -1100,7 +1100,7 @@
                     <td>${v.created_at ? new Date(v.created_at * 1000).toLocaleString() : '–'}</td>
                     <td>${v.samples ?? '–'}</td>
                     <td>${_stmPair(m.hatecheck_de)}</td><td>${_stmPair(m.hatecheck_en)}</td><td>${_stmPair(m.discord)}</td>
-                    <td>${isActive ? '' : `<button class="btn-sm-outline" onclick="stmActivate('${_stEsc(v.version)}')">Activate</button>`}</td>
+                    <td>${isActive ? '' : `<button class="btn" data-variant="outline" data-size="sm" onclick="stmActivate('${_stEsc(v.version)}')">Activate</button>`}</td>
                 </tr>`;
             });
             document.getElementById('stm-body').innerHTML = rows.length ? rows.join('')
@@ -1166,7 +1166,7 @@
                         <div class="grid gap-3">
                             <div style="display:flex; gap:.5rem;">
                                 <input id="search-query" type="text" placeholder="Name, ID, or owner ID…" style="flex:1;">
-                                <button onclick="adminAction('search_server')" class="btn-primary">Search</button>
+                                <button onclick="adminAction('search_server')" class="btn" data-variant="primary" data-size="default">Search</button>
                             </div>
                             <div id="search-result" class="action-result"></div>
                             <div id="search-table-wrap" style="display:none; overflow-x:auto;">
@@ -1198,7 +1198,7 @@
                                 </select>
                                 <input id="bulk-percent" type="number" min="1" max="100" value="100" style="width:70px; text-align:center;" placeholder="%">
                             </div>
-                            <button onclick="adminAction('bulk_config')" class="btn-primary">Apply Bulk Config</button>
+                            <button onclick="adminAction('bulk_config')" class="btn" data-variant="primary" data-size="default">Apply Bulk Config</button>
                             <div id="bulk-result" class="action-result"></div>
                         </div>
                     </section>
@@ -1209,7 +1209,7 @@
                     <section>
                         <div class="grid gap-3">
                             <input id="leave-gid" type="text" placeholder="Guild ID" class="w-full">
-                            <button onclick="adminAction('leave_server')" class="btn-destructive">Leave Server</button>
+                            <button onclick="adminAction('leave_server')" class="btn" data-variant="destructive" data-size="default">Leave Server</button>
                             <div id="leave-result" class="action-result"></div>
                         </div>
                     </section>
@@ -1271,7 +1271,7 @@
             <section>
                 <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
                     <input id="gc-inspect-id" type="text" placeholder="Guild ID…" style="flex:1; max-width:320px;" onkeydown="if(event.key==='Enter') loadGuildConfig()">
-                    <button onclick="loadGuildConfig()" class="btn-primary">Inspect</button>
+                    <button onclick="loadGuildConfig()" class="btn" data-variant="primary" data-size="default">Inspect</button>
                 </div>
                 <div id="gc-inspect-error" class="action-result" style="display:none;"></div>
                 <div id="gc-inspect-wrap" style="display:none;">
@@ -1309,7 +1309,7 @@
             <section>
                 <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
                     <input id="user-search-query" type="text" placeholder="Username or User-ID…" style="flex:1;" onkeydown="if(event.key==='Enter') searchUser()">
-                    <button onclick="searchUser()" class="btn-primary">Search</button>
+                    <button onclick="searchUser()" class="btn" data-variant="primary" data-size="default">Search</button>
                 </div>
                 <div id="user-search-result" class="action-result"></div>
                 <div id="user-search-wrap" style="display:none;">
@@ -1320,11 +1320,11 @@
                             <div id="user-search-id" style="font-size:.72rem; opacity:.4; margin-top:.1rem;"></div>
                         </div>
                         <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                            <button id="btn-send-data" onclick="sendUserData()" class="btn-sm-outline" style="color:var(--avo-info);" title="Send all stored data to the user via DM">
+                            <button id="btn-send-data" onclick="sendUserData()" class="btn" data-variant="outline" data-size="sm" style="color:var(--avo-info);" title="Send all stored data to the user via DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                 Send Data via DM
                             </button>
-                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn-sm-outline" style="color:var(--avo-error);" title="Delete all user data and send a DM">
+                            <button id="btn-delete-data" onclick="deleteUserData()" class="btn" data-variant="outline" data-size="sm" style="color:var(--avo-error);" title="Delete all user data and send a DM">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;display:inline;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:.3rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                 Delete All Data
                             </button>
@@ -1353,13 +1353,13 @@
                 </div>
                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
                     <input id="gcf-search" type="text" placeholder="Search text / author / server…" style="font-size:.78rem; padding:.3rem .6rem; width:230px;" oninput="gcRenderFeed()">
-                    <button onclick="gcLoad()" class="btn-sm-outline">Refresh</button>
+                    <button onclick="gcLoad()" class="btn" data-variant="outline" data-size="sm">Refresh</button>
                 </div>
             </header>
             <section>
                 <div id="gcf-filter-chip" style="display:none; margin-bottom:.6rem; font-size:.78rem;">
                     Showing only messages by <strong id="gcf-filter-name"></strong>
-                    <button onclick="gcClearAuthor()" class="btn-sm-outline" style="font-size:.7rem; margin-left:.5rem;">Show all</button>
+                    <button onclick="gcClearAuthor()" class="btn" data-variant="outline" data-size="sm" style="font-size:.7rem; margin-left:.5rem;">Show all</button>
                 </div>
                 <div id="gcf-list" style="display:flex; flex-direction:column; gap:.6rem;">
                     <div style="opacity:.4; font-size:.82rem;">Loading…</div>
@@ -1382,7 +1382,7 @@
                     <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
                         <input id="gcb-uid" type="text" placeholder="User ID" style="width:190px;">
                         <input id="gcb-reason" type="text" placeholder="Reason" style="flex:1; min-width:180px;">
-                        <button onclick="gcBanManual()" class="btn-primary">Ban from global chat</button>
+                        <button onclick="gcBanManual()" class="btn" data-variant="primary" data-size="default">Ban from global chat</button>
                     </div>
                 </div>
             </section>
@@ -1408,7 +1408,7 @@
                         <section>
                             <div class="grid gap-3">
                                 <input id="gc-mid" type="text" placeholder="Message ID (from footer)" class="w-full">
-                                <button onclick="adminAction('gc_delete')" class="btn-destructive">Delete GC Message</button>
+                                <button onclick="adminAction('gc_delete')" class="btn" data-variant="destructive" data-size="default">Delete GC Message</button>
                                 <div id="gc-result" class="action-result"></div>
                             </div>
                         </section>
@@ -1433,7 +1433,7 @@
                                         <input id="notice-vol" type="number" step="0.1" min="0.5" max="4.0" value="2.0" style="width:80px; text-align:center;">
                                         <span style="opacity:.45; font-size:.7rem;">(1.0 = normal, 2.0 = louder)</span>
                                     </div>
-                                    <button onclick="adminAction('restart_notice')" class="btn-primary">Play TTS Notice</button>
+                                    <button onclick="adminAction('restart_notice')" class="btn" data-variant="primary" data-size="default">Play TTS Notice</button>
                                     <div id="notice-result" class="action-result"></div>
                                 </div>
                             </section>
@@ -1444,7 +1444,7 @@
                             <section>
                                 <div class="grid gap-3">
                                     <p style="opacity:.6; font-size:.78rem; margin:0;">Plays a TTS reboot announcement in every voice channel Baxi is currently in, then exits the process. Your container/service must be configured to auto-restart.</p>
-                                    <button onclick="adminAction('reboot')" class="btn-destructive">Reboot Bot Now</button>
+                                    <button onclick="adminAction('reboot')" class="btn" data-variant="destructive" data-size="default">Reboot Bot Now</button>
                                     <div id="reboot-result" class="action-result"></div>
                                 </div>
                             </section>
@@ -1463,7 +1463,7 @@
                                     <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                                 </div>
                                 <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
-                                <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn-primary">Send Notification</button>
+                                <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn" data-variant="primary" data-size="default">Send Notification</button>
 
                                 <!-- Progress UI (hidden until job starts) -->
                                 <div id="notif-progress-wrap" style="display:none;">
@@ -1522,7 +1522,7 @@
             <div style="margin-bottom:1rem;">
                 <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem;">
                     <div class="adm-field-label adm-eyebrow" style="flex:1;">AI Risk Summary</div>
-                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn-sm-outline" style="font-size:.68rem; padding:.15rem .5rem; color:var(--color-primary, #FF6B4A);" title="Request a new AI summary for this user">↻ Re-analyze</button>
+                    <button id="pm-reanalyze-btn" onclick="reanalyzeCurrentUser()" class="btn" data-variant="outline" data-size="sm" style="font-size:.68rem; padding:.15rem .5rem; color:var(--color-primary, #FF6B4A);" title="Request a new AI summary for this user">↻ Re-analyze</button>
                 </div>
                 <div id="pm-summary-wrap" style="display:none;">
                     <div id="pm-summary" style="font-size:.82rem; line-height:1.6; padding:.6rem .75rem; background:var(--adm-surface); border-left:2px solid var(--avo-coral-500); border-radius:var(--avo-radius-sm, 6px); color:inherit;"></div>
@@ -1753,7 +1753,7 @@ function renderTasks() {
             ${t.extra ? `<div style="font-size:.72rem; opacity:.4;">${escHtml(t.extra)}</div>` : ''}
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:.4rem;">
                 ${t.last_run ? `<span style="font-size:.7rem; opacity:.35;">Last run: ${t.last_run}</span>` : '<span></span>'}
-                <button onclick="runTask('${escHtml(key)}')" class="btn-sm-outline" style="font-size:.7rem; padding:.15rem .5rem;">▶ Run now</button>
+                <button onclick="runTask('${escHtml(key)}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.7rem; padding:.15rem .5rem;">▶ Run now</button>
             </div>
         </div>
     `).join('');
@@ -1866,7 +1866,7 @@ function renderReports() {
         <td style="font-weight:700;">${t.count}</td>
         <td style="opacity:.7;">${t.guilds}</td>
         <td style="opacity:.6; font-size:.74rem; max-width:340px;">${escHtml((t.reasons||[]).slice(0,3).join(' · '))}</td>
-        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error); border-color:var(--avo-error);" title="Add to network safety list">Flag</button></td>
+        <td><button onclick="safetyFlagQuick('${escHtml(t.reported_id)}','${escHtml(t.reported_name||'')}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.72rem; color:var(--avo-error); border-color:var(--avo-error);" title="Add to network safety list">Flag</button></td>
     </tr>`).join('') : '<tr><td colspan="5" class="is-empty">No reports yet.</td></tr>';
 
     // Recent reports
@@ -1960,7 +1960,7 @@ function renderFlagged() {
         <td>${escHtml(u.reason||'–')}</td>
         <td style="opacity:.5;">${u.entry_date||'–'}</td>
         <td>${u.auto_flagged ? '<span class="badge badge-auto">Auto</span>' : '<span class="badge badge-flagged">Manual</span>'}</td>
-        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-success);">Deflag</button></td>
+        <td><button onclick="quickDeflag('${u.uid||u.id}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.72rem; color:var(--avo-success);">Deflag</button></td>
     </tr>`).join('');
 }
 
@@ -1999,7 +1999,7 @@ function filterGuilds() {
         <td style="opacity:.5; font-size:.75rem;">${g.id}</td>
         <td>${fmt(g.member_count)}</td>
         <td>
-            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error);">Leave</button>
+            <button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.72rem; color:var(--avo-error);">Leave</button>
         </td>
     </tr>`).join('');
 }
@@ -2212,7 +2212,7 @@ async function searchUser() {
             <td style="opacity:.6; font-size:.73rem;">${escHtml(t.closed_by||'- ')}</td>
             <td style="opacity:.5; white-space:nowrap; font-size:.72rem;">${escHtml((t.closed_on||'- ').slice(0,16))}</td>
             <td style="opacity:.4; font-size:.72rem;">${t.message_count}</td>
-            <td><a href="/?ticket_transcript=${encodeURIComponent(t.id)}" target="_blank" class="btn-sm-outline" style="font-size:.7rem; padding:.15rem .4rem;">View</a></td>
+            <td><a href="/?ticket_transcript=${encodeURIComponent(t.id)}" target="_blank" class="btn" data-variant="outline" data-size="sm" style="font-size:.7rem; padding:.15rem .4rem;">View</a></td>
         </tr>`).join('');
         sections.insertAdjacentHTML('beforeend', `
         <div style="border:1px solid rgba(52,211,153,.2); padding:.75rem 1rem;">
@@ -2337,11 +2337,11 @@ function gcRenderFeed() {
             </div>
             <p class="gc-msg-body">${m.content ? escHtml(m.content) : '<span style="opacity:.4;">Content not recorded (relayed before the feed existed) — deletion still works.</span>'}</p>
             <div class="gc-msg-actions">
-                <button class="btn-sm-outline gc-del" data-gcmid="${escHtml(m.gcmid)}" style="color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Delete everywhere</span></button>
+                <button class="btn gc-del" data-variant="outline" data-size="sm" data-gcmid="${escHtml(m.gcmid)}" style="color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Delete everywhere</span></button>
                 ${banned.has(m.author_id)
-                    ? `<button class="btn-sm-outline gc-unban" data-author="${escHtml(m.author_id)}" style="color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban author</span></button>`
-                    : `<button class="btn-sm-outline gc-ban" data-author="${escHtml(m.author_id)}" data-name="${escHtml(m.author_name || '')}" style="color:var(--avo-warning);">${ICO_USER_X}<span class="btn-label">Ban author</span></button>`}
-                <button class="btn-sm-outline gc-history" data-author="${escHtml(m.author_id)}">${ICO_HISTORY}<span class="btn-label">Author history</span></button>
+                    ? `<button class="btn gc-unban" data-variant="outline" data-size="sm" data-author="${escHtml(m.author_id)}" style="color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban author</span></button>`
+                    : `<button class="btn gc-ban" data-variant="outline" data-size="sm" data-author="${escHtml(m.author_id)}" data-name="${escHtml(m.author_name || '')}" style="color:var(--avo-warning);">${ICO_USER_X}<span class="btn-label">Ban author</span></button>`}
+                <button class="btn gc-history" data-variant="outline" data-size="sm" data-author="${escHtml(m.author_id)}">${ICO_HISTORY}<span class="btn-label">Author history</span></button>
             </div>
         </div>`).join('');
 }
@@ -2359,7 +2359,7 @@ function gcRenderBans() {
         <td>${escHtml(b.reason || '–')}</td>
         <td style="opacity:.6;">${escHtml(b.by || '–')}</td>
         <td style="opacity:.5; font-size:.75rem;">${escHtml(b.date || '–')}</td>
-        <td><button class="btn-sm-outline gc-unban" data-author="${escHtml(b.user_id)}" style="font-size:.72rem; color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban</span></button></td>
+        <td><button class="btn gc-unban" data-variant="outline" data-size="sm" data-author="${escHtml(b.user_id)}" style="font-size:.72rem; color:var(--avo-success);">${ICO_USER_CHECK}<span class="btn-label">Unban</span></button></td>
     </tr>`).join('');
 }
 
@@ -2376,7 +2376,7 @@ function gcRenderGuilds() {
         <td style="opacity:.7;">#${escHtml(g.channel_name)}</td>
         <td>${fmt(g.members)}</td>
         <td>${fmt(g.messages)}</td>
-        <td><button class="btn-sm-outline gc-guild-remove" data-gid="${escHtml(g.guild_id)}" data-name="${escHtml(g.guild_name)}" style="font-size:.72rem; color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Remove</span></button></td>
+        <td><button class="btn gc-guild-remove" data-variant="outline" data-size="sm" data-gid="${escHtml(g.guild_id)}" data-name="${escHtml(g.guild_name)}" style="font-size:.72rem; color:var(--avo-error);border-color:var(--avo-error);">${ICO_TRASH}<span class="btn-label">Remove</span></button></td>
     </tr>`).join('');
 }
 
@@ -2521,7 +2521,7 @@ async function adminAction(action) {
             <td style="opacity:.5;">${g.boost_count}</td>
             <td>${g.terms ? '✅' : '❌'}</td>
             <td style="opacity:.5;">${g.lang}</td>
-            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn-sm-outline" style="font-size:.72rem; color:var(--avo-error);">Leave</button></td>
+            <td><button onclick="leaveGuild('${g.id}', '${escHtml(g.name)}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.72rem; color:var(--avo-error);">Leave</button></td>
         </tr>`).join('');
     } else if (action === 'gc_delete') {
         payload.message_id = document.getElementById('gc-mid').value.trim();
@@ -2707,7 +2707,7 @@ async function viewPrismProfile(uid) {
                 <td style="opacity:.7; max-width:200px; word-break:break-word;">${escHtml(ev.reason || '- ')}</td>
                 <td style="opacity:.4; font-size:.72rem;">${ev.guild_id || '- '}</td>
                 <td style="opacity:.5; white-space:nowrap;">${fmtTs(ev.timestamp)}<br><span style="opacity:.5; font-size:.68rem;">${ev.age_days}d ago</span></td>
-                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn-sm-outline" style="font-size:.68rem; color:var(--avo-error); padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
+                <td><button onclick="deletePrismEvent('${tsEsc}')" class="btn" data-variant="outline" data-size="sm" style="font-size:.68rem; color:var(--avo-error); padding:.15rem .4rem;" title="Delete this violation">✕</button></td>
             </tr>`;
         }).join('');
     }
@@ -2797,7 +2797,7 @@ function renderCfPage() {
             </td>
             <td><span class="badge badge-flagged" style="white-space:nowrap;">${escHtml(reasonText)}</span></td>
             <td style="font-size:.75rem; max-width:260px; word-break:break-word;">${msgShort}</td>
-            <td><a href="/?id_chatfilter=${e.id}" target="_blank" class="btn-sm-outline" style="font-size:.72rem;">View</a></td>
+            <td><a href="/?id_chatfilter=${e.id}" target="_blank" class="btn" data-variant="outline" data-size="sm" style="font-size:.72rem;">View</a></td>
         </tr>`;
     }).join('');
 }
@@ -2825,7 +2825,7 @@ async function loadCfLogs() {
         body.innerHTML = `<tr><td colspan="7" style="border-left:2px solid var(--avo-error);color:var(--avo-error);">` +
             `<span style="font-family:var(--avo-font-mono);font-weight:700;margin-right:.5em;">ERR</span>` +
             `Error loading logs: ${escHtml(String(err))} ` +
-            `<button class="btn-sm-outline" style="margin-left:.5em;" onclick="loadCfLogs()">Retry</button></td></tr>`;
+            `<button class="btn" data-variant="outline" data-size="sm" style="margin-left:.5em;" onclick="loadCfLogs()">Retry</button></td></tr>`;
     }
 }
 

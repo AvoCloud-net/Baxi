@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatfilter Log #{{data.id}} | Baxi</title>
-    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="Baxi -  Chatfilter Log">
     <meta property="og:description" content="Information on entry #{{data.id}} of user {{data.uname}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/logs/">
     <meta property="og:color" content="#FF6B4A">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
 </head>
@@ -39,7 +39,7 @@
                 <p class="font-semibold mb-4"><span class="highlight-yellow">{{ data.reason }}</span></p>
                 <p class="text-muted text-sm">The content may be distressing or triggering. Do you want to continue?</p>
                 <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button onclick="hideOverlay()" class="btn-primary">Continue anyway</button>
+                    <button onclick="hideOverlay()" class="btn" data-variant="primary" data-size="default">Continue anyway</button>
                 </div>
             </section>
         </div>
@@ -71,18 +71,18 @@
     </nav>
 
     <div class="button-group local-button-group" data-orientation="vertical">
-        <button type="button" class="btn-lg-outline p-6">
+        <button type="button" class="btn p-6" data-variant="outline" data-size="lg">
             <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
             {{user.name}}
         </button>
         <hr role="separator" />
-        <button onclick="location.href = '/'" class="btn-lg-outline">
+        <button onclick="location.href = '/'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
             Back
         </button>
-        <button onclick="location.href = '/logout/'" class="btn-lg-outline">
+        <button onclick="location.href = '/logout/'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m16 17 5-5-5-5"/>
                 <path d="M21 12H9"/>
@@ -222,10 +222,10 @@
                                 <label for="fp-reason" class="text-sm text-muted">Reason (optional -  helps the model generalise)</label>
                                 <input id="fp-reason" type="text" placeholder="e.g. gaming joke, no real intent" class="input" />
                                 <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-                                    <button id="btn-false-positive" type="button" class="btn-primary" onclick="submitFeedback('SAFE')">
+                                    <button id="btn-false-positive" type="button" class="btn" data-variant="primary" data-size="default" onclick="submitFeedback('SAFE')">
                                         Mark as false positive
                                     </button>
-                                    <button id="btn-true-positive" type="button" class="btn-lg-outline" onclick="submitFeedback('UNSAFE')">
+                                    <button id="btn-true-positive" type="button" class="btn" data-variant="outline" data-size="lg" onclick="submitFeedback('UNSAFE')">
                                         Confirm correct (true positive)
                                     </button>
                                 </div>

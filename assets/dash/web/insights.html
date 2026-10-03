@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BaxiInsights -  {{ guild.name }}</title>
-    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="BaxiInsights -  {{ guild.name }}">
     <meta property="og:description" content="Server analytics for {{ guild.name }}.">
     <meta property="og:color" content="#FF6B4A">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <script src="{{ cdn.basecoat_js }}" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ cdn.chartjs_js }}"></script>
 
     <style>
         #page-loader {
@@ -208,23 +208,23 @@
 
     <!-- Sidebar -->
     <div class="button-group local-button-group" data-orientation="vertical">
-        <button type="button" class="btn-lg-outline p-6">
+        <button type="button" class="btn p-6" data-variant="outline" data-size="lg">
             <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src={{user.avatar_url}} />
             {{user.name}}
         </button>
         <hr role="separator" />
-        <button onclick="location.href='/guild/?guild_login={{ guild_id }}'" class="btn-lg-outline">
+        <button onclick="location.href='/guild/?guild_login={{ guild_id }}'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
             Back to Dashboard
         </button>
         <hr role="separator" />
         <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.4;padding:0 0.75rem 0.25rem;">Sections</span>
-        <button onclick="scrollToSection('sec-overview')" class="btn-lg-outline">Overview</button>
-        <button onclick="scrollToSection('sec-messages')" class="btn-lg-outline">Messages</button>
-        <button onclick="scrollToSection('sec-members')" class="btn-lg-outline">Members</button>
-        <button onclick="scrollToSection('sec-moderation')" class="btn-lg-outline">Moderation</button>
+        <button onclick="scrollToSection('sec-overview')" class="btn" data-variant="outline" data-size="lg">Overview</button>
+        <button onclick="scrollToSection('sec-messages')" class="btn" data-variant="outline" data-size="lg">Messages</button>
+        <button onclick="scrollToSection('sec-members')" class="btn" data-variant="outline" data-size="lg">Members</button>
+        <button onclick="scrollToSection('sec-moderation')" class="btn" data-variant="outline" data-size="lg">Moderation</button>
         <hr role="separator" />
-        <button onclick="location.href='/logout/'" class="btn-lg-outline">
+        <button onclick="location.href='/logout/'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
             Log-out
         </button>

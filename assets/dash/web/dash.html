@@ -8,22 +8,19 @@
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#E8ECEF" media="(prefers-color-scheme: light)">
     <title>Baxi Dashboard -  {{data.name}}</title>
-    <link rel="shortcut icon" href="https://avocloud.net/favicon.ico" type="image/x-icon">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="Baxi Dashboard -  {{data.name}}">
     <meta property="og:description" content="5 minute administrative access for the Discord guild {{data.name}}.">
     <meta property="og:url" content="https://baxi.avocloud.net/">
     <meta property="og:color" content="#FF6B4A">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/basecoat.cdn.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/basecoat.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.10-beta.2/dist/js/toast.min.js" defer></script>
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <script src="{{ cdn.basecoat_js }}" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
     <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" as="style" onload="this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap"></noscript>
 
     <style>
         #page-loader {
@@ -280,7 +277,7 @@
     <div id="toaster" class="toaster" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <div class="button-group local-button-group" data-orientation="vertical">
-        <button type="button" class="btn-lg-outline p-6">
+        <button type="button" class="btn p-6" data-variant="outline" data-size="lg">
             <img class="size-8 shrink-0 object-cover rounded-full" alt="@{{user.name}}" src="{{user.avatar_url}}" width="32" height="32" loading="lazy" />
             <span class="user-label">
                 <span class="user-label__welcome">Welcome</span>
@@ -288,19 +285,19 @@
             </span>
         </button>
         <hr role="separator" />
-        <button onclick="window.dashGoBack ? window.dashGoBack() : (location.href = '/')" class="btn-lg-outline">
+        <button onclick="window.dashGoBack ? window.dashGoBack() : (location.href = '/')" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
             Back
         </button>
-        <button onclick="window.open('https://baxi.avocloud.net/docs/', '_blank')" class="btn-lg-outline">
+        <button onclick="window.open('https://baxi.avocloud.net/docs/', '_blank')" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>
             </svg>
             Documentation
         </button>
-        <button onclick="openKofi()" class="btn-lg-outline">
+        <button onclick="openKofi()" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="M10 2v2"/>
                 <path d="M14 2v2"/>
@@ -309,7 +306,7 @@
             </svg>
             Support us
         </button>
-        <button onclick="location.href = '/logout/'" class="btn-lg-outline">
+        <button onclick="location.href = '/logout/'" class="btn" data-variant="outline" data-size="lg">
             <svg class="lucide" viewBox="0 0 24 24">
                 <path d="m16 17 5-5-5-5"/>
                 <path d="M21 12H9"/>
@@ -564,7 +561,7 @@
                                     <p class="text-muted text-sm">
                                         Please select whether you agree to our guidelines. Your consent is required in order to use all functions.
                                         By clicking "Agree", you agree to the following terms:
-                                        <button class="btn-link"
+                                        <button class="btn" data-variant="link" data-size="default"
                                             onclick="window.open('https://avocloud.net/regulations/', '_blank')">
                                             Data Protection Regulations, Terms of Service, Service Description Summary, Discord Related Rules
                                         </button>
@@ -624,7 +621,7 @@
                                 </div>
 
                                 <div class="card-actions">
-                                    <button type="submit" class="btn-primary submit-btn">
+                                    <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                         <span class="btn-text">
                                             <svg class="lucide" viewBox="0 0 24 24">
                                                 <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -661,7 +658,7 @@
                                 <section>
                                     <div id="feedback-bot-general" class="channel-perm-feedback hidden mb-2"></div>
                                     <div id="feedback-bot-role" class="channel-perm-feedback hidden mb-2"></div>
-                                    <button type="button" id="btn-check-perms" onclick="checkAllPermissions()" class="btn-outline w-full">
+                                    <button type="button" id="btn-check-perms" onclick="checkAllPermissions()" class="btn w-full" data-variant="outline" data-size="default">
                                         <span class="btn-text">
                                             <svg class="lucide" viewBox="0 0 24 24">
                                                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
@@ -730,7 +727,7 @@
                                 </fieldset>
                             </div>
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -928,7 +925,7 @@
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
-                                        <button type="button" class="btn-primary" onclick="cfBypassAdd()" style="flex-shrink:0;">
+                                        <button type="button" class="btn" data-variant="primary" data-size="default" onclick="cfBypassAdd()" style="flex-shrink:0;">
                                             <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                             Add
                                         </button>
@@ -938,7 +935,7 @@
 
                                 <div id="chatfilter-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
                                 <div class="card-actions">
-                                    <button type="submit" class="btn-primary submit-btn">
+                                    <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                         <span class="btn-text">
                                             <svg class="lucide" viewBox="0 0 24 24">
                                                 <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1038,7 +1035,7 @@
                                             <span class="text-sm">👍/👎</span>
                                         </label>
                                     </div>
-                                    <button type="button" class="btn-primary" onclick="suggestionsAddChannel()" style="flex-shrink:0;align-self:end;">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="suggestionsAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1073,7 +1070,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" id="suggestions-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
+                                <button type="submit" id="suggestions-save-btn" class="btn submit-btn flex items-center justify-center gap-2" data-variant="primary" data-size="default">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -1135,14 +1132,14 @@
                                     <label for="sticky-add-message">Message:</label>
                                     <textarea id="sticky-add-message" class="w-full min-h-[80px]" maxlength="2000" placeholder="Enter the sticky message text…"></textarea>
                                 </div>
-                                <button type="button" class="btn-primary flex items-center gap-2" style="align-self:start;" onclick="stickyAdd()">
+                                <button type="button" class="btn flex items-center gap-2" data-variant="primary" data-size="default" style="align-self:start;" onclick="stickyAdd()">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     Add Sticky Message
                                 </button>
                             </div>
 
                             <div class="card-actions">
-                                <button type="button" id="sticky-save-btn" data-save-btn class="btn-primary flex items-center justify-center gap-2" onclick="stickySave()">
+                                <button type="button" id="sticky-save-btn" data-save-btn class="btn flex items-center justify-center gap-2" data-variant="primary" data-size="default" onclick="stickySave()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -1191,7 +1188,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1340,7 +1337,7 @@
                                             <option value="danger">Danger (red)</option>
                                         </select>
                                     </div>
-                                    <button type="button" class="btn-primary" onclick="ticketButtonAdd()">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="ticketButtonAdd()">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1348,7 +1345,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1440,7 +1437,7 @@
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button type="button" class="btn-primary" onclick="antispamAddWlChannel()" style="flex-shrink:0;">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="antispamAddWlChannel()" style="flex-shrink:0;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1460,7 +1457,7 @@
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button type="button" class="btn-primary" onclick="antispamAddWlRole()" style="flex-shrink:0;">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="antispamAddWlRole()" style="flex-shrink:0;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </button>
@@ -1470,7 +1467,7 @@
 
                             <div id="antispam-channel-stats" class="text-xs text-muted" style="padding:4px 0;"></div>
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1519,9 +1516,9 @@
                             <div class="grid gap-2">
                                 <label class="font-medium text-sm">Protection level</label>
                                 <div id="antiraid-presets" class="grid grid-cols-3 gap-2">
-                                    <button type="button" class="btn-outline antiraid-preset" data-preset="relaxed" onclick="antiraidApplyPreset('relaxed')">Relaxed</button>
-                                    <button type="button" class="btn-outline antiraid-preset" data-preset="balanced" onclick="antiraidApplyPreset('balanced')">Balanced</button>
-                                    <button type="button" class="btn-outline antiraid-preset" data-preset="strict" onclick="antiraidApplyPreset('strict')">Strict</button>
+                                    <button type="button" class="btn antiraid-preset" data-variant="outline" data-size="default" data-preset="relaxed" onclick="antiraidApplyPreset('relaxed')">Relaxed</button>
+                                    <button type="button" class="btn antiraid-preset" data-variant="outline" data-size="default" data-preset="balanced" onclick="antiraidApplyPreset('balanced')">Balanced</button>
+                                    <button type="button" class="btn antiraid-preset" data-variant="outline" data-size="default" data-preset="strict" onclick="antiraidApplyPreset('strict')">Strict</button>
                                 </div>
                                 <p class="text-muted text-xs" id="antiraid-preset-hint">Balanced — sensible default for most servers.</p>
                             </div>
@@ -1686,7 +1683,7 @@
                                                 <option value="{{ id }}">{{ name }}</option>
                                                 {% endfor %}
                                             </select>
-                                            <button type="button" class="btn-primary" onclick="antiraidAddWlRole()" style="flex-shrink:0;">
+                                            <button type="button" class="btn" data-variant="primary" data-size="default" onclick="antiraidAddWlRole()" style="flex-shrink:0;">
                                                 <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                                 Add
                                             </button>
@@ -1697,7 +1694,7 @@
                             </details>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1783,7 +1780,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1821,7 +1818,7 @@
                             </h2>
                             <p class="text-muted">Everything Baxi flagged and left for you to decide. Each entry says what Baxi already did and what every button will do.</p>
                         </div>
-                        <button type="button" class="btn-outline" onclick="modReviewRefresh()" style="flex-shrink:0;">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" onclick="modReviewRefresh()" style="flex-shrink:0;">
                             <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
                             <span class="btn-label">Refresh</span>
                         </button>
@@ -1919,7 +1916,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -1934,7 +1931,7 @@
                                         <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
                                 </button>
-                                <button type="button" id="verify-post-btn" class="btn-outline" onclick="postVerifyPanel()">
+                                <button type="button" id="verify-post-btn" class="btn" data-variant="outline" data-size="default" onclick="postVerifyPanel()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                         <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
                                     </svg>
@@ -2017,7 +2014,7 @@
                                         <input type="number" id="rr-max-roles" min="0" max="25" placeholder="Leave empty for no limit" class="w-full">
                                         <p class="text-muted text-xs">Leave empty (or 0) for no limit. Set to <strong>1</strong> for exclusive (picking a new role removes the previous one). Editable later.</p>
                                     </div>
-                                    <button type="submit" id="rr-add-panel-btn" class="btn-primary w-full">
+                                    <button type="submit" id="rr-add-panel-btn" class="btn w-full" data-variant="primary" data-size="default">
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Create Panel &amp; Post in Discord
                                     </button>
@@ -2093,7 +2090,7 @@
                                 </div>
 
                                 <div class="add-area mt-3">
-                                    <button type="button" class="btn-primary" id="wc-add-step">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" id="wc-add-step">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add step
                                     </button>
@@ -2101,7 +2098,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2208,7 +2205,7 @@
                                     <input type="file" id="welcomer-bg-upload" accept="image/png,image/jpeg,image/webp" class="w-full">
                                     <div id="welcomer-bg-preview" class="hidden mt-2">
                                         <img id="welcomer-bg-img" class="rounded max-h-32 object-cover" alt="Background preview">
-                                        <button type="button" class="btn-outline mt-1 text-xs" style="color:#DC3838;border-color:#DC3838;" onclick="removeWelcomerBg()">Remove background</button>
+                                        <button type="button" class="btn mt-1 text-xs" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="removeWelcomerBg()">Remove background</button>
                                     </div>
                                 </div>
                                 <div class="grid gap-2">
@@ -2256,7 +2253,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2409,7 +2406,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2470,7 +2467,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2546,7 +2543,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <button type="button" class="btn-primary" onclick="autoReleaseAddChannel()" style="flex-shrink:0;align-self:end;">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="autoReleaseAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Hinzufügen
                                     </button>
@@ -2557,7 +2554,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" id="auto-release-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
+                                <button type="submit" id="auto-release-save-btn" class="btn submit-btn flex items-center justify-center gap-2" data-variant="primary" data-size="default">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2625,7 +2622,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <button type="button" class="btn-primary" onclick="assistantAddChannel()" style="flex-shrink:0;align-self:end;">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="assistantAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Hinzufügen
                                     </button>
@@ -2649,7 +2646,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" id="assistant-save-btn" class="btn-primary submit-btn flex items-center justify-center gap-2">
+                                <button type="submit" id="assistant-save-btn" class="btn submit-btn flex items-center justify-center gap-2" data-variant="primary" data-size="default">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
@@ -2675,7 +2672,7 @@
                             DiscordGate
                         </h2>
                         <p class="text-muted">Players must link their Discord before joining the Minecraft server. Discord: <code>/mc link</code> · In-game: <code>/dg</code>.</p>
-                        <a href="https://modrinth.com/plugin/discordgate" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex;align-items:center;gap:0.5rem;margin-top:0.5rem;text-decoration:none;width:fit-content;">
+                        <a href="https://modrinth.com/plugin/discordgate" target="_blank" rel="noopener" class="btn" data-variant="secondary" data-size="default" style="display:inline-flex;align-items:center;gap:0.5rem;margin-top:0.5rem;text-decoration:none;width:fit-content;">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:1em;height:1em;">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
@@ -2709,8 +2706,8 @@
                                 <p class="text-muted text-xs">Required for the bot to authenticate against the plugin. Must match <code>secret</code> in <code>plugins/DiscordGate/config.yml</code>.</p>
                                 <div class="mcl-secret-row" style="display:flex;gap:0.5rem;align-items:center;">
                                     <input type="password" id="mcl-api-secret" class="input" placeholder="••••••••" style="flex:1;" oninput="mclCheckSecret()">
-                                    <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
-                                    <button type="button" class="btn-secondary" style="white-space:nowrap;flex-shrink:0;" onclick="mclCopySecret(this)">Copy</button>
+                                    <button type="button" class="btn" data-variant="secondary" data-size="default" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
+                                    <button type="button" class="btn" data-variant="secondary" data-size="default" style="white-space:nowrap;flex-shrink:0;" onclick="mclCopySecret(this)">Copy</button>
                                 </div>
                                 <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--color-error, #DC3838);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
                                 <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--color-surface-2,rgba(0,0,0,.08));padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
@@ -2835,7 +2832,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2904,7 +2901,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2947,7 +2944,7 @@
                                     <option value="tiktok">TikTok</option>
                                 </select>
                                 <input type="text" id="livestream-add-login" placeholder="Twitch username" class="flex-1" maxlength="64">
-                                <button type="button" class="btn-primary" id="livestream-add-btn" onclick="addStreamer()">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" id="livestream-add-btn" onclick="addStreamer()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                                     </svg>
@@ -3004,7 +3001,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3043,7 +3040,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="yvid-add-login" placeholder="@handle or UCxxx channel ID" class="input flex-1" maxlength="64">
-                                <button type="button" class="btn-primary" id="yvid-add-btn" onclick="yvidAddChannel()">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" id="yvid-add-btn" onclick="yvidAddChannel()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
@@ -3100,7 +3097,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3139,7 +3136,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="tt-add-login" placeholder="TikTok username (e.g. charlidamelio)" class="input flex-1" maxlength="64">
-                                <button type="button" class="btn-primary" id="tt-add-btn" onclick="ttAddAccount()">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" id="tt-add-btn" onclick="ttAddAccount()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
@@ -3195,7 +3192,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3234,7 +3231,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="tw-add-login" placeholder="X username (e.g. nasa)" class="input flex-1" maxlength="15">
-                                <button type="button" class="btn-primary" id="tw-add-btn" onclick="twAddAccount()">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" id="tw-add-btn" onclick="twAddAccount()">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
@@ -3305,7 +3302,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3433,7 +3430,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -3526,7 +3523,7 @@
                                             <option value="react">Add reaction</option>
                                             <option value="dm">Send DM</option>
                                         </select>
-                                        <button type="button" class="btn-primary shrink-0" onclick="ccAddActionRow(document.getElementById('cc-action-type').value)">
+                                        <button type="button" class="btn shrink-0" data-variant="primary" data-size="default" onclick="ccAddActionRow(document.getElementById('cc-action-type').value)">
                                             <svg class="lucide" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                                             Add action
                                         </button>
@@ -3535,7 +3532,7 @@
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <button type="submit" class="btn-primary submit-btn flex-1 min-w-0">
+                                <button type="submit" class="btn submit-btn flex-1 min-w-0" data-variant="primary" data-size="default">
                                     <span class="btn-text flex items-center justify-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M5 12h14"/><path d="M12 5v14"/>
@@ -3548,7 +3545,7 @@
                                         <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                                     </svg>
                                 </button>
-                                <button type="button" id="customcmd-cancel-edit" class="btn-outline shrink-0 hidden" onclick="ccCancelEdit()">Cancel</button>
+                                <button type="button" id="customcmd-cancel-edit" class="btn shrink-0 hidden" data-variant="outline" data-size="default" onclick="ccCancelEdit()">Cancel</button>
                             </div>
                         </form>
 
@@ -3614,7 +3611,7 @@
 
                             <!-- Add-area: append a new empty trigger card -->
                             <div class="add-area mt-3">
-                                <button type="button" class="btn-primary" id="tv-add-trigger" onclick="addTempVoiceTrigger()">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" id="tv-add-trigger" onclick="addTempVoiceTrigger()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                                     </svg>
@@ -3644,7 +3641,7 @@
                                 <div class="card tv-trigger-card">
                                     <header class="flex items-center justify-between">
                                         <h3 class="text-base font-semibold">Trigger channel</h3>
-                                        <button type="button" class="btn-outline tv-trigger-remove" style="color:#DC3838;border-color:#DC3838;">
+                                        <button type="button" class="btn tv-trigger-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;">
                                             <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                             <span class="btn-label">Remove</span>
                                         </button>
@@ -3677,7 +3674,7 @@
                             </template>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
                                             <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -3754,7 +3751,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3826,7 +3823,7 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -3906,14 +3903,14 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
                                     <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                 </button>
-                                <button type="button" id="counting-reset-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                <button type="button" id="counting-reset-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                                     Reset count
                                 </button>
@@ -3982,14 +3979,14 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
                                     <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                 </button>
-                                <button type="button" id="onewordstory-end-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                <button type="button" id="onewordstory-end-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>
                                     End story
                                 </button>
@@ -4048,14 +4045,14 @@
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
                                     <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                 </button>
-                                <button type="button" id="flagquiz-reset-scores-btn" class="btn-secondary" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                                <button type="button" id="flagquiz-reset-scores-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                     Reset scores
                                 </button>
@@ -4114,14 +4111,14 @@
                                 <label class="label">Role Rewards</label>
                                 <p class="text-muted text-xs">When the server reaches a level, a role is automatically assigned to all members.</p>
                                 <div id="leveling-role-rewards-list" class="grid gap-2"></div>
-                                <button type="button" id="leveling-add-reward-btn" class="btn-primary" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
+                                <button type="button" id="leveling-add-reward-btn" class="btn" data-variant="primary" data-size="default" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
                                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                     Add reward
                                 </button>
                             </div>
 
                             <div class="card-actions">
-                                <button type="submit" class="btn-primary submit-btn">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -4264,9 +4261,9 @@
                         </div>
 
                         <div id="paginationControls" class="flex items-center justify-center gap-4 mt-8">
-                            <button id="prevPage" class="btn-secondary">&larr; Prev</button>
+                            <button id="prevPage" class="btn" data-variant="secondary" data-size="default">&larr; Prev</button>
                             <span id="pageInfo" class="text-muted text-sm">1 / 1</span>
-                            <button id="nextPage" class="btn-secondary">Next &rarr;</button>
+                            <button id="nextPage" class="btn" data-variant="secondary" data-size="default">Next &rarr;</button>
                         </div>
                     </section>
                 </div>
@@ -4288,7 +4285,7 @@
          per-card .card-actions rows stay visible and keep working. -->
     <div class="avo-save-bar" id="avo-save-bar" role="status" aria-live="polite" hidden>
         <span class="avo-save-bar__label" id="avo-save-bar-label"></span>
-        <button type="button" class="btn-primary" id="avo-save-bar-btn">
+        <button type="button" class="btn" data-variant="primary" data-size="default" id="avo-save-bar-btn">
             <span class="btn-text flex items-center gap-2">
                 <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Save changes
@@ -4892,7 +4889,7 @@
                                     <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
                             </div>
-                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="removeStreamer('${safeLogin}', '${platform}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="removeStreamer('${safeLogin}', '${platform}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -4908,7 +4905,7 @@
                                     <option value="above" ${posAbove}>Above embed</option>
                                     <option value="in_embed" ${posEmbed}>In embed (as field)</option>
                                 </select>
-                                <button type="button" id="ls-save-${idx}" class="btn-outline submit-btn" onclick="updateStreamerMessage(${idx}, '${safeLogin}', '${platform}')">
+                                <button type="button" id="ls-save-${idx}" class="btn submit-btn" data-variant="outline" data-size="default" onclick="updateStreamerMessage(${idx}, '${safeLogin}', '${platform}')">
                                     <span class="btn-text flex items-center gap-2">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
@@ -5081,7 +5078,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">' + profileUrl.replace('https://', '') + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5089,7 +5086,7 @@
                     + '<label class="text-sm">Alert channel:</label>'
                     + '<div class="flex items-center gap-2">'
                     + '<select class="select flex-1 yvid-channel-select" data-id="' + safeId + '">' + channelOptions + '</select>'
-                    + '<button type="button" class="btn-primary yvid-save-btn" data-id="' + safeId + '" onclick="yvidUpdateChannel(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn yvid-save-btn" data-variant="primary" data-size="default" data-id="' + safeId + '" onclick="yvidUpdateChannel(\'' + safeId + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
                     + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
                     + '</button>'
@@ -5246,7 +5243,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5254,7 +5251,7 @@
                     + '<label class="text-sm">Alert channel:</label>'
                     + '<div class="flex items-center gap-2">'
                     + '<select class="select flex-1 tt-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
-                    + '<button type="button" class="btn-primary tt-save-btn" data-user="' + safeUser + '" onclick="ttUpdateChannel(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn tt-save-btn" data-variant="primary" data-size="default" data-user="' + safeUser + '" onclick="ttUpdateChannel(\'' + safeUser + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
                     + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
                     + '</button>'
@@ -5395,7 +5392,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5403,7 +5400,7 @@
                     + '<label class="text-sm">Alert channel:</label>'
                     + '<div class="flex items-center gap-2">'
                     + '<select class="select flex-1 tw-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
-                    + '<button type="button" class="btn-primary tw-save-btn" data-user="' + safeUser + '" onclick="twUpdateChannel(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn tw-save-btn" data-variant="primary" data-size="default" data-user="' + safeUser + '" onclick="twUpdateChannel(\'' + safeUser + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
                     + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
                     + '</button>'
@@ -5554,7 +5551,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + (acc.username || igUserId) + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="igRemoveAccount(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="igRemoveAccount(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5569,8 +5566,8 @@
                     + '<input type="checkbox" class="input ig-reels-cb" data-igid="' + safeId + '"' + (acc.alert_reels !== false ? ' checked' : '') + '>'
                     + '<span>Reels</span></label>'
                     + (acc.token_expired
-                        ? '<a href="/oauth/instagram/start?guild={{ guild.id }}" class="btn-primary inline-flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Reconnect Account</a>'
-                        : '<button type="button" class="btn-primary ig-save-btn" data-igid="' + safeId + '" onclick="igUpdateSettings(\'' + safeId + '\')">'
+                        ? '<a href="/oauth/instagram/start?guild={{ guild.id }}" class="btn inline-flex items-center gap-2" data-variant="primary" data-size="default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Reconnect Account</a>'
+                        : '<button type="button" class="btn ig-save-btn" data-variant="primary" data-size="default" data-igid="' + safeId + '" onclick="igUpdateSettings(\'' + safeId + '\')">'
                           + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
                           + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
                           + '</button>')
@@ -5729,7 +5726,7 @@
             row.innerHTML = `
                 <header class="flex items-center justify-between">
                     <h4 class="text-sm font-semibold">${ccActionLabel(type)}</h4>
-                    <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
+                    <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
                         <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                 </header>
@@ -5840,13 +5837,13 @@
                             <p class="text-muted text-xs">by ${ccEsc(cmd.created_by || 'Unknown')} &mdash; ${ccEsc(cmd.created_at || '')}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" class="btn-outline" onclick="editCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" onclick="editCustomCmd('${trigger.replace(/'/g, "\\'")}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                                 </svg>
                                 Edit
                             </button>
-                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -6268,13 +6265,13 @@
                             <p class="text-muted text-xs" style="margin-top:4px;">${styleLabel}</p>
                         </div>
                         <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;align-items:center;">
-                            <button type="button" class="btn-outline btn-move-up" title="Move up" style="padding:4px 8px;${isFirst ? 'opacity:0.35;cursor:not-allowed;' : ''}">
+                            <button type="button" class="btn btn-move-up" data-variant="outline" data-size="default" title="Move up" style="padding:4px 8px;${isFirst ? 'opacity:0.35;cursor:not-allowed;' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                             </button>
-                            <button type="button" class="btn-outline btn-move-down" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
+                            <button type="button" class="btn btn-move-down" data-variant="outline" data-size="default" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
-                            <button type="button" class="btn-outline btn-remove" style="color:#DC3838;border-color:#DC3838;">
+                            <button type="button" class="btn btn-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -7081,8 +7078,8 @@
 
             const actions = modReviewActions(item.kind);
             const buttons = actions.map(function (act) {
-                const cls = act.tone === 'ok' ? 'btn-primary' : 'btn-outline';
-                return '<button type="button" class="' + cls + ' mod_review-act" data-action="' + act.a + '" ' +
+                const variant = act.tone === 'ok' ? 'primary' : 'outline';
+                return '<button type="button" class="btn mod_review-act" data-variant="' + variant + '" data-size="default" data-action="' + act.a + '" ' +
                        'style="' + MOD_REVIEW_TONES[act.tone] + '"><span class="btn-label">' + modReviewEscape(act.l) + '</span></button>';
             }).join('');
             const hints = actions.map(function (act) {
@@ -7194,7 +7191,9 @@
         function _wlRemoveBtn(label, onClick) {
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'btn-outline';
+            b.className = 'btn';
+            b.dataset.variant = 'outline';
+            b.dataset.size = 'default';
             b.style.cssText = 'color:#ef4444;border-color:#ef4444;';
             b.innerHTML = _WL_TRASH + '<span class="btn-label"></span>';
             b.querySelector('.btn-label').textContent = label;
@@ -7368,7 +7367,7 @@
                     <option value="">-  Select a role - </option>
                     ${_levelingRolesOptions}
                 </select>
-                <button type="button" class="btn-secondary" style="padding:6px 10px;flex-shrink:0;"
+                <button type="button" class="btn" data-variant="secondary" data-size="default" style="padding:6px 10px;flex-shrink:0;"
                         onclick="this.closest('div').remove()">✕</button>`;
             if (roleId) row.querySelector('[data-reward-role]').value = String(roleId);
             list.appendChild(row);
@@ -7595,8 +7594,7 @@
             const active = antiraidDetectPreset();
             document.querySelectorAll('.antiraid-preset').forEach(function (btn) {
                 const on = btn.dataset.preset === active;
-                btn.classList.toggle('btn-primary', on);
-                btn.classList.toggle('btn-outline', !on);
+                btn.dataset.variant = on ? 'primary' : 'outline';
             });
             const hint = document.getElementById('antiraid-preset-hint');
             if (hint) hint.textContent = _ANTIRAID_PRESET_HINTS[active] || _ANTIRAID_PRESET_HINTS.custom;
@@ -7630,7 +7628,7 @@
                             <h3 class="text-base font-semibold">Step ${idx + 1}: At ${step.warns} warning${step.warns !== 1 ? 's' : ''} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" style="display:inline-block;vertical-align:-3px;"><path d="m9 18 6-6-6-6"/></svg> ${actionLabel}</h3>
                             <p class="text-muted text-xs">${step.action === 'timeout' ? `Timeout: ${durationMin} min &nbsp;&middot;&nbsp;` : ''}DM: ${step.dm ? 'Yes' : 'No'}</p>
                         </div>
-                        <button type="button" class="btn-outline btn-wc-remove" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;">
+                        <button type="button" class="btn btn-wc-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -7721,7 +7719,7 @@
                                     onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
                                 👍/👎 votes
                             </label>
-                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;" onclick="suggestionsRemoveChannel('${ch.id}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="suggestionsRemoveChannel('${ch.id}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -7798,7 +7796,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <h3 class="text-base font-semibold">${chName}</h3>
-                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -7876,7 +7874,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <h3 class="text-base font-semibold">${chName}</h3>
-                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="assistantRemoveChannel('${cid}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="assistantRemoveChannel('${cid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -7954,7 +7952,7 @@
                             <p class="text-muted text-xs sticky-preview-${cid}" style="white-space:pre-wrap;margin-top:2px;">${preview.replace(/</g,'&lt;')}</p>
                         </div>
                         <div class="flex gap-2" style="flex-shrink:0;margin-left:12px;">
-                            <button type="button" class="btn-secondary sticky-edit-btn-${cid}"
+                            <button type="button" class="btn sticky-edit-btn-${cid}" data-variant="secondary" data-size="default"
                                 onclick="stickyToggleEdit('${cid}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -7962,7 +7960,7 @@
                                 </svg>
                                 <span class="btn-label">Edit</span>
                             </button>
-                            <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;"
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;"
                                 onclick="stickyRemove('${cid}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -7975,14 +7973,14 @@
                     <section class="sticky-edit-section-${cid} hidden" style="padding-top:0;">
                         <textarea class="w-full min-h-[80px] sticky-textarea-${cid}" maxlength="2000">${escapedMsg}</textarea>
                         <div class="flex gap-2 mt-2">
-                            <button type="button" class="btn-primary" onclick="stickySaveEdit('${cid}')">
+                            <button type="button" class="btn" data-variant="primary" data-size="default" onclick="stickySaveEdit('${cid}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;">
                                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                                     <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
                                 </svg>
                                 Apply
                             </button>
-                            <button type="button" class="btn-secondary" onclick="stickyToggleEdit('${cid}')">Cancel</button>
+                            <button type="button" class="btn" data-variant="secondary" data-size="default" onclick="stickyToggleEdit('${cid}')">Cancel</button>
                         </div>
                     </section>`;
                 list.appendChild(card);
@@ -8104,7 +8102,7 @@
                 const entriesHtml = (panel.entries || []).map(e => {
                     return `<div class="rr-entry-row flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
                         <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
-                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
                             <span class="btn-text">Remove</span>
                             <svg viewBox="0 0 24 24" class="spinner hidden" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:loader-spin 0.9s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         </button>
@@ -8117,7 +8115,7 @@
                             <h3 class="text-base font-semibold">${_rrEscape(panel.title) || 'Panel'}</h3>
                             <p class="text-muted text-xs">Message ID: ${mid}</p>
                         </div>
-                        <button type="button" class="btn-outline" style="color:#DC3838;border-color:#DC3838;"
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;"
                             onclick="removeRRPanel('${mid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -8154,7 +8152,7 @@
                                         <input type="number" class="input rr-edit-max w-full" data-msgid="${mid}" min="0" max="25" value="${maxRoles || ''}" placeholder="no limit">
                                     </div>
                                 </div>
-                                <button type="button" class="btn-primary" onclick="saveRRPanel(this, '${mid}')">
+                                <button type="button" class="btn" data-variant="primary" data-size="default" onclick="saveRRPanel(this, '${mid}')">
                                     <span class="btn-text">Save panel changes</span>
                                     <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
                                         stroke="currentColor" fill="none" stroke-width="2"
@@ -8193,7 +8191,7 @@
                                 </div>
                                 <div style="flex:0 0 auto;display:flex;flex-direction:column;">
                                     <label class="form-label" style="visibility:hidden;">x</label>
-                                    <button type="button" class="btn-primary" style="white-space:nowrap;" onclick="addRREntry(this, '${mid}')">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" style="white-space:nowrap;" onclick="addRREntry(this, '${mid}')">
                                         <span class="btn-text">Add</span>
                                         <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
                                             stroke="currentColor" fill="none" stroke-width="2"
@@ -8725,16 +8723,15 @@
 
     <script>
         function showSaveToast(success, message) {
-            document.dispatchEvent(new CustomEvent('basecoat:toast', {
-                detail: {
-                    config: {
-                        category: success ? 'success' : 'error',
-                        title: success ? 'EXEC // SAVED' : 'EXEC // FAILED',
-                        description: message || (success ? 'Settings applied successfully.' : 'Failed to save. Please try again.'),
-                        cancel: { label: 'DISMISS' }
-                    }
-                }
-            }));
+            // basecoat 1.0: the toaster element carries the API (it replaced the
+            // 0.3.x 'basecoat:toast' document event).
+            const toaster = document.getElementById('toaster');
+            if (toaster && toaster.toast) toaster.toast({
+                category: success ? 'success' : 'error',
+                title: success ? 'EXEC // SAVED' : 'EXEC // FAILED',
+                description: message || (success ? 'Settings applied successfully.' : 'Failed to save. Please try again.'),
+                cancel: { label: 'DISMISS' }
+            });
             document.querySelectorAll('.submit-btn[disabled]').forEach(btn => {
                 btn.disabled = false;
                 btn.querySelector('.spinner')?.classList.add('hidden');
@@ -9169,7 +9166,7 @@
                 title="Ko-fi — avocloudnet" loading="lazy"
                 style="border:none;width:100%;height:min(712px, 65vh);border-radius:8px;background:#f9f9f9;"></iframe>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('kofi-dialog').close()">Close</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('kofi-dialog').close()">Close</button>
         </footer>
     </div>
 </dialog>
@@ -9189,8 +9186,8 @@
             <p id="remove-tt-dialog-description"></p>
         </header>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="ttConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="ttConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9202,8 +9199,8 @@
             <p id="remove-tw-dialog-description"></p>
         </header>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('remove-tw-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="twConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-tw-dialog').close()">Cancel</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="twConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9215,8 +9212,8 @@
             <p id="remove-ig-dialog-description"></p>
         </header>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('remove-ig-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="igConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-ig-dialog').close()">Cancel</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="igConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9228,8 +9225,8 @@
             <p id="remove-yvid-dialog-description"></p>
         </header>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('remove-yvid-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="yvidConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-yvid-dialog').close()">Cancel</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="yvidConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9241,8 +9238,8 @@
             <p id="remove-streamer-dialog-description"></p>
         </header>
         <footer>
-            <button class="btn-outline" onclick="document.getElementById('remove-streamer-dialog').close()">Cancel</button>
-            <button class="btn-primary" style="background:#DC3838;border-color:#DC3838;" onclick="confirmRemoveStreamer()">Remove</button>
+            <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-streamer-dialog').close()">Cancel</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="confirmRemoveStreamer()">Remove</button>
         </footer>
     </div>
 </dialog>
