@@ -12,113 +12,116 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
     <script src="{{ cdn.basecoat_js }}" defer></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
     <script src="{{ cdn.chartjs_js }}"></script>
 
     <style>
         #page-loader {
             position: fixed; inset: 0; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
-            background: var(--background, canvas);
+            background: var(--avo-canvas);
             transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
         }
         #page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        #page-loader .loader-spinner {
-            width: 2.5rem; height: 2.5rem;
-            border: 3px solid color-mix(in srgb, var(--color-primary, #FF6B4A) 20%, transparent);
-            border-top-color: var(--color-primary, #FF6B4A);
-            border-radius: 50%; animation: spin 0.9s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* The kit's tick ring (.avo-spinner), one step bigger for a page loader. */
+        #page-loader .loader-spinner { width: 2.5rem; height: 2.5rem; --avo-spinner-ring: 4px; }
+        #page-loader .loader-note { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); letter-spacing: 0.06em; color: var(--avo-text-muted); }
 
-        .stat-card {
-            border-radius: var(--avo-radius-md, 8px);
+        /* Panels: glass with the kit's corner marks (main.css lists .stat-card and
+           .chart-card with the rest). One chart per panel, titled by a `//` kicker
+           (BRANDING §9 Data visualisation). */
+        .stat-card, .chart-card {
             position: relative;
-            background: var(--card, var(--color-card));
-            border: 1px solid var(--border, var(--color-border));
-            padding: 1.25rem 1.5rem;
-            display: flex; flex-direction: column; gap: 0.3rem;
+            border-radius: var(--avo-radius-lg);
+            background-image: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+            backdrop-filter: blur(var(--avo-glass-blur));
+            border: 1px solid var(--avo-line);
+            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
         }
-        .stat-card .label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.5; }
+        .stat-card { padding: var(--avo-ui-pad-plate); display: flex; flex-direction: column; gap: 0.3rem; }
+        .stat-card .label { font-family: var(--avo-font-mono); font-size: var(--avo-text-kicker); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--avo-text-muted); }
+        .stat-card .value { font-size: 1.9rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+        .stat-card .sub   { font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
 
-        /* Inline info "i" with hover/tap tooltip */
+        /* Inline info marker with a hover/tap tooltip: a 6px-cornered box, not a
+           circle (§5), and a floating tooltip is opaque, not glass. */
         .info-i {
             position: absolute; top: 0.85rem; right: 0.9rem;
-            width: 1.05rem; height: 1.05rem; border-radius: 50%;
-            border: 1px solid var(--border, var(--color-border));
-            font-size: 0.68rem; font-weight: 700; font-style: normal;
+            width: 1.15rem; height: 1.15rem; border-radius: var(--avo-radius);
+            border: 1px solid var(--avo-line-strong); color: var(--avo-text-muted);
+            font-family: var(--avo-font-mono); font-size: 0.68rem; font-weight: 600; font-style: normal;
             display: flex; align-items: center; justify-content: center;
-            opacity: 0.4; cursor: help; user-select: none; transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
+            cursor: help; user-select: none;
         }
-        .info-i:hover, .info-i:focus-visible { opacity: 0.9; }
+        .info-i:hover, .info-i:focus-visible { color: var(--avo-text); border-color: var(--avo-primary); }
         .info-i .tip {
             position: absolute; bottom: 150%; right: -0.35rem;
             width: max-content; max-width: 230px;
-            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            backdrop-filter: blur(var(--avo-glass-blur));
-            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-            border: 1px solid var(--border, var(--color-border));
-            border-radius: var(--avo-radius-sm, 6px);
+            background: var(--avo-surface-raised);
+            border: 1px solid var(--avo-line-strong);
+            border-radius: var(--avo-radius);
             padding: 0.55rem 0.7rem;
-            font-size: 0.72rem; font-weight: 500; line-height: 1.4;
+            font-size: var(--avo-ui-label); font-weight: 500; line-height: 1.4;
             text-transform: none; letter-spacing: normal; text-align: left;
-            color: var(--foreground, inherit); opacity: 0;
-            visibility: hidden; transform: translateY(4px);
-            transition: opacity var(--avo-dur-micro) var(--avo-ease-out), transform var(--avo-dur-micro) var(--avo-ease-out), visibility var(--avo-dur-micro) var(--avo-ease-out);
-            z-index: 60; box-shadow: inset 0 1px 0 var(--avo-glass-edge); pointer-events: none;
+            color: var(--avo-text); opacity: 0;
+            visibility: hidden;
+            z-index: 60; pointer-events: none;
         }
-        .info-i:hover .tip, .info-i:focus-visible .tip { opacity: 1; visibility: visible; transform: translateY(0); }
-        .stat-card .value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
-        .stat-card .sub   { font-size: 0.78rem; opacity: 0.45; }
+        .info-i:hover .tip, .info-i:focus-visible .tip { opacity: 1; visibility: visible; }
 
-        .chart-card {
-            border-radius: var(--avo-radius-md, 8px);
-            background: var(--card, var(--color-card));
-            border: 1px solid var(--border, var(--color-border));
-            padding: 1.5rem;
+        .chart-card { padding: 1.5rem; }
+        .chart-card h3 {
+            display: flex; align-items: center; gap: 0.6em;
+            font-family: var(--avo-font-mono); font-size: var(--avo-text-kicker); font-weight: 500;
+            letter-spacing: 0.22em; text-transform: uppercase; color: var(--avo-text-muted);
+            margin-bottom: 1rem;
         }
-        .chart-card h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 1rem; opacity: 0.85; }
+        .chart-card h3::before { content: '//'; color: var(--avo-primary); flex-shrink: 0; }
 
         .rank-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0.45rem 0; border-bottom: 1px solid var(--border, var(--color-border));
-            font-size: 0.86rem;
+            height: var(--avo-ui-row-h); padding: 0; border-bottom: 1px solid var(--avo-line);
+            font-size: var(--avo-ui-text);
         }
         .rank-row:last-child { border-bottom: none; }
-        .rank-num { font-size: 0.72rem; font-weight: 700; opacity: 0.35; width: 1.5rem; flex-shrink: 0; }
-        .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--border); overflow: hidden; }
-        .rank-bar { height: 100%; background: var(--color-primary, #FF6B4A); transition: width var(--avo-dur-ui) var(--avo-ease-out); }
-        .rank-count { font-size: 0.78rem; font-weight: 600; opacity: 0.6; white-space: nowrap; }
+        .rank-num { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; color: var(--avo-text-muted); width: 1.5rem; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--avo-surface-high); overflow: hidden; }
+        .rank-bar { height: 100%; background: var(--avo-primary); }
+        .rank-count { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; color: var(--avo-text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-        .tag { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: var(--avo-radius-sm, 6px); }
-        .tag-warn { background: color-mix(in srgb, #E0A33A 15%, transparent); color: #E0A33A; }
-        .tag-kick { background: color-mix(in srgb, #ED5333 15%, transparent); color: #ED5333; }
-        .tag-ban  { background: color-mix(in srgb, #DC3838 15%, transparent); color: #DC3838; }
-        .tag-mute { background: color-mix(in srgb, #7E7E7E 15%, transparent); color: #7E7E7E; }
+        /* Mod-action chips: flat, 6px, a 1px border. Status colour is the border
+           and the label, never a fill (§9), and never coral (§3). */
+        .tag { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; padding: 0.1rem 0.5rem; border: 1px solid var(--avo-line-strong); border-radius: var(--avo-radius); }
+        .tag::before, .tag::after { content: none; }
+        .tag-warn { color: var(--avo-warning); border-color: color-mix(in srgb, var(--avo-warning) 45%, transparent); }
+        .tag-kick { color: var(--avo-info);    border-color: color-mix(in srgb, var(--avo-info) 45%, transparent); }
+        .tag-ban  { color: var(--avo-error);   border-color: color-mix(in srgb, var(--avo-error) 45%, transparent); }
+        .tag-mute { color: var(--avo-text-muted); }
 
-        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; opacity: 0.9; }
+        .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
         .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.9rem; }
         .grid-2    { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
         .grid-3    { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
         .section   { margin-bottom: 2.5rem; }
 
         .time-bar { display: flex; gap: 0.5rem; margin-bottom: 1.75rem; }
+        /* A control row: the 32px step (§9). The active/hover fill is main.css. */
         .time-bar button {
-            padding: 0.32rem 1rem; border-radius: var(--avo-radius-sm, 6px);
-            border: 1px solid var(--border, var(--color-border));
-            font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent;
-        }
-        .time-bar button.active, .time-bar button:hover {
-            background: var(--color-primary, #FF6B4A); color: #fff;
-            border-color: var(--color-primary, #FF6B4A);
+            height: var(--avo-ui-control-h); padding: 0 1rem; border-radius: var(--avo-radius);
+            border: 1px solid var(--avo-line-strong);
+            font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            cursor: pointer; background: transparent;
         }
 
-        .health-track { height: 6px; background: var(--border); overflow: hidden; margin-top: 0.4rem; }
-        .health-fill  { height: 100%; transition: width var(--avo-dur-enter) var(--avo-ease-out); }
+        .health-track { height: 6px; background: var(--avo-surface-high); overflow: hidden; margin-top: 0.4rem; }
+        .health-fill  { height: 100%; }
 
-        .no-data { opacity: 0.45; font-size: 0.84rem; padding: 0.5rem 0; }
+        .no-data { color: var(--avo-text-muted); font-size: var(--avo-ui-text); padding: 0.5rem 0; }
 
         /* ── Mobile: hide the desktop sidebar entirely ──────────────────── */
         @media (max-width: 768px) {
@@ -136,8 +139,8 @@
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
                 z-index: 600;
-                background: var(--card, #0A0A0A);
-                border-top: 1px solid var(--border, rgba(255,255,255,0.1));
+                background: var(--avo-surface-raised);
+                border-top: 1px solid var(--avo-line-strong);
                 padding: 0.45rem 0.5rem env(safe-area-inset-bottom, 0.45rem);
                 gap: 0.3rem;
                 overflow-x: auto;
@@ -149,23 +152,27 @@
             #mobile-nav button {
                 flex: 0 0 auto;
                 white-space: nowrap;
-                font-size: 0.75rem;
-                font-weight: 600;
-                padding: 0.35rem 0.85rem;
-                border-radius: var(--avo-radius-sm, 6px);
-                border: 1px solid var(--border, rgba(255,255,255,0.12));
+                height: var(--avo-ui-control-h-compact);
+                padding: 0 0.85rem;
+                font-family: var(--avo-font-mono);
+                font-size: var(--avo-ui-label);
+                font-weight: 500;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                border-radius: var(--avo-radius);
+                border: 1px solid var(--avo-line-strong);
                 background: transparent;
                 cursor: pointer;
             }
             #mobile-nav button:hover, #mobile-nav button:active {
-                background: var(--color-primary, #FF6B4A);
-                color: #fff;
-                border-color: var(--color-primary, #FF6B4A);
+                background: var(--avo-primary);
+                color: var(--avo-primary-on);
+                border-color: var(--avo-primary);
             }
             #mobile-nav .mnav-sep {
                 flex-shrink: 0;
                 width: 1px;
-                background: var(--border, rgba(255,255,255,0.1));
+                background: var(--avo-line);
                 margin: 0.2rem 0.1rem;
                 align-self: stretch;
             }
@@ -173,17 +180,12 @@
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
     <div id="page-loader" aria-hidden="true">
-        <div class="loader-spinner"></div>
-        <p style="font-size:0.82rem;opacity:0.4;">Loading analytics…</p>
+        <div class="avo-spinner loader-spinner"></div>
+        <p class="loader-note">Loading analytics…</p>
     </div>
     <script>
-        (function(){
-            var l=document.getElementById('page-loader');
-            var bg=getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
-            if(bg&&bg!=='rgba(0,0,0,0)'&&bg!=='transparent') l.style.background=bg;
-        })();
         window.addEventListener('load',function(){
             var l=document.getElementById('page-loader');
             if(l){l.classList.add('hidden');setTimeout(function(){l.remove()},400);}
@@ -239,7 +241,7 @@
         <button onclick="scrollToSection('sec-members')">Members</button>
         <button onclick="scrollToSection('sec-moderation')">Moderation</button>
         <div class="mnav-sep"></div>
-        <button onclick="location.href='/logout/'" style="color:#DC3838;border-color:rgba(220,56,56,0.3);">Log-out</button>
+        <button onclick="location.href='/logout/'" style="color:var(--avo-error);border-color:color-mix(in srgb, var(--avo-error) 30%, transparent);">Log-out</button>
     </nav>
 
     <div id="dash-content-wrapper" class="max-w-6xl mx-auto px-4 sm:px-6">
@@ -277,13 +279,13 @@
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">How many members joined the server in this period.</span></span>
                     <span class="label">Joins</span>
-                    <span class="value" style="color:#46A758" id="st-joins">{{ data.total_joins }}</span>
+                    <span class="value" style="color:var(--avo-success)" id="st-joins">{{ data.total_joins }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">How many members left or were removed in this period.</span></span>
                     <span class="label">Leaves</span>
-                    <span class="value" style="color:#DC3838" id="st-leaves">{{ data.total_leaves }}</span>
+                    <span class="value" style="color:var(--avo-error)" id="st-leaves">{{ data.total_leaves }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
@@ -302,7 +304,7 @@
                     <span class="info-i" tabindex="0">i<span class="tip">An at-a-glance score (0–100) of server wellbeing. Higher means fewer mod actions and filter hits relative to your member count. Green is healthy, amber is okay, red needs attention.</span></span>
                     <span class="label">Health Score</span>
                     <span class="value" id="st-health">{{ data.health }}<span style="font-size:1rem;opacity:0.5;">/100</span></span>
-                    <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}#46A758{% elif data.health>=40 %}#E0A33A{% else %}#DC3838{% endif %};"></div></div>
+                    <div class="health-track"><div class="health-fill" id="health-fill" style="width:{{ data.health }}%;background:{% if data.health>=70 %}var(--avo-success){% elif data.health>=40 %}var(--avo-warning){% else %}var(--avo-error){% endif %};"></div></div>
                 </div>
             </div>
 
@@ -317,7 +319,7 @@
                 <div class="stat-card">
                     <span class="info-i" tabindex="0">i<span class="tip">Joins minus leaves. A positive number means your server grew in this period; negative means it shrank.</span></span>
                     <span class="label">Net Members</span>
-                    <span class="value" id="st-net" style="color:{% if data.net_members>=0 %}#46A758{% else %}#DC3838{% endif %};">{% if data.net_members>=0 %}+{% endif %}{{ data.net_members }}</span>
+                    <span class="value" id="st-net" style="color:{% if data.net_members>=0 %}var(--avo-success){% else %}var(--avo-error){% endif %};">{% if data.net_members>=0 %}+{% endif %}{{ data.net_members }}</span>
                     <span class="sub">joins − leaves</span>
                 </div>
                 <div class="stat-card">
@@ -419,19 +421,19 @@
             <div class="grid-auto" style="margin-bottom:1rem;">
                 <div class="stat-card">
                     <span class="label">Warns</span>
-                    <span class="value" style="color:#E0A33A" id="st-warn">{{ data.mod_counts.warn }}</span>
+                    <span class="value" style="color:var(--avo-warning)" id="st-warn">{{ data.mod_counts.warn }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Kicks</span>
-                    <span class="value" style="color:#ED5333" id="st-kick">{{ data.mod_counts.kick }}</span>
+                    <span class="value" style="color:var(--avo-info)" id="st-kick">{{ data.mod_counts.kick }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Bans</span>
-                    <span class="value" style="color:#DC3838" id="st-ban">{{ data.mod_counts.ban }}</span>
+                    <span class="value" style="color:var(--avo-error)" id="st-ban">{{ data.mod_counts.ban }}</span>
                 </div>
                 <div class="stat-card">
                     <span class="label">Mutes</span>
-                    <span class="value" style="color:#7E7E7E" id="st-mute">{{ data.mod_counts.mute }}</span>
+                    <span class="value" style="color:var(--avo-text-muted)" id="st-mute">{{ data.mod_counts.mute }}</span>
                 </div>
             </div>
             <div class="chart-card" style="margin-bottom:1rem;">
@@ -502,7 +504,7 @@
             </div>
         </section>
 
-        <p style="font-size:0.75rem;opacity:0.3;text-align:center;margin-bottom:2rem;">BaxiInsights · Baxi v{{ data.version }} · avocloud.net · No message content is stored.</p>
+        <p style="font-family:var(--avo-font-mono);font-size:var(--avo-text-serial);letter-spacing:0.12em;text-transform:uppercase;color:var(--avo-text-muted);text-align:center;margin-bottom:2rem;">BaxiInsights · Baxi v{{ data.version }} · avocloud.net · No message content is stored.</p>
     </div>
 
     <script>
@@ -511,56 +513,74 @@
 
         function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
 
-        function isDark() {
-            return document.documentElement.classList.contains('dark')
-                || document.documentElement.getAttribute('data-theme') === 'dark'
-                || window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Chart colours are canvas colours, so they cannot be `var()`: resolve the
+        // kit's tokens once per build and hand Chart.js plain rgb(). That keeps the
+        // series on the tokens (and the light theme working) without a second copy
+        // of the values (BRANDING §12.4).
+        function tok(name, alpha) {
+            const probe = document.createElement('span');
+            probe.style.color = 'var(' + name + ')';
+            document.body.appendChild(probe);
+            const rgb = getComputedStyle(probe).color.match(/[\d.]+/g) || [0, 0, 0];
+            probe.remove();
+            // A token that already carries alpha (the lines are rgba) keeps it.
+            if (alpha === undefined) alpha = rgb.length > 3 ? rgb[3] : undefined;
+            return alpha === undefined ? 'rgb(' + rgb.slice(0, 3).join(',') + ')'
+                                       : 'rgba(' + rgb.slice(0, 3).join(',') + ',' + alpha + ')';
         }
+
+        // Data visualisation (BRANDING §9): coral is series 1, series 2+ descend the
+        // ramp (700, 900) and then go neutral, never a rainbow. Grid faint, axis at
+        // the line colour, labels mono. Bars are rectangles; lines are straight with
+        // no fill under them. A chart here looks like a printout.
         function ctDefaults() {
-            const dark = isDark();
-            return { color: dark?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.55)', grid: dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)' };
+            return { color: tok('--avo-text-muted'), grid: tok('--avo-line'), axis: tok('--avo-line-strong') };
         }
 
-        // Tooltip reads as a small glass surface, mono tabular numbers, 6px
-        // radius, no drop shadow — the chart-tooltip rule in BRANDING §9.
-        if (window.Chart) {
-            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(4,4,4,0.85)';
-            Chart.defaults.plugins.tooltip.titleFont = { family: "'JetBrains Mono', monospace", size: 11, weight: '600' };
-            Chart.defaults.plugins.tooltip.bodyFont = { family: "'JetBrains Mono', monospace", size: 11 };
-            Chart.defaults.plugins.tooltip.cornerRadius = 6;
-            Chart.defaults.plugins.tooltip.boxPadding = 4;
-            Chart.defaults.plugins.tooltip.padding = 8;
-            Chart.defaults.plugins.tooltip.displayColors = false;
-            Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
-            Chart.defaults.plugins.tooltip.borderWidth = 1;
+        const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+        function chartDefaults() {
+            if (!window.Chart) return;
+            Chart.defaults.font.family = MONO;
+            Chart.defaults.font.size = 11;
+            Chart.defaults.color = tok('--avo-text-muted');
+            // Tooltip: a small opaque surface at the 6px control radius, mono
+            // tabular numbers, no drop shadow.
+            const t = Chart.defaults.plugins.tooltip;
+            t.backgroundColor = tok('--avo-surface-raised');
+            t.titleColor = tok('--avo-text');
+            t.bodyColor = tok('--avo-text-muted-2');
+            t.titleFont = { family: MONO, size: 11, weight: '600' };
+            t.bodyFont = { family: MONO, size: 11 };
+            t.cornerRadius = 6;
+            t.padding = 8;
+            t.displayColors = false;
+            t.borderColor = tok('--avo-line-strong');
+            t.borderWidth = 1;
         }
-
-        // ── Shared chart palette ─────────────────────────────────────────────
-        // avocloud v2: series run on the coral ramp + neutrals (monochrome
-        // blueprint look, BRANDING §3). Key names are the old colour words so
-        // every chart below keeps working; only the values are brand ramp steps.
-        const C = {
-            blue:   '#FF6B4A', blueA:  'rgba(255,107,74,0.55)',  blueB: 'rgba(255,107,74,0.15)',
-            teal:   '#FF9379', tealA:  'rgba(255,147,121,0.55)', tealB: 'rgba(255,147,121,0.13)',
-            green:  '#FFB6A4', greenA: 'rgba(255,182,164,0.55)', greenB:'rgba(255,182,164,0.13)',
-            red:    '#C73D20', redA:   'rgba(199,61,32,0.55)',   redB:  'rgba(199,61,32,0.12)',
-            amber:  '#FF7A5C', amberA: 'rgba(255,122,92,0.55)',  amberB:'rgba(255,122,92,0.12)',
-            orange: '#ED5333', orangeA:'rgba(237,83,51,0.55)',   orangeB:'rgba(237,83,51,0.12)',
-            purple: '#7E7E7E', purpleA:'rgba(126,126,126,0.55)', purpleB:'rgba(126,126,126,0.12)',
-            lime:   '#BBBBBB',
-        };
 
         let charts = {};
         function destroyCharts() { Object.values(charts).forEach(c => c?.destroy()); charts = {}; }
 
-        function scaleOpts(color, grid) {
-            return { x:{ticks:{color,maxTicksLimit:12},grid:{color:grid}}, y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true} };
+        function scaleOpts(color, grid, axis) {
+            const base = { ticks: { color }, grid: { color: grid }, border: { color: axis } };
+            return { x: { ...base, ticks: { color, maxTicksLimit: 12 } }, y: { ...base, ticks: { color, precision: 0 }, beginAtZero: true } };
         }
 
+        let lastData = null;
+        // Chart colours are baked at build time, so a theme switch rebuilds them.
+        document.addEventListener('avo:themechange', () => { if (lastData) buildCharts(lastData); });
+
         function buildCharts(d) {
+            lastData = d;
             destroyCharts();
-            const { color, grid } = ctDefaults();
-            const sc = scaleOpts(color, grid);
+            chartDefaults();
+            const { color, grid, axis } = ctDefaults();
+            const sc = scaleOpts(color, grid, axis);
+            // The ramp, resolved: series 1 coral, 2 coral-700, 3 coral-900, then neutrals.
+            const S = [tok('--avo-series-1'), tok('--avo-series-2'), tok('--avo-series-3'), tok('--avo-series-4'), tok('--avo-series-5')];
+            const SA = [tok('--avo-series-1', 0.55), tok('--avo-series-2', 0.65), tok('--avo-series-3', 0.75), tok('--avo-series-4', 0.55), tok('--avo-series-5', 0.55)];
+            const line = (label, data, i) => ({ label, data, borderColor: S[i], backgroundColor: S[i], fill: false, tension: 0, borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4 });
+            const legend = { labels: { color, boxWidth: 10, boxHeight: 2 } };
 
             // ── Messages per day ─────────────────────────────────────────────
             const ctxMT = document.getElementById('chart-msg-timeline');
@@ -569,7 +589,7 @@
                 data: {
                     labels: d.msg_timeline.map(e => e.date),
                     datasets: [{ label: 'Messages', data: d.msg_timeline.map(e => e.count),
-                        backgroundColor: C.blueA, borderColor: C.blue, borderWidth: 1.5, borderRadius: 0 }],
+                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }],
                 },
                 options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
             });
@@ -578,15 +598,9 @@
             const ctxH = document.getElementById('chart-hourly');
             if (ctxH) {
                 const hours = Array.from({length:24},(_,i)=>i.toString().padStart(2,'0')+':00');
-                // Per-bar colour descends the coral ramp, never a rainbow palette
-                // (BRANDING §9 Data visualisation: coral is series 1, then 700/900,
-                // then neutral).
-                const hourColors = hours.map((_,i) => {
-                    if (i < 6)  return 'rgba(126,126,126,0.55)';   // night — neutral
-                    if (i < 12) return C.blueA;                     // morning — coral 500
-                    if (i < 18) return C.redA;                      // afternoon — coral 700
-                    return 'rgba(95,28,13,0.65)';                   // evening — coral 900
-                });
+                // Per-bar colour descends the ramp by part of day: night neutral,
+                // morning coral, afternoon coral-700, evening coral-900.
+                const hourColors = hours.map((_,i) => i < 6 ? SA[4] : i < 12 ? SA[0] : i < 18 ? SA[1] : SA[2]);
                 charts.hourly = new Chart(ctxH, {
                     type: 'bar',
                     data: { labels: hours, datasets: [{ label: 'Messages', data: hours.map((_,i)=>d.hourly_dist[String(i)]||0),
@@ -599,30 +613,19 @@
             const ctxMem = document.getElementById('chart-members');
             if (ctxMem) charts.members = new Chart(ctxMem, {
                 type: 'line',
-                data: {
-                    labels: d.member_timeline.map(e=>e.date),
-                    datasets: [
-                        { label:'Joins',  data:d.member_timeline.map(e=>e.joins),  borderColor:C.green,  backgroundColor:C.greenB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                        { label:'Leaves', data:d.member_timeline.map(e=>e.leaves), borderColor:C.red,    backgroundColor:C.redB,   tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                    ],
-                },
-                options: { responsive:true, plugins:{legend:{labels:{color,usePointStyle:true}}}, scales: sc },
+                data: { labels: d.member_timeline.map(e=>e.date),
+                    datasets: [ line('Joins', d.member_timeline.map(e=>e.joins), 0), line('Leaves', d.member_timeline.map(e=>e.leaves), 3) ] },
+                options: { responsive:true, plugins:{legend}, scales: sc },
             });
 
             // ── Mod timeline ─────────────────────────────────────────────────
             const ctxMod = document.getElementById('chart-mod-timeline');
             if (ctxMod) charts.modTimeline = new Chart(ctxMod, {
                 type: 'line',
-                data: {
-                    labels: d.timeline.map(e=>e.date),
-                    datasets: [
-                        { label:'Warn', data:d.timeline.map(e=>e.warn), borderColor:C.amber,  backgroundColor:C.amberB,  tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                        { label:'Kick', data:d.timeline.map(e=>e.kick), borderColor:C.orange, backgroundColor:C.orangeB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                        { label:'Ban',  data:d.timeline.map(e=>e.ban),  borderColor:C.red,    backgroundColor:C.redB,    tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                        { label:'Mute', data:d.timeline.map(e=>e.mute), borderColor:C.purple, backgroundColor:C.purpleB, tension:0.4, fill:true, borderWidth:2, pointRadius:3, pointHoverRadius:5 },
-                    ],
-                },
-                options: { responsive:true, plugins:{legend:{labels:{color,usePointStyle:true}}}, scales: sc },
+                data: { labels: d.timeline.map(e=>e.date),
+                    datasets: [ line('Warn', d.timeline.map(e=>e.warn), 0), line('Kick', d.timeline.map(e=>e.kick), 1),
+                                line('Ban', d.timeline.map(e=>e.ban), 2),  line('Mute', d.timeline.map(e=>e.mute), 3) ] },
+                options: { responsive:true, plugins:{legend}, scales: sc },
             });
 
             // ── Filter severity ──────────────────────────────────────────────
@@ -631,31 +634,27 @@
                 type: 'bar',
                 data: { labels:['Lvl 1','Lvl 2','Lvl 3','Lvl 4','Lvl 5'],
                     datasets:[{label:'Hits', data:['1','2','3','4','5'].map(k=>d.severity_dist[k]||0),
-                        // Ascending intensity down the coral ramp (100→900), not a
-                        // rainbow severity palette (BRANDING §9 Data visualisation).
-                        backgroundColor:['rgba(255,216,207,0.6)', C.tealA, C.blueA, C.redA, 'rgba(95,28,13,0.65)'],
-                        borderColor:    ['#FFD8CF',               C.teal,  C.blue,  C.red,  '#5F1C0D'],
-                        borderWidth: 1.5, borderRadius: 0 }] },
-                options: { responsive:true, plugins:{legend:{display:false}},
-                    scales:{x:{ticks:{color},grid:{color:grid}},y:{ticks:{color,precision:0},grid:{color:grid},beginAtZero:true}} },
+                        // One series, so one colour: the level is on the axis.
+                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }] },
+                options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
             });
 
             // ── Filter category ──────────────────────────────────────────────
+            // Horizontal bars, not a doughnut: a fraction of a ring is a pie chart,
+            // and this system does not own that shape (§9).
             const ctxCat = document.getElementById('chart-category');
             if (ctxCat) {
-                const catColors={phishing:C.red,nsfw:C.orange,toxicity:C.amber,hate:'#9C2E16',doxxing:'#BBBBBB',selfharm:C.purple,keyword:'#5A5A5A'};
-                const catKeys=Object.keys(d.category_counts);
+                const catKeys = Object.keys(d.category_counts).sort((a, b) => d.category_counts[b] - d.category_counts[a]);
                 if (catKeys.length) {
                     charts.category = new Chart(ctxCat, {
-                        type:'doughnut',
-                        data:{labels:catKeys,datasets:[{data:catKeys.map(k=>d.category_counts[k]),
-                            backgroundColor:catKeys.map(k=>catColors[k]||C.blue),
-                            borderColor:'transparent', hoverOffset:6}]},
-                        options:{responsive:true,plugins:{legend:{position:'right',labels:{color,font:{size:11},usePointStyle:true,padding:12}}}},
+                        type: 'bar',
+                        data: { labels: catKeys, datasets: [{ label: 'Hits', data: catKeys.map(k => d.category_counts[k]),
+                            backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }] },
+                        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+                            scales: { x: { ...sc.y, beginAtZero: true }, y: { ...sc.x, ticks: { color } } } },
                     });
                 }
             }
-
         }
 
         function renderRankList(items, labelFn, maxCount) {
@@ -696,7 +695,7 @@
             set('st-mod100', d.mod_per_100);
 
             const net = document.getElementById('st-net');
-            if (net) { net.textContent = (d.net_members >= 0 ? '+' : '') + d.net_members; net.style.color = d.net_members >= 0 ? '#46A758' : '#DC3838'; }
+            if (net) { net.textContent = (d.net_members >= 0 ? '+' : '') + d.net_members; net.style.color = d.net_members >= 0 ? 'var(--avo-success)' : 'var(--avo-error)'; }
             set('st-peak', d.peak_hour === null || d.peak_hour === undefined ? '–' : String(d.peak_hour).padStart(2,'0') + ':00');
 
             if (d.ticket_stats) {
@@ -711,7 +710,7 @@
             set('st-mute',   d.mod_counts.mute);
 
             const bar = document.getElementById('health-fill');
-            if (bar) { bar.style.width=d.health+'%'; bar.style.background=d.health>=70?'#46A758':d.health>=40?'#E0A33A':'#DC3838'; }
+            if (bar) { bar.style.width=d.health+'%'; bar.style.background=d.health>=70?'var(--avo-success)':d.health>=40?'var(--avo-warning)':'var(--avo-error)'; }
 
             const maxCh = d.top_active_channels?.[0]?.count || 1;
             const maxUsr = d.top_active_users?.[0]?.count || 1;
@@ -766,6 +765,6 @@
 
         document.addEventListener('DOMContentLoaded', () => buildCharts(D));
     </script>
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
 </body>
 </html>

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#E8ECEF" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#141518" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F4F6F7" media="(prefers-color-scheme: light)">
     <title>Baxi Dashboard -  {{data.name}}</title>
     <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
     <meta property="og:title" content="Baxi Dashboard -  {{data.name}}">
@@ -18,11 +18,14 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
     <script src="{{ cdn.basecoat_js }}" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <style>
+        /* Page-level loader: the kit's tick ring, one step bigger (BRANDING §9). It
+           covers the canvas, so it is the canvas colour: no blur, no tint. */
         #page-loader {
             position: fixed;
             inset: 0;
@@ -32,7 +35,7 @@
             align-items: center;
             justify-content: center;
             gap: 1.25rem;
-            background: var(--background, var(--color-background, canvas));
+            background: var(--avo-canvas);
             transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
         }
         #page-loader.hidden {
@@ -44,24 +47,31 @@
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
+            font-family: var(--avo-font-mono);
+            font-size: var(--avo-ui-label);
+            font-weight: 500;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
+            color: var(--avo-text-muted);
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius-sm, 6px);
-            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-            opacity: 0.7;
+            border-radius: var(--avo-radius);
+            border: 1px solid var(--avo-line-strong);
         }
-        /* Loading gesture: the shared tick-ring spinner (main.css .avo-spinner),
-           sized up for a page-level loader (BRANDING §9). */
         #page-loader .loader-spinner {
             width: 2.5rem;
             height: 2.5rem;
             --avo-spinner-ring: 4px;
         }
+        #page-loader .loader-note {
+            font-family: var(--avo-font-mono);
+            font-size: var(--avo-ui-label);
+            letter-spacing: 0.06em;
+            color: var(--avo-text-muted);
+        }
 
-        /* Nav search */
+        /* Nav search: a field (32px, flat, 1px outline, the field fill) with a
+           leading icon. Focus is the coral ring on the wrapper, and the border
+           stays put, so focus never looks like hover (§9 Forms, §10). */
         .nav-search {
             position: relative;
             flex: 1;
@@ -71,74 +81,75 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            background: color-mix(in srgb, currentColor 7%, transparent);
-            border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
-            border-radius: var(--radius-md, 0.5rem);
-            padding: 0.3rem 0.7rem;
+            height: var(--avo-ui-control-h);
+            background: var(--avo-plate-fill);
+            border: 1px solid var(--avo-line-strong);
+            border-radius: var(--avo-radius);
+            padding: 0 0.7rem;
         }
         .nav-search-wrap:focus-within {
-            border-color: var(--color-primary, #FF6B4A);
+            outline: var(--avo-focus-w) solid var(--avo-primary);
+            outline-offset: 2px;
         }
         .nav-search-ico {
-            width: 14px; height: 14px;
-            opacity: 0.45; flex-shrink: 0;
+            width: var(--avo-icon-sm); height: var(--avo-icon-sm);
+            color: var(--avo-text-muted); flex-shrink: 0;
             stroke: currentColor; fill: none;
-            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+            stroke-width: var(--avo-icon-stroke); stroke-linecap: round; stroke-linejoin: round;
         }
+        .nav-search-wrap:focus-within .nav-search-ico { color: var(--avo-text); }
         #nav-search-input {
-            background: transparent; border: none; outline: none;
-            font-size: 0.8rem; color: inherit; width: 100%; min-width: 0;
+            background: transparent; border: none; outline: none; box-shadow: none;
+            font-size: var(--avo-ui-text); color: inherit; width: 100%; min-width: 0; height: 100%;
         }
-        #nav-search-input::placeholder { opacity: 0.4; }
+        #nav-search-input::placeholder { color: var(--avo-text-muted); }
+        /* A floating menu: opaque, never glass (§5). Its rows are hairline
+           divisions of one surface, not rounded panels of their own. */
         .nav-search-results {
             position: absolute;
             top: calc(100% + 6px);
             left: 0; right: 0;
-            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            backdrop-filter: blur(var(--avo-glass-blur));
-            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-            border: 1px solid var(--border, color-mix(in srgb, currentColor 15%, transparent));
-            border-radius: var(--radius-md, 0.5rem);
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+            background: var(--avo-surface-raised);
+            border: 1px solid var(--avo-line-strong);
+            border-radius: var(--avo-radius-lg);
+            box-shadow: inset 0 1px 0 var(--avo-glass-edge-raised);
             z-index: 9999;
-            list-style: none; margin: 0; padding: 0.3rem;
+            list-style: none; margin: 0; padding: 0;
             max-height: 340px; overflow-y: auto;
         }
         .nav-search-results.hidden { display: none; }
         .nav-search-item {
             display: flex; align-items: center; gap: 0.6rem;
-            padding: 0.45rem 0.7rem;
-            border-radius: calc(var(--radius-md, 0.5rem) - 2px);
-            cursor: pointer; font-size: 0.82rem; color: inherit;
+            height: var(--avo-ui-row-h);
+            padding: 0 0.7rem;
+            cursor: pointer; font-size: var(--avo-ui-text); color: inherit;
         }
         .nav-search-item:hover,
-        .nav-search-item.ns-active {
-            background: color-mix(in srgb, currentColor 8%, transparent);
-        }
+        .nav-search-item.ns-active { background: var(--avo-surface-high); }
+        .nav-search-item.ns-active { box-shadow: inset 2px 0 0 var(--avo-primary); }
         .nav-search-item svg {
-            width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6;
+            width: var(--avo-icon-sm); height: var(--avo-icon-sm); flex-shrink: 0; color: var(--avo-text-muted);
             stroke: currentColor; fill: none;
-            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+            stroke-width: var(--avo-icon-stroke); stroke-linecap: round; stroke-linejoin: round;
         }
         .nav-search-group {
-            font-size: 0.68rem; opacity: 0.4; text-transform: uppercase;
-            letter-spacing: 0.07em; padding: 0.4rem 0.7rem 0.15rem;
+            font-family: var(--avo-font-mono);
+            font-size: var(--avo-text-micro); color: var(--avo-text-muted); text-transform: uppercase;
+            letter-spacing: 0.12em; padding: 0.6rem 0.7rem 0.25rem;
         }
         .nav-search-empty {
-            padding: 0.6rem 0.7rem; font-size: 0.82rem; opacity: 0.45; text-align: center;
+            padding: 0.6rem 0.7rem; font-size: var(--avo-ui-text); color: var(--avo-text-muted); text-align: center;
         }
         @media (max-width: 700px) { .nav-search { display: none; } }
 
         /* PRISM score card. --score-border is set per user by renderPrismScores;
-           hover only brightens the hairline to the user's risk colour — no lift,
-           no drop shadow, matching the card language in main.css. */
+           hover only brightens the hairline to the user's risk colour: no lift,
+           no drop shadow. Glass on the panel, never on its contents. */
         .prism-score-card {
             background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            backdrop-filter: blur(var(--avo-glass-blur));
-            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-            border: 1px solid #2a2a2a;
-            border-radius: var(--avo-radius-md, 8px);
+            border: 1px solid var(--avo-line);
+            border-radius: var(--avo-radius-lg);
             padding: 16px 12px;
             display: flex;
             flex-direction: column;
@@ -148,7 +159,7 @@
             cursor: pointer;
         }
         .prism-score-card:hover {
-            border-color: var(--score-border, #2a2a2a);
+            border-color: var(--score-border, var(--avo-line-strong));
         }
 
         /* Anti-Raid advanced disclosure */
@@ -157,14 +168,16 @@
         .antiraid-advanced > summary svg { transition: transform var(--avo-dur-micro) var(--avo-ease-out); }
         .antiraid-advanced[open] > summary svg { transform: rotate(90deg); }
 
-        /* Range slider: gradient lives on the TRACK pseudo (var --p = filled %) so external
-           ::-webkit-slider-runnable-track rules can't paint over it. Thumb centred on a 6px
-           track. !important beats basecoat / avocloud main.css range styling. */
+        /* Range slider: the filled part is a gradient on the TRACK pseudo (--p = the
+           filled %) so no external ::-webkit-slider-runnable-track rule can paint
+           over it. A hard two-stop split, not a wash. The track is a plain
+           rectangle and the thumb a small 6px-cornered block (§5: no pills, no
+           round caps). !important beats Basecoat's own range styling. */
         input[type="range"].dash-range {
             -webkit-appearance: none !important;
             appearance: none !important;
             width: 100%;
-            height: 16px;            /* tall enough for the thumb; track drawn by pseudo */
+            height: 18px;            /* tall enough for the thumb; the track is drawn by the pseudo */
             background: transparent !important;
             outline: none;
             cursor: pointer;
@@ -172,52 +185,46 @@
         }
         input[type="range"].dash-range::-webkit-slider-runnable-track {
             height: 6px;
-            border-radius: 9999px;
+            border-radius: 0;
             border: none;
             background: linear-gradient(to right,
-                var(--color-primary, #FF6B4A) calc(var(--p, 0) * 1%),
-                #3c3c41 calc(var(--p, 0) * 1%)) !important;
+                var(--avo-primary) calc(var(--p, 0) * 1%),
+                var(--avo-surface-high) calc(var(--p, 0) * 1%)) !important;
         }
         input[type="range"].dash-range::-webkit-slider-thumb {
             -webkit-appearance: none !important;
             appearance: none !important;
-            width: 16px;
-            height: 16px;
-            margin-top: -5px;        /* (6px track - 16px thumb) / 2 */
-            border-radius: 9999px;
-            background: var(--color-primary, #FF6B4A) !important;
-            border: 2px solid #0A0A0A;
-            box-shadow: 0 0 0 1px var(--color-primary, #FF6B4A);
+            width: 10px;
+            height: 18px;
+            margin-top: -6px;        /* (6px track - 18px thumb) / 2 */
+            border-radius: var(--avo-radius);
+            background: var(--avo-primary) !important;
+            border: 2px solid var(--avo-canvas);
         }
         input[type="range"].dash-range::-moz-range-track {
             height: 6px;
-            border-radius: 9999px;
+            border-radius: 0;
             border: none;
-            background: #3c3c41 !important;
+            background: var(--avo-surface-high) !important;
         }
         input[type="range"].dash-range::-moz-range-progress {
             height: 6px;
-            border-radius: 9999px;
-            background: var(--color-primary, #FF6B4A) !important;
+            border-radius: 0;
+            background: var(--avo-primary) !important;
         }
         input[type="range"].dash-range::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border: 2px solid #0A0A0A;
-            border-radius: 9999px;
-            background: var(--color-primary, #FF6B4A) !important;
+            width: 10px;
+            height: 18px;
+            border: 2px solid var(--avo-canvas);
+            border-radius: var(--avo-radius);
+            background: var(--avo-primary) !important;
         }
-        /* visible keyboard focus (replaces the removed outline) */
-        input[type="range"].dash-range:focus-visible::-webkit-slider-thumb {
-            box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #FF6B4A) 40%, transparent);
-        }
-        input[type="range"].dash-range:focus-visible::-moz-range-thumb {
-            box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #FF6B4A) 40%, transparent);
-        }
+        /* The ring, as everywhere: coral, 2px, on the whole control. */
+        input[type="range"].dash-range:focus-visible { outline: var(--avo-focus-w) solid var(--avo-primary); outline-offset: 3px; }
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
     <!-- Full-page loader -  hidden once window.load fires -->
     <div id="page-loader" aria-hidden="true">
         <span class="loader-badge">
@@ -225,16 +232,8 @@
             Baxi Dashboard
         </span>
         <div class="avo-spinner loader-spinner"></div>
-        <p style="font-size: 0.85rem; opacity: 0.5; letter-spacing: 0.03em;">Loading your data …</p>
+        <p class="loader-note">Loading your data …</p>
     </div>
-    <script>
-        (function () {
-            var l = document.getElementById('page-loader');
-            var bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
-                  || getComputedStyle(document.body).backgroundColor;
-            if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') l.style.background = bg;
-        })();
-    </script>
 
 
     <!-- Nav -->
@@ -322,45 +321,45 @@
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 
-        <!-- Top.gg Vote Banner -  avocloud.net styled. Coral is a spark, never
-             a section ground (BRANDING §3) — glass surface with a coral 2px
-             top edge (a static line, not an animated wash) instead. -->
-        <div style="position:relative; background:linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2)); border:1px solid rgba(255,107,74,0.25); border-top:2px solid var(--color-primary, #FF6B4A); backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur)); padding:1rem 1.25rem; margin-bottom:1.5rem; overflow:hidden;">
-            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:0.85rem; flex:1 1 320px; min-width:0;">
-                    <span style="flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; background:rgba(255,147,121,0.12); border:1px solid rgba(255,147,121,0.3); color:#FF9379;">
+        <!-- Top.gg vote banner. A glass panel with the kit's corner marks (main.css
+             .vote-banner). Coral is a spark, never a section ground (BRANDING §3):
+             the only coral here is the icon, the marks and the CTA's tint. -->
+        <div class="vote-banner">
+            <div class="vote-banner__row">
+                <div class="vote-banner__copy">
+                    <span class="vote-banner__icon">
                         <!-- Lucide: heart -->
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                             <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                         </svg>
                     </span>
-                    <div style="min-width:0;">
-                        <div style="font-weight:600; font-size:0.95rem; line-height:1.3; margin-bottom:0.15rem;">Enjoying Baxi? Help us grow.</div>
-                        <div style="font-size:0.825rem; opacity:0.75; line-height:1.4;">A free vote on Top.gg keeps Baxi climbing -  and as a thank you, we'll feature {{guild.name}} in the avocloud.net community Discord.</div>
+                    <div>
+                        <div class="vote-banner__title">Enjoying Baxi? Help us grow.</div>
+                        <div class="vote-banner__text">A free vote on Top.gg keeps Baxi climbing, and as a thank you we'll feature {{guild.name}} in the avocloud.net community Discord.</div>
                     </div>
                 </div>
                 {% if user_on_avocloud %}
                 <a href="/vote/{{guild.id}}" target="_blank" rel="noopener" class="avo-btn cta-link" style="flex-shrink:0;">
                     <!-- Lucide: thumbs-up -->
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                         <path d="M7 10v12"/>
                         <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
                     </svg>
                     Vote on Top.gg
                 </a>
                 {% else %}
-                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; flex-shrink:0;">
-                    <span title="Join the avocloud.net Discord to unlock voting" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.55rem 1.25rem; border:1px dashed rgba(255,255,255,0.18); background:transparent; color:inherit; font-weight:500; font-size:0.875rem; opacity:0.45; cursor:not-allowed;">
+                <div class="vote-banner__actions">
+                    <button type="button" class="btn" data-variant="outline" disabled title="Join the avocloud.net Discord to unlock voting">
                         <!-- Lucide: lock -->
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
                         Vote on Top.gg
-                    </span>
+                    </button>
                     <a href="https://avocloud.net/discord" target="_blank" rel="noopener" class="avo-btn cta-link">
                         <!-- Lucide: users -->
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -506,7 +505,7 @@
             <a href="#instagram" class="dash-nav-item" style="opacity:0.5;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 Instagram
-                <span style="font-size:0.6rem;padding:1px 5px;background:var(--muted);color:var(--muted-foreground);margin-left:2px;font-weight:600;">UNAVAILABLE</span>
+                <span style="font-size:0.6rem;padding:1px 5px;background:var(--avo-text-muted);color:var(--avo-text-muted);margin-left:2px;font-weight:600;">UNAVAILABLE</span>
             </a>
 
             <span class="dash-nav-group-label">Automation</span>
@@ -646,11 +645,7 @@
                                             </svg>
                                             Save
                                         </span>
-                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                            stroke="currentColor" fill="none" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                        </svg>
+                                        <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                     </button>
                                 </div>
                             </form>
@@ -682,11 +677,7 @@
                                             </svg>
                                             Verify Permissions
                                         </span>
-                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                            stroke="currentColor" fill="none" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                        </svg>
+                                        <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                     </button>
                                 </section>
                             </div>
@@ -752,11 +743,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -960,11 +947,7 @@
                                             </svg>
                                             Save
                                         </span>
-                                        <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                            stroke="currentColor" fill="none" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                        </svg>
+                                        <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                     </button>
                                 </div>
                             </form>
@@ -1091,7 +1074,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1160,7 +1143,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1213,11 +1196,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1370,11 +1349,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1492,11 +1467,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1719,11 +1690,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1805,11 +1772,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -1941,11 +1904,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                                 <button type="button" id="verify-post-btn" class="btn" data-variant="outline" data-size="default" onclick="postVerifyPanel()">
                                     <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
@@ -1974,15 +1933,15 @@
                     </header>
                     <section>
                         <!-- How it works -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-primary,#FF6B4A) 25%,transparent);padding:14px 16px;margin-bottom:1.5rem;">
-                            <p class="text-sm font-semibold mb-2" style="color:var(--color-primary,#FF6B4A);">How it works -  2 steps</p>
+                        <div style="background:color-mix(in srgb,var(--avo-primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--avo-primary) 25%,transparent);padding:14px 16px;margin-bottom:1.5rem;">
+                            <p class="text-sm font-semibold mb-2" style="color:var(--avo-accent-text);">How it works -  2 steps</p>
                             <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
                                 <li class="text-sm flex gap-3 items-start">
-                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">1</span>
+                                    <span class="step-num">1</span>
                                     <span><strong>Create a panel</strong>: choose a channel, give it a title and description. Baxi posts an embed message with buttons there.</span>
                                 </li>
                                 <li class="text-sm flex gap-3 items-start">
-                                    <span style="flex-shrink:0;min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">2</span>
+                                    <span class="step-num">2</span>
                                     <span><strong>Add buttons</strong>: pick a role (and optionally an emoji and label) for each button. Members click a button to get the role, and click again to remove it.</span>
                                 </li>
                             </ol>
@@ -1992,7 +1951,7 @@
                         <div class="card mb-6">
                             <header>
                                 <h3 class="text-base font-semibold flex items-center gap-2">
-                                    <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">1</span>
+                                    <span class="step-num">1</span>
                                     Create a new panel
                                 </h3>
                                 <p class="text-muted text-sm">Each panel is a separate embed message. You can have multiple panels in different channels.</p>
@@ -2041,7 +2000,7 @@
                         <!-- Step 2: Existing panels / add entries -->
                         <div>
                             <h3 class="text-base font-semibold flex items-center gap-2 mb-3">
-                                <span style="min-width:22px;height:22px;border-radius:50%;background:var(--color-primary,#FF6B4A);color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
+                                <span class="step-num">2</span>
                                 Your panels -  add emoji → role entries
                             </h3>
                             <div id="rr-panels-list">
@@ -2123,11 +2082,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2221,7 +2176,7 @@
                                     <input type="file" id="welcomer-bg-upload" accept="image/png,image/jpeg,image/webp" class="w-full">
                                     <div id="welcomer-bg-preview" class="hidden mt-2">
                                         <img id="welcomer-bg-img" class="rounded max-h-32 object-cover" alt="Background preview">
-                                        <button type="button" class="btn mt-1 text-xs" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="removeWelcomerBg()">Remove background</button>
+                                        <button type="button" class="btn mt-1 text-xs" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="removeWelcomerBg()">Remove background</button>
                                     </div>
                                 </div>
                                 <div class="grid gap-2">
@@ -2278,11 +2233,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2431,11 +2382,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2492,11 +2439,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2565,7 +2508,7 @@
                                     </button>
                                 </div>
                                 {% if not news_channels %}
-                                <p class="text-muted text-xs" style="color:var(--warn,#E0A33A);">No announcement channels found in this server.</p>
+                                <p class="text-muted text-xs" style="color:var(--avo-warning);">No announcement channels found in this server.</p>
                                 {% endif %}
                             </div>
 
@@ -2575,7 +2518,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2667,7 +2610,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2725,8 +2668,8 @@
                                     <button type="button" class="btn" data-variant="secondary" data-size="default" style="white-space:nowrap;flex-shrink:0;" onclick="mclGenerateSecret()">Generate</button>
                                     <button type="button" class="btn" data-variant="secondary" data-size="default" style="white-space:nowrap;flex-shrink:0;" onclick="mclCopySecret(this)">Copy</button>
                                 </div>
-                                <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--color-error, #DC3838);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
-                                <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--color-surface-2,rgba(0,0,0,.08));padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
+                                <p id="mcl-secret-warning" class="text-xs" style="display:none;color:var(--avo-error);">⚠ Weak secret — use the Generate button or enter a strong random value.</p>
+                                <div id="mcl-secret-hint" class="text-xs text-muted" style="display:none;background:var(--avo-surface-raised);padding:0.75rem;margin-top:0.25rem;line-height:1.6;">
                                     Paste this secret into <code>plugins/DiscordGate/config.yml</code> on your Minecraft server:
                                     <pre style="margin:0.4rem 0 0.2rem;font-size:0.85em;"><code id="mcl-secret-hint-value">secret: "…"</code></pre>
                                     Then run <code>/dg reload</code> in-game or restart the server. Save these settings afterwards.
@@ -2740,7 +2683,7 @@
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium">Linked role <span class="text-muted">(optional)</span></label>
                                 <p class="text-muted text-xs">Given after successful linking, removed on unlink.</p>
-                                <select id="mcl-role" class="input">
+                                <select id="mcl-role" class="select input">
                                     <option value="">— None —</option>
                                     {% for role_id, role_name in roles.items() %}
                                     {% if role_name != '@everyone' %}
@@ -2765,7 +2708,7 @@
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium">Public link channel <span class="text-muted">(optional)</span></label>
                                 <p class="text-muted text-xs">Posts a message like <em>"@user linked Minecraft account X"</em> when somebody links.</p>
-                                <select id="mcl-announce-channel" class="input">
+                                <select id="mcl-announce-channel" class="select input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
                                     <option value="{{ channel_id }}">#{{ channel_name }}</option>
@@ -2788,7 +2731,7 @@
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium">Broadcast channel <span class="text-muted">(optional)</span></label>
                                 <p class="text-muted text-xs">Where to post the broadcast message. Leave empty to disable channel relay.</p>
-                                <select id="mcl-announcement-channel" class="input">
+                                <select id="mcl-announcement-channel" class="select input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
                                     <option value="{{ channel_id }}">#{{ channel_name }}</option>
@@ -2818,7 +2761,7 @@
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium">Bridge channel <span class="text-muted">(required when enabled)</span></label>
                                 <p class="text-muted text-xs">The Discord channel that mirrors in-game chat. Must match the webhook below.</p>
-                                <select id="mcl-chat-channel" class="input">
+                                <select id="mcl-chat-channel" class="select input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
                                     <option value="{{ channel_id }}">#{{ channel_name }}</option>
@@ -2839,7 +2782,7 @@
                             <div class="grid gap-2">
                                 <label class="text-sm font-medium">Status channel</label>
                                 <p class="text-muted text-xs">Leave on <em>None</em> to disable the board. Baxi needs <strong>View Channel</strong>, <strong>Send Messages</strong> and <strong>Embed Links</strong> here. Changing the channel posts a fresh board there.</p>
-                                <select id="mcl-status-channel" class="input">
+                                <select id="mcl-status-channel" class="select input">
                                     <option value="">— None —</option>
                                     {% for channel_id, channel_name in channels.items() %}
                                     <option value="{{ channel_id }}">#{{ channel_name }}</option>
@@ -2857,11 +2800,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -2926,11 +2865,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3022,7 +2957,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3061,7 +2996,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                             <p class="text-muted text-xs">Enter a channel handle (e.g. "@mkbhd") or channel ID (UCxxx). The first check will seed the latest video without sending a notification.</p>
@@ -3118,7 +3053,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3157,7 +3092,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                             <p class="text-muted text-xs">Enter a TikTok username without @ (e.g. "charlidamelio"). The first check seeds the latest post without sending a notification.</p>
@@ -3213,7 +3148,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3252,7 +3187,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Add
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                             <p class="text-muted text-xs">Enter an X username without @ (e.g. "nasa"). The first check seeds the latest post without sending a notification.</p>
@@ -3274,11 +3209,11 @@
                     </header>
 
                     <!-- Instagram unavailable notice -->
-                    <div style="border:1px solid #E0A33A;background:rgba(224,163,58,0.08);display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    <div style="border:1px solid var(--avo-warning);background:color-mix(in srgb, var(--avo-warning) 8%, transparent);display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--avo-warning);width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                         <div>
-                            <p style="font-weight:600;color:#E0A33A;margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
-                            <p style="font-size:0.875rem;color:var(--muted-foreground);line-height:1.55;">
+                            <p style="font-weight:600;color:var(--avo-warning);margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
+                            <p style="font-size:0.875rem;color:var(--avo-text-muted);line-height:1.55;">
                                 Instagram blocks all automated access from server infrastructure — including authenticated API requests.
                                 The official Meta Graph API requires a verified Business Portfolio, App Review, and approved permissions, which are gated behind a review process
                                 that Meta does not grant to third-party bots. All known workarounds (scraping, mirror sites, unofficial APIs) are either blocked or unreliable.
@@ -3323,7 +3258,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3455,11 +3390,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3531,7 +3462,7 @@
                                 <div id="cc-actions-list" class="grid gap-3"></div>
                                 <div class="add-area mt-2">
                                     <div class="flex items-center gap-2">
-                                        <select id="cc-action-type" class="w-full">
+                                        <select id="cc-action-type" class="select w-full">
                                             <option value="text">Send message / reply</option>
                                             <option value="add_role">Add role</option>
                                             <option value="remove_role">Remove role</option>
@@ -3555,11 +3486,7 @@
                                         </svg>
                                         <span id="customcmd-submit-label">Add Command</span>
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                                 <button type="button" id="customcmd-cancel-edit" class="btn shrink-0 hidden" data-variant="outline" data-size="default" onclick="ccCancelEdit()">Cancel</button>
                             </div>
@@ -3657,7 +3584,7 @@
                                 <div class="card tv-trigger-card">
                                     <header class="flex items-center justify-between">
                                         <h3 class="text-base font-semibold">Trigger channel</h3>
-                                        <button type="button" class="btn tv-trigger-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;">
+                                        <button type="button" class="btn tv-trigger-remove" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);">
                                             <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                             <span class="btn-label">Remove</span>
                                         </button>
@@ -3699,11 +3626,7 @@
                                         </svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3772,11 +3695,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3844,11 +3763,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -3911,7 +3826,7 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);">
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);">
                                 <p class="text-muted text-xs" style="margin:0;">
                                     <strong>Current count:</strong> <span id="counting-current-display">- </span> &nbsp;|&nbsp;
                                     <strong>High score:</strong> <span id="counting-highscore-display">- </span>
@@ -3924,7 +3839,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                                 <button type="button" id="counting-reset-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -3986,7 +3901,7 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2" style="padding:12px 16px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);">
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);">
                                 <p class="text-muted text-xs" style="margin:0;">
                                     <strong>Words so far:</strong> <span id="onewordstory-length-display">- </span> &nbsp;|&nbsp;
                                     <strong>Longest story:</strong> <span id="onewordstory-highscore-display">- </span>
@@ -4000,7 +3915,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                                 <button type="button" id="onewordstory-end-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M20 6 9 17l-5-5"/></svg>
@@ -4066,7 +3981,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                                 <button type="button" id="flagquiz-reset-scores-btn" class="btn" data-variant="secondary" data-size="default" style="flex-shrink:0;display:flex;align-items:center;gap:6px;">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -4139,7 +4054,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -4255,7 +4170,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -4326,7 +4241,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -4376,7 +4291,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -4420,7 +4335,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </form>
@@ -4459,7 +4374,7 @@
                         <div id="logContainer">
                             {% for log in data.audit_log %}
                             <div class="log-entry card mt-4" data-type="{{ log.type }}" style="position: relative;">
-                                <div style="position: absolute; top: -12px; left: -12px; background: var(--color-primary, #FF6B4A); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600;">
+                                <div class="log-index">
                                     {{ data.audit_log|length - loop.index0 }}
                                 </div>
 
@@ -4481,9 +4396,9 @@
                                         <div><strong>Time:</strong> {{ log.time }}</div>
                                         <div><strong>Status:</strong>
                                             {% if log.success %}
-                                            <span style="color: #46A758;">Success</span>
+                                            <span style="color: var(--avo-success);">Success</span>
                                             {% else %}
-                                            <span style="color: #DC3838;">Failed</span>
+                                            <span style="color: var(--avo-error);">Failed</span>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -5217,7 +5132,7 @@
                                     <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
                             </div>
-                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="removeStreamer('${safeLogin}', '${platform}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="removeStreamer('${safeLogin}', '${platform}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -5225,7 +5140,7 @@
                                 <span class="btn-label">Remove</span>
                             </button>
                         </header>
-                        <div class="grid gap-2" style="border-top:1px solid var(--border,#333);margin-top:12px;padding:12px 16px 4px 16px;">
+                        <div class="grid gap-2" style="border-top:1px solid var(--avo-line);margin-top:12px;padding:12px 16px 4px 16px;">
                             <label class="text-xs font-medium text-muted">Custom live message <span style="font-weight:normal;">(shown in ping &amp; above/in embed when live)</span></label>
                             <textarea id="ls-cm-${idx}" placeholder="e.g. Hey @everyone ich bin live — schaut vorbei!" class="textarea" rows="2" maxlength="500">${escapedMsg}</textarea>
                             <div class="flex gap-2 items-center flex-wrap">
@@ -5238,7 +5153,7 @@
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
                                         Save
                                     </span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </div>
@@ -5406,7 +5321,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">' + profileUrl.replace('https://', '') + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="yvidRemoveChannel(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5416,7 +5331,7 @@
                     + '<select class="select flex-1 yvid-channel-select" data-id="' + safeId + '">' + channelOptions + '</select>'
                     + '<button type="button" class="btn yvid-save-btn" data-variant="primary" data-size="default" data-id="' + safeId + '" onclick="yvidUpdateChannel(\'' + safeId + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
-                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '<span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>'
                     + '</button>'
                     + '</div>'
                     + '</div>';
@@ -5561,7 +5476,7 @@
                 card.className = 'card tt-card';
                 card.innerHTML = '<header class="flex items-center justify-between">'
                     + '<div class="flex items-center gap-3">'
-                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#010101,#ff0050);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                    + '<div style="width:2.5rem;height:2.5rem;border-radius:50%;background:#010101;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
                     + (acc.display_name || acc.username).charAt(0).toUpperCase()
                     + '</div>'
                     + '<div>'
@@ -5571,7 +5486,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="ttRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5581,7 +5496,7 @@
                     + '<select class="select flex-1 tt-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
                     + '<button type="button" class="btn tt-save-btn" data-variant="primary" data-size="default" data-user="' + safeUser + '" onclick="ttUpdateChannel(\'' + safeUser + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
-                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '<span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>'
                     + '</button>'
                     + '</div>'
                     + '</div>';
@@ -5710,7 +5625,7 @@
                 card.className = 'card tw-card';
                 card.innerHTML = '<header class="flex items-center justify-between">'
                     + '<div class="flex items-center gap-3">'
-                    + '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                    + '<div style="width:2.5rem;height:2.5rem;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
                     + (acc.display_name || acc.username).charAt(0).toUpperCase()
                     + '</div>'
                     + '<div>'
@@ -5720,7 +5635,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + acc.username + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="twRemoveAccount(\'' + safeUser + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="twRemoveAccount(\'' + safeUser + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5730,7 +5645,7 @@
                     + '<select class="select flex-1 tw-channel-select" data-user="' + safeUser + '">' + channelOptions + '</select>'
                     + '<button type="button" class="btn tw-save-btn" data-variant="primary" data-size="default" data-user="' + safeUser + '" onclick="twUpdateChannel(\'' + safeUser + '\')">'
                     + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
-                    + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                    + '<span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>'
                     + '</button>'
                     + '</div>'
                     + '</div>';
@@ -5854,9 +5769,9 @@
                 const tokenExpiresTs = acc.token_expires || 0;
                 const sevenDays = Math.floor(Date.now() / 1000) + 7 * 86400;
                 const tokenWarn = acc.token_expired
-                    ? '<span style="font-size:0.65rem;padding:1px 6px;background:#DC3838;color:#fff;font-weight:600;margin-left:4px;">TOKEN EXPIRED</span>'
+                    ? '<span style="font-size:0.65rem;padding:1px 6px;background:var(--avo-error);color:#fff;font-weight:600;margin-left:4px;">TOKEN EXPIRED</span>'
                     : (tokenExpiresTs && tokenExpiresTs < sevenDays
-                        ? '<span style="font-size:0.65rem;padding:1px 6px;background:#E0A33A;color:#fff;font-weight:600;margin-left:4px;">EXPIRING SOON</span>'
+                        ? '<span style="font-size:0.65rem;padding:1px 6px;background:var(--avo-warning);color:#000;font-weight:600;margin-left:4px;">EXPIRING SOON</span>'
                         : '');
                 let channelOptions = '<option value="">-- Select a channel --</option>';
                 Object.keys(DISCORD_CHANNELS).forEach(function (cid) {
@@ -5868,8 +5783,8 @@
                 card.innerHTML = '<header class="flex items-center justify-between">'
                     + '<div class="flex items-center gap-3">'
                     + (acc.profile_image_url
-                        ? '<img src="' + acc.profile_image_url + '" alt="" style="width:2.5rem;height:2.5rem;border-radius:9999px;object-fit:cover;border:2px solid #e1306c;flex-shrink:0;" onerror="this.style.display=\'none\'">'
-                        : '<div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
+                        ? '<img src="' + acc.profile_image_url + '" alt="" style="width:2.5rem;height:2.5rem;border-radius:50%;object-fit:cover;border:2px solid #e1306c;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+                        : '<div style="width:2.5rem;height:2.5rem;border-radius:50%;background:#e1306c;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;">'
                           + (acc.display_name || acc.username || '?').charAt(0).toUpperCase() + '</div>')
                     + '<div>'
                     + '<h3 class="text-base font-semibold flex items-center gap-2">'
@@ -5879,7 +5794,7 @@
                     + '</h3>'
                     + '<a href="' + profileUrl + '" target="_blank" class="text-muted text-xs hover:underline">@' + (acc.username || igUserId) + '</a>'
                     + '</div></div>'
-                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="igRemoveAccount(\'' + safeId + '\')">'
+                    + '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="igRemoveAccount(\'' + safeId + '\')">'
                     + '<svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
                     + '<span class="btn-label">Remove</span></button>'
                     + '</header>'
@@ -5897,7 +5812,7 @@
                         ? '<a href="/oauth/instagram/start?guild={{ guild.id }}" class="btn inline-flex items-center gap-2" data-variant="primary" data-size="default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Reconnect Account</a>'
                         : '<button type="button" class="btn ig-save-btn" data-variant="primary" data-size="default" data-igid="' + safeId + '" onclick="igUpdateSettings(\'' + safeId + '\')">'
                           + '<span class="btn-text flex items-center gap-2"><svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Save</span>'
-                          + '<svg viewBox="0 0 24 24" class="spinner hidden animate-spin" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+                          + '<span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>'
                           + '</button>')
                     + '</div>';
                 list.appendChild(card);
@@ -5977,7 +5892,7 @@
             moderate_members: 'Timeout Members', mention_everyone: 'Mention Everyone',
         };
         function ccEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-        function ccInfo(t) { return `<span title="${ccEsc(t)}" style="display:inline-flex;cursor:help;color:#7E7E7E;margin-left:4px;vertical-align:middle;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>`; }
+        function ccInfo(t) { return `<span title="${ccEsc(t)}" style="display:inline-flex;cursor:help;color:var(--avo-text-muted);margin-left:4px;vertical-align:middle;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>`; }
         const _CC_TARGET_INFO = "Command author = the person who typed the trigger. First @mentioned user = the first user mentioned in their message (e.g. for a '!warn @user' command). If 'mentioned' is chosen but nobody is mentioned, this action is skipped.";
         function ccActionLabel(t) {
             return { text: 'Send message / reply', add_role: 'Add role', remove_role: 'Remove role', delete_messages: 'Delete messages', react: 'Add reaction', dm: 'Send DM' }[t] || t;
@@ -6003,7 +5918,7 @@
         }
         function ccTargetSelect(selected) {
             selected = selected || 'author';
-            return `<select class="cc-act-target w-full">
+            return `<select class="select cc-act-target w-full">
                 <option value="author" ${selected === 'author' ? 'selected' : ''}>Command author</option>
                 <option value="mentioned" ${selected === 'mentioned' ? 'selected' : ''}>First @mentioned user</option>
             </select>`;
@@ -6032,7 +5947,7 @@
             }
             if (type === 'add_role' || type === 'remove_role') {
                 return `<div class="grid gap-2">
-                    <div class="grid gap-1"><label class="text-xs text-muted">Role</label><select class="cc-act-role w-full">${ccRoleOptions(d.role)}</select></div>
+                    <div class="grid gap-1"><label class="text-xs text-muted">Role</label><select class="select cc-act-role w-full">${ccRoleOptions(d.role)}</select></div>
                     <div class="grid gap-1"><label class="text-xs text-muted flex items-center">${type === 'add_role' ? 'Add to' : 'Remove from'}${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>
                 </div>`;
             }
@@ -6054,7 +5969,7 @@
             row.innerHTML = `
                 <header class="flex items-center justify-between">
                     <h4 class="text-sm font-semibold">${ccActionLabel(type)}</h4>
-                    <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
+                    <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);padding:4px 8px;" onclick="this.closest('.cc-action').remove()">
                         <svg class="lucide" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                 </header>
@@ -6147,7 +6062,7 @@
                 const actions = (Array.isArray(cmd.actions) && cmd.actions.length)
                     ? cmd.actions
                     : [{ type: 'text', reply: false }];
-                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:#0A0A0A;border:1px solid #3c3c41;padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
+                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:var(--avo-surface-raised);border:1px solid var(--avo-line-strong);padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
 
                 const gate = cmd.gate || {};
                 const gateParts = [
@@ -6171,7 +6086,7 @@
                                 </svg>
                                 Edit
                             </button>
-                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="deleteCustomCmd('${trigger.replace(/'/g, "\\'")}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -6325,8 +6240,8 @@
                 // glass blur and z-order from one place instead of a second
                 // hand-tuned copy. display is still toggled inline below.
                 prismPopover.className = 'popup';
-                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:linear-gradient(var(--avo-glass-tint),var(--avo-glass-tint-2));backdrop-filter:blur(var(--avo-glass-blur));-webkit-backdrop-filter:blur(var(--avo-glass-blur));border:1px solid #2a2a2a;border-radius:var(--avo-radius-md, 8px);padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:inset 0 1px 0 var(--avo-glass-edge);">
-                    <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#888;padding:4px;line-height:1;">
+                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:var(--avo-surface-raised);border:1px solid var(--avo-line-strong);border-radius:var(--avo-radius-lg);padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:inset 0 1px 0 var(--avo-glass-edge-raised);">
+                    <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--avo-text-muted);padding:4px;line-height:1;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                     <div id="prism-popover-content"></div>
@@ -6351,11 +6266,11 @@
             filtered.forEach(u => {
                 const score      = u.score;
                 const isOptedOut = !!u.opted_out;
-                const scoreColor = isOptedOut ? '#7E7E7E' : (score >= 70 ? '#46A758' : score >= 40 ? '#E0A33A' : '#DC3838');
-                const scoreBg    = isOptedOut ? 'rgba(126,126,126,.12)' : (score >= 70 ? 'rgba(70,167,88,.12)' : score >= 40 ? 'rgba(224,163,58,.12)' : 'rgba(220,56,56,.12)');
-                const scoreBord  = isOptedOut ? 'rgba(126,126,126,.3)' : (score >= 70 ? 'rgba(70,167,88,.3)'  : score >= 40 ? 'rgba(224,163,58,.3)'  : 'rgba(220,56,56,.3)');
+                const scoreColor = isOptedOut ? 'var(--avo-text-muted)' : (score >= 70 ? 'var(--avo-success)' : score >= 40 ? 'var(--avo-warning)' : 'var(--avo-error)');
+                const scoreBg    = isOptedOut ? 'color-mix(in srgb, var(--avo-text-muted) 12%, transparent)' : (score >= 70 ? 'color-mix(in srgb, var(--avo-success) 12%, transparent)' : score >= 40 ? 'color-mix(in srgb, var(--avo-warning) 12%, transparent)' : 'color-mix(in srgb, var(--avo-error) 12%, transparent)');
+                const scoreBord  = isOptedOut ? 'color-mix(in srgb, var(--avo-text-muted) 30%, transparent)' : (score >= 70 ? 'color-mix(in srgb, var(--avo-success) 30%, transparent)'  : score >= 40 ? 'color-mix(in srgb, var(--avo-warning) 30%, transparent)'  : 'color-mix(in srgb, var(--avo-error) 30%, transparent)');
                 const scoreLabel = isOptedOut ? 'Opted Out' : (score >= 70 ? 'Low Risk' : score >= 40 ? 'Medium Risk' : 'High Risk');
-                const dotColor   = isOptedOut ? '#7E7E7E' : (u.manual_flag ? '#E0A33A' : scoreColor);
+                const dotColor   = isOptedOut ? 'var(--avo-text-muted)' : (u.manual_flag ? 'var(--avo-warning)' : scoreColor);
 
                 const fallback = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(u.uid) % BigInt(6))}.png`;
                 const avatarUrl = u.avatar_url || fallback;
@@ -6368,66 +6283,66 @@
                 card.style.setProperty('--score-border', scoreBord);
 
                 let badges = '';
-                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7E7E7E !important;margin-top:6px;">Opt-Out</span>`;
-                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#E0A33A !important;margin-top:6px;">Manual Flag</span>`;
+                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--avo-text-muted) !important;margin-top:6px;">Opt-Out</span>`;
+                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--avo-warning) !important;margin-top:6px;">Manual Flag</span>`;
 
                 card.innerHTML = `
                     <div style="position:relative;margin-bottom:10px;">
                         <img src="${avatarUrl}" alt=""
                             style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};${isOptedOut ? 'opacity:0.5;filter:grayscale(60%);' : ''}"
                             onerror="this.src='${fallback}'">
-                        <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid #0A0A0A;display:block;"></span>
+                        <span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:${dotColor};border:2px solid var(--avo-surface-raised);display:block;"></span>
                     </div>
-                    <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? '#888' : '#FFFFFF'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
-                    <div style="padding:3px 12px;border-radius:var(--avo-radius-sm, 6px);background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
-                        <span style="font-family:var(--avo-font-mono);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
+                    <span style="font-size:0.82rem;font-weight:600;word-break:break-word;max-width:100%;color:${isOptedOut ? 'var(--avo-text-muted)' : 'var(--avo-text)'} !important;margin-bottom:8px;">${u.name.replace(/</g,'&lt;')}</span>
+                    <div style="padding:3px 12px;border-radius:var(--avo-radius);background:${scoreBg};border:1px solid ${scoreBord};display:inline-flex;align-items:center;gap:5px;">
+                        <span style="font-family:var(--avo-font-mono);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:600;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}</span>
                         <span style="font-size:0.62rem;font-weight:500;color:${scoreColor} !important;">${scoreLabel}</span>
                     </div>
                     ${badges}
-                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.67rem;color:#999 !important;margin-top:9px;">
+                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.67rem;color:var(--avo-text-muted) !important;margin-top:9px;">
                         Details
-                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--avo-text-muted)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </span>
                 `;
 
                 card.addEventListener('click', () => {
                     const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
                     const manualSection = u.manual_flag ? `
-                        <div style="margin-top:14px;padding:12px 14px;background:rgba(224,163,58,.1);border:1px solid rgba(224,163,58,.28);">
+                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-warning) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-warning) 28%, transparent);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:#E0A33A !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--avo-warning)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-warning) !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
                             </div>
-                            <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:#fff !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
-                            <p style="font-size:0.76rem;color:#fff !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:rgba(224,163,58,.08);font-style:italic;">${manualReason || 'No reason provided.'}</p>
+                            <p style="font-size:0.74rem;color:var(--avo-text-muted-2) !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:var(--avo-text) !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
+                            <p style="font-size:0.76rem;color:var(--avo-text) !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:color-mix(in srgb, var(--avo-warning) 8%, transparent);font-style:italic;">${manualReason || 'No reason provided.'}</p>
                         </div>` : '';
 
                     const optOutSection = isOptedOut ? `
-                        <div style="margin-top:14px;padding:12px 14px;background:rgba(126,126,126,.1);border:1px solid rgba(126,126,126,.28);">
+                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-text-muted) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-text-muted) 28%, transparent);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7E7E7E" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:#7E7E7E !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--avo-text-muted)"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-text-muted) !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
                             </div>
-                            <p style="font-size:0.74rem;color:#ddd !important;line-height:1.55;margin:0;">This user has opted out of Prism trust scoring. No score is being tracked. Moderation systems (chat filter, anti-spam, etc.) remain active.</p>
+                            <p style="font-size:0.74rem;color:var(--avo-text-muted-2) !important;line-height:1.55;margin:0;">This user has opted out of Prism trust scoring. No score is being tracked. Moderation systems (chat filter, anti-spam, etc.) remain active.</p>
                         </div>` : '';
 
                     const summarySection = u.llm_summary ? `
-                        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #333;">
-                            <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa !important;">AI Analysis</span>
-                            <p style="font-size:0.78rem;color:#ddd !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
+                        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--avo-line);">
+                            <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--avo-text-muted-2) !important;">AI Analysis</span>
+                            <p style="font-size:0.78rem;color:var(--avo-text-muted-2) !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
                         </div>` : '';
 
                     document.getElementById('prism-popover-content').innerHTML = `
                         <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
                             <img src="${avatarUrl}" alt="" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid ${scoreBord};${isOptedOut ? 'opacity:0.5;filter:grayscale(60%);' : ''}" onerror="this.src='${fallback}'">
                             <div>
-                                <div style="font-size:0.92rem;font-weight:700;color:#fff !important;">${u.name.replace(/</g,'&lt;')}</div>
-                                <div style="font-size:0.68rem;color:#aaa !important;margin-top:3px;">ID: ${u.uid}</div>
+                                <div style="font-size:0.92rem;font-weight:700;color:var(--avo-text) !important;">${u.name.replace(/</g,'&lt;')}</div>
+                                <div style="font-size:0.68rem;color:var(--avo-text-muted-2) !important;margin-top:3px;">ID: ${u.uid}</div>
                             </div>
                         </div>
                         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${scoreBg};border:1px solid ${scoreBord};">
                             <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
-                            <span style="font-size:1.05rem;font-weight:800;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
+                            <span style="font-size:1.05rem;font-weight:600;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
                         </div>
                         ${optOutSection}
                         ${manualSection}
@@ -6448,11 +6363,11 @@
                 _prismFilter = btn.dataset.filter;
                 document.querySelectorAll('.prism-filter-btn').forEach(b => {
                     b.style.background = 'transparent';
-                    b.style.color = '#888';
+                    b.style.color = 'var(--avo-text-muted)';
                     b.classList.remove('active');
                 });
-                btn.style.background = '#2a2a2a';
-                btn.style.color = '#ccc';
+                btn.style.background = 'var(--avo-surface-high)';
+                btn.style.color = 'var(--avo-text-muted-2)';
                 btn.classList.add('active');
                 renderPrismCards(_prismUsers);
             });
@@ -6566,8 +6481,8 @@
         const _TICKET_STYLE_CSS = {
             primary: 'background:#5865F2;color:#fff;',
             secondary: 'background:#7E7E7E;color:#fff;',
-            success: 'background:#46A758;color:#fff;',
-            danger: 'background:#DC3838;color:#fff;',
+            success: 'background:var(--avo-success);color:#fff;',
+            danger: 'background:var(--avo-error);color:#fff;',
         };
 
         function renderTicketButtons() {
@@ -6599,7 +6514,7 @@
                             <button type="button" class="btn btn-move-down" data-variant="outline" data-size="default" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
-                            <button type="button" class="btn btn-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;">
+                            <button type="button" class="btn btn-remove" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -7366,9 +7281,9 @@
         }
 
         const MOD_REVIEW_TONES = {
-            ok:   'background:#46A758; border-color:#46A758;',
-            warn: 'color:#E5A000; border-color:#E5A000;',
-            bad:  'color:#DC3838; border-color:#DC3838;'
+            ok:   'background:var(--avo-success); border-color:var(--avo-success);',
+            warn: 'color:var(--avo-warning); border-color:var(--avo-warning);',
+            bad:  'color:var(--avo-error); border-color:var(--avo-error);'
         };
 
         function modReviewRenderItem(item) {
@@ -7522,7 +7437,7 @@
             b.className = 'btn';
             b.dataset.variant = 'outline';
             b.dataset.size = 'default';
-            b.style.cssText = 'color:#ef4444;border-color:#ef4444;';
+            b.style.cssText = 'color:var(--avo-error);border-color:var(--avo-error);';
             b.innerHTML = _WL_TRASH + '<span class="btn-label"></span>';
             b.querySelector('.btn-label').textContent = label;
             b.onclick = onClick;
@@ -7877,8 +7792,8 @@
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             _cfBypassChannels.forEach(cid => {
                 const tag = document.createElement('div');
-                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);font-size:13px;';
-                tag.innerHTML = `<span>${nameMap[cid] || '#' + cid}</span><button type="button" onclick="cfBypassRemove('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);font-size:13px;';
+                tag.innerHTML = `<span>${nameMap[cid] || '#' + cid}</span><button type="button" onclick="cfBypassRemove('${cid}')" style="background:none;border:none;cursor:pointer;color:var(--avo-text-muted);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 list.appendChild(tag);
             });
         }
@@ -7907,8 +7822,8 @@
             for (const opt of sel.options) { if (opt.value) nameMap[opt.value] = opt.text; }
             ids.forEach(id => {
                 const tag = document.createElement('div');
-                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--card-bg,#0A0A0A);border:1px solid var(--border,#27272a);font-size:13px;';
-                tag.innerHTML = `<span>${prefix}${nameMap[id] || id}</span><button type="button" onclick="${removeFn}('${id}')" style="background:none;border:none;cursor:pointer;color:var(--muted,#888);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);font-size:13px;';
+                tag.innerHTML = `<span>${prefix}${nameMap[id] || id}</span><button type="button" onclick="${removeFn}('${id}')" style="background:none;border:none;cursor:pointer;color:var(--avo-text-muted);padding:0;line-height:1;" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 list.appendChild(tag);
             });
         }
@@ -8042,7 +7957,7 @@
                             <h3 class="text-base font-semibold">Step ${idx + 1}: At ${step.warns} warning${step.warns !== 1 ? 's' : ''} <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right" style="display:inline-block;vertical-align:-3px;"><path d="m9 18 6-6-6-6"/></svg> ${actionLabel}</h3>
                             <p class="text-muted text-xs">${step.action === 'timeout' ? `Timeout: ${durationMin} min &nbsp;&middot;&nbsp;` : ''}DM: ${step.dm ? 'Yes' : 'No'}</p>
                         </div>
-                        <button type="button" class="btn btn-wc-remove" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;">
+                        <button type="button" class="btn btn-wc-remove" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);flex-shrink:0;">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -8133,7 +8048,7 @@
                                     onchange="_suggestionChannels[${idx}].votes_enabled = this.checked; renderSuggestionChannels()">
                                 👍/👎 votes
                             </label>
-                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;" onclick="suggestionsRemoveChannel('${ch.id}')">
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="suggestionsRemoveChannel('${ch.id}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
@@ -8210,7 +8125,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <h3 class="text-base font-semibold">${chName}</h3>
-                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);flex-shrink:0;margin-left:12px;" onclick="autoReleaseRemoveChannel('${cid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -8288,7 +8203,7 @@
                 card.innerHTML = `
                     <header class="flex items-center justify-between">
                         <h3 class="text-base font-semibold">${chName}</h3>
-                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;flex-shrink:0;margin-left:12px;" onclick="assistantRemoveChannel('${cid}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);flex-shrink:0;margin-left:12px;" onclick="assistantRemoveChannel('${cid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="btn-label">Remove</span>
                         </button>
@@ -8374,7 +8289,7 @@
                                 </svg>
                                 <span class="btn-label">Edit</span>
                             </button>
-                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;"
+                            <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);"
                                 onclick="stickyRemove('${cid}')">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -8516,9 +8431,9 @@
                 const entriesHtml = (panel.entries || []).map(e => {
                     return `<div class="rr-entry-row flex items-center justify-between gap-2 py-1 border-b border-muted last:border-0">
                         <span class="text-sm">${_rrEscape(e.emoji)} <span class="text-muted">${_rrEscape(e.label)}</span></span>
-                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);padding:2px 8px;font-size:0.75rem;" onclick="removeRREntry(this, '${mid}', '${(e.emoji||'').replace(/'/g,"\\'")}')">
                             <span class="btn-text">Remove</span>
-                            <svg viewBox="0 0 24 24" class="spinner hidden" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:loader-spin 0.9s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                         </button>
                     </div>`;
                 }).join('');
@@ -8529,7 +8444,7 @@
                             <h3 class="text-base font-semibold">${_rrEscape(panel.title) || 'Panel'}</h3>
                             <p class="text-muted text-xs">Message ID: ${mid}</p>
                         </div>
-                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:#DC3838;border-color:#DC3838;"
+                        <button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);"
                             onclick="removeRRPanel('${mid}')">
                             <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;">
                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -8540,7 +8455,7 @@
                     </header>
                     <section>
                         <!-- Editable panel settings -->
-                        <div style="background:color-mix(in srgb,var(--color-primary,#FF6B4A) 5%,transparent);border:1px solid var(--border);padding:12px;margin-bottom:1rem;">
+                        <div style="background:color-mix(in srgb,var(--avo-primary) 5%,transparent);border:1px solid var(--avo-line);padding:12px;margin-bottom:1rem;">
                             <p class="text-sm font-medium mb-3">Panel settings</p>
                             <div class="grid gap-3">
                                 <div class="grid gap-1">
@@ -8568,19 +8483,14 @@
                                 </div>
                                 <button type="button" class="btn" data-variant="primary" data-size="default" onclick="saveRRPanel(this, '${mid}')">
                                     <span class="btn-text">Save panel changes</span>
-                                    <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
-                                        stroke="currentColor" fill="none" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        style="animation:loader-spin 0.9s linear infinite;">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                    </svg>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                 </button>
                             </div>
                         </div>
 
                         <p class="text-sm font-medium mb-2">Buttons</p>
                         <div class="mb-4">${entriesHtml || '<p class="text-muted text-xs">No buttons yet.</p>'}</div>
-                        <div style="border-top:1px solid var(--border);padding-top:1rem;">
+                        <div style="border-top:1px solid var(--avo-line);padding-top:1rem;">
                             <p class="text-sm font-medium mb-1">Add button</p>
                             <p class="text-xs text-muted mb-3">Each button toggles a role. Emoji and label are both optional, but at least one must be set.</p>
                             <div class="flex gap-2 flex-wrap">
@@ -8607,12 +8517,7 @@
                                     <label class="form-label" style="visibility:hidden;">x</label>
                                     <button type="button" class="btn" data-variant="primary" data-size="default" style="white-space:nowrap;" onclick="addRREntry(this, '${mid}')">
                                         <span class="btn-text">Add</span>
-                                        <svg viewBox="0 0 24 24" class="spinner hidden" width="16" height="16"
-                                            stroke="currentColor" fill="none" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round"
-                                            style="animation:loader-spin 0.9s linear infinite;">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                        </svg>
+                                        <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
                                     </button>
                                 </div>
                             </div>
@@ -9268,7 +9173,7 @@
 
     </script>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 
     <script>
@@ -9609,7 +9514,7 @@
         </header>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-tt-dialog').close()">Cancel</button>
-            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="ttConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:var(--avo-error);border-color:var(--avo-error);" onclick="ttConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9622,7 +9527,7 @@
         </header>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-tw-dialog').close()">Cancel</button>
-            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="twConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:var(--avo-error);border-color:var(--avo-error);" onclick="twConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9635,7 +9540,7 @@
         </header>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-ig-dialog').close()">Cancel</button>
-            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="igConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:var(--avo-error);border-color:var(--avo-error);" onclick="igConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9648,7 +9553,7 @@
         </header>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-yvid-dialog').close()">Cancel</button>
-            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="yvidConfirmRemove()">Remove</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:var(--avo-error);border-color:var(--avo-error);" onclick="yvidConfirmRemove()">Remove</button>
         </footer>
     </div>
 </dialog>
@@ -9661,7 +9566,7 @@
         </header>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('remove-streamer-dialog').close()">Cancel</button>
-            <button class="btn" data-variant="primary" data-size="default" style="background:#DC3838;border-color:#DC3838;" onclick="confirmRemoveStreamer()">Remove</button>
+            <button class="btn" data-variant="primary" data-size="default" style="background:var(--avo-error);border-color:var(--avo-error);" onclick="confirmRemoveStreamer()">Remove</button>
         </footer>
     </div>
 </dialog>

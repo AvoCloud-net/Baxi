@@ -16,8 +16,9 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
     {% if show_intro %}
     <script src="{{ cdn.gsap_js }}"></script>
     <script>
@@ -44,7 +45,7 @@
     {% endif %}
 </head>
 
-<body>
+<body class="avo-ui">
     {% if show_intro %}
     <div id="avo-splash">
         <div class="hw" id="avo-splash-hw">
@@ -237,10 +238,10 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
     {% if show_intro %}
-    <script src="{{ url_for('static', filename='scripts/wordmark.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/wordmark.js') }}?v={{ static_versions.get('scripts/wordmark.js', '') }}"></script>
     <script>
         /* Post-login splash (BRANDING §5): the CAD reveal, full-screen, once
            after a successful login. Server gates it via session['show_intro'],

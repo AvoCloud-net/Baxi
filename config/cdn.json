@@ -1,6 +1,7 @@
 {
   "base": "https://cdn.avocloud.net",
   "versions": {
+    "avocloud-ui": "4.2.1",
     "avocloud-ui-fonts": "4.4.0",
     "avocloud-logo": "4.2.1",
     "basecoat": "1.0.2",

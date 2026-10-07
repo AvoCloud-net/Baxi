@@ -24,6 +24,9 @@ def _load() -> dict:
     return {
         "origin": base,
         "fonts_css": url("avocloud-ui-fonts", "fonts.css"),
+        # The kit: tokens + components, themed onto Basecoat. Imports avocloud.css,
+        # which imports the tokens and the fonts. Load it AFTER basecoat (§12.1).
+        "ui_base_css": url("avocloud-ui", "avocloud.base.css"),
         "favicon": url("avocloud-logo", "favicon.ico"),
         "basecoat_css": url("basecoat", "basecoat.cdn.min.css"),
         "basecoat_js": url("basecoat", "js/all.min.js"),

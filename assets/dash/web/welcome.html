@@ -15,8 +15,9 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <script src="{{ cdn.gsap_js }}"></script>
     <script>
@@ -51,22 +52,22 @@
             font-weight: 500;
             letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--avo-text-muted, #7E7E7E);
+            color: var(--avo-text-muted);
         }
         .welcome-hero .hero-badge::before {
             content: '//';
-            color: var(--color-primary, #FF6B4A);
+            color: var(--avo-accent-text);
         }
         .welcome-hero h1 {
             font-size: clamp(2rem, 6vw, 3.5rem);
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.1;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.01em;
         }
         .welcome-hero p {
             font-size: 1.05rem;
             max-width: 480px;
-            opacity: 0.65;
+            color: var(--avo-text-muted);
             line-height: 1.65;
         }
         /* Discord blurple stays — it is Discord's brand colour on a Discord
@@ -76,12 +77,14 @@
             display: inline-flex;
             align-items: center;
             gap: 0.65rem;
-            padding: 0.75rem 1.75rem;
-            border-radius: var(--avo-radius-sm);
+            height: var(--avo-ui-control-h-primary); /* the one action this screen is about */
+            padding: 0 1.5rem;
+            border-radius: var(--avo-radius);
             font-family: var(--avo-font-mono);
-            font-size: 0.85rem;
+            font-size: var(--avo-text-xs);
             font-weight: 500;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             background: #5865F2;
             color: #fff;
             border: none;
@@ -108,26 +111,23 @@
         .stats-strip .stat {
             text-align: center;
         }
-        /* Big stat counters get Anton (BRANDING §4 — display numbers only,
-           never body copy). */
+        /* Big counters: the one UI face at 600, tabular so digits don't reflow (§4). */
         .stats-strip .stat-value {
             font-family: var(--avo-font-massive);
-            font-weight: 400;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
             font-size: clamp(1.6rem, 4vw, 2.4rem);
             line-height: 1;
-            letter-spacing: 0.01em;
+            letter-spacing: -0.02em;
         }
-        .stats-strip .stat-label {
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-        }
+        .stats-strip .stat-label { margin-top: 0.25rem; }
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 1rem;
         }
-        /* .card carries the coral corner marks + scan grid from main.css; this
-           only puts the row layout back over basecoat's column default. */
+        /* .card carries the corner marks from main.css; this only puts the row
+           layout back over basecoat's column default. */
         .feature-card {
             display: flex;
             flex-direction: row;
@@ -135,33 +135,30 @@
             align-items: flex-start;
             padding: 1rem;
         }
-        .feature-card > * {
-            position: relative;
-            z-index: 1; /* above the .card::after scan grid */
-        }
+        .feature-card > * { position: relative; z-index: 1; }
         .feature-icon {
             flex-shrink: 0;
             width: 2.25rem;
             height: 2.25rem;
-            
             display: flex;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 12%, transparent);
+            border: 1px solid var(--avo-line-strong);
+            border-radius: var(--avo-radius);
         }
         .feature-icon svg {
             width: 1.1rem;
             height: 1.1rem;
-            stroke: var(--color-primary, #FF6B4A);
+            stroke: var(--avo-primary);
             fill: none;
-            stroke-width: 2;
+            stroke-width: var(--avo-icon-stroke);
             stroke-linecap: round;
             stroke-linejoin: round;
         }
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -520,8 +517,8 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/wordmark.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/wordmark.js') }}?v={{ static_versions.get('scripts/wordmark.js', '') }}"></script>
     <script>
         /* Hero wordmark reveal (BRANDING §5). Above the fold, so it plays on
            load — no ScrollTrigger, no visibility gate: content already on

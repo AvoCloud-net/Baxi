@@ -1,192 +1,87 @@
-/* Fonts: loaded from the avocloud CDN by each template (cdn.fonts_css, pinned in
-   config/cdn.json), not @imported here, so the version lives in one place. */
-
 /* ==========================================================================
-   avocloud brand v2.9.1 — blueprint / CAD monochrome + coral spark + glass
-   Source of truth: ~/Nextcloud/avocloud/brand/ (tokens/tokens.json).
-   Loads AFTER tailwind + basecoat, so everything here is a deliberate
-   override of those. The v1 remote avocloud.net stylesheet is no longer
-   pulled in by any template — see BRANDING.md §10.
+   Baxi dashboard · avocloud UI theme (BRANDING v4.2, kit avocloud-ui@4.2.1)
+
+   This file is Baxi's own layer ON TOP of the kit. It carries no token of its
+   own: colours, radii, fonts, glass, motion and the control scale all come from
+   avocloud.base.css, which every template loads right after Basecoat
+   (config/cdn.json pins the version, one place). The page opts into the theme
+   with `class="avo-ui"` on <body>; the light theme is `html.avo-light`, set by
+   scripts/theme.js next to `.dark`.
+
+   What the UI theme means here (§9.1): anthracite canvas, surfaces one step
+   LIGHTER than it, lines .08/.16, IBM Plex Mono for everything, Syne only for
+   the wordmark, NO background pattern, 32px controls, 6px controls / 8px boxes.
+
+   Rules this file follows, so the next edit does too:
+   · a hex, a radius or a font written here is a second source of truth — use
+     the `--avo-*` token, or add the token to the kit first (BRANDING §12.4)
+   · never transition a colour property (§6.9): geometry and opacity only
+   · glass on panels, never on rows; corner marks one pair per surface
+   · floating surfaces (dialogs, the save bar, menus) are opaque, not glass
+   · coral is brand, never status; one coral block per view
    ========================================================================== */
 
 :root {
-  --font-family: 'Space Grotesk', system-ui, sans-serif;
-  /* avocloud v2 fonts: Syne brand headings, Space Grotesk body/UI,
-     JetBrains Mono kickers/buttons/chips. Anton (big stat numbers) was
-     dropped 2026-09-16 (BRANDING §4) — the counter role resolves to Syne 700
-     now, so call sites using --avo-font-massive must state font-weight:700
-     explicitly (Anton shipped only one weight; Syne does not). */
-  --avo-font-brand: 'Syne', 'Space Grotesk', sans-serif;
-  --avo-font-display: 'Space Grotesk', system-ui, sans-serif;
-  --avo-font-massive: 'Syne', 'Space Grotesk', sans-serif;
-  --avo-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
-  /* ---- coral ramp (mode-independent) — BRANDING §3.
-     This used to arrive from the v1 remote stylesheet. It is the brand's one
-     spark: a ramp for tints, never a background wash. */
-  --avo-coral-50:  #FFEEEA;
-  --avo-coral-100: #FFD8CF;
-  --avo-coral-200: #FFB6A4;
-  --avo-coral-300: #FF9379;
-  --avo-coral-400: #FF7A5C;
-  --avo-coral-500: #FF6B4A;
-  --avo-coral-600: #ED5333;
-  --avo-coral-700: #C73D20;
-  --avo-coral-800: #9C2E16;
-  --avo-coral-900: #5F1C0D;
+  /* Coral as TEXT. The kit has one coral value in both themes; small coral text
+     on the light canvas is the one place it drops to coral-700 (§3). Pick this
+     for `color:`, `--avo-primary` for fills, borders and marks. */
+  --avo-accent-text: var(--avo-primary);
+  /* Inset of the floating account plate from the viewport edge. */
+  --rail-inset: 12px;
+  /* The kit maps Tailwind's radius scale from sm up; the two steps it leaves out
+     would still resolve to Tailwind's own 24px (`rounded-3xl`). Nothing in this
+     system is larger than 8px (§5). */
+  --radius-xs: var(--avo-radius-mk);
+  --radius-3xl: var(--avo-radius-lg);
+  /* Tailwind's font utilities (`font-sans`, `font-mono`) land on the one UI face. */
+  --font-sans: var(--avo-font-ui);
+  --font-mono: var(--avo-font-ui);
+}
+html.avo-light { --avo-accent-text: var(--avo-primary-text-small); }
 
-  /* one coral, both themes (BRANDING §3) */
-  --color-primary: #FF6B4A;
-  --color-primary-rgb: 255, 107, 74;
-  --avo-coral-rgb: 255, 107, 74;
+/* ── Base ─────────────────────────────────────────────────────── */
 
-  /* icon scale — BRANDING §5 */
-  --avo-icon-sm: 16px;
-  --avo-icon-md: 20px;
-  --avo-icon-lg: 24px;
-
-  /* the loading gesture (bar + spinner, §9) — one hatch, two shapes */
-  --avo-hatch: repeating-linear-gradient(45deg,
-      rgba(var(--avo-coral-rgb), 0.55) 0 1px, transparent 1px 6px);
-  --avo-hatch-period: 8.49px; /* 6px / sin(45°) — one full stripe period */
-  /* Role tokens, same names as brand/tokens/avocloud.css. These do NOT swap
-     per theme — small coral text on a light surface drops to coral-700 by
-     hand (see --color-primary under html:not(.dark)), which is a sizing
-     call, not a theme one. */
-  --avo-primary:       #FF6B4A;
-  --avo-primary-hover: #FF9379;
-  --avo-primary-on:    #000000; /* text ON a solid coral fill — black, not white */
-
-  /* softened corners (BRANDING §5): 6px on controls, 8px on boxes — nothing
-     larger. The pill is retired (§5/§11); a chip/badge/status shape gets 6px,
-     never rounded-full. Circles stay only for avatars, via explicit 50%. */
-  --avo-radius-sharp: 0px;
-  --avo-radius-sm: 6px;  /* buttons, inputs, chips */
-  --avo-radius-md: 8px;  /* cards, panels */
-  --radius: 8px;
-  /* Hard cap on the whole utility scale: nothing may exceed 8px, or it reads
-     as the retired v1 rounded-card look (BRANDING §6). */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 8px;
-  --radius-2xl: 8px;
-  --radius-3xl: 8px;
-  --radius-4xl: 8px;
-
-  /* tailwind font utilities */
-  --font-sans: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-
-  /* ---- semantic (mode-independent) — BRANDING §3 ---- */
-  --avo-success: #46A758;
-  --avo-warning: #E0A33A;
-  --avo-error:   #DC3838;
-  --avo-info:    #3B82C4;
-
-  /* ---- space scale — BRANDING §6. Use the steps; a 13px gap is a mistake. */
-  --avo-space-1: 4px;  --avo-space-2: 8px;  --avo-space-3: 12px; --avo-space-4: 16px;
-  --avo-space-5: 24px; --avo-space-6: 32px; --avo-space-7: 48px; --avo-space-8: 64px;
-
-  /* ---- layout — BRANDING §6 "Spacing & grid" ---- */
-  --avo-maxw:          1180px;
-  --avo-container-pad: clamp(1rem, 4vw, 2.5rem);
-  --avo-section-pad-y: clamp(4rem, 10vw, 8rem);
-  --avo-measure:       60ch;
-
-  /* ---- motion — BRANDING §5b -------------------------------------------
-     Four easing curves and four duration steps, nothing in between. A value
-     that fits none of these usually means the animation is doing something
-     the design language doesn't ask for. Mirrors brand/tokens/avocloud.css —
-     change a number there, change it here. */
-  --avo-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);    /* default, every entrance */
-  --avo-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);   /* reversible, cross-fades */
-  --avo-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);/* pops only */
-
-  --avo-dur-micro: 0.18s;  /* hover, border, colour, focus — must feel instant */
-  --avo-dur-ui:    0.35s;  /* nav state, chips, toggles, small layout shifts */
-  --avo-dur-enter: 0.7s;   /* entrances */
-  --avo-dur-sig:   2.4s;   /* the CAD wordmark reveal, played at 0.6 timeScale */
-
-  /* ---- glass — BRANDING §6b ---------------------------------------------
-     Dark tint, mostly transparent, low blur. The surface should disappear
-     into the canvas and let the blueprint grid behind it do the work; a
-     light tint turns every surface into a grey panel sitting ON the page. */
-  --avo-glass-blur:          7px;
-  --avo-glass-blur-animated: 5px;
-  --avo-glass-tint:          rgba(4, 4, 4, 0.28);
-  --avo-glass-tint-2:        rgba(4, 4, 4, 0.44);
-  --avo-glass-edge:          rgba(255, 255, 255, 0.10);
+body { min-height: 100vh; min-height: 100dvh; } /* the canvas fills the viewport on short pages */
+html, body {
+  overflow-x: clip; /* a wide table or code block never scrolls the page sideways */
 }
 
-/* Dark (default canvas): near-black + hairline borders — basecoat tokens */
-html.dark {
-  --background: #000000;
-  --card: #0A0A0A;
-  --popover: #0A0A0A;
-  --border: rgba(255, 255, 255, 0.10);
-  --input: rgba(255, 255, 255, 0.10);
-  --primary: #FF6B4A;
-  --primary-foreground: #000000; /* black on coral, never white (BRANDING §3) */
-  --ring: #FF6B4A;
-  --avo-text: #FFFFFF;
-  --avo-text-muted: #7E7E7E;
-  --avo-border-strong: rgba(255, 255, 255, 0.18);
-}
+html::-webkit-scrollbar { display: none; }
 
-/* Body/UI face. This used to be a `*, *::before, *::after` universal rule
-   whose only job was out-shouting the v1 remote stylesheet's Quicksand
-   universal rule; that stylesheet is gone, so inheritance from body does it. */
-code, pre, kbd, samp {
-  font-family: var(--avo-font-mono);
-}
+code, pre, kbd, samp { font-family: var(--avo-font-mono); }
 
-/* avocloud v2: Syne 800 for h1/h2 only; h3/h4 stay Space Grotesk 600. */
-h1, h2 {
-  font-family: var(--avo-font-brand);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-h3, h4 {
+/* One face (§4): headlines are Plex Mono 600, tracking -0.01em. Syne belongs to
+   the wordmark and nothing else. */
+h1, h2, h3, h4 {
   font-family: var(--avo-font-display);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-/* Buttons speak mono (BRANDING §8 .avo-btn) */
-.btn:not([data-variant=link]), .avo-btn {
+.text-muted { color: var(--avo-text-muted); }
+
+/* Field label, above the field (§9 Forms): mono, uppercase, muted. Scoped to
+   plain unclassed labels that don't wrap a checkbox/radio directly — those are
+   option rows (`.radio-label`, an inline toggle row). */
+label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="radio"])) {
+  display: block;
   font-family: var(--avo-font-mono);
-  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: var(--avo-ui-label);
+  letter-spacing: 0.12em;
+  color: var(--avo-text-muted);
+  margin-bottom: 0.35rem;
 }
 
-/* Controls take 6px, boxes take 8px (BRANDING §6). Anything already shaped as
-   a pill or circle opts out via rounded-full / an explicit radius of its own. */
-.btn:not([data-variant=link]), .avo-btn,
-.input, .textarea, .select, input[type="text"], input[type="number"],
-input[type="password"], input[type="search"], input[type="url"],
-input[type="email"], textarea, select {
-  border-radius: var(--avo-radius-sm, 6px);
-}
-/* black text on solid coral fills */
-.btn[data-variant=primary] {
-  color: #000000;
-}
+/* ── Buttons ──────────────────────────────────────────────────── *
+   The kit declares the variants, the 28/32/40px scale and the mono face
+   (avocloud.base.css §3). Left here: the hover gesture and Baxi's own padding.
 
-/* ── Button gesture (BRANDING §5b) ─────────────────────────────
-   A line passing over something — the same gesture as the kicker rule, the
-   nav links and the accent-link underline: coral wipes in from the left, and
-   the icon steps forward a couple of pixels.
-
-   No overflow:hidden anywhere here on purpose. The wipe is inset:0 scaled in
-   X, so it can never exceed the button box, and clipping buttons would cut
-   off any menu or tooltip anchored inside one.
-
-   ponytail: the third part of the gesture — the label roll (two stacked
-   copies in a 1em overflow:hidden box) — is not implemented. It needs a
-   second aria-hidden copy of every label, and the labels live at several
-   hundred call sites across dash.html/admin.html. Upgrade path: a JS pass in
-   main.js that wraps each button's text node in the roll box at load, which
-   keeps the markup single-sourced. */
+   The gesture is a line passing over something (§5): a coral wash grows in from
+   the left (`scaleX`, origin left) and the icon steps two pixels forward. It is
+   transform only. No overflow:hidden — it would clip menus anchored inside a
+   button. The label roll is not built: it needs a duplicate aria-hidden label at
+   several hundred call sites; a JS pass could add it without touching markup. */
 .btn:not([data-variant=link]), .avo-btn {
   position: relative;
   isolation: isolate;
@@ -196,255 +91,150 @@ input[type="email"], textarea, select {
   content: '';
   position: absolute;
   inset: 0;
-  /* Negative z-index inside the isolated stacking context: paints over the
-     button's own background, under its label. No wrapper span needed. */
   z-index: -1;
   border-radius: inherit;
-  background: rgba(255, 107, 74, 0.14);
+  background: color-mix(in srgb, var(--avo-primary) 14%, transparent);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--avo-dur-micro) var(--avo-ease-out);
 }
 
-/* The primary button is already coral, so its wipe is the hover shade —
-   a coral wipe over coral would be no gesture at all. */
-.btn[data-variant=primary]::before {
-  background: var(--avo-primary-hover, #FF9379);
+/* The primary button is already coral, so its wash is the hover shade. */
+.btn[data-variant=primary]::before, .btn:not([data-variant])::before {
+  background: var(--avo-primary-hover);
 }
 
-.btn:not([data-variant=link]):hover::before,
-.avo-btn:hover::before {
-  transform: scaleX(1);
-}
+.btn:not([data-variant=link]):hover::before, .avo-btn:hover::before { transform: scaleX(1); }
 
-/* Icon steps forward. Low-alpha wipe on the outline/ghost family rather than
-   a solid coral one: those buttons carry their own label colour at the call
-   site (the red Remove buttons, for one), and a solid coral fill under a red
-   label is unreadable. */
 .btn:not([data-variant=link]) svg, .avo-btn svg {
   transition: transform var(--avo-dur-micro) var(--avo-ease-out);
 }
+.btn:not([data-variant=link]):hover svg, .avo-btn:hover svg { transform: translateX(2px); }
 
-.btn:not([data-variant=link]):hover svg, .avo-btn:hover svg {
-  transform: translateX(2px);
+/* The kit's tick ring inside a button (the save/working state). It is coral, so on
+   a coral button it would vanish: there it is black, like the label (§3). Setting
+   the channel triple re-colours the ring without a second spinner. */
+.avo-spinner.spinner { display: inline-block; }
+.btn[data-variant=primary] .avo-spinner, .btn:not([data-variant]) .avo-spinner { --avo-coral-rgb: 0, 0, 0; }
+
+/* A button label wraps instead of forcing the card wider. */
+.btn[data-variant=link] {
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
 }
 
-/* Light-mode token overrides (secondary theme — dashboard keeps its toggle) */
-html:not(.dark) {
-  --card-bg: #E8ECEF;
-  --border: rgba(0, 0, 0, 0.14);
-  --bg-secondary: #E8ECEF;
-  --background: #E8ECEF;
-  --card: #E8ECEF;
-  --input: rgba(0, 0, 0, 0.14);
-  --primary: #FF6B4A;
-  --primary-foreground: #000000;
-  /* small coral text on a light surface drops to coral-700 (BRANDING §3) */
-  --color-primary: #C73D20;
-  --color-primary-rgb: 199, 61, 32;
-  --avo-text: #0A0A0A;
-  --avo-text-muted: #555555;
-  --avo-border-strong: rgba(0, 0, 0, 0.22);
-  /* Glass on the light band: same idea inverted — a lightening of the light
-     canvas, still mostly transparent so the grid reads through it. */
-  --avo-glass-tint:   rgba(255, 255, 255, 0.55);
-  --avo-glass-tint-2: rgba(255, 255, 255, 0.72);
-  --avo-glass-edge:   rgba(255, 255, 255, 0.85);
+/* Basecoat gives sizes their own padding; the kit owns the HEIGHT (32px, 28px
+   sm, 40px lg), so the padding only has to be horizontal. */
+.btn[data-size=default], .btn:not([data-size]) { padding: 0 0.875rem; gap: 0.5rem; }
+.btn[data-size=default]:has(> svg), .btn:not([data-size]):has(> svg) { padding-inline: 0.75rem; }
+.btn[data-size=sm] { padding: 0 0.75rem; gap: 0.375rem; }
+.btn[data-size=sm]:has(> svg) { padding-inline: 0.625rem; }
+.btn[data-size=lg] { padding: 0 1.25rem; gap: 0.5rem; }
+.btn[data-size=lg]:has(> svg) { padding-inline: 1rem; }
+
+/* A compact select to sit beside size-sm buttons: the same 28px step, not an
+   ad hoc height (§9 "one row, one height"). */
+.select-compact {
+  height: var(--avo-ui-control-h-compact) !important;
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
 }
 
-/* Insights day-selector - hardcode brand coral; --color-primary resolves to white in dark mode */
-html.dark .time-bar button.active,
-html.dark .time-bar button:hover {
-  background: #FF6B4A !important;
-  color: #0B0B0B !important;
-  border-color: #FF6B4A !important;
+/* Coral-tinted link that acts as a button (vote, join the Discord). Pair with
+   .avo-btn at the call site: that supplies radius, mono face and the wash. */
+.cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--avo-ui-control-h);
+  padding: 0 1rem;
+  border: 1px solid color-mix(in srgb, var(--avo-primary) 50%, transparent);
+  background: color-mix(in srgb, var(--avo-primary) 10%, transparent);
+  color: inherit;
+  font-weight: 500;
+  font-size: var(--avo-ui-text);
+  text-decoration: none;
 }
+.cta-link:hover { border-color: var(--avo-primary-hover); }
+/* A static glyph (thumbs-up, users) holds still; only the border reacts. */
+.avo-btn.cta-link:hover svg, .cta-link:hover svg { transform: none; }
 
-body {
-  font-family: var(--font-family);
-  overflow-x: clip; /* prevent horizontal scroll from layout-viewport expansion */
-  /* The canvas moves to <html> so the blueprint grid below can sit at
-     z-index:-1 — above the canvas, below every bit of page content, without
-     needing a z-index on anything else. */
-  background: transparent;
-}
-
-html {
-  background: var(--background, #000000);
-}
-
-/* ── Blueprint background grid (BRANDING §6) ──────────────────
-   A fine 40px line grid plus a sparser 200px crosshair layer, both fixed and
-   drifting at DIFFERENT rates on scroll. They are not meant to line up — two
-   independent scales reading as parallax depth is the point, and syncing them
-   flattens it back into one grid.
-
-   This is also what the glass surfaces (§6b) have to reveal: without it the
-   nav's backdrop-filter has nothing recognisable to soften.
-
-   No mix-blend-mode here, ever. An element carrying one establishes its own
-   backdrop root, and every backdrop-filter in front of it then renders with
-   nothing to sample — silently, with correct-looking computed styles. */
-.avo-grid, .avo-crosshair {
-  position: fixed;
-  left: 0;
-  right: 0;
-  /* Taller than the viewport so the drift never exposes an edge. */
-  top: -20vh;
-  height: 140vh;
-  z-index: -1;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.avo-grid {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 40px 40px;
-  transform: translate3d(0, var(--avo-grid-y, 0px), 0);
-}
-
-/* Crosshairs come from an SVG tile: a short arm pair can't be expressed as a
-   linear-gradient, which fills its whole tile along the other axis. */
-.avo-crosshair {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath d='M100 92v16M92 100h16' stroke='rgba(255,255,255,0.09)' stroke-width='1'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  transform: translate3d(0, var(--avo-crosshair-y, 0px), 0);
-}
-
-html:not(.dark) .avo-grid {
-  background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-}
-
-html:not(.dark) .avo-crosshair {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath d='M100 92v16M92 100h16' stroke='rgba(0,0,0,0.13)' stroke-width='1'/%3E%3C/svg%3E");
-}
-
-html::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Site navigation bar ────────────────────────────────────── */
-
-/* Glass, and the point is restraint (BRANDING §6b): the bar reads as black —
-   the same as the page. You only notice it when the blueprint grid drifts
-   behind it and arrives softened instead of sharp. Nothing opaque underneath,
-   or there is nothing left to show through. */
+/* ── Site bar ─────────────────────────────────────────────────── *
+   The app frame's top edge. Opaque: it stays put while content scrolls under
+   it, and a faint glass tint would let the text through. A hairline, no shadow. */
 .site-nav {
   position: fixed;
-  top: 4px;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1.5rem;
-  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-  backdrop-filter: blur(var(--avo-glass-blur));
-  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-  border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.1));
+  gap: 0.75rem;
+  height: 56px;
+  padding: 0 1.5rem;
+  background: var(--avo-canvas);
+  border-bottom: 1px solid var(--avo-line);
 }
 
-html:not(.dark) .site-nav {
-  border-bottom-color: rgba(0, 0, 0, 0.07);
-}
-
-/* wordmark: Syne 800, tight negative tracking, .NET in coral (BRANDING §2) */
+/* Wordmark: Syne 800, tight tracking, `.NET` in coral (§2). Syne is allowed
+   here and only here — the wordmark role has its own token. */
 .avocloud-logo {
   display: inline-flex;
   align-items: center;
-  /* No gap: AVOCLOUD is one word, and the split into __slot + __rest-wrap is a
-     markup seam, not a space. The clearspace between mark and wordmark lives on
-     __slot instead. */
   gap: 0;
   text-decoration: none;
   color: inherit;
-  font-family: var(--avo-font-brand, 'Syne', sans-serif);
+  font-family: var(--avo-font-wordmark);
   font-weight: 800;
   letter-spacing: -0.02em;
   font-size: 1rem;
   line-height: 1;
 }
 
-/* Mark and wordmark sit side by side, which is the whole lockup (BRANDING §2).
-   This was an inline-grid with the icon and "AVO" both in cell 1/1 — stacked,
-   waiting on a swap animation that no script here ever drove, so the mark just
-   printed on top of the A. */
+/* Mark and wordmark sit side by side: that is the whole lockup. */
 .avocloud-logo__slot {
   display: inline-flex;
   align-items: center;
-  /* Clearspace is one bracket-width; the mark renders ~1.5rem tall and the
-     bracket is a sixth of that. */
-  gap: 0.25rem;
+  gap: 0.25rem; /* clearspace is one bracket-width */
   flex-shrink: 0;
 }
+.avocloud-logo__icon, .avocloud-logo__av { display: flex; align-items: center; }
+.avocloud-logo__icon svg { height: 1.5rem; width: auto; }
+.avocloud-logo__av { font-weight: 800; }
+.avocloud-logo__rest-wrap { display: inline-flex; align-items: center; }
+.avocloud-logo__rest { font-family: var(--avo-font-wordmark); font-weight: 800; letter-spacing: -0.02em; }
+.avocloud-logo__dot { color: var(--avo-primary); }
+.logo-cursor { fill: var(--avo-primary); stroke: none; }
 
-.avocloud-logo__icon,
-.avocloud-logo__av {
-  display: flex;
-  align-items: center;
-}
-
-.avocloud-logo__icon svg {
-  height: 1.5rem;
-  width: auto;
-}
-
-.avocloud-logo__av {
-  font-weight: 800;
-}
-
-.avocloud-logo__rest-wrap {
-  display: inline-flex;
-  align-items: center;
-}
-
-.avocloud-logo__dot {
-  color: var(--color-primary, #FF6B4A);
-}
-
-/* New logo mark: coral terminal cursor */
-.logo-cursor {
-  fill: var(--color-primary, #FF6B4A);
-  stroke: none;
-}
-
-/* ── Theme toggle ─────────────────────────────────────────── */
-
+/* Theme toggle: icon-only control, square at the control height. */
 .theme-toggle {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: var(--avo-ui-control-h);
+  height: var(--avo-ui-control-h);
+  border-radius: var(--avo-radius);
   background: transparent;
-  border: 1px solid rgba(128, 128, 128, 0.3);
+  border: 1px solid var(--avo-line-strong);
+  color: var(--avo-text);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-.theme-toggle:hover {
-  border-color: var(--color-primary, #FF6B4A);
-  background: rgba(255, 107, 74, 0.1);
-}
-
+.theme-toggle:hover { border-color: var(--avo-primary); }
 .theme-toggle svg {
-  width: 16px;
-  height: 16px;
+  width: var(--avo-icon-sm);
+  height: var(--avo-icon-sm);
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: var(--avo-icon-stroke);
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* ── Navigation button group (floating) ──────────────────── */
+/* ── Account plate · floating, bottom-left ────────────────────── */
 
 .local-button-group {
   position: fixed;
@@ -457,21 +247,9 @@ html:not(.dark) .site-nav {
   padding: 0;
   gap: 0;
 }
-
-.local-button-group button[class] {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.local-button-group button[class]:first-child {
-  cursor: default;
-  pointer-events: none;
-}
-
-.local-button-group hr {
-  margin: 0;
-}
+.local-button-group button[class] { background: transparent; border: none; box-shadow: none; }
+.local-button-group button[class]:first-child { cursor: default; pointer-events: none; }
+.local-button-group hr { margin: 0; }
 
 .local-button-group .user-label {
   display: flex;
@@ -479,406 +257,272 @@ html:not(.dark) .site-nav {
   align-items: flex-start;
   gap: 0.05rem;
 }
-
 .local-button-group .user-label__welcome {
-  font-family: 'Syne', sans-serif;
-  font-weight: 600;
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
+  font-family: var(--avo-font-mono);
+  font-weight: 500;
+  font-size: var(--avo-text-serial);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.45;
+  color: var(--avo-text-muted);
   line-height: 1;
 }
+.local-button-group .user-label__name { font-weight: 600; line-height: 1.2; }
 
-.local-button-group .user-label__name {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  line-height: 1.2;
+/* basecoat 1.0.2 styles a span inside .button-group as an input-group addon;
+   the section label in insights.html is plain text. */
+.local-button-group > span {
+  display: block;
+  gap: normal;
+  border-width: 0;
+  background-color: transparent;
+  box-shadow: none;
+  line-height: 1.5;
 }
 
-/* ── Section label ────────────────────────────────────────── */
-
-/* mono kicker (avocloud v2 signature eyebrow): "// LABEL ————" */
+/* ── Kicker · `// LABEL ———` ──────────────────────────────────── *
+   Coral `//`, a hairline rule trailing right that draws itself in from the left
+   (§5). The section router toggles display, which restarts the animation, so
+   the rule redraws each time a section opens. */
 .section-label {
   font-family: var(--avo-font-mono);
-  font-size: 0.72rem;
+  font-size: var(--avo-text-kicker);
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--avo-text-muted, #7E7E7E);
+  color: var(--avo-text-muted);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 0.6em;
 }
-
-.section-label::before {
-  content: '//';
-  color: var(--color-primary, #FF6B4A);
-  flex-shrink: 0;
-}
-
-/* Trailing hairline rule off to the right (BRANDING §6) — it draws itself in
-   from the left rather than simply being there. The section router toggles
-   display on .dash-section, and a display change restarts CSS animations, so
-   the rule redraws every time its section is opened. */
+.section-label::before { content: '//'; color: var(--avo-primary); flex-shrink: 0; }
 .section-label::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border, rgba(128, 128, 128, 0.2));
+  background: var(--avo-line);
   min-width: 2rem;
   transform-origin: left;
-  animation: avo-draw var(--avo-dur-enter) var(--avo-ease-out) both;
+  animation: avo-draw var(--avo-dur-ui) var(--avo-ease-out) both;
 }
-
 @keyframes avo-draw {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
 }
 
-/* ── Lucide SVG icons ─────────────────────────────────────── */
+.dash-category-header {
+  font-family: var(--avo-font-mono);
+  font-size: var(--avo-text-kicker);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--avo-text-muted);
+  padding: 2rem 0 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  border-top: 1px solid var(--avo-line);
+  margin-top: 0.5rem;
+}
+.dash-category-header::before { content: '//'; color: var(--avo-primary); flex-shrink: 0; }
+.dash-category-header::after { content: ''; flex: 1; height: 1px; background: var(--avo-line); min-width: 2rem; }
+.dash-category-header:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+/* ── Icons · Lucide, stroke 1.5, pinned (§5) ──────────────────── */
 
 .lucide {
   width: 1.2em;
   height: 1.2em;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: var(--avo-icon-stroke);
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
   flex-shrink: 0;
   vertical-align: middle;
 }
+.lucide * { vector-effect: non-scaling-stroke; }
 
-/* ── Loading gesture (BRANDING §9) ───────────────────────────
-   One loader, two shapes: coral marks at a constant period, marching.
-   Straight, it's the 45° hatch sliding sideways as a bar. Bent, it's an even
-   tick ring rotating as a spinner. Ported from tokens/avocloud.css. */
-.avo-loader {
-  height: 6px;
-  width: 100%;
-  background: var(--avo-hatch);
-  background-size: var(--avo-hatch-period) var(--avo-hatch-period);
-  animation: avo-march 0.6s linear infinite;
-}
-@keyframes avo-march { to { background-position: var(--avo-hatch-period) 0; } }
-.avo-loader.inline { width: 52px; display: inline-block; vertical-align: middle; }
-
-.avo-spinner {
-  --avo-spinner-ticks: 12;
-  --avo-spinner-ring: 3px;
-  width: var(--avo-icon-md);
-  height: var(--avo-icon-md);
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: repeating-conic-gradient(
-      rgba(var(--avo-coral-rgb), 0.95) 0 calc(360deg / var(--avo-spinner-ticks) / 2),
-      transparent 0 calc(360deg / var(--avo-spinner-ticks)));
-  -webkit-mask: radial-gradient(circle closest-side,
-      transparent calc(100% - var(--avo-spinner-ring)),
-      #000 calc(100% - var(--avo-spinner-ring) + 0.5px));
-          mask: radial-gradient(circle closest-side,
-      transparent calc(100% - var(--avo-spinner-ring)),
-      #000 calc(100% - var(--avo-spinner-ring) + 0.5px));
-  animation: avo-spin 1.2s linear infinite;
-}
-@keyframes avo-spin { to { transform: rotate(360deg); } }
-.avo-spinner.sm { width: var(--avo-icon-sm); height: var(--avo-icon-sm); }
-.avo-spinner.lg { width: 28px; height: 28px; --avo-spinner-ring: 3.5px; }
-
-@media (prefers-reduced-motion: reduce) {
-  .avo-loader, .avo-spinner { animation: none; }
-}
-
-/* ── Card variants ────────────────────────────────────────── */
-
-/* v2 card language: no shadow-lift hovers. Hairline brightens +
-   coral corner crosshair marks fade in (CAD registration marks). */
-.card, .stat-tile {
-  position: relative;
-  border-radius: var(--avo-radius-md, 8px);
-}
-
-/* Content surfaces are glass (BRANDING §5b) — the canvas/grid behind them is
-   what makes them read as glass rather than a plain dark panel. */
-.card {
-  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-  backdrop-filter: blur(var(--avo-glass-blur));
-  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-}
-
-.card::before, .card::after,
-.stat-tile::before, .stat-tile::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity var(--avo-dur-ui) var(--avo-ease-out);
-  pointer-events: none;
-  background-repeat: no-repeat;
-}
-
-/* Both corner crosshair marks (top-left + bottom-right) in a single layer, so
-   ::after stays free for the scan grid. Drawn as SVG rather than 1px bars so
-   the elbow curves with the card: inset 5px inside an 8px card radius gives a
-   concentric 3px inner radius. Coral is hardcoded because it cannot be read
-   from a custom property inside url() — and the brand runs one coral value on
-   both themes anyway (BRANDING §3). */
-.card::before, .stat-tile::before {
-  z-index: 2;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M.5 11V3.5A3 3 0 0 1 3.5.5H11' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M11.5 1v7.5a3 3 0 0 1-3 3H1' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E");
-  background-size: 12px 12px;
-  background-position: 5px 5px, right 5px bottom 5px;
-}
-
-/* Faint blueprint scan grid, same idea as the corner marks but subtler.
-   border-radius: inherit keeps it inside the card's rounded corners. */
-.card::after, .stat-tile::after {
-  z-index: 0;
-  border-radius: inherit;
-  background-image:
-    linear-gradient(to right, currentColor 1px, transparent 1px),
-    linear-gradient(to bottom, currentColor 1px, transparent 1px);
-  background-size: 22px 22px;
-  background-repeat: repeat;
-}
-
-.card:hover::before, .card:focus-within::before,
-.stat-tile:hover::before {
-  opacity: 1;
-}
-
-.card:hover::after, .card:focus-within::after,
-.stat-tile:hover::after {
-  opacity: 0.05;
-}
-
-/* Not every card is a target. The marks and the scan grid say "this is the
-   thing you are pointing at", which only means something on a card you can act
-   on as a whole — a tile, a link, a summary you click through.
-
-   Two kinds opt out, both via :has() so no call site has to remember:
-
-   1. A card holding other cards is a container. Hovering it would strike the
-      marks on the whole frame while the tile under the cursor does the same,
-      and the page reads as if two things were selected at once.
-
-   2. A card holding form controls is a work surface, not a target. On a
-      settings panel a thousand pixels tall the 22px grid becomes a wall of
-      lines that moves every time the pointer crosses the card, and the corner
-      marks land so far apart they no longer register as a pair.
-
-   Every card inside a .dash-section is a panel of that second kind, including
-   the read-only ones (Bot Permissions, Review Queue) that :has() cannot catch
-   because they hold no controls. .stat-tile, not a .card, keeps its marks.
-   .hub-tile lost its own marks entirely (BRANDING §9 "one pair per surface,
-   not per row") — the Home hub grid (.hub-grid) carries one static pair for
-   the whole tile group instead; see the Home hub section below. */
-.card:has(.card, .stat-tile):hover::before,
-.card:has(.card, .stat-tile):hover::after,
-.card:has(.card, .stat-tile):focus-within::before,
-.card:has(.card, .stat-tile):focus-within::after,
-.card:has(input, select, textarea):hover::before,
-.card:has(input, select, textarea):hover::after,
-.card:has(input, select, textarea):focus-within::before,
-.card:has(input, select, textarea):focus-within::after,
-.dash-section .card:hover::before,
-.dash-section .card:hover::after,
-.dash-section .card:focus-within::before,
-.dash-section .card:focus-within::after {
-  opacity: 0;
-}
-
-.card-hover:hover {
-  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
-}
-
-/* Same reasoning for the hairline: containers and work surfaces stay put. */
-.card-hover:has(.card, .hub-tile, .stat-tile):hover,
-.card-hover:has(input, select, textarea):hover {
-  border-color: var(--border, rgba(128, 128, 128, 0.18));
-}
-
-.card-featured {
-  border-top: 2px solid var(--color-primary, #FF6B4A);
-  background: linear-gradient(135deg, rgba(255, 107, 74, 0.07) 0%, transparent 60%);
-}
-
-/* ── Typography helpers ───────────────────────────────────── */
-
-.text-muted {
-  color: var(--avo-text-muted, #7E7E7E);
-}
-
-/* Field label, above the field (BRANDING §9 Forms): mono, uppercase, muted.
-   Scoped to plain unclassed labels that don't wrap a checkbox/radio directly
-   — those are option rows (`.radio-label`, an inline toggle row), not field
-   labels, and keep their own body-text treatment. */
-label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="radio"])) {
-  display: block;
-  font-family: var(--avo-font-mono);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  color: var(--avo-text-muted, #7E7E7E);
-  margin-bottom: 0.35rem;
-}
-
-/* A link that dims on hover is off-system — a line should be struck
-   (BRANDING §5b). The underline grows from the left, same gesture as the
-   kicker rule and the button wipe. */
-.accent-link {
-  position: relative;
-  color: var(--color-primary, #FF6B4A);
-  text-decoration: none;
-}
-
-.accent-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -3px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--avo-dur-micro) var(--avo-ease-out);
-}
-
-.accent-link:hover::after {
-  transform: scaleX(1);
-}
-
-/* Card headings pair an icon with their label, so they shrink-wrap and centre
-   the two. Scoped, not global: as a bare `h2` rule this shrank every heading in
-   the app to its text width, which quietly breaks anything relying on a
-   full-width block heading (centred text, a bottom rule, a flex header). */
-.card header h2,
-.card > h2,
-.popup-inner h2 {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* ── Hero (full-screen, for standalone pages) ─────────────── */
-
-.hero {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding-top: 80px;
-}
-
-.hero-content {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeInUp var(--avo-dur-enter) var(--avo-ease-out) forwards;
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Page header (compact, for dashboard pages) ───────────── */
-
-.page-header {
-  padding-top: 6rem;
-  padding-bottom: 2rem;
-}
-
-/* ── Dashboard sticky section nav ────────────────────────── */
-
-.dash-nav {
-  position: sticky;
-  top: 56px;           /* just below the site-nav */
-  z-index: 500;
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 0;
-  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-  backdrop-filter: blur(var(--avo-glass-blur));
-  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
-  border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-  /* bleed to container edges */
-  margin-left: -1rem;
-  margin-right: -1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  margin-bottom: 2.5rem;
-  scrollbar-width: none;
-}
-
-.dash-nav::-webkit-scrollbar { display: none; }
-
-.dash-nav-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.65rem 0.9rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--avo-text-muted, #7E7E7E);
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-}
-
-.dash-nav-item svg {
-  width: 13px;
-  height: 13px;
-  stroke: currentColor;
-  stroke-width: 2;
-  fill: none;
+/* Every inline Lucide glyph in the templates and the runtime-built markup draws
+   its stroke as a presentation attribute (`stroke-width="2"`), which any CSS
+   declaration beats. One rule instead of three hundred edits: stroke 1.5, pinned
+   to device pixels so a 16px and a 24px icon draw the same line (§5). Only
+   outline icons (`stroke="currentColor"`) are touched; filled shapes keep theirs. */
+.avo-ui svg[stroke="currentColor"] {
+  stroke-width: var(--avo-icon-stroke);
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.avo-ui svg[stroke="currentColor"] * { vector-effect: non-scaling-stroke; }
+
+/* ── Cards, tiles · glass panels with one pair of corner marks ── *
+   The kit themes Basecoat's `.card` (glass, 8px, hairline). What is added is the
+   corner marks (§5): two coral arcs, top-left and bottom-right, inset 4px, a 4px
+   radius that traces the corner. Visible at REST (opacity .32, scale .55) and
+   full on hover and :focus-within, so a keyboard user sees what a pointer user
+   does. Drawn with the same recipe as the kit's `.avo-mk`.
+
+   One pair per surface. A card that holds other cards or tiles is a container,
+   not a target, so it carries none; the tiles inside carry theirs. The old scan
+   grid and the hover-only marks are gone (BRANDING §11 "Retired"). */
+.card, .stat-tile, .vote-banner, .stat-card, .chart-card, .mc-link-card, .chat-log { position: relative; border-radius: var(--avo-radius-lg); }
+
+.card::before, .card::after,
+.stat-tile::before, .stat-tile::after,
+.vote-banner::before, .vote-banner::after,
+.stat-card::before, .stat-card::after,
+.chart-card::before, .chart-card::after,
+.mc-link-card::before, .mc-link-card::after,
+.chat-log::before, .chat-log::after,
+.hub-grid::before, .hub-grid::after {
+  content: '';
+  position: absolute;
+  width: var(--avo-mk-size);
+  height: var(--avo-mk-size);
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--avo-mk-rest-opacity);
+  transform: scale(var(--avo-mk-rest-scale));
+  transition: opacity var(--avo-dur-micro) var(--avo-ease-out),
+              transform var(--avo-dur-ui) var(--avo-ease-spring);
+}
+.card::before, .stat-tile::before, .vote-banner::before, .stat-card::before, .chart-card::before, .mc-link-card::before, .chat-log::before, .hub-grid::before {
+  top: var(--avo-mk-inset);
+  left: var(--avo-mk-inset);
+  border-top: 1px solid var(--avo-primary);
+  border-left: 1px solid var(--avo-primary);
+  border-top-left-radius: var(--avo-radius-mk);
+  transform-origin: top left;
+}
+.card::after, .stat-tile::after, .vote-banner::after, .stat-card::after, .chart-card::after, .mc-link-card::after, .chat-log::after, .hub-grid::after {
+  bottom: var(--avo-mk-inset);
+  right: var(--avo-mk-inset);
+  border-bottom: 1px solid var(--avo-primary);
+  border-right: 1px solid var(--avo-primary);
+  border-bottom-right-radius: var(--avo-radius-mk);
+  transform-origin: bottom right;
+}
+.card:hover::before, .card:hover::after, .card:focus-within::before, .card:focus-within::after,
+.stat-tile:hover::before, .stat-tile:hover::after,
+.vote-banner:hover::before, .vote-banner:hover::after,
+.stat-card:hover::before, .stat-card:hover::after,
+.chart-card:hover::before, .chart-card:hover::after,
+.mc-link-card:hover::before, .mc-link-card:hover::after,
+.chat-log:hover::before, .chat-log:hover::after { opacity: 1; transform: scale(1); }
+/* The hub grid is not a single hover target; its pair stays at rest. */
+.hub-grid::before, .hub-grid::after { opacity: 1; transform: none; inset: auto; }
+.hub-grid::before { inset: 0 auto auto 0; }
+.hub-grid::after  { inset: auto 0 0 auto; }
+
+.card:has(.card, .stat-tile)::before, .card:has(.card, .stat-tile)::after { display: none; }
+
+.card {
+  font-size: inherit;
+  line-height: inherit;
+  overflow: visible;
+}
+.card > header {
+  gap: calc(var(--spacing) * 1.5);
+  grid-template-rows: auto auto;
+  border-radius: 0;
+}
+.card > header p {
+  font-size: var(--text-sm);
+  line-height: var(--tw-leading, var(--text-sm--line-height));
+  color: var(--avo-text-muted);
+}
+.card > header h2 { line-height: 1; }
+
+/* Card headings pair an icon with their label (§5: the one place an icon takes
+   the accent). Scoped, not global: as a bare `h2` rule it shrank every heading
+   in the app to its text width. */
+.card header h2, .card > h2, .popup-inner h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card header h2 svg { color: var(--avo-primary); }
+
+/* Error state: the semantic strip on the leading edge, over the glass edge. */
+.card.is-error { box-shadow: inset 2px 0 0 var(--avo-error), inset 0 1px 0 var(--avo-glass-edge); }
+
+.btn-text { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+.page-header { padding-top: 6rem; padding-bottom: 2rem; }
+
+/* ── Vote banner ──────────────────────────────────────────────── */
+
+.vote-banner {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background-image: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
+  backdrop-filter: blur(var(--avo-glass-blur));
+  border: 1px solid var(--avo-line);
+  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+}
+.vote-banner__row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between; }
+.vote-banner__copy { display: flex; align-items: center; gap: 0.85rem; flex: 1 1 320px; min-width: 0; }
+.vote-banner__icon {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
+  color: var(--avo-accent-text);
+}
+.vote-banner__title { font-weight: 600; line-height: 1.3; margin-bottom: 0.15rem; }
+.vote-banner__text { font-size: var(--avo-ui-label); color: var(--avo-text-muted); line-height: 1.5; }
+.vote-banner__actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; flex: 0 1 auto; min-width: 0; }
+@media (max-width: 639px) {
+  .vote-banner__actions, .vote-banner__row > .cta-link { width: 100%; }
+  .vote-banner__actions > * { flex: 1 1 auto; justify-content: center; }
 }
 
-.dash-nav-item:hover { color: var(--color-primary, #FF6B4A); }
-
-.dash-nav-item.active {
-  color: var(--color-primary, #FF6B4A);
-  border-bottom-color: var(--color-primary, #FF6B4A);
+/* ── Numbered markers · steps and log entries ─────────────────── *
+   A hairline box with the number in coral, not a filled circle: a coral block
+   is one per view (§3), and white on coral is never correct. */
+.step-num, .log-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
+  color: var(--avo-accent-text);
+  font-family: var(--avo-font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.step-num { min-width: 22px; height: 22px; font-size: 0.75rem; }
+.log-index {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 0.35rem;
+  font-size: var(--avo-ui-label);
+  background: var(--avo-surface-raised);
 }
 
-/* offset anchor scroll targets so they don't hide under the sticky nav */
-.dash-section {
-  scroll-margin-top: 5.5rem;
-}
+/* ── Section router · only the active section shows ───────────── */
 
-/* ── Section router: only the active section is shown ───────── */
-.dash-section { display: none; }
-.dash-section.is-active { display: block; animation: dashFadeIn var(--avo-dur-ui) var(--avo-ease-out); }
+.dash-section { display: none; scroll-margin-top: 5.5rem; }
+/* No entrance animation on data (§9 motion budget): a section appears at once. */
+.dash-section.is-active { display: block; }
 
-@keyframes dashFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* dash.html: the rail is replaced by the Home hub. The ~28 destinations are one
+   click away as tiles there, so a second, denser copy in a rail is redundant.
+   The element stays (the section router reads its items). */
+.dash-nav, .dash-nav-toggle { display: none !important; }
 
-/* ── Home hub: system tiles grouped by category ─────────────── */
-/* The grid, not the tiles, carries the corner marks (BRANDING §9 "one pair
-   per surface, not per row") — a static pair, since the grid itself isn't a
-   single hover target the way a .card is. */
+/* ── Home hub · system tiles by category ──────────────────────── */
+
 .hub-grid {
   position: relative;
   display: grid;
@@ -888,45 +532,26 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   padding: 10px;
 }
 
-.hub-grid::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background-repeat: no-repeat;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M.5 11V3.5A3 3 0 0 1 3.5.5H11' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M11.5 1v7.5a3 3 0 0 1-3 3H1' fill='none' stroke='%23FF6B4A'/%3E%3C/svg%3E");
-  background-size: 12px 12px;
-  background-position: 0 0, right 0 bottom 0;
-}
-
 .hub-tile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.7rem;
   width: 100%;
   min-height: 3.9rem;
   text-align: left;
-  /* Extra room on the right for the corner status lamp, which is positioned
-     rather than laid out — without it a two-line label runs under the dot. */
+  /* room on the right for the status marker, which is positioned, not laid out */
   padding: 0.7rem 1.4rem 0.7rem 0.8rem;
-  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  border-radius: var(--avo-radius-md, 8px);
-  background: var(--card, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--avo-line);
+  border-radius: var(--avo-radius-lg);
+  background: var(--avo-surface);
   color: inherit;
   cursor: pointer;
 }
+.hub-tile:hover { border-color: var(--avo-line-strong); background: var(--avo-surface-raised); }
 
-.hub-tile:hover {
-  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
-}
-
-/* Hairline plate, not a coral wash. Twenty-five tiles each carrying a filled
-   coral square turned the hub into a field of identical orange chips with the
-   labels as an afterthought; empty plates let the icons read as drawings and
-   give the accent somewhere to go on hover. */
+/* Hairline plate, not a coral wash: twenty-five filled coral squares turned the
+   hub into a field of orange chips. */
 .hub-tile-icon {
   flex-shrink: 0;
   display: inline-flex;
@@ -934,41 +559,28 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  border-radius: var(--avo-radius-sm, 6px);
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
   background: transparent;
-  color: var(--color-primary, #FF6B4A);
+  color: var(--avo-accent-text);
 }
-
-.hub-tile:hover .hub-tile-icon {
-  background: rgba(255, 107, 74, 0.14);
-  border-color: rgba(255, 107, 74, 0.45);
-}
-
+.hub-tile:hover .hub-tile-icon { border-color: var(--avo-primary); }
 .hub-tile-icon svg {
-  width: 16px;
-  height: 16px;
+  width: var(--avo-icon-sm);
+  height: var(--avo-icon-sm);
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: var(--avo-icon-stroke);
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.hub-tile-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
-}
+.hub-tile-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1; }
 
-/* Wraps to two lines instead of truncating. "Sticky Messa…", "YouTube Vide…"
-   and "Classifier Trai…" were unreadable at this column width, and a hub whose
-   entries cannot be told apart is not a hub. */
+/* Wraps to two lines instead of truncating: "Sticky Messa…" was unreadable. */
 .hub-tile-label {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--avo-ui-text);
   line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -978,10 +590,12 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   overflow-wrap: anywhere;
 }
 
-/* Status is a lamp in the corner, not a line of type. Spelled out under every
-   label it read as a column of "ON" repeated twenty times — the exception is
-   what carries information here, so only the exception gets contrast. The word
-   itself stays in the accessibility tree via .sr-only. */
+/* Status is a small lamp in the corner, not a line of type: spelled out under
+   every label it read as a column of "ON". Only the exception gets contrast, so a
+   system that is on shows a success dot and one that is off a dull one. The word
+   itself stays in the accessibility tree via .sr-only, so colour is never the only
+   signal. (§9 prefers a strip for status; the lamp is kept by decision, the
+   strip made twenty tiles look like a row of green bars.) */
 .hub-tile-status {
   position: absolute;
   top: 0.6rem;
@@ -990,36 +604,19 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   align-items: center;
   pointer-events: none;
 }
-
 .hub-status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: rgba(128, 128, 128, 0.35);
+  background: var(--avo-line-strong);
 }
+.hub-tile-status.is-on .hub-status-dot { background: var(--avo-success); }
 
-.hub-tile-status.is-on .hub-status-dot {
-  background: #46A758;
-}
-
-/* A disabled system should be legible as disabled without reading anything —
-   the whole tile steps back rather than announcing itself in small type. */
-.hub-tile.is-off .hub-tile-icon {
-  opacity: 0.4;
-}
-
-/* The label only steps back far enough to read as secondary — push it further
-   and a server that has most systems off looks like a broken page rather than
-   a configured one. */
-.hub-tile.is-off .hub-tile-label {
-  opacity: 0.6;
-}
-
-.hub-tile.is-off:hover .hub-tile-icon,
-.hub-tile.is-off:hover .hub-tile-label {
-  opacity: 1;
-}
+/* A disabled system reads as disabled without any text: the tile steps back. */
+.hub-tile.is-off .hub-tile-icon { opacity: 0.4; }
+.hub-tile.is-off .hub-tile-label { opacity: 0.6; }
+.hub-tile.is-off:hover .hub-tile-icon, .hub-tile.is-off:hover .hub-tile-label { opacity: 1; }
 
 .hub-tile-arrow {
   flex-shrink: 0;
@@ -1027,38 +624,50 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   transform: translateX(-3px);
   transition: opacity var(--avo-dur-micro) var(--avo-ease-out), transform var(--avo-dur-micro) var(--avo-ease-out);
 }
-
-.hub-tile:hover .hub-tile-arrow,
-.hub-tile:focus-visible .hub-tile-arrow {
-  opacity: 0.75;
-  transform: translateX(0);
-}
-
+.hub-tile:hover .hub-tile-arrow, .hub-tile:focus-visible .hub-tile-arrow { opacity: 0.75; transform: translateX(0); }
 .hub-tile-arrow svg {
-  width: 15px;
-  height: 15px;
+  width: var(--avo-icon-sm);
+  height: var(--avo-icon-sm);
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: var(--avo-icon-stroke);
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* ── Home stat tiles (big-number metrics) ───────────────────── */
+/* Review-queue count on a sidebar entry and its Home tile. Red because it is a
+   to-do, and a filled count is the one filled-error case §9 allows. */
+.queue-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: var(--avo-radius);
+  font-family: var(--avo-font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background-color: var(--avo-error);
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+.hub-tile.has-queue { border-color: var(--avo-error); }
+
+/* ── Stat tiles · big-number metrics ──────────────────────────── */
 
 .stat-tile {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  background: var(--card, rgba(255, 255, 255, 0.02));
+  padding: var(--avo-ui-pad-plate);
+  border: 1px solid var(--avo-line);
+  background: var(--avo-surface);
 }
-
-.stat-tile:hover {
-  border-color: var(--avo-border-strong, rgba(128, 128, 128, 0.35));
-}
+.stat-tile:hover { border-color: var(--avo-line-strong); }
 
 .stat-tile-icon {
   display: inline-flex;
@@ -1066,45 +675,43 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   justify-content: center;
   width: 1.9rem;
   height: 1.9rem;
-  background: rgba(255, 107, 74, 0.1);
-  color: var(--color-primary, #FF6B4A);
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
+  color: var(--avo-accent-text);
   margin-bottom: 0.35rem;
 }
-
 .stat-tile-icon svg {
-  width: 16px;
-  height: 16px;
+  width: var(--avo-icon-sm);
+  height: var(--avo-icon-sm);
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: var(--avo-icon-stroke);
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* big stat counters: Syne 700 (BRANDING §4 — Anton dropped 2026-09-16, the
-   counter role now resolves to the brand face, stated explicitly since Syne
-   ships multiple weights). Tabular/mono so digits don't reflow as they tick. */
+/* Counters: one face in the UI theme (`--avo-font-massive` resolves to Plex),
+   600, tabular so digits don't reflow as they tick (§4). */
 .stat-tile-value {
-  font-family: var(--avo-font-massive, 'Syne', sans-serif);
-  font-weight: 700;
+  font-family: var(--avo-font-massive);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-size: clamp(1.35rem, 3vw, 1.75rem);
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
+}
+.stat-tile-label { font-weight: 600; font-size: var(--avo-ui-text); }
+.stat-tile-sub { font-size: var(--avo-ui-label); color: var(--avo-text-muted); line-height: 1.35; }
+
+.stat-label {
+  font-family: var(--avo-font-mono);
+  font-size: var(--avo-text-kicker);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--avo-text-muted);
 }
 
-.stat-tile-label {
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.stat-tile-sub {
-  font-size: 0.75rem;
-  color: var(--avo-text-muted, #7E7E7E);
-  line-height: 1.35;
-}
-
-/* ── Guild picker (replaces login dropdown) ─────────────────── */
+/* ── Guild picker ─────────────────────────────────────────────── */
 
 .guild-grid {
   display: grid;
@@ -1115,178 +722,89 @@ label:not([class]):not(:has(> input[type="checkbox"])):not(:has(> input[type="ra
   padding-right: 4px;
   scrollbar-width: thin;
 }
-
-/* The grid scrolls at 440px. Fading the bottom edge is what says so — a hard
-   cut through a tile row reads as a layout bug, not as "there is more below".
-   The mask is dropped once the list is scrolled to the end (.is-end, set by
-   dash_home) so the last row isn't permanently dimmed. */
+/* The grid scrolls at 440px; fading the bottom edge is what says so. The mask is
+   dropped once scrolled to the end (.is-end, set by dash_home). */
 .guild-grid:not(.is-end) {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
 }
-
-.guild-tile {
-  text-decoration: none;
-}
-
-/* Guild tiles keep the filled plate: an initial floating in an empty hairline
-   box has nothing to sit on, and here the plate stands in for a server icon
-   rather than framing a drawn one. */
+.guild-tile { text-decoration: none; }
+/* The initial stands in for a server icon, so the plate stays filled. */
 .guild-tile-letter {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
+  font-family: var(--avo-font-mono);
+  font-weight: 600;
   font-size: 1rem;
   line-height: 1;
   text-transform: uppercase;
   overflow: hidden;
-  background: rgba(255, 107, 74, 0.12);
+  background: var(--avo-surface-high);
   border-color: transparent;
 }
+.guild-tile:hover .guild-tile-letter { border-color: transparent; }
+.guild-tile .hub-tile-label { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.guild-tile-letter img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
 
-.guild-tile:hover .guild-tile-letter {
-  border-color: transparent;
-}
-
-/* One-line server names — a guild list is scanned, not read, and the tiles
-   are wider here than in the system hub. */
-.guild-tile .hub-tile-label {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.guild-tile-letter img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-  display: block;
-}
-
-/* ── Scroll indicator ─────────────────────────────────────── */
-
-.scroll-indicator {
-  margin-top: 2rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.5;
-  transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
-  animation: bounce 2s infinite;
-}
-
-.scroll-indicator:hover {
-  opacity: 1;
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40%  { transform: translateY(-10px); }
-  60%  { transform: translateY(-5px); }
-}
-
-/* ── Feature adoption badge ───────────────────────────────── */
-
+/* ── Chips, badges, inline highlights ─────────────────────────── *
+   A chip is a label, not a surface (§5): flat, 6px, a 1px border, literal coral
+   brackets. Never glass. Coral is never status, so a count or an adoption
+   figure is neutral. */
 .adoption-badge {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  font-family: var(--avo-font-mono);
   font-size: 0.7rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: var(--avo-radius-sm, 6px);
-  background-color: rgba(255, 107, 74, 0.15);
-  color: rgb(255, 147, 121);
-  border: 1px solid rgba(255, 107, 74, 0.25);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: var(--avo-radius);
+  background: transparent;
+  color: var(--avo-text-muted);
+  border: 1px solid var(--avo-line-strong);
   white-space: nowrap;
   pointer-events: none;
 }
 
-html:not(.dark) .adoption-badge {
-  background-color: rgba(255, 107, 74, 0.1);
-  color: rgb(199, 61, 32);
-  border-color: rgba(255, 107, 74, 0.2);
+.highlight-yellow {
+  background-color: color-mix(in srgb, var(--avo-primary) 12%, transparent);
+  border-radius: var(--avo-radius);
+  padding: 2px 8px;
+  color: var(--avo-accent-text);
 }
+.highlight-yellow:hover { background-color: color-mix(in srgb, var(--avo-primary) 22%, transparent); }
 
-/* ── Add-area: dashed border with wider dash gaps (dashboard + admin) ─────── */
+.tag-input-container { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.375rem; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--avo-font-mono);
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
+  padding: 2px 8px;
+  font-size: 0.78rem;
+}
+.tag::before { content: "["; color: var(--avo-primary); opacity: 0.7; margin-right: 0.15em; }
+.tag::after  { content: "]"; color: var(--avo-primary); opacity: 0.7; margin-left: 0.15em; }
+.remove-tag { cursor: pointer; color: var(--avo-text-muted); margin-left: 2px; }
+.remove-tag:hover { color: var(--avo-accent-text); }
+
+/* 1.0.2 made .badge a component of its own (fixed 20px, clipped); the admin
+   panel defines its own badge look, so give it its natural height back. */
+.badge { height: auto; line-height: calc(1 / 0.75); }
+
+/* ── Add-area · dashed, wide gaps ─────────────────────────────── */
 
 .add-area {
   padding: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='0' ry='0' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/Svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' ry='8' fill='none' stroke='rgba(128%2C128%2C128%2C0.35)' stroke-width='1.5' stroke-dasharray='6%2C12' stroke-linecap='round'/%3E%3C/svg%3E");
 }
-
 .add-area.mt-4 { margin-top: 1rem; }
 .add-area.mt-3 { margin-top: 0.75rem; }
 
-/* ── Review-queue count badge ─────────────────────────────── */
-/* Sits on the sidebar entry and the Home tile so a waiting queue is
-   visible without opening the section. Red, because it is a to-do. */
-
-.queue-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  margin-left: 0.4rem;
-  padding: 0 0.35rem;
-  border-radius: var(--avo-radius-sm, 6px);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  background-color: #DC3838;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.dash-nav-item.has-queue,
-.dash-nav-item.has-queue:hover { color: #DC3838; }
-
-.hub-tile.has-queue { border-color: rgba(220, 56, 56, 0.45); }
-
-/* ── Highlight badges ─────────────────────────────────────── */
-
-/* No lift on hover — the badge deepens in place. A translate here would be the
-   one v1 gesture left on the page (see the card block above: "no shadow-lift
-   hovers"), and it drags the surrounding text line with it. */
-.highlight-purple {
-  background-color: rgba(255, 107, 74, 0.2);
-  padding: 2px 8px;
-  color: rgb(255, 147, 121);
-}
-
-.highlight-purple:hover {
-  background-color: rgba(255, 107, 74, 0.4);
-  cursor: pointer;
-}
-
-.highlight-purple:active {
-  background-color: rgba(255, 107, 74, 0.6);
-}
-
-.highlight-yellow {
-  background-color: rgba(255, 107, 74, 0.2);
-  padding: 2px 8px;
-  color: rgb(255, 147, 121);
-}
-
-.highlight-yellow:hover {
-  background-color: rgba(255, 107, 74, 0.4);
-}
-
-html:not(.dark) .highlight-yellow {
-  color: rgb(199, 61, 32);
-  background-color: rgba(255, 107, 74, 0.15);
-}
-
-html:not(.dark) .highlight-purple {
-  color: rgb(199, 61, 32);
-  background-color: rgba(255, 107, 74, 0.15);
-}
-
-/* ── Radio / option label ────────────────────────────────── */
+/* ── Option rows · radio / checkbox label ─────────────────────── */
 
 .radio-label {
   position: relative;
@@ -1296,10 +814,8 @@ html:not(.dark) .highlight-purple {
   padding: 0.75rem;
   cursor: pointer;
 }
-
-/* A coral rule draws down the left edge instead of the whole row washing grey —
-   same wipe language as the buttons, and it points at the option it belongs to
-   rather than tinting a box the size of two lines of text. */
+/* A coral rule draws down the left edge: the same "line being struck" gesture
+   as the kicker, pointing at the option it belongs to. */
 .radio-label::before {
   content: '';
   position: absolute;
@@ -1307,29 +823,23 @@ html:not(.dark) .highlight-purple {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--color-primary, #FF6B4A);
+  background: var(--avo-primary);
   transform: scaleY(0);
   transform-origin: top;
   transition: transform var(--avo-dur-micro) var(--avo-ease-out);
 }
+.radio-label:hover::before, .radio-label:focus-within::before { transform: scaleY(1); }
+.radio-label:hover { background: var(--avo-surface-raised); }
 
-.radio-label:hover::before,
-.radio-label:focus-within::before {
-  transform: scaleY(1);
-}
-
-.radio-label:hover {
-  background: rgba(255, 107, 74, 0.05);
-}
-
-/* ── Checkbox / radio / switch — mono glyphs (BRANDING §9 Forms) ─────────
-   `[ ]`/`[x]`/`[-]`, `( )`/`(o)`, `[ OFF ]`/`[ ON  ]` — the same bracket
-   language as a chip, not a boxed native/basecoat control. Ported from
-   brand/tokens/avocloud.base.css, retargeted at bare `<input>` elements
-   since dash.html/admin.html use native inputs, not `.input`/`.field`
-   markup. Both of basecoat's own pseudo-elements are neutralised (the tick
-   in ::after, the knob/dot position in ::before) so nothing renders behind
-   the glyph. */
+/* ── Checkbox / radio / switch · mono glyphs (§9 Forms) ───────── *
+   `[ ]`/`[x]`/`[-]`, `( )`/`(o)`, `[ OFF ]`/`[ ON  ]`: the bracket language of
+   the chip. Off is muted, on is coral — coral is the MARK here, not a block, so
+   a form with five ticks does not spend the accent five times. Ported from
+   avocloud.base.css §Toggles, retargeted at bare `<input>` because the dashboard
+   uses native inputs, not `.input`/`.field` markup. Basecoat's own pseudo
+   elements (tick in ::after, knob in ::before) are neutralised, position
+   included, or a checked radio sits a character right of its neighbours.
+   The hit target is the 24px box, not the glyph (WCAG 2.5.8). */
 input[type="checkbox"], input[type="radio"] {
   appearance: none !important;
   width: auto !important;
@@ -1345,20 +855,16 @@ input[type="checkbox"], input[type="radio"] {
   align-items: center;
   justify-content: center;
   font-family: var(--avo-font-mono);
-  font-size: 0.8rem;
+  font-size: var(--avo-text-xs);
   line-height: 1;
   letter-spacing: 0.06em;
-  color: var(--avo-text-muted, #7E7E7E) !important;
+  color: var(--avo-text-muted) !important;
   white-space: pre;
   cursor: pointer;
 }
-input[type="checkbox"][role="switch"] {
-  min-width: 52px;
-}
+input[type="checkbox"][role="switch"] { min-width: 52px; }
 
-input[type="checkbox"]::after, input[type="radio"]::after {
-  content: none !important;
-}
+input[type="checkbox"]::after, input[type="radio"]::after { content: none !important; }
 input[type="checkbox"]::before, input[type="radio"]::before {
   position: static !important;
   width: auto !important;
@@ -1372,915 +878,90 @@ input[type="checkbox"]::before, input[type="radio"]::before {
   -webkit-mask: none !important;
   mask: none !important;
 }
-
 input[type="checkbox"]:not([role="switch"])::before { content: "[ ]"; }
 input[type="radio"]::before { content: "( )"; }
 input[type="checkbox"][role="switch"]::before { content: "[ OFF ]"; }
 
-input[type="checkbox"]:checked, input[type="radio"]:checked {
-  color: var(--avo-primary, #FF6B4A) !important;
-}
+input[type="checkbox"]:checked, input[type="radio"]:checked { color: var(--avo-primary) !important; }
 input[type="checkbox"]:checked:not([role="switch"])::before { content: "[x]"; }
 input[type="radio"]:checked::before { content: "(o)"; }
 input[type="checkbox"][role="switch"]:checked::before { content: "[ ON  ]"; }
 input[type="checkbox"]:indeterminate::before { content: "[-]"; }
 
-input[type="checkbox"]:hover, input[type="radio"]:hover {
-  color: var(--avo-text, #FFFFFF) !important;
-}
-input[type="checkbox"]:checked:hover, input[type="radio"]:checked:hover {
-  color: var(--avo-primary-hover, #FF9379) !important;
-}
-input[type="checkbox"][disabled], input[type="radio"][disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+input[type="checkbox"]:hover, input[type="radio"]:hover { color: var(--avo-text) !important; }
+input[type="checkbox"]:checked:hover, input[type="radio"]:checked:hover { color: var(--avo-primary-hover) !important; }
+input[type="checkbox"][disabled], input[type="radio"][disabled] { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Site footer ──────────────────────────────────────────── */
-
-.site-footer {
-  font-size: 0.875rem;
-  text-align: center;
-  padding: 2rem 0;
-  color: var(--avo-text-muted, #7E7E7E);
-  border-top: 1px solid rgba(128, 128, 128, 0.15);
-  margin-top: 4rem;
-}
-
-/* ── Popup / modal overlay ────────────────────────────────── */
-
-.popup {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(var(--avo-glass-blur));
-  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-  padding: 2rem;
-  overflow-y: auto;
-  align-items: center;
-  justify-content: center;
-}
-
-.popup-inner {
-  max-width: 520px;
-  width: 100%;
-  margin: auto;
-}
-
-.popup.fade-out {
-  animation: fadeOut var(--avo-dur-enter) var(--avo-ease-in-out) forwards;
-}
-
-/* ── Misc ─────────────────────────────────────────────────── */
-
-main {
-  position: relative;
-  z-index: 2;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* Defined here rather than leaning on Tailwind's: the markup that uses it is
-   built at runtime (the hub tiles), which the browser build's class scanner
-   does not necessarily see. */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
-@keyframes fadeOut {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@keyframes fadeIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.container.fade-in {
-  animation: fadeIn var(--avo-dur-enter) var(--avo-ease-in-out) forwards;
-}
-
-/* ── Tag input ────────────────────────────────────────────── */
-
-.tag-input-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-top: 0.375rem;
-}
-
-/* v2 bracket chip: "[ label ]" — literal coral brackets. Chips count as
-   controls, so 6px (BRANDING §6 / avocloud.css .avo-chip; §8's "sharp corners"
-   prose predates the softened radii). */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+/* ── Fields · bare inputs and textareas ───────────────────────── *
+   Basecoat 1.0 only styles `.input[type=text]` and friends, and the dashboard's
+   ~70 text and number inputs carry no class: Tailwind's preflight leaves them
+   borderless, transparent and 21px tall. They get the same field as `.input`
+   (§9 Forms): flat, 1px outline, the field fill, 6px corners, 32px, mono. A
+   textarea is multi-line and sizes to its content. Focus is the kit's coral ring
+   and the border stays put, so focus never looks like hover (§10). */
+input:not([type]):not(.input), input[type="text"]:not(.input), input[type="number"]:not(.input),
+input[type="password"]:not(.input), input[type="url"]:not(.input), input[type="email"]:not(.input),
+input[type="search"]:not(.input), input[type="tel"]:not(.input), input[type="date"]:not(.input),
+input[type="time"]:not(.input), input[type="datetime-local"]:not(.input),
+textarea:not(.textarea) {
   font-family: var(--avo-font-mono);
-  background: transparent;
-  color: inherit;
-  border: 1px solid var(--border, rgba(128, 128, 128, 0.25));
-  border-radius: var(--avo-radius-sm, 6px);
-  padding: 2px 8px;
-  font-size: 0.78rem;
+  font-size: var(--avo-ui-text);
+  color: var(--avo-text);
+  background-color: var(--avo-plate-fill);
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius);
+  padding: 0 0.75rem;
+  height: var(--avo-ui-control-h);
 }
+textarea:not(.textarea) { height: auto; padding: 0.5rem 0.75rem; line-height: 1.5; resize: vertical; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+input::placeholder, textarea::placeholder { color: var(--avo-text-muted); }
+input:disabled:not([type="checkbox"]):not([type="radio"]), textarea:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Error: the outline goes `error` and the message below carries the meaning. */
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--avo-error); }
 
-.tag::before { content: "["; color: var(--color-primary, #FF6B4A); opacity: 0.7; margin-right: 0.15em; }
-.tag::after  { content: "]"; color: var(--color-primary, #FF6B4A); opacity: 0.7; margin-left: 0.15em; }
+/* Native <select>: the popup list takes the field fill, or the OS paints it
+   white-on-white. */
+select, option { background-color: var(--avo-plate-fill); color: var(--avo-text); }
 
-.remove-tag {
-  cursor: pointer;
-  color: var(--avo-text-muted, #7E7E7E);
-  margin-left: 2px;
-}
+fieldset { min-width: 0; } /* fieldsets default to min-content, which breaks grid sizing */
 
-/* Colour step, not an opacity fade: the chip is already low-contrast, and
-   fading a faint thing to slightly less faint reads as nothing happening. */
-.remove-tag:hover {
-  color: var(--color-primary, #FF6B4A);
-}
-
-/* ── Channel permission feedback ─────────────────────────── */
-
+/* ── Feedback ─────────────────────────────────────────────────── *
+   Status is a strip plus a label, not a filled row (§9). */
 .channel-perm-feedback {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
+  font-family: var(--avo-font-mono);
+  font-size: var(--avo-ui-label);
   padding: 0.375rem 0.75rem;
   margin-top: 0.375rem;
-  background: rgba(70, 167, 88, 0.1);
   color: var(--avo-success);
-  border: 1px solid rgba(70, 167, 88, 0.3);
+  border-radius: var(--avo-radius);
+  border: 1px solid var(--avo-line);
+  box-shadow: inset 2px 0 0 var(--avo-success);
+}
+.channel-perm-feedback.error { color: var(--avo-error); box-shadow: inset 2px 0 0 var(--avo-error); }
+
+/* ── Footer, links ────────────────────────────────────────────── */
+
+.site-footer {
+  font-size: var(--avo-ui-text);
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--avo-text-muted);
+  border-top: 1px solid var(--avo-line);
+  margin-top: 4rem;
 }
 
-.channel-perm-feedback.error {
-  background: rgba(220, 56, 56, 0.1);
-  color: var(--avo-error);
-  border-color: rgba(220, 56, 56, 0.3);
-}
-
-/* ── General: link-button text wrapping ─────────────────────── */
-
-/* buttons default to white-space: nowrap -  override so long link text wraps */
-.btn[data-variant=link] {
-  white-space: normal;
-  word-break: break-word;
-  text-align: left;
-}
-
-/* fieldsets default to min-width: min-content which breaks CSS Grid sizing */
-fieldset {
-  min-width: 0;
-}
-
-/* ── Hamburger nav toggle (mobile only) ──────────────────── */
-
-.dash-nav-toggle {
-  display: none; /* hidden on desktop */
-}
-
-/* ── Mobile overrides ─────────────────────────────────────── */
-
-@media (max-width: 639px) {
-
-  /* ── Hamburger toggle: sits inside site-nav between logo and theme toggle ── */
-  .dash-nav-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.75rem;
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    border-radius: 2rem;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: inherit;
-    background: transparent;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    flex: 1;
-    justify-content: center;
-    margin: 0 0.5rem;
-    max-width: 45vw;
-  }
-
-  .dash-nav-toggle svg {
-    width: 1rem;
-    height: 1rem;
-    stroke: currentColor;
-    stroke-width: 2;
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-  }
-
-  .dash-nav-toggle__chevron {
-    opacity: 0.5;
-    transition: transform var(--avo-dur-micro) var(--avo-ease-out);
-  }
-
-  .dash-nav-toggle[aria-expanded="true"] .dash-nav-toggle__chevron {
-    transform: rotate(180deg);
-  }
-
-  /* ── Dash nav: full-screen overlay on mobile ── */
-  .dash-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9500;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    background: var(--background, #000000);
-    padding: 5rem 1rem 2rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    gap: 0.15rem;
-    margin: 0;
-    border-top: none;
-    border-bottom: none;
-    margin-bottom: 0;
-    display: none;
-  }
-
-  body.nav-open {
-    overflow: hidden;
-    touch-action: none;
-  }
-
-  html:not(.dark) .dash-nav {
-    background: #fff;
-  }
-
-  .dash-nav.open {
-    display: flex;
-  }
-
-  /* Nav items: full-width rows in the overlay */
-  .dash-nav-item {
-    padding: 0.85rem 1rem;
-    border-bottom: none !important;
-    font-size: 0.9rem;
-    width: 100%;
-  }
-
-  .dash-nav-item svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .dash-nav-item:hover,
-  .dash-nav-item.active {
-    background: rgba(255, 107, 74, 0.1);
-  }
-
-  /* Nav group labels: section dividers inside the mobile overlay */
-  .dash-nav-group-label {
-    padding: 0.9rem 1rem 0.2rem;
-    border-left: none;
-    margin-left: 0;
-    border-top: 1px solid rgba(128, 128, 128, 0.12);
-    margin-top: 0.4rem;
-    width: 100%;
-    font-size: 0.6rem;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  /* Push main content below the toggle pill */
-  main {
-    padding-top: 3.5rem;
-  }
-
-  /* Increase scroll-margin so anchor links land below the toggle pill */
-  .dash-section {
-    scroll-margin-top: 7rem;
-  }
-
-  /* ── Button group: compact icon-only pill at bottom center ── */
-  .local-button-group {
-    bottom: 1rem;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    flex-direction: row !important;
-    align-items: center;
-    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-    backdrop-filter: blur(var(--avo-glass-blur));
-    -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-    border: 1px solid var(--border, rgba(128, 128, 128, 0.25));
-    border-radius: 3rem;
-    padding: 0.3rem;
-    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-    gap: 0.15rem;
-  }
-
-  /* Hide the HR divider -  not needed in horizontal pill layout */
-  .local-button-group hr {
-    display: none;
-  }
-
-  /* Shrink all buttons to icon-only square pills, centered */
-  .local-button-group button[class] {
-    width: 2.75rem !important;
-    height: 2.75rem !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    font-size: 0 !important;
-    line-height: 0;
-    min-width: 0 !important;
-    flex: 0 0 2.75rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0 !important;
-    overflow: hidden;
-  }
-
-  /* Icon sizes inside the shrunken buttons */
-  .local-button-group button[class] svg {
-    width: 1.15rem !important;
-    height: 1.15rem !important;
-    flex-shrink: 0;
-  }
-
-  .local-button-group button[class] img {
-    width: 1.75rem !important;
-    height: 1.75rem !important;
-    flex-shrink: 0;
-    border-radius: 50%;
-  }
-
-  /* Hide welcome/name text on mobile -  show only avatar in the pill */
-  .local-button-group .user-label {
-    display: none !important;
-  }
-
-  /* Card header action buttons: icon-only on mobile */
-  .card header .btn[data-variant=outline] .btn-label,
-  .card header .btn[data-variant=secondary] .btn-label {
-    display: none;
-  }
-
-  /* Cards: keep all content inside the card, wrap long strings */
-  .card {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  /* All flex rows inside cards may wrap to respect card padding */
-  .card .flex {
-    flex-wrap: wrap;
-  }
-
-  /* Flex children may shrink below intrinsic content size */
-  .card .flex > *,
-  .card .grid > * {
-    min-width: 0;
-  }
-
-  /* Inputs/selects/textareas never exceed their container */
-  .card input,
-  .card select,
-  .card textarea {
-    max-width: 100%;
-  }
-
-  /* Preformatted text wraps on mobile (e.g. DiscordGate secret hint) */
-  .card pre,
-  .card code {
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-
-  /* DiscordGate secret row: Generate/Copy fill remaining row when wrapped */
-  .mcl-secret-row .btn[data-variant=secondary] {
-    flex: 1;
-    min-width: 80px;
-  }
-
-  /* Override fixed-width platform select on Add Streamer row */
-  #livestream-add-platform {
-    width: auto !important;
-    flex: 1;
-    min-width: 110px;
-  }
-  #livestream-add-login,
-  #yvid-add-login {
-    flex: 1 1 100%;
-  }
-
-  /* PRISM user-card grid: 2 columns on mobile (overrides inline 4-col grid) */
-  #prism-scores-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-/* ── Dashboard nav group labels ─────────────────────────────── */
-
-.dash-nav-group-label {
-  display: inline-flex;
-  align-items: flex-end;
-  padding: 0.5rem 0.5rem 0.3rem 0.75rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: oklch(.38 0 0);
-  white-space: nowrap;
-  border-left: 1px solid rgba(128, 128, 128, 0.2);
-  margin-left: 0.2rem;
-  line-height: 1;
-  align-self: stretch;
-  justify-content: center;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-/* ── Dashboard category headers in main content ─────────────── */
-
-.dash-category-header {
-  font-family: var(--avo-font-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--avo-text-muted, #7E7E7E);
-  padding: 2rem 0 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.6em;
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
-  margin-top: 0.5rem;
-}
-
-.dash-category-header::before {
-  content: '//';
-  color: var(--color-primary, #FF6B4A);
-  flex-shrink: 0;
-}
-
-.dash-category-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border, rgba(128, 128, 128, 0.2));
-  min-width: 2rem;
-}
-
-.dash-category-header:first-child {
-  border-top: none;
-  padding-top: 0;
-  margin-top: 0;
-}
-
-/* ── Avocloud logo animation ────────────────────────────────── */
-
-.avo-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  text-decoration: none;
-  cursor: pointer;
-  color: inherit;
-}
-
-/* Icon + AV text share same grid cell */
-.avo-icon {
-  display: inline-grid;
-  flex-shrink: 0;
-  transition: opacity var(--avo-dur-ui) var(--avo-ease-out),
-              transform var(--avo-dur-ui) var(--avo-ease-out);
-}
-.avo-icon > * { grid-area: 1/1; display: flex; align-items: center; }
-
-.avo-av {
-  font-family: var(--avo-font-brand, 'Syne', sans-serif);
-  font-weight: 800;
-  font-size: 2rem;
-  letter-spacing: .04em;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(6px);
-  transition: opacity var(--avo-dur-ui) var(--avo-ease-out),
-              transform var(--avo-dur-ui) var(--avo-ease-out);
-}
-
-.avo-text-wrap {
-  overflow: hidden;
-  max-width: 0;
-  display: flex;
-  align-items: baseline;
-  transition: max-width var(--avo-dur-ui) var(--avo-ease-out);
-}
-
-.avo-text {
-  font-family: var(--avo-font-brand, 'Syne', sans-serif);
-  font-weight: 800;
-  font-size: 2rem;
-  letter-spacing: .04em;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(20px);
-  transition: transform var(--avo-dur-ui) var(--avo-ease-out),
-              opacity var(--avo-dur-ui) var(--avo-ease-out) 0.05s;
-}
-
-.avo-dot { color: var(--color-primary, #FF6B4A); }
-
-.avo-path {
-  stroke-dasharray: none;
-  stroke-dashoffset: 0;
-}
-
-/* ── CAD construction reveal (BRANDING §5) ────────────────────────────────
-
-   Ported from brand/motion/wordmark-reveal.css + Wordmark.tsx (React+GSAP)
-   to vanilla — same geometry, same timeline, same timeScale 0.6. The word is
-   AVOCLOUD.NET (umbrella brand) at both call sites.
-
-   Two of them share these styles, and there is deliberately only one
-   implementation of the animation (scripts/wordmark.js):
-   · the post-login splash on dash_home.html — full screen, once per login,
-     gated server-side by session['show_intro'], popped in dash.py
-   · the hero on welcome.html — in place, on every load of the landing page */
-
-#avo-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000000;
-  transition: opacity var(--avo-dur-enter) var(--avo-ease-in-out);
-}
-
-#avo-splash.avo-fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Nothing else on screen — no tagline, no spinner, no version string. */
-.hw { position: relative; display: inline-block; }
-.hw-ch { position: relative; display: inline-block; }
-.hw-fill { display: inline-block; position: relative; z-index: 1; }
-.hw-ch.coral .hw-fill { color: var(--avo-coral-500, #FF6B4A); }
-
-/* Outline layer. The glyph comes from ::before content so it stays out of the
-   accessible text tree — real text lives only in .hw-fill. */
-.hw-stroke {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  opacity: 0;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 1.2px rgba(255, 255, 255, 0.55);
-  pointer-events: none;
-}
-.hw-stroke::before { content: attr(data-ch); }
-.hw-ch.coral .hw-stroke { -webkit-text-stroke-color: rgba(255, 107, 74, 0.7); }
-
-/* FOUC guard: pre-hide the fills only when motion is allowed and JS ran (the
-   head script adds .gsap-ready). No JS or reduced motion → no class → the
-   solid wordmark shows, never a blank screen. */
-html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
-
-.hw-guides {
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: visible;
-  z-index: 0;
-  pointer-events: none;
-}
-.hw-line { stroke: rgba(255, 255, 255, 0.30); stroke-width: 1; opacity: 0; stroke-dasharray: 1; }
-.hw-line.coral { stroke: rgba(255, 107, 74, 0.5); }
-.hw-circ { fill: none; stroke: rgba(255, 255, 255, 0.26); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0; }
-.hw-circ.coral { stroke: rgba(255, 107, 74, 0.55); }
-
-/* Guide lines on the light band — white scaffolding on #E8ECEF is invisible.
-   Scoped to .hw.is-hero, never global: the splash keeps its black canvas in
-   both themes, so darkening its guides would erase them instead. */
-html:not(.dark) .hw.is-hero .hw-line { stroke: rgba(0, 0, 0, 0.28); }
-html:not(.dark) .hw.is-hero .hw-line.coral { stroke: rgba(199, 61, 32, 0.5); }
-html:not(.dark) .hw.is-hero .hw-circ { stroke: rgba(0, 0, 0, 0.24); }
-html:not(.dark) .hw.is-hero .hw-circ.coral { stroke: rgba(199, 61, 32, 0.55); }
-
-/* The per-letter spans inherit the face; the universal `*` font-family rule
-   that used to break that inheritance is gone with the v1 remote stylesheet.
-   The hero variant is the same wordmark — only the colour source differs, so
-   it stays legible on the light band where the splash never goes. */
-.splash-word, .hero-word {
-  font-family: var(--avo-font-brand, 'Syne', sans-serif);
-  font-weight: 800;
-  /* flex, not inline-block: the letters are one span each, and whitespace-only
-     text nodes between them would otherwise render as word gaps. */
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  font-size: clamp(1.5rem, 5.2vw, 4.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.015em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  margin: 0;
-  position: relative;
-  z-index: 1;
-}
-
-/* The splash always sits on the black canvas; the hero follows the theme. */
-.splash-word { color: #FFFFFF; }
-.hero-word   { color: var(--avo-text, inherit); }
-
-/* The outline layer is drawn in the text colour so it survives the light
-   theme too — a white stroke on a light band is invisible. */
-html:not(.dark) .hero-word .hw-stroke {
-  -webkit-text-stroke-color: rgba(0, 0, 0, 0.45);
-}
-html:not(.dark) .hero-word .hw-ch.coral .hw-stroke {
-  -webkit-text-stroke-color: rgba(199, 61, 32, 0.7);
-}
-
-/* ── Desktop sidebar (≥ 900px) ───────────────────────────────── */
-
-@media (min-width: 900px) {
-
-  /* Sidebar: a floating glass plate inset from the viewport edge, the same
-     shape the kit's own dashboard demo uses (`avo-plate avo-rail`) — not a
-     flush full-bleed panel. `--rail-inset` is subtracted TWICE from the
-     height (once top, once bottom) per BRANDING §9 Navigation, and `height`
-     is stated explicitly rather than relying on top+bottom alone — belt and
-     suspenders for the one property that, if it silently fails to
-     constrain, turns off the scroll below. */
-  :root { --rail-inset: 12px; }
-
-  .dash-nav {
-    position: fixed;
-    left: var(--rail-inset);
-    top: calc(56px + var(--rail-inset));
-    height: calc(100vh - 56px - var(--rail-inset) * 2 - 230px); /* 230px = the account plate's own height (~214px, 5 rows + separator) plus the 12px gap above it */
-    width: 220px;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    margin: 0;
-    padding: 0.5rem 0;
-    border: 1px solid var(--border, rgba(128, 128, 128, 0.14));
-    border-radius: var(--avo-radius-md, 8px);
-    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-    backdrop-filter: blur(var(--avo-glass-blur));
-    -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-  }
-
-  /* Nav items: left-border indicator instead of bottom-border. Mono,
-     uppercase, one fixed row height (BRANDING §9 Navigation / "one row, one
-     height") — a rail row is a control, same scale as everything else in
-     this surface. */
-  .dash-nav-item {
-    width: 100%;
-    height: 36px;
-    border-bottom: none;
-    border-left: 2px solid transparent;
-    padding: 0 1rem;
-    font-family: var(--avo-font-mono);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    border-radius: 0;
-    white-space: nowrap;
-  }
-
-  .dash-nav-item svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .dash-nav-item:hover {
-    color: var(--color-primary, #FF6B4A);
-    background: rgba(255, 107, 74, 0.07);
-  }
-
-  /* Active: a coral 2px tick on the leading edge PLUS --fg text — colour is
-     never the only signal (BRANDING §9 Navigation). The label itself does
-     not turn coral; only the tick does. */
-  .dash-nav-item.active {
-    border-left-color: var(--color-primary, #FF6B4A);
-    border-bottom-color: transparent;
-    background: rgba(255, 107, 74, 0.08);
-    color: var(--avo-text, #FFFFFF);
-  }
-
-  /* Group labels: horizontal dividers in sidebar, with the same `//` kicker
-     language as .section-label. */
-  .dash-nav-group-label {
-    flex-direction: row;
-    align-items: center;
-    border-left: none;
-    margin-left: 0;
-    align-self: auto;
-    padding: 1rem 1rem 0.3rem;
-    width: 100%;
-    border-top: 1px solid rgba(128, 128, 128, 0.1);
-    margin-top: 0.35rem;
-    font-family: var(--avo-font-mono);
-    font-size: 0.65rem;
-    justify-content: flex-start;
-    gap: 0.4em;
-  }
-
-  .dash-nav-group-label::before {
-    content: '//';
-    color: var(--color-primary, #FF6B4A);
-    flex-shrink: 0;
-  }
-
-  /* (button[class] below: basecoat 1.0.2 styles .btn[data-size=…] at 0,2,0, so these
-     rules need the extra attribute selector to keep winning.) */
-  /* Account plate: its own floating glass panel below the rail, same inset
-     and radius — two plates with a gap between them, not one panel wearing
-     two treatments. */
-  .local-button-group {
-    position: fixed;
-    bottom: var(--rail-inset);
-    left: var(--rail-inset);
-    width: 220px;
-    flex-direction: column;
-    align-items: stretch;
-    border-radius: var(--avo-radius-md, 8px);
-    border: 1px solid var(--border, rgba(128, 128, 128, 0.14));
-    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-    backdrop-filter: blur(var(--avo-glass-blur));
-    -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-    padding: 0.35rem 0;
-    gap: 0;
-    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-    transform: none;
-    overflow: hidden; /* keep button hovers inside the rounded frame */
-  }
-
-  .local-button-group hr {
-    display: block;
-    margin: 0.2rem 0.75rem;
-  }
-
-  /* Restore full-width buttons with text + icon */
-  .local-button-group button[class] {
-    width: 100%;
-    height: auto;
-    padding: 0.55rem 1rem;
-    border-radius: 0;
-    font-size: 0.82rem;
-    line-height: 1.4;
-    flex: none;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    overflow: visible;
-    border: none;
-    background: transparent;
-    min-width: 0;
-  }
-
-  .local-button-group button[class]:hover {
-    background: rgba(255, 107, 74, 0.07);
-    color: var(--color-primary, #FF6B4A);
-  }
-
-  .local-button-group button[class]:first-child:hover {
-    background: transparent;
-    color: inherit;
-  }
-
-  .local-button-group button[class] svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
-
-  .local-button-group button[class] img {
-    width: 1.5rem;
-    height: 1.5rem;
-    flex-shrink: 0;
-    border-radius: 50%;
-  }
-
-  /* Hamburger toggle stays hidden on desktop */
-  .dash-nav-toggle {
-    display: none;
-  }
-}
-
-/* ── dash.html: rail replaced by the Home hub ──────────────────────────────
-   .dash-nav is only ever rendered on dash.html, and there its ~28
-   destinations are already one click away as big cards on the Home hub —
-   a second, denser copy of the same list in a rail is redundant next to
-   that. (admin.html keeps its own rail below: .admin-sidebar is a separate
-   element, untouched by this.) The account plate (.local-button-group)
-   stays, just floating on its own instead of pinned under the rail. */
-.dash-nav, .dash-nav-toggle {
-  display: none !important;
-}
-
-@media (min-width: 900px) {
-  .local-button-group {
-    left: var(--rail-inset, 12px);
-    bottom: var(--rail-inset, 12px);
-    width: auto;
-    min-width: 190px;
-  }
-
-  .local-button-group button[class] {
-    border-radius: calc(var(--avo-radius-md, 8px) - 3px) !important; /* beats .button-group's joined-corner radii */
-  }
-}
-
-/* ── Wordmark lockup tail (was inherited from the v1 remote stylesheet) ─── */
-.avocloud-logo__rest {
-  font-family: var(--avo-font-brand, 'Syne', sans-serif);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-/* ── Stat label (was inherited from the v1 remote stylesheet) ───────────── */
-.stat-label {
-  font-family: var(--avo-font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--avo-text-muted, #7E7E7E);
-}
-
-/* ── Page-transition curtain (BRANDING §5b) ─────────────────────
-   One curtain swept across two page loads: it rises from the bottom edge over
-   the outgoing page, and the incoming page carries it the rest of the way off
-   the top. One edge, one direction, one continuous motion across a real
-   navigation — the same language as every other transition here.
-
-   It is parked off-screen and only ever moved by script, so with JS broken it
-   is an inert empty div. Never `body { opacity: 0 }`: make invisible the
-   page's resting state and a script that fails to run leaves a blank page. */
-.avo-curtain {
-  position: fixed;
-  inset: 0;
-  z-index: 10050;
-  background: #000000;
-  pointer-events: none;
-  transform: translateY(100%);
-}
-
-/* Raised: covering the viewport, on its way in from the bottom. */
-.avo-curtain.is-out {
-  transform: translateY(0);
-  transition: transform 0.3s var(--avo-ease-in-out);
-}
-
-/* The incoming page starts covered and lifts it off the top. Both halves are
-   UI scale, not signature scale — this is paid on every click. */
-.avo-curtain.is-covered {
-  transform: translateY(0);
-}
-
-.avo-curtain.is-in {
-  transform: translateY(-100%);
-  transition: transform 0.42s var(--avo-ease-in-out);
-}
-
-/* ── Footer links ─────────────────────────────────────────────
-   Replaces 32 inline onmouseover="this.style.opacity=…" handlers across ten
-   templates. Those had no keyboard state at all, ignored the motion tokens,
-   and — being inline styles — outranked any rule written here later.
-
-   The gesture is .accent-link's: a rule drawn in from the left, not a fade. */
+/* A link that dims on hover is off-system: a line is struck (§6.3). The
+   underline grows from the left, the same gesture as the kicker rule. */
 .footer-link {
   position: relative;
-  font-size: 0.8rem;
+  font-size: var(--avo-text-xs);
   text-decoration: none;
-  color: var(--avo-text-muted, #7E7E7E);
+  color: var(--avo-text-muted);
 }
-
 .footer-link::after {
   content: '';
   position: absolute;
@@ -2293,105 +974,76 @@ html:not(.dark) .hero-word .hw-ch.coral .hw-stroke {
   transform-origin: left;
   transition: transform var(--avo-dur-micro) var(--avo-ease-out);
 }
+.footer-link:hover, .footer-link:focus-visible { color: var(--avo-text); }
+.footer-link:hover::after, .footer-link:focus-visible::after { transform: scaleX(1); }
+.footer-link.is-accent { color: var(--avo-accent-text); font-weight: 600; }
+.footer-link.is-accent:hover, .footer-link.is-accent:focus-visible { color: var(--avo-accent-text); }
 
-.footer-link:hover,
-.footer-link:focus-visible {
-  color: var(--avo-text, inherit);
-}
-
-.footer-link:hover::after,
-.footer-link:focus-visible::after {
-  transform: scaleX(1);
-}
-
-/* Coral-tinted link that acts as a button (vote, join the Discord). Pair it
-   with .avo-btn at the call site — that is what supplies the radius, the mono
-   face and the hover wipe, so this rule only has to carry the tint. */
-.cta-link {
-  display: inline-flex;
+/* ── Popup · a modal log-in-style overlay ─────────────────────── *
+   The scrim carries no blur (a blurred scrim is mud) and the dialog is opaque:
+   floating surfaces are never glass (§5). */
+.popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--avo-scrim);
+  padding: 2rem;
+  overflow-y: auto;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.25rem;
-  border: 1px solid rgba(255, 107, 74, 0.5);
-  background: rgba(255, 107, 74, 0.12);
-  color: inherit;
-  font-weight: 500;
-  font-size: 0.875rem;
-  text-decoration: none;
+  justify-content: center;
+}
+.popup-inner { max-width: var(--avo-ui-dialog-w); width: 100%; margin: auto; }
+.popup-inner.card {
+  background-color: var(--avo-surface-raised);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: var(--avo-line-strong);
+}
+.popup.fade-out { animation: fadeOut var(--avo-dur-ui) var(--avo-ease-in-out) forwards; }
+@keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+.container.fade-in { animation: fadeIn var(--avo-dur-ui) var(--avo-ease-in-out) forwards; }
+@keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+/* ── Misc ─────────────────────────────────────────────────────── */
+
+main { position: relative; z-index: 2; }
+.hidden { display: none !important; }
+/* Defined here rather than leaning on Tailwind's: the markup that uses it is
+   built at runtime (the hub tiles), which the browser build's scanner misses. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
-.cta-link:hover {
-  border-color: var(--avo-primary-hover, #FF9379);
-}
-
-/* The shared button rule steps every icon 2px right on hover — motion that
-   reads as "this moves you forward", which is right for an arrow and wrong for
-   a static glyph. Both CTA links carry one (thumbs-up, users), so they hold
-   still and only the border reacts. */
-.avo-btn.cta-link:hover svg,
-.cta-link:hover svg {
-  transform: none;
-}
-
-/* Admin gets the accent — it is the one link in that row that goes somewhere
-   most visitors cannot. */
-.footer-link.is-accent {
-  color: var(--color-primary, #FF6B4A);
-  font-weight: 600;
-}
-
-.footer-link.is-accent:hover,
-.footer-link.is-accent:focus-visible {
-  color: var(--color-primary, #FF6B4A);
-}
-
-/* ── Card action row ──────────────────────────────────────────
-   The per-card save row. Separated by a hairline so the button does not sit
-   flush against the last field, right-aligned because it acts on the card
-   above it, not on the page.
-
-   It stays in the DOM even with the save bar running: the bar is JavaScript,
-   and a settings page that cannot save at all without JS is worse than one
-   with two ways to do it. body.has-save-bar hides it once the bar is live. */
+/* ── Card action row & the one save bar ───────────────────────── *
+   The per-card save row stays in the DOM even with the save bar running: the bar
+   is JavaScript, and a settings page that cannot save without JS is worse than
+   one with two ways to do it. body.has-save-bar hides it once the bar is live. */
 .card-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border, rgba(128, 128, 128, 0.18));
+  border-top: 1px solid var(--avo-line);
 }
-
-/* With the bar running the inline save is a duplicate — but some of these rows
-   also carry a non-save action ("Reset count", "Reset scores"). Hide the save
-   button there and keep the row; hide the whole row only when the save button
-   is all it holds, so no empty rule line is left behind. */
 body.has-save-bar .card-actions > .submit-btn,
-body.has-save-bar .card-actions > [data-save-btn] {
-  display: none;
-}
+body.has-save-bar .card-actions > [data-save-btn] { display: none; }
+body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]))) { display: none; }
 
-body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]))) {
-  display: none;
-}
-
-@media (max-width: 639px) {
-  /* Thumb reach beats alignment on a phone. */
-  .card-actions > * {
-    flex: 1;
-    justify-content: center;
-  }
-}
-
-/* ── Sticky save bar ──────────────────────────────────────────
-   One save for the whole dashboard, shown only while something is unsaved.
-
-   Centred rather than parked in a corner: the floating account group holds the
-   bottom left (main.css, .local-button-group) and basecoat drops its toasts
-   bottom right, so both corners are already spoken for.
-
-   z-index sits above page content but below .popup (10000) and .avo-curtain
-   (10050) — a modal or a page transition must always cover it. */
+/* One save for the whole dashboard, shown only while something is unsaved.
+   Centred: the account plate holds the bottom left and basecoat drops toasts
+   bottom right. A floating surface, so opaque. z-index sits above content and
+   below .popup. */
 .avo-save-bar {
   position: fixed;
   bottom: 1.25rem;
@@ -2400,54 +1052,153 @@ body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.6rem 0.7rem 0.6rem 1.1rem;
-  border: 1px solid var(--border, rgba(128, 128, 128, 0.18));
-  border-radius: var(--avo-radius-md, 8px);
-  background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-  backdrop-filter: blur(var(--avo-glass-blur));
-  -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-  box-shadow: inset 0 1px 0 var(--avo-glass-edge);
-  /* Parked below the edge and pulled up on .is-open. translateX carries the
-     centring, so both axes have to be restated in the open state. */
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius-lg);
+  background: var(--avo-surface-raised);
+  box-shadow: inset 0 1px 0 var(--avo-glass-edge-raised);
+  /* Parked below the edge and pulled up on .is-open; translateX carries the
+     centring, so both axes are restated in the open state. */
   transform: translate(-50%, calc(100% + 1.25rem));
   transition: transform var(--avo-dur-ui) var(--avo-ease-out);
 }
-
-.avo-save-bar.is-open {
-  transform: translate(-50%, 0);
-}
-
-/* display:flex above outranks the UA rule for [hidden], so the no-JS state has
-   to be restated here — otherwise the bar shows on a page whose script never
-   ran, with nothing wired to its button. */
-.avo-save-bar[hidden] {
-  display: none;
-}
-
+.avo-save-bar.is-open { transform: translate(-50%, 0); }
+/* display:flex outranks the UA rule for [hidden]; restated for the no-JS state. */
+.avo-save-bar[hidden] { display: none; }
 .avo-save-bar__label {
   font-family: var(--avo-font-mono);
-  font-size: 0.72rem;
+  font-size: var(--avo-ui-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--avo-text-muted, #7E7E7E);
+  color: var(--avo-text-muted);
   white-space: nowrap;
 }
+.avo-save-bar__label strong { color: var(--avo-accent-text); font-weight: 600; }
+/* Out of the tab order while parked: a button off the bottom of the screen that
+   still takes focus is a keyboard trap you cannot see. */
+.avo-save-bar:not(.is-open) { visibility: hidden; }
 
-.avo-save-bar__label strong {
-  color: var(--color-primary, #FF6B4A);
-  font-weight: 600;
+/* ── Wide screens · the account plate is a floating panel ─────── */
+
+@media (min-width: 900px) {
+  /* Inset from the viewport edge, same shape as the kit's `avo-plate`. */
+  .local-button-group {
+    position: fixed;
+    bottom: var(--rail-inset);
+    left: var(--rail-inset);
+    width: auto;
+    min-width: 190px;
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: var(--avo-radius-lg);
+    border: 1px solid var(--avo-line);
+    background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2)), var(--avo-surface);
+    padding: 0.35rem 0;
+    gap: 0;
+    box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+    transform: none;
+    overflow: hidden; /* keep button hovers inside the rounded frame */
+  }
+  .local-button-group hr { display: block; margin: 0.2rem 0.75rem; }
+
+  /* Full-width rows with text + icon. basecoat 1.0.2 styles .btn[data-size=…] at
+     0,2,0, so these need the extra attribute selector to keep winning. */
+  .local-button-group button[class] {
+    width: 100%;
+    height: var(--avo-ui-row-h) !important;
+    padding: 0 1rem;
+    border-radius: 0 !important;
+    font-size: var(--avo-ui-label);
+    line-height: 1.4;
+    flex: none;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    overflow: visible;
+    border: none;
+    background: transparent;
+    min-width: 0;
+  }
+  .local-button-group button[class]:first-child { height: auto !important; padding: 0.5rem 1rem; }
+  .local-button-group button[class]:hover { background: var(--avo-surface-raised); color: var(--avo-text); }
+  .local-button-group button[class]:first-child:hover { background: transparent; }
+  .local-button-group button[class] svg { width: var(--avo-icon-sm); height: var(--avo-icon-sm); flex-shrink: 0; }
+  .local-button-group button[class] img { width: 1.5rem; height: 1.5rem; flex-shrink: 0; border-radius: 50%; }
 }
 
-/* Hidden from the tab order while parked — a button off the bottom of the
-   screen that still takes focus is a keyboard trap you cannot see. */
-.avo-save-bar:not(.is-open) {
-  visibility: hidden;
+/* ── Narrow screens ───────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  /* Push main content below the bar. */
+  main { padding-top: 3.5rem; }
+  .dash-section { scroll-margin-top: 7rem; }
+
+  /* Account plate: a compact icon-only strip at bottom centre. */
+  .local-button-group {
+    bottom: 1rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    flex-direction: row !important;
+    align-items: center;
+    background: var(--avo-surface-raised);
+    border: 1px solid var(--avo-line-strong);
+    border-radius: var(--avo-radius-lg);
+    padding: 0.3rem;
+    box-shadow: inset 0 1px 0 var(--avo-glass-edge-raised);
+    gap: 0.15rem;
+  }
+  .local-button-group hr { display: none; }
+
+  /* Icon-only square controls, centred. */
+  .local-button-group button[class] {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    padding: 0 !important;
+    border-radius: var(--avo-radius) !important;
+    font-size: 0 !important;
+    line-height: 0;
+    min-width: 0 !important;
+    flex: 0 0 2.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    overflow: hidden;
+  }
+  .local-button-group button[class] svg { width: 1.15rem !important; height: 1.15rem !important; flex-shrink: 0; }
+  .local-button-group button[class] img { width: 1.75rem !important; height: 1.75rem !important; flex-shrink: 0; border-radius: 50%; }
+  .local-button-group .user-label { display: none !important; }
+
+  /* Card header action buttons: icon-only. */
+  .card header .btn[data-variant=outline] .btn-label,
+  .card header .btn[data-variant=secondary] .btn-label { display: none; }
+
+  /* Cards keep all content inside, and wrap long strings. */
+  .card { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+  .card .flex { flex-wrap: wrap; }
+  .card .flex > *, .card .grid > * { min-width: 0; }
+  .card input, .card select, .card textarea { max-width: 100%; }
+  .card pre, .card code { white-space: pre-wrap; word-break: break-all; }
+
+  /* DiscordGate secret row: Generate/Copy fill the remaining row when wrapped. */
+  .mcl-secret-row .btn[data-variant=secondary] { flex: 1; min-width: 80px; }
+
+  /* The fixed-width platform select on the Add Streamer row. */
+  #livestream-add-platform { width: auto !important; flex: 1; min-width: 110px; }
+  #livestream-add-login, #yvid-add-login { flex: 1 1 100%; }
+
+  /* PRISM user-card grid: 2 columns (overrides the inline 4-col grid). */
+  #prism-scores-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  .card-actions > * { flex: 1; justify-content: center; } /* thumb reach beats alignment */
+
+  /* The adoption chip is positioned in the card's corner; on a phone that is on
+     top of the heading, so it takes its own line instead. */
+  .adoption-badge { position: static; align-self: flex-start; margin-bottom: 0.5rem; }
 }
 
-/* 900px, not 640: below it the account group leaves its bottom-left corner —
-   between 640 and 899 it sits at left:20px in the base layout, and a ~440px
-   bar centred in a 700px viewport lands right on top of it. Spanning the full
-   width instead removes the question entirely. */
+/* Below 900px the account plate leaves its corner; the save bar spans the width
+   instead of colliding with it. */
 @media (max-width: 899px) {
   .avo-save-bar {
     left: 0;
@@ -2460,29 +1211,107 @@ body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]
     justify-content: space-between;
     transform: translateY(100%);
   }
-
-  .avo-save-bar.is-open {
-    transform: translateY(0);
-  }
-
-  /* Lift the floating account group clear of the bar rather than letting the
-     two stack on top of each other. */
-  body.has-save-bar .local-button-group {
-    bottom: 4.5rem;
-  }
+  .avo-save-bar.is-open { transform: translateY(0); }
+  /* Lift the floating account group clear of the bar. */
+  body.has-save-bar .local-button-group { bottom: 4.5rem; }
 }
 
-/* ── Focus (BRANDING §12) ─────────────────────────────────────
-   :focus-visible only, so pointer users don't get a ring on click and
-   keyboard users always do. The offset keeps it clear of the component's own
-   hairline border. Never remove without a replacement at least as visible. */
-:focus-visible {
-  outline: 2px solid var(--avo-primary, #FF6B4A);
-  outline-offset: 3px;
+/* ── CAD construction reveal (§6.1) ───────────────────────────── *
+   Ported from brand/motion/wordmark-reveal.css + Wordmark.tsx to vanilla; same
+   geometry, same timeline, same timeScale 0.6. One implementation
+   (scripts/wordmark.js), two call sites:
+   · the post-login splash on dash_home.html: full screen, once per login, gated
+     server-side by session['show_intro'] (§6.1 "once per session")
+   · the hero on welcome.html: in place, the landing page's one signature moment
+   The splash is always dark, whatever the theme: its strokes are white. */
+#avo-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #141518; /* the dark UI canvas, fixed on purpose (see above) */
+  transition: opacity var(--avo-dur-ui) var(--avo-ease-in-out);
+}
+#avo-splash.avo-fade-out { opacity: 0; pointer-events: none; }
+
+/* Nothing else on screen: no tagline, no spinner, no version string. */
+.hw { position: relative; display: inline-block; }
+.hw-ch { position: relative; display: inline-block; }
+.hw-fill { display: inline-block; position: relative; z-index: 1; }
+.hw-ch.coral .hw-fill { color: var(--avo-coral-500); }
+
+/* Outline layer. The glyph comes from ::before content so it stays out of the
+   accessible text tree: real text lives only in .hw-fill. */
+.hw-stroke {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.2px rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+.hw-stroke::before { content: attr(data-ch); }
+.hw-ch.coral .hw-stroke { -webkit-text-stroke-color: rgba(var(--avo-coral-rgb), 0.7); }
+
+/* FOUC guard: pre-hide the fills only when motion is allowed and JS ran (the
+   head script adds .gsap-ready). No JS or reduced motion → the solid wordmark
+   shows, never a blank screen. */
+html.gsap-ready .hw-fill { clip-path: inset(100% 0 0 0); }
+
+.hw-guides { position: absolute; top: 0; left: 0; overflow: visible; z-index: 0; pointer-events: none; }
+.hw-line { stroke: rgba(255, 255, 255, 0.30); stroke-width: 1; opacity: 0; stroke-dasharray: 1; }
+.hw-line.coral { stroke: rgba(var(--avo-coral-rgb), 0.5); }
+.hw-circ { fill: none; stroke: rgba(255, 255, 255, 0.26); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0; }
+.hw-circ.coral { stroke: rgba(var(--avo-coral-rgb), 0.55); }
+
+/* The hero follows the theme; the splash does not. White scaffolding on the
+   light canvas is invisible, so the hero's guides darken. Scoped to .is-hero. */
+html.avo-light .hw.is-hero .hw-line { stroke: rgba(0, 0, 0, 0.28); }
+html.avo-light .hw.is-hero .hw-line.coral { stroke: rgba(199, 61, 32, 0.5); }
+html.avo-light .hw.is-hero .hw-circ { stroke: rgba(0, 0, 0, 0.24); }
+html.avo-light .hw.is-hero .hw-circ.coral { stroke: rgba(199, 61, 32, 0.55); }
+
+.splash-word, .hero-word {
+  font-family: var(--avo-font-wordmark);
+  font-weight: 800;
+  /* flex, not inline-block: the letters are one span each, and whitespace-only
+     text nodes between them would otherwise render as word gaps. */
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-size: var(--avo-text-wordmark);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+.splash-word { color: #E9E9EB; }
+.hero-word { color: var(--avo-text); }
+html.avo-light .hero-word .hw-stroke { -webkit-text-stroke-color: rgba(0, 0, 0, 0.45); }
+html.avo-light .hero-word .hw-ch.coral .hw-stroke { -webkit-text-stroke-color: rgba(199, 61, 32, 0.7); }
+
+/* ── Insights day selector ────────────────────────────────────── */
+.time-bar button.active, .time-bar button:hover {
+  background: var(--avo-primary) !important;
+  color: var(--avo-primary-on) !important;
+  border-color: var(--avo-primary) !important;
 }
 
-/* ── Accessibility: respect reduced-motion ───────────────────── */
-/* Kills spinners, hatch loaders and pulse loops for users who ask for less motion. */
+/* ── Focus (§10) ──────────────────────────────────────────────── *
+   The kit sets the coral ring on :focus-visible. Controls that already carry a
+   1px border sit tighter, or the ring floats. The border does not change on
+   focus: the ring is the whole signal, so focus stays distinguishable from hover. */
+.btn:focus-visible, .input:focus-visible, .select:focus-visible, .textarea:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 2px; }
+
+/* Reduced motion (§6.8): end state, instantly. The loader is the one exception
+   and the kit already stops it still instead. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -2490,117 +1319,4 @@ body.has-save-bar .card-actions:not(:has(> :not(.submit-btn):not([data-save-btn]
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ── Native <select>: explicit dark colours so the OS popup isn't white-on-white ── */
-select, option {
-  background-color: var(--card, #0A0A0A);
-  color: var(--avo-text, inherit);
-}
-html:not(.dark) select,
-html:not(.dark) option {
-  background-color: #ffffff;
-  color: #141414;
-}
-
-/* ── Small button family (admin panel) ─────────────────────────
-   data-size="sm" gets the same brand treatment as the base family at the top
-   of this file (mono label, 6px radius, coral wipe, icon step) from the general
-   .btn rules; only the compact 28px step is its own. The link variant is
-   excluded — it is text, and a wipe behind a text link is the cross-fade
-   gesture the system rejects. */
-.btn[data-size=sm]:not([data-variant=link]) {
-  min-height: 28px; /* compact control step (BRANDING §9 "one row, one height") */
-}
-
-/* A compact control to sit beside size-sm buttons in a dense toolbar, at the same
-   28px step — an ad hoc height:auto + one-off padding per call site is the
-   "input at 36px next to a button at 32px" bug §9 names. */
-.select-compact {
-  height: 28px;
-  padding: 0 0.5rem;
-  font-size: 0.78rem;
-  border-radius: var(--avo-radius-sm, 6px);
-}
-
-/* basecoat ships an oklch red for --destructive; the brand's danger red is
-   #DC3838 and it stays distinct from coral on purpose (BRANDING §3). Set in
-   both themes because the semantic ramp is mode-independent. */
-html.dark, html:not(.dark) {
-  --destructive: var(--avo-error);
-}
-
-/* ── basecoat 1.0.2 compat ──────────────────────────────────────
-   The templates and this file were written against basecoat 0.3.10-beta.2.
-   1.0.2 is the pin the brand kit is verified against (BRANDING §12.2), but it
-   changed card and button metrics. The values below put the old ones back so
-   the dashboard does not move: unclipped, bordered card that inherits the
-   page's type; 36/32/40px buttons with 16/12/24px side padding. Only the
-   metrics are restored — surfaces and colours still come from 1.0.2 and the
-   brand rules above. */
-.card {
-  font-size: inherit;
-  line-height: inherit;
-  overflow: visible;
-  border-width: 1px;
-}
-.card > header {
-  gap: calc(var(--spacing) * 1.5);
-  grid-template-rows: auto auto;
-  border-radius: 0;
-}
-.card > header p {
-  font-size: var(--text-sm);
-  line-height: var(--tw-leading, var(--text-sm--line-height));
-  color: var(--avo-text-muted);
-}
-.card > header h2 {
-  line-height: 1;
-}
-.btn[data-size=default] {
-  padding: 0.5rem 1rem;
-  gap: 0.5rem;
-}
-.btn[data-size=default]:has(> svg) {
-  padding-inline: 0.75rem;
-}
-.btn[data-size=sm] {
-  padding: 0 0.75rem;
-  gap: 0.375rem;
-}
-.btn[data-size=sm]:has(> svg) {
-  padding-inline: 0.625rem;
-}
-.btn[data-size=lg] {
-  padding: 0.5rem 1.5rem;
-  gap: 0.5rem;
-}
-.btn[data-size=lg]:has(> svg) {
-  padding-inline: 1rem;
-}
-/* 0.3.10 only drew a border on the outline variant; its shadow-xs sat on the
-   filled ones. :not(:focus-visible) keeps 1.0.2's focus ring on top. */
-.btn:is([data-variant=primary], [data-variant=secondary], [data-variant=destructive], [data-variant=ghost], [data-variant=link]) {
-  border-width: 0;
-}
-.btn:is([data-variant=primary], [data-variant=secondary], [data-variant=destructive]):not(:focus-visible) {
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-}
-
-/* 1.0.2 made .badge a component of its own (fixed 20px, clipped, text-xs).
-   The admin panel defines its own badge look, so give it back its natural height. */
-.badge {
-  height: auto;
-  line-height: calc(1 / 0.75);
-}
-
-/* 1.0.2 styles a span inside .button-group as an input-group addon (muted fill,
-   border, shadow). The sidebar section label in insights.html is plain text. */
-.local-button-group > span {
-  display: block;
-  gap: normal;
-  border-width: 0;
-  background-color: transparent;
-  box-shadow: none;
-  line-height: 1.5;
 }

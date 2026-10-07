@@ -14,11 +14,12 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -46,15 +47,17 @@
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
-            <p class="text-xs font-mono tracking-widest mb-1" style="color: var(--color-primary, #FF6B4A); opacity: 0.7;">SYS // ERROR</p>
-            <h1 class="text-3xl font-bold">Request Failed</h1>
+            <p class="font-mono text-xs tracking-widest mb-1" style="color: var(--avo-error);">ERR</p>
+            <h1 class="text-3xl font-semibold">Request Failed</h1>
             <p class="text-muted">"{{message}}"</p>
         </div>
 
         <main class="pb-24">
             <section class="pb-16">
                 <div class="section-label">WHAT HAPPENED</div>
-                <div class="card">
+                <!-- Error state (BRANDING §9): an `error` left strip, a mono ERR serial, the
+                     actual message in the body face (above), and a way out. -->
+                <div class="card is-error">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24">
@@ -67,12 +70,12 @@
                         <p class="text-muted">The request could not be completed. Please check the details above and try again.</p>
                     </header>
                     <section>
-                        <a href="/" class="btn inline-flex items-center gap-2 font-mono text-sm tracking-wide" data-variant="secondary" data-size="default">
+                        <a href="/" class="btn inline-flex items-center gap-2" data-variant="secondary" data-size="default">
                             <svg class="lucide" viewBox="0 0 24 24">
                                 <path d="m12 19-7-7 7-7"/>
                                 <path d="M19 12H5"/>
                             </svg>
-                            BACK // HOME
+                            Back to home
                         </a>
                     </section>
                 </div>
@@ -89,7 +92,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 </body>
 

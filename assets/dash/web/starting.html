@@ -15,8 +15,9 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <style>
         .starting-hero {
@@ -38,13 +39,13 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius-sm, 6px);
+            border-radius: var(--avo-radius);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
         .starting-hero h1 {
             font-size: clamp(2rem, 6vw, 3.5rem);
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.1;
             letter-spacing: -0.02em;
         }
@@ -64,7 +65,7 @@
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -119,7 +120,7 @@
         // Auto-refresh every 5 seconds until the bot is ready
         setTimeout(() => location.reload(), 10000);
     </script>
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
 </body>
 
 </html>

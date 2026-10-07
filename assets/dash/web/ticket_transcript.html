@@ -10,53 +10,48 @@
     <meta property="og:description" content="Transcript for support ticket #{{data.id}} -  {{data.title}}">
     <meta property="og:url" content="https://baxi.avocloud.net/">
     <meta property="og:type" content="website">
-    <meta name="theme-color" content="#FF6B4A">
+    <meta name="theme-color" content="#141518" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F4F6F7" media="(prefers-color-scheme: light)">
 
     <script src="{{ cdn.tailwind_js }}"></script>
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <style>
         :root {
-            --chat-bg: rgba(34, 34, 34, 0.8);
-            --chat-border: 1px solid rgba(255, 255, 255, 0.1);
-            --chat-radius: 0px;
             --chat-spacing: 1.25rem;
             --avatar-size: 48px;
         }
 
-        html:not(.dark) {
-            --chat-bg: rgba(220, 220, 220, 0.6);
-            --chat-border: 1px solid rgba(0, 0, 0, 0.08);
-        }
-
+        /* The log is one panel: it carries the box radius and the glass, and the
+           messages inside it are hairline rows, not rounded panels of their own
+           (BRANDING §9: round the container, not the contents). The corner marks
+           come from main.css. */
         .chat-log {
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: var(--chat-spacing);
             margin: 2rem 0 0;
             padding: 1.5rem;
-            /* Glass tokens (BRANDING §6b) — dark tint, 7px, lit top edge. The
-               container carries the box radius; bubbles inside stay flat
-               (--chat-radius: 0) — round the container, not the contents
-               (BRANDING §9). */
             background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            border: var(--chat-border);
-            border-radius: var(--avo-radius-md, 8px);
+            border: 1px solid var(--avo-line);
+            border-radius: var(--avo-radius-lg);
             backdrop-filter: blur(var(--avo-glass-blur));
             -webkit-backdrop-filter: blur(var(--avo-glass-blur));
             box-shadow: inset 0 1px 0 var(--avo-glass-edge);
         }
 
-
+        /* No entrance animation on data (§9 motion budget): a transcript is read,
+           not watched arriving. */
         .chat-message {
             display: flex;
             align-items: flex-start;
             gap: 1rem;
-            animation: fadeIn 0.3s ease-out;
         }
 
         .chat-avatar {
@@ -65,71 +60,74 @@
             border-radius: 50%;
             flex-shrink: 0;
             object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-
-        html:not(.dark) .chat-avatar {
-            border-color: rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--avo-line-strong);
         }
 
         .chat-bubble {
-            background-color: var(--chat-bg);
+            background-color: var(--avo-surface-raised);
             padding: 0.75rem 1rem;
-            border-radius: var(--chat-radius);
+            border-radius: 0;
             max-width: min(100%, 800px);
             width: fit-content;
-            border: var(--chat-border);
+            border: 1px solid var(--avo-line);
         }
 
         .chat-header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 0.85rem;
-            color: var(--avo-text-muted, #7E7E7E);
+            font-size: var(--avo-ui-text);
+            color: var(--avo-text-muted);
             margin-bottom: 0.25rem;
             gap: 1rem;
             flex-wrap: wrap;
         }
 
         .chat-username {
-            font-weight: bold;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .chat-timestamp {
-            font-style: italic;
-            font-size: 0.75rem;
-            opacity: 0.75;
+            font-family: var(--avo-font-mono);
+            font-variant-numeric: tabular-nums;
+            font-size: var(--avo-ui-label);
             white-space: nowrap;
         }
 
         .chat-text {
             white-space: pre-wrap;
-            color: var(--avo-text-muted, #7E7E7E);
-            font-size: 0.95rem;
+            color: var(--avo-text);
+            font-size: var(--avo-ui-text);
             line-height: 1.5;
         }
 
+        /* Status is the semantic colour on a hairline and a mono label, never a
+           filled ground (§9). */
         .ticket-status {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: var(--avo-radius-sm, 6px);
-            font-size: 0.8rem;
-            font-weight: 600;
+            height: var(--avo-ui-control-h-compact);
+            padding: 0 0.75rem;
+            border-radius: var(--avo-radius);
+            border: 1px solid var(--avo-line-strong);
+            font-family: var(--avo-font-mono);
+            font-size: var(--avo-ui-label);
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
 
         .status-open {
-            background: color-mix(in srgb, var(--avo-success) 15%, transparent);
             color: var(--avo-success);
+            border-color: color-mix(in srgb, var(--avo-success) 45%, transparent);
         }
 
         .status-closed {
-            background: color-mix(in srgb, var(--avo-error) 15%, transparent);
             color: var(--avo-error);
+            border-color: color-mix(in srgb, var(--avo-error) 45%, transparent);
         }
 
         @media (max-width: 768px) {
@@ -140,7 +138,7 @@
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -326,7 +324,7 @@
                                 {% for attachment in entry.attachments %}
                                 <a href="{{ attachment_url }}{{ attachment }}" target="_blank" rel="noopener noreferrer">
                                     <img src="{{ attachment_url }}{{ attachment }}" alt="Attachment"
-                                        style="border: var(--chat-border); max-width: 600px;">
+                                        style="border: 1px solid var(--avo-line); max-width: 600px;">
                                 </a>
                                 {% endfor %}
                             </div>
@@ -378,7 +376,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 </body>
 

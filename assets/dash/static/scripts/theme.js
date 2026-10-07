@@ -1,5 +1,11 @@
 /* Theme toggle.
  *
+ * Two classes on <html> per theme, because two things read them:
+ *   .dark        the dashboard's own selectors and Tailwind's dark: variant
+ *   .avo-light   the avocloud kit (BRANDING §9.1): `.avo-light .avo-ui` swaps the
+ *                UI theme's roles to the light canvas. Dark is the kit's default,
+ *                so it needs no class of its own.
+ *
  * Replaces https://avocloud.net/assets/js/theme.js, which now 404s. While it was
  * missing, `html.dark` was never set (so every page rendered light regardless of
  * the OS setting), `toggleTheme()` was undefined (so the button did nothing) and
@@ -45,7 +51,10 @@
 
     function apply(theme) {
         root.classList.toggle('dark', theme === 'dark');
+        root.classList.toggle('avo-light', theme !== 'dark');
         paintIcon(theme);
+        // Canvas consumers (the insights charts) bake colours at build time.
+        document.dispatchEvent(new CustomEvent('avo:themechange', { detail: theme }));
     }
 
     window.toggleTheme = function () {

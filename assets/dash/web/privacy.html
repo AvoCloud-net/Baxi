@@ -15,8 +15,9 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <style>
         .legal-hero {
@@ -37,13 +38,13 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius-sm, 6px);
+            border-radius: var(--avo-radius);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
         .legal-hero h1 {
             font-size: clamp(1.75rem, 5vw, 2.75rem);
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.1;
             letter-spacing: -0.02em;
         }
@@ -60,8 +61,8 @@
             width: 1.75rem;
             height: 1.75rem;
             
-            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 15%, transparent);
-            color: var(--color-primary, #FF6B4A);
+            background: color-mix(in srgb, var(--avo-primary) 15%, transparent);
+            color: var(--avo-accent-text);
             font-size: 0.75rem;
             font-weight: 700;
             flex-shrink: 0;
@@ -118,9 +119,9 @@
             font-size: 0.75rem;
             font-weight: 600;
             padding: 0.2rem 0.6rem;
-            border-radius: var(--avo-radius-sm, 6px);
-            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 12%, transparent);
-            color: var(--color-primary, #FF6B4A);
+            border-radius: var(--avo-radius);
+            background: color-mix(in srgb, var(--avo-primary) 12%, transparent);
+            color: var(--avo-accent-text);
             margin-bottom: 0.5rem;
         }
         .update-badge {
@@ -164,7 +165,7 @@
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -263,7 +264,7 @@
                                         <span class="legal-section-num">1.1</span>
                                         Cookies
                                     </div>
-                                    <p>We do not use any tracking or analytics cookies. The Baxi Dashboard uses a single session cookie (<code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">session</code>) solely to maintain your login state after authenticating with Discord. This cookie contains no personal data beyond a session identifier and is deleted when you log out.</p>
+                                    <p>We do not use any tracking or analytics cookies. The Baxi Dashboard uses a single session cookie (<code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">session</code>) solely to maintain your login state after authenticating with Discord. This cookie contains no personal data beyond a session identifier and is deleted when you log out.</p>
                                 </div>
                                 <div class="legal-item">
                                     <p>We try to develop as much as possible ourselves, and only use open source software where necessary. We do not give away, sell or share any of the data we process or collect with third parties.</p>
@@ -420,7 +421,7 @@
                                         <li>Personal identity information beyond a Discord User ID</li>
                                     </ul>
                                     <p style="margin-top: 0.75rem;">A Prism profile contains only the numeric trust score and a log of past moderation events -  nothing else. There is no behavioural tracking, no content scanning, and no activity profiling of any kind. Trust scores are shared across all servers using Baxi, meaning a moderation event on one server affects the user's score network-wide. Users scoring 30 or below are automatically flagged, which blocks Global Chat access.</p>
-                                    <p style="margin-top: 0.75rem;">You can opt out of Prism at any time by running <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command -  running it once opts you out and deletes your Prism profile, running it again opts you back in. While opted out, no trust score is maintained and no moderation events are recorded by Prism for your account.</p>
+                                    <p style="margin-top: 0.75rem;">You can opt out of Prism at any time by running <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command -  running it once opts you out and deletes your Prism profile, running it again opts you back in. While opted out, no trust score is maintained and no moderation events are recorded by Prism for your account.</p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -470,7 +471,7 @@
                                         <span class="legal-section-num">5.1</span>
                                         Discord API
                                     </div>
-                                    <p>Baxi communicates with the Discord API (operated by Discord Inc.) to function as a Discord bot. This means that data such as user IDs, message content, and guild information is exchanged with Discord's infrastructure as part of normal bot operation. This exchange is governed by <a href="https://discord.com/privacy" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">Discord's Privacy Policy</a>. We do not control or receive data from Discord beyond what is passed to the bot at the time of an event.</p>
+                                    <p>Baxi communicates with the Discord API (operated by Discord Inc.) to function as a Discord bot. This means that data such as user IDs, message content, and guild information is exchanged with Discord's infrastructure as part of normal bot operation. This exchange is governed by <a href="https://discord.com/privacy" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">Discord's Privacy Policy</a>. We do not control or receive data from Discord beyond what is passed to the bot at the time of an event.</p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -518,7 +519,7 @@
                                         </span>
                                         Email
                                     </div>
-                                    <p><a href="mailto:support@avocloud.net" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">support@avocloud.net</a></p>
+                                    <p><a href="mailto:support@avocloud.net" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">support@avocloud.net</a></p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -527,7 +528,7 @@
                                         </span>
                                         Discord
                                     </div>
-                                    <p>Join our community at <a href="https://avocloud.net/discord" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">avocloud.net/discord</a></p>
+                                    <p>Join our community at <a href="https://avocloud.net/discord" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">avocloud.net/discord</a></p>
                                 </div>
                             </div>
                         </section>
@@ -548,7 +549,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 </body>
 

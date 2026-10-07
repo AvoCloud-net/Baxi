@@ -15,8 +15,9 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 
     <style>
         .legal-hero {
@@ -37,13 +38,13 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius-sm, 6px);
+            border-radius: var(--avo-radius);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
         .legal-hero h1 {
             font-size: clamp(1.75rem, 5vw, 2.75rem);
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.1;
             letter-spacing: -0.02em;
         }
@@ -60,8 +61,8 @@
             width: 1.75rem;
             height: 1.75rem;
             
-            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 15%, transparent);
-            color: var(--color-primary, #FF6B4A);
+            background: color-mix(in srgb, var(--avo-primary) 15%, transparent);
+            color: var(--avo-accent-text);
             font-size: 0.75rem;
             font-weight: 700;
             flex-shrink: 0;
@@ -113,12 +114,12 @@
         }
         .legal-list.check li::before {
             content: "✓";
-            color: #46A758;
+            color: var(--avo-success);
             opacity: 1;
         }
         .legal-list.cross li::before {
             content: "✗";
-            color: #DC3838;
+            color: var(--avo-error);
             opacity: 1;
         }
         .legal-highlight {
@@ -128,9 +129,9 @@
             font-size: 0.75rem;
             font-weight: 600;
             padding: 0.2rem 0.6rem;
-            border-radius: var(--avo-radius-sm, 6px);
-            background: color-mix(in srgb, var(--color-primary, #FF6B4A) 12%, transparent);
-            color: var(--color-primary, #FF6B4A);
+            border-radius: var(--avo-radius);
+            background: color-mix(in srgb, var(--avo-primary) 12%, transparent);
+            color: var(--avo-accent-text);
             margin-bottom: 0.5rem;
         }
         .update-badge {
@@ -186,7 +187,7 @@
     </style>
 </head>
 
-<body>
+<body class="avo-ui">
 
     <!-- Nav -->
     <nav class="site-nav" id="site-nav">
@@ -376,7 +377,7 @@
                                         <span class="legal-section-num">3.4</span>
                                         Data Retention
                                     </div>
-                                    <p>Log data collected by Baxi (chat filter logs, global chat message data, ticket transcripts) is automatically deleted after <strong>30 days</strong>. For full details on what data is stored and how it is handled, see our <a href="/privacy/" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">Privacy Policy</a>.</p>
+                                    <p>Log data collected by Baxi (chat filter logs, global chat message data, ticket transcripts) is automatically deleted after <strong>30 days</strong>. For full details on what data is stored and how it is handled, see our <a href="/privacy/" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">Privacy Policy</a>.</p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -394,7 +395,7 @@
                                     <ul class="legal-list" style="margin-top: 0.75rem;">
                                         <li>Your moderation history (warnings, kicks, bans, filter violations) contributes to a trust score that is shared across all Baxi servers.</li>
                                         <li>Users with a trust score of 30 or below are automatically flagged and blocked from Global Chat.</li>
-                                        <li>Server administrators can view flagged users via the <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/scan_users</code> command.</li>
+                                        <li>Server administrators can view flagged users via the <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/scan_users</code> command.</li>
                                         <li>Prism only tracks behaviour resulting in moderation actions -  normal messages are never scored or stored.</li>
                                     </ul>
                                     <div class="legal-highlight" style="margin-top: 0.75rem;">
@@ -402,7 +403,7 @@
                                         Moderation tool, not profiling
                                     </div>
                                     <p>Prism is strictly a moderation tool. It does not profile users, track activity patterns, monitor message content, or build social graphs. The only data Prism records are moderation actions (e.g. warnings, kicks, bans) and the resulting trust score. No behavioural surveillance or identity profiling takes place.</p>
-                                    <p style="margin-top: 0.75rem;">Trust scores recover over time through clean behaviour. You can opt out of Prism at any time by running <code style="font-family: monospace; font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command -  running it once opts you out and deletes your profile, running it again opts you back in. You may also request a copy or deletion of your Prism data by contacting us.</p>
+                                    <p style="margin-top: 0.75rem;">Trust scores recover over time through clean behaviour. You can opt out of Prism at any time by running <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/prism-optout</code> in any server with Baxi. This is a toggle command -  running it once opts you out and deletes your profile, running it again opts you back in. You may also request a copy or deletion of your Prism data by contacting us.</p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -463,7 +464,7 @@
                                         <span class="legal-section-num">4.3</span>
                                         Changes to These Terms
                                     </div>
-                                    <p>These terms may be updated periodically. We will announce significant changes via our Discord community at <a href="https://avocloud.net/discord" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">avocloud.net/discord</a> and update the "Last updated" date on this page. Continued use of our services after changes are published constitutes acceptance of the updated terms.</p>
+                                    <p>These terms may be updated periodically. We will announce significant changes via our Discord community at <a href="https://avocloud.net/discord" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">avocloud.net/discord</a> and update the "Last updated" date on this page. Continued use of our services after changes are published constitutes acceptance of the updated terms.</p>
                                 </div>
                             </div>
                         </section>
@@ -523,7 +524,7 @@
                                         </span>
                                         Email
                                     </div>
-                                    <p><a href="mailto:support@avocloud.net" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">support@avocloud.net</a></p>
+                                    <p><a href="mailto:support@avocloud.net" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">support@avocloud.net</a></p>
                                 </div>
                                 <div class="legal-item">
                                     <div class="legal-section-title">
@@ -532,7 +533,7 @@
                                         </span>
                                         Discord
                                     </div>
-                                    <p>Join our community at <a href="https://avocloud.net/discord" style="color: var(--color-primary, #FF6B4A); text-decoration: none; font-weight: 600;">avocloud.net/discord</a></p>
+                                    <p>Join our community at <a href="https://avocloud.net/discord" style="color: var(--avo-accent-text); text-decoration: none; font-weight: 600;">avocloud.net/discord</a></p>
                                 </div>
                             </div>
                         </section>
@@ -553,7 +554,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 </body>
 

@@ -15,11 +15,12 @@
     <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
     <link rel="stylesheet" href="{{ cdn.fonts_css }}">
     <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <script src="{{ url_for('static', filename='scripts/theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
 </head>
 
-<body>
+<body class="avo-ui">
     <!-- Sensitive content overlay -->
     <div class="popup" id="popup">
         <div class="popup-inner card">
@@ -209,7 +210,7 @@
                     </header>
                     <section>
                         {% if data.false_positive or data.feedback %}
-                            <div class="update-badge" style="display:inline-flex;align-items:center;gap:0.4rem;background:color-mix(in srgb, var(--success, #46A758) 15%, transparent);color:var(--success, #46A758);">
+                            <div class="update-badge" style="display:inline-flex;align-items:center;gap:0.4rem;background:color-mix(in srgb, var(--avo-success) 15%, transparent);color:var(--avo-success);">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 Feedback submitted
                                 {% if data.feedback and data.feedback.admin %}
@@ -307,7 +308,7 @@
             }
         }
     </script>
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
 </body>
 
