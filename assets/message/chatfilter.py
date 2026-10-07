@@ -70,3 +70,16 @@ class Chatfilter:
             use_ml=use_ml,
             targeted_hint=targeted_hint,
         )
+
+
+async def text_is_clean(guild_id: int, channel_id: int, user_id: int, text: str) -> bool:
+    """For text that Baxi will publish later or on someone's behalf (quotes, time capsules).
+    Honours the guild's own chatfilter setting; fails open if the filter itself errors."""
+    try:
+        if not dict(datasys.load_data(guild_id, "chatfilter")).get("enabled", False):
+            return True
+        res = await Chatfilter().check(text, guild_id, channel_id, user_id)
+        return not res.get("flagged", False)
+    except Exception as e:
+        logger.error(f"text_is_clean error: {e}")
+        return True

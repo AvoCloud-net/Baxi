@@ -31,6 +31,8 @@ import secrets
 import urllib.parse
 import assets.share as share
 import assets.db as db
+import assets.games.onewordstory as onewordstory_game
+import assets.pulse as pulse_sys
 from assets.data import load_temp_actions, save_temp_actions
 
 # In-memory store for notification broadcast jobs { job_id: {...} }
@@ -3166,31 +3168,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"success": True, "message": "One Word Story settings saved!"})
 
         elif system == "one_word_story_end":
-            existing: dict = dict(load_data(int(guild_id), "one_word_story"))
-            words: list = list(existing.get("words", []))
-
-            if words:
-                story_text = " ".join(words)
-                if len(story_text) > 3800:
-                    story_text = story_text[:3800] + " […]"
-                channel_raw = str(existing.get("channel", "") or "")
-                if channel_raw.isdigit():
-                    channel = bot.get_channel(int(channel_raw))
-                    if channel is not None:
-                        embed = discord.Embed(
-                            title="One Word Story — The End",
-                            description=story_text,
-                            color=config.Discord.color,
-                        )
-                        embed.set_footer(text=f"Baxi · One Word Story · {len(words)} words")
-                        try:
-                            await channel.send(embed=embed)
-                        except (discord.Forbidden, discord.HTTPException):
-                            pass
-
-            existing["words"] = []
-            existing["last_user_id"] = 0
-            save_data(int(guild_id), "one_word_story", existing)
+            word_count = await onewordstory_game.end_story(bot, int(guild_id))
 
             user = await discord_auth.fetch_user()
             audit_log_new = {
@@ -3204,7 +3182,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
-            return quart.jsonify({"success": True, "message": f"Story ended ({len(words)} words) and posted."})
+            return quart.jsonify({"success": True, "message": f"Story ended ({word_count} words) and posted."})
 
         elif system == "leveling":
             data: dict = await quart.request.get_json()
@@ -3262,6 +3240,176 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             save_data(int(guild_id), "audit_log", audit_log)
 
             return quart.jsonify({"success": True, "message": "Level System settings saved!"})
+
+        elif system == "starboard":
+            data: dict = await quart.request.get_json()
+            pl = data.get("starboard")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'starboard' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            if pl["enabled"] and not channel_raw:
+                return quart.jsonify({"success": False, "message": "Select a starboard channel first."}), 400
+
+            emoji = str(pl.get("emoji", "")).strip()
+            if not (re.fullmatch(r"<a?:\w{2,32}:\d{17,20}>", emoji) or (0 < len(emoji) <= 16 and not any(c.isspace() for c in emoji))):
+                return quart.jsonify({"success": False, "message": "Invalid emoji."}), 400
+            threshold = pl.get("threshold")
+            if not isinstance(threshold, int) or isinstance(threshold, bool) or not 1 <= threshold <= 25:
+                return quart.jsonify({"success": False, "message": "Stars needed must be between 1 and 25."}), 400
+
+            existing: dict = dict(load_data(int(guild_id), "starboard"))
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+                "emoji": emoji,
+                "threshold": threshold,
+                "self_star": bool(pl.get("self_star", False)),
+                "ignore_nsfw": bool(pl.get("ignore_nsfw", True)),
+                "throwback": bool(pl.get("throwback", True)),
+                # preserve runtime state
+                "last_throwback": existing.get("last_throwback", ""),
+            }
+
+            save_data(int(guild_id), "starboard", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "starboard",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Starboard settings saved!"})
+
+        elif system == "quotes":
+            data: dict = await quart.request.get_json()
+            pl = data.get("quotes")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'quotes' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+                "staff_only_save": bool(pl.get("staff_only_save", False)),
+            }
+
+            save_data(int(guild_id), "quotes", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "quotes",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Quote Book settings saved!"})
+
+        elif system == "capsule":
+            data: dict = await quart.request.get_json()
+            pl = data.get("capsule")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'capsule' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+            }
+
+            save_data(int(guild_id), "capsule", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "capsule",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Time Capsule settings saved!"})
+
+        elif system == "pulse":
+            data: dict = await quart.request.get_json()
+            pl = data.get("pulse")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'pulse' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            if pl["enabled"] and not channel_raw:
+                return quart.jsonify({"success": False, "message": "Select a recap channel first."}), 400
+
+            weekday, hour = pl.get("weekday"), pl.get("hour")
+            if not isinstance(weekday, int) or isinstance(weekday, bool) or not 0 <= weekday <= 6:
+                return quart.jsonify({"success": False, "message": "Invalid weekday."}), 400
+            if not isinstance(hour, int) or isinstance(hour, bool) or not 0 <= hour <= 23:
+                return quart.jsonify({"success": False, "message": "Invalid hour."}), 400
+
+            tz_name = str(pl.get("timezone", ""))
+            if not pulse_sys.is_valid_timezone(tz_name):
+                return quart.jsonify({"success": False, "message": "Invalid timezone."}), 400
+
+            existing: dict = dict(load_data(int(guild_id), "pulse"))
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+                "weekday": weekday,
+                "hour": hour,
+                "timezone": tz_name,
+                "show_members": bool(pl.get("show_members", True)),
+                # preserve runtime state
+                "last_recap": existing.get("last_recap", ""),
+            }
+            save_data(int(guild_id), "pulse", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "pulse",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Pulse settings saved!"})
 
         elif system == "flag_quiz":
             data: dict = await quart.request.get_json()
@@ -4471,7 +4619,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "add_reactions",
                         "read_message_history",
                     }
-                elif system in ("flag_quiz", "leveling", "youtube_alert", "notification", "verify_channel"):
+                elif system in ("flag_quiz", "leveling", "pulse", "starboard", "quotes", "capsule", "youtube_alert", "notification", "verify_channel"):
                     required_perms = {
                         "view_channel",
                         "send_messages",

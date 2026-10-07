@@ -744,6 +744,51 @@ CREATE TABLE IF NOT EXISTS leveling_users (
 
 CREATE INDEX IF NOT EXISTS ix_leveling_users_guild ON leveling_users(guild_id);
 
+CREATE TABLE IF NOT EXISTS quotes (
+    guild_id          INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    quote_id          INTEGER,
+    author_id         TEXT DEFAULT '',
+    author_name       TEXT DEFAULT '',
+    content           TEXT DEFAULT '',
+    source_channel_id TEXT DEFAULT '',
+    source_message_id TEXT DEFAULT '',
+    saved_by          TEXT DEFAULT '',
+    created_at        TEXT DEFAULT '',
+    PRIMARY KEY (guild_id, quote_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_quotes_author ON quotes(guild_id, author_id);
+CREATE INDEX IF NOT EXISTS ix_quotes_source ON quotes(guild_id, source_message_id);
+
+CREATE TABLE IF NOT EXISTS time_capsules (
+    capsule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id   INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    user_id    TEXT,
+    content    TEXT,
+    target     TEXT DEFAULT 'dm',
+    reveal     INTEGER DEFAULT 1,
+    created_at INTEGER,
+    deliver_at INTEGER,
+    attempts   INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS ix_capsules_due ON time_capsules(deliver_at);
+CREATE INDEX IF NOT EXISTS ix_capsules_user ON time_capsules(guild_id, user_id);
+
+-- Starboard stores IDs only; the message text lives in the board post on Discord.
+CREATE TABLE IF NOT EXISTS starboard_entries (
+    guild_id           INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    message_id         TEXT,
+    channel_id         TEXT DEFAULT '',
+    author_id          TEXT DEFAULT '',
+    stars              INTEGER DEFAULT 0,
+    board_message_id   TEXT DEFAULT '',
+    message_created_at TEXT DEFAULT '',
+    PRIMARY KEY (guild_id, message_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_starboard_board ON starboard_entries(guild_id, board_message_id);
+
 CREATE TABLE IF NOT EXISTS bot_admins (
     pos      INTEGER PRIMARY KEY,
     admin_id TEXT

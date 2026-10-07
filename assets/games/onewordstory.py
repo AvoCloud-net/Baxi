@@ -95,3 +95,62 @@ async def check_onewordstory(message: discord.Message, bot: commands.AutoSharded
             pass
 
     return True
+
+
+_EMBED_CHUNK = 4000
+
+
+def _chunk_story(text: str, size: int = _EMBED_CHUNK) -> list:
+    """Split text on word boundaries into pieces that fit an embed description."""
+    chunks, current = [], ""
+    for word in text.split(" "):
+        if current and len(current) + 1 + len(word) > size:
+            chunks.append(current)
+            current = word
+        else:
+            current = f"{current} {word}" if current else word
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+async def end_story(bot: commands.AutoShardedBot, guild_id: int) -> int:
+    """Post the finished story in the game channel, then reset it. Returns the word count."""
+    data: dict = dict(datasys.load_data(guild_id, "one_word_story"))
+    words: list = list(data.get("words", []))
+
+    if words:
+        t: dict = datasys.load_lang_file(guild_id)["games"]["one_word_story"]
+        channel_raw = str(data.get("channel", "") or "")
+        channel = bot.get_channel(int(channel_raw)) if channel_raw.isdigit() else None
+        if channel is not None:
+            chunks = _chunk_story(" ".join(words))
+            try:
+                for i, chunk in enumerate(chunks):
+                    embed = discord.Embed(description=chunk, color=cfg.Discord.color)
+                    if i == 0:
+                        embed.title = t["end_title"]
+                    if i == len(chunks) - 1:
+                        embed.set_footer(text=str(t["end_footer"]).format(count=len(words)))
+                    await channel.send(embed=embed)
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
+    data["words"] = []
+    data["last_user_id"] = 0
+    datasys.save_data(guild_id, "one_word_story", data)
+    return len(words)
+
+
+def undo_word(guild_id: int):
+    """Remove the last word of the story. Returns the removed word, or None if empty."""
+    data: dict = dict(datasys.load_data(guild_id, "one_word_story"))
+    words: list = list(data.get("words", []))
+    if not words:
+        return None
+    removed = words.pop()
+    data["words"] = words
+    # allow the previous author to write again after a correction
+    data["last_user_id"] = 0
+    datasys.save_data(guild_id, "one_word_story", data)
+    return removed

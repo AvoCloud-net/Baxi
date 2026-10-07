@@ -53,6 +53,9 @@ from assets.tasks import (
     McStatusBoardTask,
 )
 from assets.giveaway import GiveawayTask
+from assets.pulse import PulseTask
+from assets.starboard import StarboardTask
+from assets.capsule import CapsuleTask
 from assets.poll import PollTask
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -246,6 +249,24 @@ def events(bot: commands.AutoShardedBot, web):
             anti_raid_task.tick.start()
             share.task_instances["AntiRaid"] = anti_raid_task
             logger.debug.success("Anti-Raid task started.")
+
+            logger.working("Starting Pulse task...")
+            pulse_task = PulseTask(bot)
+            pulse_task.tick.start()
+            share.task_instances["Pulse"] = pulse_task
+            logger.debug.success("Pulse recap task started.")
+
+            logger.working("Starting Starboard task...")
+            starboard_task = StarboardTask(bot)
+            starboard_task.tick.start()
+            share.task_instances["Starboard"] = starboard_task
+            logger.debug.success("Starboard throwback task started.")
+
+            logger.working("Starting Capsule task...")
+            capsule_task = CapsuleTask(bot)
+            capsule_task.tick.start()
+            share.task_instances["Capsule"] = capsule_task
+            logger.debug.success("Time capsule task started.")
 
             # Chatfilter model loads in the background; rules-only until it is ready.
             from assets.message.safetext import models as _safetext_models

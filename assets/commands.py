@@ -19,6 +19,7 @@ from assets.message.warnings import add_warning, remove_warning, get_warnings
 import assets.message.tempvoice as tempvoice
 import assets.trust as sentinel
 import assets.share as share
+import assets.games.onewordstory as onewordstory_game
 import time
 import reds_simple_logger
 
@@ -130,6 +131,13 @@ def base_commands(bot: commands.AutoShardedBot):
                 name="Opt-out status",
                 value=("You have **opted out** of the network safety list." if opted_out
                        else "You are opted in (default). Use `/safety_optout` to opt out."),
+                inline=False,
+            )
+            embed.add_field(
+                name="Quotes & time capsules",
+                value="A quote of you is stored only if someone saved it on purpose - you can remove it "
+                      "with `/quote remove`. Time capsules are kept only until delivered (cancel with "
+                      "`/capsule cancel`). Starboard posts vanish when the original message is deleted.",
                 inline=False,
             )
             embed.add_field(
@@ -1097,30 +1105,47 @@ def leveling_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
-    @bot.tree.command(name="onewordstory", description="Show the current One Word Story so far")
-    async def onewordstory_cmd(interaction: discord.Interaction):
-        await interaction.response.defer()
+    ows_group = app_commands.Group(name="onewordstory", description="One Word Story commands")
+
+    def _ows_context(interaction: discord.Interaction):
+        lang = datasys.load_lang_file(interaction.guild.id)
+        t: dict = lang["games"]["one_word_story"]
+        data: dict = dict(datasys.load_data(interaction.guild.id, "one_word_story"))
+        return t, data
+
+    async def _ows_guard(interaction: discord.Interaction, staff_only: bool):
+        """Common checks. Returns (t, data) or None if a response was already sent."""
         if interaction.guild is None:
             lang = datasys.load_lang_file(0)
             await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
-            return
-
-        guild_id = interaction.guild.id
-        lang = datasys.load_lang_file(guild_id)
-        t: dict = lang["games"]["one_word_story"]
-
-        data: dict = dict(datasys.load_data(guild_id, "one_word_story"))
+            return None
+        t, data = _ows_context(interaction)
         if not data.get("enabled", False):
-            await interaction.edit_original_response(embed=Embed(
+            await interaction.followup.send(embed=Embed(
                 title=t["story_title"],
                 description=t["story_not_enabled"],
                 color=config.Discord.danger_color,
-            ))
+            ), ephemeral=True)
+            return None
+        if staff_only and not interaction.user.guild_permissions.manage_messages:
+            await interaction.followup.send(embed=Embed(
+                description=t["no_permission"],
+                color=config.Discord.danger_color,
+            ), ephemeral=True)
+            return None
+        return t, data
+
+    @ows_group.command(name="show", description="Show the current One Word Story so far")
+    async def ows_show(interaction: discord.Interaction):
+        await interaction.response.defer()
+        ctx = await _ows_guard(interaction, staff_only=False)
+        if ctx is None:
             return
+        t, data = ctx
 
         channel_raw = str(data.get("channel", "") or "")
         if channel_raw.isdigit() and interaction.channel_id != int(channel_raw):
-            await interaction.edit_original_response(content=t["wrong_channel"])
+            await interaction.followup.send(t["wrong_channel"], ephemeral=True)
             return
 
         words: list = list(data.get("words", []))
@@ -1141,7 +1166,51 @@ def leveling_commands(bot: commands.AutoShardedBot):
             color=config.Discord.color,
         )
         embed.set_footer(text=t["footer"])
-        await interaction.edit_original_response(embed=embed)
+        await interaction.followup.send(embed=embed)
+
+    @ows_group.command(name="end", description="Finish the story, post it in the game channel and start a new one")
+    async def ows_end(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ctx = await _ows_guard(interaction, staff_only=True)
+        if ctx is None:
+            return
+        t, data = ctx
+
+        if not data.get("words"):
+            await interaction.followup.send(embed=Embed(
+                description=t["end_empty"],
+                color=config.Discord.warn_color,
+            ), ephemeral=True)
+            return
+
+        count = await onewordstory_game.end_story(bot, interaction.guild.id)
+        await interaction.followup.send(embed=Embed(
+            description=str(t["end_done"]).format(count=count),
+            color=config.Discord.success_color,
+        ), ephemeral=True)
+
+    @ows_group.command(name="undo", description="Remove the last word from the story")
+    async def ows_undo(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ctx = await _ows_guard(interaction, staff_only=True)
+        if ctx is None:
+            return
+        t, _ = ctx
+
+        removed = onewordstory_game.undo_word(interaction.guild.id)
+        if removed is None:
+            await interaction.followup.send(embed=Embed(
+                description=t["end_empty"],
+                color=config.Discord.warn_color,
+            ), ephemeral=True)
+            return
+
+        await interaction.followup.send(embed=Embed(
+            description=str(t["undo_done"]).format(word=discord.utils.escape_markdown(removed)),
+            color=config.Discord.success_color,
+        ), ephemeral=True)
+
+    bot.tree.add_command(ows_group)
 
 
 def mc_link_commands(bot: commands.AutoShardedBot):

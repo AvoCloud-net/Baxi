@@ -23,6 +23,10 @@ _migrate.run()
 
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands, tempvoice_commands
 from assets.giveaway import giveaway_commands
+from assets.pulse_commands import pulse_commands
+from assets.quotes import quote_commands
+from assets.capsule import capsule_commands
+import assets.starboard as starboard
 from assets.poll import poll_commands, PollButton, PollCloseButton
 from assets.dash.cdn import cdn_context
 from assets.dash.log import highlight_word
@@ -121,6 +125,11 @@ giveaway_commands(bot=bot)
 poll_commands(bot=bot)
 mc_link_commands(bot=bot)
 tempvoice_commands(bot=bot)
+pulse_commands(bot=bot)
+quote_commands(bot=bot)
+capsule_commands(bot=bot)
+starboard.starboard_commands(bot=bot)
+starboard.register(bot)
 
 web.jinja_env.filters['highlight_word'] = highlight_word
 

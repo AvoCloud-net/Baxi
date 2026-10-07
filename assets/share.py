@@ -98,6 +98,24 @@ task_status: dict = {
         "last_run": None,
         "detail": "Checks Instagram accounts for new posts/reels every 15 min",
     },
+    "Pulse": {
+        "name": "Pulse Recap",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Posts the weekly activity recap for guilds that enabled it (checked every 10 min)",
+    },
+    "Starboard": {
+        "name": "Starboard Throwback",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Posts the weekly starboard throwback for guilds that enabled it (checked every 30 min)",
+    },
+    "Capsule": {
+        "name": "Time Capsules",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Delivers due time capsules (checked every 5 min)",
+    },
     "MusicIdle": {
         "name": "Music Idle Watcher",
         "status": "idle",

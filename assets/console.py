@@ -199,6 +199,9 @@ _TASK_METHODS = {
     "TwitterPosts":     "check_posts",
     "Instagram":        "check_posts",
     "McLinkSync":       "sync_links",
+    "Pulse":            "tick",
+    "Starboard":        "tick",
+    "Capsule":          "tick",
 }
 
 

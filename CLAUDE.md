@@ -55,6 +55,12 @@ Classes using `discord.ext.tasks` loops: `GCDH_Task` (global chat data sync, 15s
 ### Message Processing (`assets/message/`)
 Feature modules: `chatfilter.py` (entry point for the local SafeText pipeline in `safetext/`: normalisation, phishing, doxxing, DE/EN lexicons + `textdetox/xlmr-large-toxicity-classifier`), `globalchat.py`, `welcomer.py`, `antispam.py`, `auto_slowmode.py`, `reactionroles.py`, `warnings.py`, `customcmd.py`.
 
+### Pulse (`assets/pulse.py`, `pulse_card.py`, `pulse_commands.py`)
+Community activity analytics derived from the BaxiInsights `activity` blob (no own tracking). Note the tracker files messages under the **UTC date with the Vienna hour**; `pulse._local_slot` undoes that. `PulseTask` posts the weekly recap (config key `pulse`, stored via the `guild_misc` catch-all).
+
+### Starboard / Quotes / Time Capsule (`assets/starboard.py`, `quotes.py`, `capsule.py`)
+Each owns its commands and (where needed) a task (`StarboardTask` 30 min, `CapsuleTask` 5 min), started in `events.py`. Tables: `starboard_entries` (IDs only), `quotes`, `time_capsules`; config keys `starboard`/`quotes`/`capsule` live in `guild_misc`. Starboard uses `bot.add_listener` (not `@bot.event`) for raw reaction/delete events so it doesn't replace handlers in `events.py`. Anything Baxi publishes later or on someone's behalf goes through `chatfilter.text_is_clean`.
+
 ### Games (`assets/games/`)
 `counting.py` -  counting game logic. `quiz.py` -  flag quiz logic.
 
@@ -68,9 +74,16 @@ Network-wide user behavior scoring. Only fully functional on the official hosted
 
 - **Toggles (`role="switch"`)**: only for enable/disable of an entire system or feature (e.g. "Enable Music", "Enable Welcomer"). One per card header area.
 - **Checkboxes**: everything else that is boolean — source selection, permission flags, optional sub-features, multi-select options. Never use `role="switch"` for these.
-- **Channel/item cards in lists**: always use `<div class="card">` with `<header class="flex items-center justify-between">`. Channel name as `<h3 class="text-base font-semibold">`. Optional subtitle as `<p class="text-muted text-xs">`. Remove button: `<button class="btn-outline" style="color:#ef4444;border-color:#ef4444;">` with trash SVG + `<span class="btn-label">Remove</span>`. Never use raw `div` with inline `style.cssText` or bare X-icon buttons for list items.
-- **Add-area (input + add button)**: wrap all add-form sections in `<div class="add-area mt-3">` (or `mt-4`). This applies the custom SVG dashed border with wider dash gaps (6px dash / 12px gap) and rounded corners. The class is defined in the `<style>` block. Always use `class="btn-primary"` for add buttons — never `btn-secondary`.
+- **Channel/item cards in lists**: always use `<div class="card">` with `<header class="flex items-center justify-between">`. Channel name as `<h3 class="text-base font-semibold">`. Optional subtitle as `<p class="text-muted text-xs">`. Remove button: `<button class="btn" data-variant="outline" data-size="default" style="color:#ef4444;border-color:#ef4444;">` with trash SVG + `<span class="btn-label">Remove</span>`. Never use raw `div` with inline `style.cssText` or bare X-icon buttons for list items.
+- **Add-area (input + add button)**: wrap all add-form sections in `<div class="add-area mt-3">` (or `mt-4`). This applies the custom SVG dashed border with wider dash gaps (6px dash / 12px gap) and rounded corners. The class is defined in the `<style>` block. Always use `data-variant="primary"` for add buttons — never `secondary`.
 - **Empty states**: use `<div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">` with icon box (`bg-muted size-10 rounded-lg`), `<h3 class="text-base font-semibold tracking-tight">`, and `<p class="text-muted text-sm">`. For full-width sections add `md:p-10`. **Deliberately diverges from `~/Nextcloud/avocloud/brand/BRANDING.md` §9**, which forbids an illustration and wants only a `//` kicker + one mono line + action — kept by decision (empty states should carry an icon), not oversight.
+
+## Basecoat / CDN
+
+- Third-party and brand assets come from `https://cdn.avocloud.net`, pinned in **one** place: `config/cdn.json` (read by `assets/dash/cdn.py`, exposed to every template as `{{ cdn.fonts_css }}`, `{{ cdn.basecoat_css }}`, `{{ cdn.basecoat_js }}`, `{{ cdn.favicon }}`). Never `latest`, never `@4`. Bump a version = edit that file, then look at the pages.
+- Basecoat is **1.0.x**: a button is `class="btn"` plus `data-variant="primary|secondary|outline|ghost|destructive|link"` and `data-size="default|sm|lg|icon…"`. The 0.3.x classes (`btn-primary`, `btn-outline`, `btn-sm-*`, `btn-lg-*`) no longer exist. Switching a button's variant in JS = `el.dataset.variant = '…'`.
+- Toasts: `document.getElementById('toaster').toast({category, title, description, cancel})`. The old `basecoat:toast` document event is gone.
+- `main.css` ends with a "basecoat 1.0.2 compat" block that restores the 0.3.x card/button metrics; basecoat's attribute selectors are 0,2,0, so overrides on `.btn` need `[data-variant]`/`[data-size]` or an extra attribute selector to win.
 
 ## Dashboard Integration Rules
 
