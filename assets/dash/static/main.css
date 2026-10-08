@@ -1322,6 +1322,7 @@ html.avo-light .hero-word .hw-ch.coral .hw-stroke { -webkit-text-stroke-color: r
 .mp-single { white-space: nowrap; overflow-x: auto; overflow-y: hidden; resize: none; height: var(--avo-ui-control-h); padding-top: 0; padding-bottom: 0; line-height: calc(var(--avo-ui-control-h) - 2px); scrollbar-width: none; }
 .mp-single::-webkit-scrollbar { display: none; }
 .mp-bar-single { margin-top: 4px; }
+.mp-var, .mp-var .btn-label { text-transform: none; letter-spacing: 0; color: var(--avo-accent-text); }
 .mp-pill-var { color: var(--avo-accent-text); }
 .mp-pill-var .mp-pill-name { color: inherit; }
 .mp-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }

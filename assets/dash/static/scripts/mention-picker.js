@@ -2,7 +2,8 @@
    Every <textarea> gets a small bar (# Channel · @ Role · @ User) that inserts
    <#id> / <@&id> / <@id> at the cursor, so nobody has to copy IDs out of Discord.
    A field that declares data-vars="user,server,…" (a textarea or a single-line
-   <input>) also gets a { } Variable button. Per-variable help can be overridden:
+   <input>) also gets one button per variable ({user} {server} …) in a second row,
+   replacing the static "Variables: …" help line. Per-variable help can be overridden:
    data-vars="user=Display name,server". Single-line inputs get no mention buttons
    unless they carry data-mentions.
    The field itself becomes a plain-text contenteditable that shows those tokens
@@ -25,7 +26,6 @@
         channel: { label: 'Channel', icon: '#', placeholder: 'Search channels…' },
         role: { label: 'Role', icon: '@', placeholder: 'Search roles…' },
         user: { label: 'User', icon: '@', placeholder: 'Search by name or nickname…' },
-        variable: { label: 'Variable', icon: '{ }', placeholder: 'Search variables…' },
     };
 
     // Default help text; a field can override it with data-vars="name=help".
@@ -76,10 +76,7 @@
 
     /* ── Data ───────────────────────────────────────────────────── */
 
-    function localItems(kind, fc) {
-        if (kind === 'variable') {
-            return fc.vars.map(v => ({ name: `{${v.name}}`, sub: v.help, token: `{${v.name}}`, prefix: '', search: v.name + ' ' + v.help }));
-        }
+    function localItems(kind) {
         if (kind === 'channel') {
             const out = [];
             Object.entries(cfg.channels || {}).forEach(([id, name]) => out.push({ id, name, group: 'Text', token: `<#${id}>`, prefix: '#' }));
@@ -390,14 +387,14 @@
         const it = popState && popState.items[i];
         if (!it) return;
         // A blurred field keeps its selection, so the token lands where the cursor was.
-        if (insertToken(popState.field, it.token, popState.kind !== 'variable')) closePop();
+        if (insertToken(popState.field, it.token, true)) closePop();
     }
 
     function refresh() {
         const { kind, input } = popState;
         const q = input.value.trim().toLowerCase();
         if (kind !== 'user') {
-            const hits = popState.all.filter(it => !q || (it.search || it.name).toLowerCase().includes(q));
+            const hits = popState.all.filter(it => !q || (it.name).toLowerCase().includes(q));
             renderList(hits.slice(0, 80), 'Nothing found.');
             return;
         }
@@ -430,13 +427,12 @@
         pop.append(input, list);
         document.body.appendChild(pop);
 
-        const fc = f._mp ? f._mp.fc : fieldCfg(f);
         // Focusing the search box moves the selection, so keep the caret the user left.
         const range = f._mp ? currentRange(f._mp.editor) : null;
-        popState = { field: f, kind, items: [], index: -1, input, list, timer: null, range, all: kind === 'user' ? [] : localItems(kind, fc) };
+        popState = { field: f, kind, items: [], index: -1, input, list, timer: null, range, all: kind === 'user' ? [] : localItems(kind) };
 
         const r = anchor.getBoundingClientRect();
-        const w = Math.min(kind === 'variable' ? 360 : 320, window.innerWidth - 24);
+        const w = Math.min(320, window.innerWidth - 24);
         pop.style.width = w + 'px';
         pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
         const below = window.innerHeight - r.bottom;
@@ -478,22 +474,46 @@
             try { f._mp = buildEditor(f, fc); } catch (e) { f._mp = null; }
         }
 
-        const bar = el('div', 'mp-bar' + (fc.single ? ' mp-bar-single' : ''));
-        bar.appendChild(el('span', 'mp-bar-label', 'Insert'));
-        const kinds = [...(fc.mentions ? ['channel', 'role', 'user'] : []), ...(fc.vars.length ? ['variable'] : [])];
-        kinds.forEach(kind => {
-            const b = el('button', 'btn mp-btn');
+        const anchor = f._mp ? f._mp.editor : f;
+        const mkBtn = (cls, title, parts, onClick) => {
+            const b = el('button', 'btn mp-btn' + cls);
             b.type = 'button';
             b.dataset.variant = 'outline';
             b.dataset.size = 'sm';
-            b.title = kind === 'variable' ? 'Insert a variable at the cursor' : `Insert a ${KINDS[kind].label.toLowerCase()} mention at the cursor`;
-            b.append(el('span', 'mp-btn-icon', KINDS[kind].icon), el('span', 'btn-label', KINDS[kind].label));
+            b.title = title;
+            parts.forEach(p => b.append(p));
             // mousedown would blur the field and lose its cursor before the click handler reads it.
             b.addEventListener('mousedown', ev => ev.preventDefault());
-            b.addEventListener('click', () => openPop(f, kind, b));
-            bar.appendChild(b);
-        });
-        (f._mp ? f._mp.editor : f).insertAdjacentElement('afterend', bar);
+            b.addEventListener('click', onClick);
+            return b;
+        };
+        const mkBar = (label, single) => {
+            const bar = el('div', 'mp-bar' + (single ? ' mp-bar-single' : ''));
+            bar.appendChild(el('span', 'mp-bar-label', label));
+            return bar;
+        };
+
+        let last = anchor;
+        if (fc.mentions) {
+            const bar = mkBar('Insert', fc.single);
+            ['channel', 'role', 'user'].forEach(kind => bar.appendChild(mkBtn('',
+                `Insert a ${KINDS[kind].label.toLowerCase()} mention at the cursor`,
+                [el('span', 'mp-btn-icon', KINDS[kind].icon), el('span', 'btn-label', KINDS[kind].label)],
+                ev => openPop(f, kind, ev.currentTarget))));
+            last.insertAdjacentElement('afterend', bar);
+            last = bar;
+        }
+        if (fc.vars.length) {
+            const bar = mkBar('Variables', fc.single);
+            fc.vars.forEach(v => bar.appendChild(mkBtn(' mp-var', v.help ? `${v.help}: inserts {${v.name}}` : `Inserts {${v.name}}`,
+                [el('span', 'btn-label', `{${v.name}}`)],
+                () => insertToken(f, `{${v.name}}`, false))));
+            last.insertAdjacentElement('afterend', bar);
+            last = bar;
+            // The buttons replace a bare "Variables: {a}, {b}" help line; longer notes stay.
+            const help = (f._mp ? f : last).nextElementSibling; // the editor and bars sit before the hidden field
+            if (help && help.tagName === 'P' && /^\s*(Variables|Placeholders):\s*(\{\w+\}[,\s]*)+\.?\s*$/i.test(help.textContent)) help.hidden = true;
+        }
     }
 
     const FIELDS = 'textarea, input[data-vars]';
