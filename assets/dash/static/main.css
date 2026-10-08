@@ -1319,6 +1319,11 @@ html.avo-light .hero-word .hw-ch.coral .hw-stroke { -webkit-text-stroke-color: r
 }
 .mp-pill-prefix { color: var(--avo-accent-text); margin-right: 1px; }
 .mp-pill.dead { color: var(--avo-text-muted); }
+.mp-single { white-space: nowrap; overflow-x: auto; overflow-y: hidden; resize: none; height: var(--avo-ui-control-h); padding-top: 0; padding-bottom: 0; line-height: calc(var(--avo-ui-control-h) - 2px); scrollbar-width: none; }
+.mp-single::-webkit-scrollbar { display: none; }
+.mp-bar-single { margin-top: 4px; }
+.mp-pill-var { color: var(--avo-accent-text); }
+.mp-pill-var .mp-pill-name { color: inherit; }
 .mp-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .mp-bar-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--avo-text-muted); margin-right: 2px; }
 .mp-btn { gap: 4px; }
@@ -1340,8 +1345,8 @@ html.avo-light .hero-word .hw-ch.coral .hw-stroke { -webkit-text-stroke-color: r
 .mp-item:hover, .mp-item.active { background: var(--avo-surface); box-shadow: inset 2px 0 0 var(--avo-primary); }
 .mp-prefix { width: 20px; text-align: center; color: var(--avo-text-muted); flex: none; }
 .mp-avatar { border-radius: 50%; flex: none; }
-.mp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mp-sub { margin-left: auto; padding-left: 8px; font-size: 11px; color: var(--avo-text-muted); white-space: nowrap; }
+.mp-name { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-sub { flex: 1 1 0; min-width: 0; margin-left: auto; padding-left: 8px; text-align: right; font-size: 11px; color: var(--avo-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mp-empty { padding: 10px 8px; font-size: 12px; color: var(--avo-text-muted); }
 
 /* ── Focus (§10) ──────────────────────────────────────────────── *

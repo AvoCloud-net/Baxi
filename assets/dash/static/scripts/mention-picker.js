@@ -1,15 +1,21 @@
-/* Mention picker for the dashboard's message fields.
+/* Mention + variable picker for the dashboard's text fields.
    Every <textarea> gets a small bar (# Channel · @ Role · @ User) that inserts
    <#id> / <@&id> / <@id> at the cursor, so nobody has to copy IDs out of Discord.
+   A field that declares data-vars="user,server,…" (a textarea or a single-line
+   <input>) also gets a { } Variable button. Per-variable help can be overridden:
+   data-vars="user=Display name,server". Single-line inputs get no mention buttons
+   unless they carry data-mentions.
    The field itself becomes a plain-text contenteditable that shows those tokens
-   as Discord-style pills (#chat, @Mod, @Fabian). The textarea stays in the DOM,
-   hidden, as the source of truth: its .value always holds the raw tokens, and
-   setting .value from the dashboard's own code re-renders the editor.
+   as pills (#chat, @Mod, @Fabian, {server}). The original textarea/input stays in
+   the DOM, hidden, as the source of truth: its .value always holds the raw tokens,
+   and setting .value from the dashboard's own code re-renders the editor. The
+   editor deliberately carries none of the field's own classes, so
+   querySelector('.some-field') keeps finding the real element.
    Channels and roles come from window.BAXI_MENTIONS (rendered into the page);
-   users are looked up through /api/dash/members/. Textareas the dashboard adds
-   later (sticky edit, custom commands, livestream) are picked up by the observer.
-   Opt out per field with data-no-mentions. With this file blocked, every field
-   still works: you just type the mention by hand. */
+   users are looked up through /api/dash/members/. Fields the dashboard adds later
+   (sticky edit, custom commands, livestream) are picked up by the observer.
+   Opt a textarea out with data-no-mentions (it still gets variables if it declares
+   any). With this file blocked, every field still works: you type the token by hand. */
 
 (function () {
     const cfg = window.BAXI_MENTIONS;
@@ -19,10 +25,23 @@
         channel: { label: 'Channel', icon: '#', placeholder: 'Search channels…' },
         role: { label: 'Role', icon: '@', placeholder: 'Search roles…' },
         user: { label: 'User', icon: '@', placeholder: 'Search by name or nickname…' },
+        variable: { label: 'Variable', icon: '{ }', placeholder: 'Search variables…' },
+    };
+
+    // Default help text; a field can override it with data-vars="name=help".
+    const VAR_HELP = {
+        user: 'Mentions the member',
+        username: 'Account username',
+        displayname: 'Display name (nickname)',
+        server: 'Server name',
+        membercount: 'Number of members',
+        button: 'Label of the button that was clicked',
+        count: 'Current value',
+        target: 'First mentioned user, otherwise the author',
     };
 
     let pop = null;       // the single open popover
-    let popState = null;  // { textarea, kind, items, index, input, list, timer }
+    let popState = null;  // { field, kind, items, index, input, list, timer, range }
 
     function el(tag, cls, text) {
         const e = document.createElement(tag);
@@ -31,9 +50,36 @@
         return e;
     }
 
+    /* ── Field config ───────────────────────────────────────────── */
+
+    function fieldCfg(f) {
+        const vars = (f.dataset.vars || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
+            const i = s.indexOf('=');
+            const name = i < 0 ? s : s.slice(0, i);
+            return { name, help: i < 0 ? (VAR_HELP[name] || '') : s.slice(i + 1) };
+        });
+        const single = f.tagName === 'INPUT';
+        const mentions = single ? f.hasAttribute('data-mentions') : !f.hasAttribute('data-no-mentions');
+        return { vars, single, mentions };
+    }
+
+    // One global regex per field: only the token kinds that field supports become pills.
+    function tokenRegex(fc) {
+        const parts = [];
+        if (fc.mentions) {
+            parts.push('(?<ch><#(?<chid>\\d{17,20})>)', '(?<ro><@&(?<roid>\\d{17,20})>)',
+                '(?<us><@!?(?<usid>\\d{17,20})>)', '(?<sp>@(?<spn>everyone|here)\\b)');
+        }
+        if (fc.vars.length) parts.push(`(?<va>\\{(?<van>${fc.vars.map(v => v.name).join('|')})\\})`);
+        return () => new RegExp(parts.join('|'), 'g');
+    }
+
     /* ── Data ───────────────────────────────────────────────────── */
 
-    function localItems(kind) {
+    function localItems(kind, fc) {
+        if (kind === 'variable') {
+            return fc.vars.map(v => ({ name: `{${v.name}}`, sub: v.help, token: `{${v.name}}`, prefix: '', search: v.name + ' ' + v.help }));
+        }
         if (kind === 'channel') {
             const out = [];
             Object.entries(cfg.channels || {}).forEach(([id, name]) => out.push({ id, name, group: 'Text', token: `<#${id}>`, prefix: '#' }));
@@ -66,40 +112,43 @@
 
     /* ── Pills ──────────────────────────────────────────────────── */
 
-    const TOKEN_RE = /<#(\d{17,20})>|<@&(\d{17,20})>|<@!?(\d{17,20})>|@(everyone|here)\b/g;
     const userNames = new Map();     // id -> display name (null while unknown)
     const pendingUsers = new Set();
     let resolveTimer = null;
 
-    function labelFor(m) {
-        if (m[1]) {
-            if (cfg.channels && cfg.channels[m[1]]) return { kind: 'channel', prefix: '#', name: cfg.channels[m[1]] };
-            if (cfg.voice && cfg.voice[m[1]]) return { kind: 'channel', prefix: '🔊', name: cfg.voice[m[1]] };
-            if (cfg.forum && cfg.forum[m[1]]) return { kind: 'channel', prefix: '💬', name: cfg.forum[m[1]] };
-            if (cfg.stage && cfg.stage[m[1]]) return { kind: 'channel', prefix: '🎙', name: cfg.stage[m[1]] };
+    function labelFor(g, fc) {
+        if (g.ch) {
+            if (cfg.channels && cfg.channels[g.chid]) return { kind: 'channel', prefix: '#', name: cfg.channels[g.chid] };
+            if (cfg.voice && cfg.voice[g.chid]) return { kind: 'channel', prefix: '🔊', name: cfg.voice[g.chid] };
+            if (cfg.forum && cfg.forum[g.chid]) return { kind: 'channel', prefix: '💬', name: cfg.forum[g.chid] };
+            if (cfg.stage && cfg.stage[g.chid]) return { kind: 'channel', prefix: '🎙', name: cfg.stage[g.chid] };
             return { kind: 'channel', prefix: '#', name: 'unknown-channel', dead: true };
         }
-        if (m[2]) {
-            const n = cfg.roles && cfg.roles[m[2]];
+        if (g.ro) {
+            const n = cfg.roles && cfg.roles[g.roid];
             return n ? { kind: 'role', prefix: '@', name: n } : { kind: 'role', prefix: '@', name: 'deleted-role', dead: true };
         }
-        if (m[3]) {
-            const known = userNames.get(m[3]);
-            if (known) return { kind: 'user', prefix: '@', name: known };
-            if (!userNames.has(m[3])) { userNames.set(m[3], null); pendingUsers.add(m[3]); scheduleResolve(); }
-            return { kind: 'user', prefix: '@', name: 'user', loading: true };
+        if (g.us) {
+            const known = userNames.get(g.usid);
+            if (known) return { kind: 'user', prefix: '@', name: known, uid: g.usid };
+            if (!userNames.has(g.usid)) { userNames.set(g.usid, null); pendingUsers.add(g.usid); scheduleResolve(); }
+            return { kind: 'user', prefix: '@', name: 'user', uid: g.usid };
         }
-        return { kind: 'special', prefix: '@', name: m[4] };
+        if (g.sp) return { kind: 'special', prefix: '@', name: g.spn };
+        const v = fc.vars.find(x => x.name === g.van);
+        return { kind: 'var', prefix: '', name: `{${g.van}}`, help: v ? v.help : '' };
     }
 
-    function makePill(token, m) {
-        const info = labelFor(m);
+    function makePill(token, groups, fc) {
+        const info = labelFor(groups, fc);
         const pill = el('span', 'mp-pill mp-pill-' + info.kind);
         pill.contentEditable = 'false';
         pill.dataset.token = token;
         if (info.dead) pill.classList.add('dead');
-        if (m[3]) pill.dataset.uid = m[3];
-        pill.append(el('span', 'mp-pill-prefix', info.prefix), el('span', 'mp-pill-name', info.name));
+        if (info.uid) pill.dataset.uid = info.uid;
+        if (info.help) pill.title = info.help;
+        if (info.prefix) pill.append(el('span', 'mp-pill-prefix', info.prefix));
+        pill.append(el('span', 'mp-pill-name', info.name));
         return pill;
     }
 
@@ -120,22 +169,26 @@
             }
             document.querySelectorAll('.mp-pill[data-uid]').forEach(p => {
                 const n = userNames.get(p.dataset.uid);
-                if (n) { p.querySelector('.mp-pill-name').textContent = n; }
+                if (n) p.querySelector('.mp-pill-name').textContent = n;
             });
             if (pendingUsers.size) scheduleResolve();
         }, 60);
     }
 
-    /* ── Editor (pills over a hidden textarea) ──────────────────── */
+    /* ── Editor (pills over a hidden field) ─────────────────────── */
 
-    // Browsers without contenteditable="plaintext-only" keep the plain textarea (and the bar).
+    // Browsers without contenteditable="plaintext-only" keep the plain field (and the bar).
     const PLAINTEXT_OK = (() => { const d = document.createElement('div'); d.contentEditable = 'plaintext-only'; return d.contentEditable === 'plaintext-only'; })();
-    const nativeValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+    const ZWSP = '​'; // gives the caret a place to sit after a pill; never saved
+
+    // Only look classes are copied to the editor. The field's own hooks
+    // (.cc-act-response, .tv-trigger-name, …) must stay unique to the real element.
+    const LOOK_CLASS = /^(w-|min-h-|max-w-|flex-|grow$|shrink|text-|font-|h-|mt-|mb-)/;
 
     function serialize(node) {
         let out = '';
         node.childNodes.forEach(n => {
-            if (n.nodeType === 3) out += n.nodeValue;
+            if (n.nodeType === 3) out += n.nodeValue.split(ZWSP).join('');
             else if (n.classList && n.classList.contains('mp-pill')) out += n.dataset.token;
             else if (n.classList && n.classList.contains('mp-trail')) { /* display-only line */ }
             else if (n.nodeName === 'BR') out += '\n';
@@ -145,71 +198,19 @@
         return out;
     }
 
-    function renderInto(editor, text) {
+    function renderInto(editor, text, fc, mkRe) {
         editor.replaceChildren();
         let last = 0;
-        TOKEN_RE.lastIndex = 0;
+        const re = mkRe();
         let m;
-        while ((m = TOKEN_RE.exec(text))) {
+        while ((m = re.exec(text))) {
             if (m.index > last) editor.appendChild(document.createTextNode(text.slice(last, m.index)));
-            editor.appendChild(makePill(m[0], m));
+            editor.appendChild(makePill(m[0], m.groups, fc));
             last = m.index + m[0].length;
         }
         if (last < text.length) editor.appendChild(document.createTextNode(text.slice(last)));
         // A trailing newline only shows a line if something follows it.
         if (text.endsWith('\n')) editor.appendChild(el('br', 'mp-trail'));
-    }
-
-    function syncPlaceholder(ta, editor) {
-        editor.dataset.placeholder = ta.placeholder || '';
-    }
-
-    function buildEditor(ta) {
-        const editor = el('div', ta.className + ' mp-editor');
-        editor.contentEditable = 'plaintext-only';
-        editor.spellcheck = true;
-        editor.setAttribute('role', 'textbox');
-        editor.setAttribute('aria-multiline', 'true');
-        if (ta.id) {
-            editor.dataset.for = ta.id;
-            const label = document.querySelector(`label[for="${CSS.escape(ta.id)}"]`);
-            if (label) { if (!label.id) label.id = ta.id + '-label'; editor.setAttribute('aria-labelledby', label.id); }
-        }
-        if (ta.rows > 0 && ta.hasAttribute('rows')) editor.style.minHeight = `calc(${ta.rows}lh + 1rem)`;
-
-        let good = nativeValue.get.call(ta);   // last value that fit maxlength
-        const max = () => (ta.maxLength > 0 ? ta.maxLength : Infinity);
-
-        const render = () => {
-            good = nativeValue.get.call(ta);
-            renderInto(editor, good);
-            syncPlaceholder(ta, editor);
-        };
-
-        // Dashboard code reads and writes ta.value everywhere; keep both views in step.
-        Object.defineProperty(ta, 'value', {
-            configurable: true,
-            get() { return nativeValue.get.call(this); },
-            set(v) { nativeValue.set.call(this, v); render(); },
-        });
-        ta.focus = () => editor.focus();
-
-        editor.addEventListener('input', () => {
-            const text = serialize(editor);
-            if (text.length > max()) { renderInto(editor, good); placeCaretEnd(editor); return; }
-            good = text;
-            nativeValue.set.call(ta, text);
-            ta.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-        // Typed or pasted <#id> text becomes a pill once the field is left; doing it
-        // while typing would throw the caret around.
-        editor.addEventListener('blur', () => { if (!pop && serialize(editor) === good) renderInto(editor, good); });
-
-        ta.hidden = true;
-        ta.style.display = 'none';
-        ta.insertAdjacentElement('beforebegin', editor);
-        render();
-        return { editor, render, max, setGood: v => { good = v; } };
     }
 
     function placeCaretEnd(editor) {
@@ -231,32 +232,63 @@
         return r;
     }
 
-    /* ── Insert ─────────────────────────────────────────────────── */
-
-    function insertToken(ta, token) {
-        const ed = ta._mp;
-        if (ed) {
-            const range = popState && popState.range ? popState.range : currentRange(ed.editor);
-            const room = ed.max() - serialize(ed.editor).length + range.toString().length;
-            if (token.length + 1 > room) return toastFull(ed.max());
-            range.deleteContents();
-            TOKEN_RE.lastIndex = 0;
-            const m = TOKEN_RE.exec(token);
-            const pill = makePill(token, m);
-            // A trailing space (like Discord) gives the caret a place to sit after the pill.
-            const next = range.endContainer.nodeType === 3 ? range.endContainer.nodeValue.charAt(range.endOffset) : '';
-            const space = document.createTextNode(/\s/.test(next) ? '' : ' ');
-            range.insertNode(space);
-            range.insertNode(pill);
-            ed.editor.focus();
-            const r = document.createRange();
-            r.setStart(space, space.length); r.collapse(true);
-            const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-            ed.editor.dispatchEvent(new Event('input', { bubbles: true }));
-            return true;
+    function buildEditor(f, fc) {
+        const nativeValue = Object.getOwnPropertyDescriptor(f.tagName === 'INPUT' ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype, 'value');
+        const mkRe = tokenRegex(fc);
+        const look = f.className.split(/\s+/).filter(c => LOOK_CLASS.test(c)).join(' ');
+        const editor = el('div', `${look} mp-editor${fc.single ? ' mp-single' : ''}`);
+        editor.contentEditable = 'plaintext-only';
+        editor.spellcheck = !fc.single;
+        editor.setAttribute('role', 'textbox');
+        if (!fc.single) editor.setAttribute('aria-multiline', 'true');
+        if (f.id) {
+            const label = document.querySelector(`label[for="${CSS.escape(f.id)}"]`);
+            if (label) { if (!label.id) label.id = f.id + '-label'; editor.setAttribute('aria-labelledby', label.id); }
         }
-        return insertIntoTextarea(ta, token);
+        if (!fc.single && f.hasAttribute('rows')) editor.style.minHeight = `calc(${f.rows}lh + 1rem)`;
+
+        let good = nativeValue.get.call(f);   // last value that fit maxlength
+        const max = () => (f.maxLength > 0 ? f.maxLength : Infinity);
+        const draw = text => renderInto(editor, text, fc, mkRe);
+
+        const render = () => {
+            good = nativeValue.get.call(f);
+            draw(good);
+            editor.dataset.placeholder = f.placeholder || '';
+        };
+
+        // Dashboard code reads and writes .value everywhere; keep both views in step.
+        Object.defineProperty(f, 'value', {
+            configurable: true,
+            get() { return nativeValue.get.call(this); },
+            set(v) { nativeValue.set.call(this, v); render(); },
+        });
+        f.focus = () => editor.focus();
+
+        editor.addEventListener('input', () => {
+            let text = serialize(editor);
+            if (fc.single && /\n/.test(text)) { text = text.replace(/\s*\n\s*/g, ' '); draw(text); placeCaretEnd(editor); }
+            if (text.length > max()) { draw(good); placeCaretEnd(editor); return; }
+            good = text;
+            nativeValue.set.call(f, text);
+            f.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        if (fc.single) editor.addEventListener('keydown', ev => { if (ev.key === 'Enter') ev.preventDefault(); });
+        // Typed or pasted tokens become pills once the field is left; doing it while
+        // typing would throw the caret around. Skipped while the popover holds a range.
+        editor.addEventListener('blur', () => { if (!pop && serialize(editor) === good) draw(good); });
+
+        f.hidden = true;
+        f.style.display = 'none';
+        f.insertAdjacentElement('beforebegin', editor);
+        render();
+        return {
+            editor, fc, max,
+            pill(token) { const m = mkRe().exec(token); return m ? makePill(token, m.groups, fc) : null; },
+        };
     }
+
+    /* ── Insert ─────────────────────────────────────────────────── */
 
     function toastFull(max) {
         const t = document.getElementById('toaster');
@@ -264,15 +296,37 @@
         return false;
     }
 
-    function insertIntoTextarea(ta, token) {
-        const max = ta.maxLength > 0 ? ta.maxLength : Infinity;
-        const start = ta.selectionStart ?? ta.value.length;
-        const end = ta.selectionEnd ?? start;
-        if (ta.value.length - (end - start) + token.length > max) return toastFull(max);
-        ta.focus();
-        ta.setRangeText(token, start, end, 'end');
+    function insertToken(f, token, withSpace) {
+        const ed = f._mp;
+        if (!ed) return insertIntoField(f, token);
+        const range = popState && popState.range ? popState.range : currentRange(ed.editor);
+        const room = ed.max() - serialize(ed.editor).length + range.toString().length;
+        if (token.length + (withSpace ? 1 : 0) > room) return toastFull(ed.max());
+        const pill = ed.pill(token);
+        if (!pill) return insertIntoField(f, token);
+        range.deleteContents();
+        // Mentions get a trailing space like in Discord; either way the caret needs a text node after the pill.
+        const next = range.endContainer.nodeType === 3 ? range.endContainer.nodeValue.charAt(range.endOffset) : '';
+        const after = document.createTextNode(withSpace && !/\s/.test(next) ? ' ' : ZWSP);
+        range.insertNode(after);
+        range.insertNode(pill);
+        ed.editor.focus();
+        const r = document.createRange();
+        r.setStart(after, after.length); r.collapse(true);
+        const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        ed.editor.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+    }
+
+    function insertIntoField(f, token) {
+        const max = f.maxLength > 0 ? f.maxLength : Infinity;
+        const start = f.selectionStart ?? f.value.length;
+        const end = f.selectionEnd ?? start;
+        if (f.value.length - (end - start) + token.length > max) return toastFull(max);
+        f.focus();
+        f.setRangeText(token, start, end, 'end');
         // Bubbles to the save bar's dirty tracking and to any character counters.
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        f.dispatchEvent(new Event('input', { bubbles: true }));
         return true;
     }
 
@@ -313,12 +367,12 @@
                 const img = el('img', 'mp-avatar');
                 img.src = it.avatar; img.alt = ''; img.width = 20; img.height = 20; img.loading = 'lazy';
                 row.appendChild(img);
-            } else {
+            } else if (it.prefix) {
                 row.appendChild(el('span', 'mp-prefix', it.prefix));
             }
             row.appendChild(el('span', 'mp-name', it.name));
             if (it.sub) row.appendChild(el('span', 'mp-sub', it.sub + (it.bot ? ' · bot' : '')));
-            row.addEventListener('mousedown', ev => ev.preventDefault()); // keep the textarea's cursor
+            row.addEventListener('mousedown', ev => ev.preventDefault()); // keep the field's cursor
             row.addEventListener('click', () => choose(i));
             list.appendChild(row);
         });
@@ -335,16 +389,15 @@
     function choose(i) {
         const it = popState && popState.items[i];
         if (!it) return;
-        const ta = popState.textarea;
-        // A blurred textarea keeps its selection, so the token lands where the cursor was.
-        if (insertToken(ta, it.token)) closePop();
+        // A blurred field keeps its selection, so the token lands where the cursor was.
+        if (insertToken(popState.field, it.token, popState.kind !== 'variable')) closePop();
     }
 
     function refresh() {
         const { kind, input } = popState;
         const q = input.value.trim().toLowerCase();
         if (kind !== 'user') {
-            const hits = popState.all.filter(it => !q || it.name.toLowerCase().includes(q));
+            const hits = popState.all.filter(it => !q || (it.search || it.name).toLowerCase().includes(q));
             renderList(hits.slice(0, 80), 'Nothing found.');
             return;
         }
@@ -361,8 +414,8 @@
         }, 220);
     }
 
-    function openPop(ta, kind, anchor) {
-        const same = pop && popState.textarea === ta && popState.kind === kind;
+    function openPop(f, kind, anchor) {
+        const same = pop && popState.field === f && popState.kind === kind;
         closePop();
         if (same) return;
 
@@ -377,12 +430,13 @@
         pop.append(input, list);
         document.body.appendChild(pop);
 
+        const fc = f._mp ? f._mp.fc : fieldCfg(f);
         // Focusing the search box moves the selection, so keep the caret the user left.
-        const range = ta._mp ? currentRange(ta._mp.editor) : null;
-        popState = { textarea: ta, kind, items: [], index: -1, input, list, timer: null, range, all: kind === 'user' ? [] : localItems(kind) };
+        const range = f._mp ? currentRange(f._mp.editor) : null;
+        popState = { field: f, kind, items: [], index: -1, input, list, timer: null, range, all: kind === 'user' ? [] : localItems(kind, fc) };
 
         const r = anchor.getBoundingClientRect();
-        const w = Math.min(320, window.innerWidth - 24);
+        const w = Math.min(kind === 'variable' ? 360 : 320, window.innerWidth - 24);
         pop.style.width = w + 'px';
         pop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
         const below = window.innerHeight - r.bottom;
@@ -394,7 +448,7 @@
 
         input.addEventListener('input', refresh);
         input.addEventListener('keydown', ev => {
-            if (ev.key === 'Escape') { ev.preventDefault(); const t = popState.textarea; closePop(); t.focus(); return; }
+            if (ev.key === 'Escape') { ev.preventDefault(); const t = popState.field; closePop(); t.focus(); return; }
             if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
                 ev.preventDefault();
                 const n = popState.items.length;
@@ -415,34 +469,39 @@
 
     /* ── Bar ────────────────────────────────────────────────────── */
 
-    function enhance(ta) {
-        if (ta.dataset.mpDone || ta.hasAttribute('data-no-mentions')) return;
-        ta.dataset.mpDone = '1';
+    function enhance(f) {
+        if (f.dataset.mpDone) return;
+        const fc = fieldCfg(f);
+        if (!fc.mentions && !fc.vars.length) return;
+        f.dataset.mpDone = '1';
         if (PLAINTEXT_OK) {
-            try { ta._mp = buildEditor(ta); } catch (e) { ta._mp = null; }
+            try { f._mp = buildEditor(f, fc); } catch (e) { f._mp = null; }
         }
 
-        const bar = el('div', 'mp-bar');
+        const bar = el('div', 'mp-bar' + (fc.single ? ' mp-bar-single' : ''));
         bar.appendChild(el('span', 'mp-bar-label', 'Insert'));
-        Object.keys(KINDS).forEach(kind => {
+        const kinds = [...(fc.mentions ? ['channel', 'role', 'user'] : []), ...(fc.vars.length ? ['variable'] : [])];
+        kinds.forEach(kind => {
             const b = el('button', 'btn mp-btn');
             b.type = 'button';
             b.dataset.variant = 'outline';
             b.dataset.size = 'sm';
-            b.title = `Insert a ${KINDS[kind].label.toLowerCase()} mention at the cursor`;
+            b.title = kind === 'variable' ? 'Insert a variable at the cursor' : `Insert a ${KINDS[kind].label.toLowerCase()} mention at the cursor`;
             b.append(el('span', 'mp-btn-icon', KINDS[kind].icon), el('span', 'btn-label', KINDS[kind].label));
-            // mousedown would blur the textarea and lose its cursor before the click handler reads it.
+            // mousedown would blur the field and lose its cursor before the click handler reads it.
             b.addEventListener('mousedown', ev => ev.preventDefault());
-            b.addEventListener('click', () => openPop(ta, kind, b));
+            b.addEventListener('click', () => openPop(f, kind, b));
             bar.appendChild(b);
         });
-        (ta._mp ? ta._mp.editor : ta).insertAdjacentElement('afterend', bar);
+        (f._mp ? f._mp.editor : f).insertAdjacentElement('afterend', bar);
     }
+
+    const FIELDS = 'textarea, input[data-vars]';
 
     function scan(root) {
         if (root.nodeType !== 1) return;
-        if (root.matches && root.matches('textarea')) enhance(root);
-        root.querySelectorAll && root.querySelectorAll('textarea').forEach(enhance);
+        if (root.matches && root.matches(FIELDS)) enhance(root);
+        root.querySelectorAll && root.querySelectorAll(FIELDS).forEach(enhance);
     }
 
     function init() {

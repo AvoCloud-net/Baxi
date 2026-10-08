@@ -1294,7 +1294,7 @@
 
                             <div class="grid gap-2">
                                 <label for="ticket-channel-name-template">Channel name template:</label>
-                                <input type="text" id="ticket-channel-name-template" placeholder="{button}-{user}" maxlength="80" class="w-full">
+                                <input type="text" id="ticket-channel-name-template" data-vars="button=Button label,user=Username" placeholder="{button}-{user}" maxlength="80" class="w-full">
                                 <p class="text-muted text-xs">Placeholders: <code>{button}</code> = button label, <code>{user}</code> = username. Result is truncated to 100 chars and sanitized for Discord.</p>
                             </div>
 
@@ -2148,13 +2148,13 @@
 
                             <div class="grid gap-2">
                                 <label for="welcomer-embed-title">Embed title:</label>
-                                <input type="text" id="welcomer-embed-title" placeholder="SYS // WELCOME" maxlength="100" class="w-full">
+                                <input type="text" id="welcomer-embed-title" data-vars="user=Display name,username,displayname,server,membercount" placeholder="SYS // WELCOME" maxlength="100" class="w-full">
                                 <p class="text-muted text-xs">Leave empty for the default title. Placeholders: {user}, {username}, {displayname}, {server}, {membercount}.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="welcomer-message">Welcome message:</label>
-                                <textarea id="welcomer-message" placeholder="Welcome {user} to {server}!" maxlength="1024"
+                                <textarea id="welcomer-message" data-vars="user,username,displayname,server,membercount" placeholder="Welcome {user} to {server}!" maxlength="1024"
                                     class="w-full min-h-[80px]"></textarea>
                                 <p class="text-muted text-xs">Variables: {user}, {username}, {displayname}, {server}, {membercount}</p>
                             </div>
@@ -2187,15 +2187,15 @@
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-title">Card title:</label>
-                                    <input type="text" id="welcomer-card-title" placeholder="Welcome, {displayname}!" maxlength="100" class="w-full">
+                                    <input type="text" id="welcomer-card-title" data-vars="user=Display name,username,displayname,server,membercount" placeholder="Welcome, {displayname}!" maxlength="100" class="w-full">
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-subtitle">Card subtitle:</label>
-                                    <input type="text" id="welcomer-card-subtitle" placeholder="{server}" maxlength="100" class="w-full">
+                                    <input type="text" id="welcomer-card-subtitle" data-vars="user=Display name,username,displayname,server,membercount" placeholder="{server}" maxlength="100" class="w-full">
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-footer">Card footer:</label>
-                                    <input type="text" id="welcomer-card-footer" placeholder="Member #{membercount}" maxlength="100" class="w-full">
+                                    <input type="text" id="welcomer-card-footer" data-vars="user=Display name,username,displayname,server,membercount" placeholder="Member #{membercount}" maxlength="100" class="w-full">
                                     <p class="text-muted text-xs">Placeholders: {user}, {username}, {displayname}, {server}, {membercount}. Plain text only, mentions are not rendered in the image.</p>
                                 </div>
                                 <div class="grid gap-2">
@@ -2229,7 +2229,7 @@
 
                             <div class="grid gap-2">
                                 <label for="welcomer-leave-message">Leave message:</label>
-                                <textarea id="welcomer-leave-message" placeholder="{user} has left {server}." maxlength="1024"
+                                <textarea id="welcomer-leave-message" data-vars="user,username,displayname,server,membercount" placeholder="{user} has left {server}." maxlength="1024"
                                     class="w-full min-h-[80px]"></textarea>
                                 <p class="text-muted text-xs">Variables: {user}, {username}, {displayname}, {server}, {membercount}</p>
                             </div>
@@ -3360,7 +3360,7 @@
                                     </label>
                                     <div class="grid gap-1">
                                         <label for="sc-members-template" class="text-sm text-muted">Template (use <code>{count}</code>):</label>
-                                        <input type="text" id="sc-members-template" class="input w-full" maxlength="64" placeholder="Members: {count}">
+                                        <input type="text" id="sc-members-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Members: {count}">
                                     </div>
                                 </div>
 
@@ -3371,7 +3371,7 @@
                                     </label>
                                     <div class="grid gap-1">
                                         <label for="sc-humans-template" class="text-sm text-muted">Template:</label>
-                                        <input type="text" id="sc-humans-template" class="input w-full" maxlength="64" placeholder="Humans: {count}">
+                                        <input type="text" id="sc-humans-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Humans: {count}">
                                     </div>
                                 </div>
 
@@ -3382,7 +3382,7 @@
                                     </label>
                                     <div class="grid gap-1">
                                         <label for="sc-bots-template" class="text-sm text-muted">Template:</label>
-                                        <input type="text" id="sc-bots-template" class="input w-full" maxlength="64" placeholder="Bots: {count}">
+                                        <input type="text" id="sc-bots-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Bots: {count}">
                                     </div>
                                 </div>
 
@@ -3393,7 +3393,7 @@
                                     </label>
                                     <div class="grid gap-1">
                                         <label for="sc-channels-template" class="text-sm text-muted">Template:</label>
-                                        <input type="text" id="sc-channels-template" class="input w-full" maxlength="64" placeholder="Channels: {count}">
+                                        <input type="text" id="sc-channels-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Channels: {count}">
                                     </div>
                                 </div>
 
@@ -3404,7 +3404,7 @@
                                     </label>
                                     <div class="grid gap-1">
                                         <label for="sc-roles-template" class="text-sm text-muted">Template:</label>
-                                        <input type="text" id="sc-roles-template" class="input w-full" maxlength="64" placeholder="Roles: {count}">
+                                        <input type="text" id="sc-roles-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Roles: {count}">
                                     </div>
                                 </div>
                             </div>
@@ -3639,7 +3639,7 @@
                                         </div>
                                         <div class="grid gap-2">
                                             <label class="text-sm">Channel name template:</label>
-                                            <input type="text" class="input w-full tv-trigger-name" maxlength="64" placeholder="{user}'s Channel">
+                                            <input type="text" class="input w-full tv-trigger-name" data-vars="user=Display name of the member" maxlength="64" placeholder="{user}'s Channel">
                                         </div>
                                     </div>
                                 </div>
@@ -5959,19 +5959,19 @@
         function ccActionBody(type, d) {
             d = d || {};
             if (type === 'text' || type === 'dm') {
-                let html = `<textarea class="cc-act-response w-full min-h-[60px]" maxlength="2000" placeholder="Message…">${ccEsc(d.response || '')}</textarea>`;
+                let html = `<textarea class="cc-act-response w-full min-h-[60px]" data-vars="user,username,server,membercount,target" maxlength="2000" placeholder="Message…">${ccEsc(d.response || '')}</textarea>`;
                 if (type === 'text') {
                     const embedOn = d.embed !== false;
                     const color = d.embed_color || '#FF6B4A';
                     html += `<label class="flex items-center gap-2 text-sm mt-2"><input type="checkbox" class="cc-act-reply" ${d.reply ? 'checked' : ''}> Reply to the trigger message${ccInfo("The bot replies directly to the user's message (shown as a reply, like clicking 'Reply' in Discord). Off = the bot sends a normal standalone message in the channel.")}</label>
                         <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="cc-act-embed" ${embedOn ? 'checked' : ''} onchange="this.closest('.cc-action').querySelector('.cc-act-embed-opts').classList.toggle('hidden', !this.checked)"> Send as embed${ccInfo('Sends the message inside a styled embed box (with optional title, color and footer). Off = plain text message.')}</label>
                         <div class="cc-act-embed-opts grid gap-2 pl-4 border-l-2 border-muted mt-1 ${embedOn ? '' : 'hidden'}">
-                            <input type="text" class="cc-act-embed-title w-full" maxlength="256" placeholder="Embed title (optional)" value="${ccEsc(d.embed_title || '')}">
+                            <input type="text" class="cc-act-embed-title w-full" data-vars="user,username,server,membercount,target" maxlength="256" placeholder="Embed title (optional)" value="${ccEsc(d.embed_title || '')}">
                             <div class="flex items-center gap-2">
                                 <input type="color" class="cc-act-embed-color h-9 w-12 rounded cursor-pointer" value="${color}" oninput="this.nextElementSibling.value=this.value">
                                 <input type="text" class="cc-act-embed-color-hex w-28 font-mono" maxlength="7" value="${color}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))this.previousElementSibling.value=this.value">
                             </div>
-                            <input type="text" class="cc-act-embed-footer w-full" maxlength="256" placeholder="Embed footer (optional)" value="${ccEsc(d.embed_footer || '')}">
+                            <input type="text" class="cc-act-embed-footer w-full" data-vars="user,username,server,membercount,target" maxlength="256" placeholder="Embed footer (optional)" value="${ccEsc(d.embed_footer || '')}">
                         </div>`;
                 } else {
                     html += `<div class="grid gap-1"><label class="text-xs text-muted flex items-center">Send DM to${ccInfo(_CC_TARGET_INFO)}</label>${ccTargetSelect(d.target)}</div>`;
