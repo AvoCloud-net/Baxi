@@ -14,6 +14,9 @@ logger = Logger()
 _DEFAULT_FONT_SIZE = 36
 _CARD_WIDTH = 1024
 _CARD_HEIGHT = 500
+_DEFAULT_CARD_TITLE = "Welcome, {displayname}!"
+_DEFAULT_CARD_SUBTITLE = "{server}"
+_DEFAULT_CARD_FOOTER = "Member #{membercount}"
 
 
 def _hex_to_color(hex_str: str, fallback: discord.Color = config.Discord.color) -> discord.Color:
@@ -33,6 +36,21 @@ def _hex_to_rgb(hex_str: str, fallback: tuple = (26, 26, 46)) -> tuple:
         except ValueError:
             pass
     return fallback
+
+
+def _format_card_text(template: str, member: discord.Member) -> str:
+    """Placeholders for the card image. Plain text only (no mention), unknown braces stay literal."""
+    values = {
+        "user": member.display_name,
+        "username": member.name,
+        "displayname": member.display_name,
+        "server": member.guild.name,
+        "membercount": str(member.guild.member_count),
+    }
+    out = str(template)
+    for key, val in values.items():
+        out = out.replace("{" + key + "}", val)
+    return out
 
 
 async def _generate_welcome_card(member: discord.Member, welcomer_config: dict) -> discord.File:
@@ -106,19 +124,19 @@ async def _generate_welcome_card(member: discord.Member, welcomer_config: dict) 
     text_color = (255, 255, 255)
 
     # Welcome text
-    welcome_text = f"Welcome, {member.display_name}!"
+    welcome_text = _format_card_text(welcomer_config.get("card_title", _DEFAULT_CARD_TITLE), member)
     bbox = draw.textbbox((0, 0), welcome_text, font=font_large)
     text_w = bbox[2] - bbox[0]
     draw.text(((_CARD_WIDTH - text_w) // 2, avatar_y + avatar_size + 30), welcome_text, fill=text_color, font=font_large)
 
     # Server name
-    server_text = member.guild.name
+    server_text = _format_card_text(welcomer_config.get("card_subtitle", _DEFAULT_CARD_SUBTITLE), member)
     bbox = draw.textbbox((0, 0), server_text, font=font_medium)
     text_w = bbox[2] - bbox[0]
     draw.text(((_CARD_WIDTH - text_w) // 2, avatar_y + avatar_size + 90), server_text, fill=(*text_color[:2], 200) if bg.mode == "RGBA" else text_color, font=font_medium)
 
     # Member count
-    count_text = f"Member #{member.guild.member_count}"
+    count_text = _format_card_text(welcomer_config.get("card_footer", _DEFAULT_CARD_FOOTER), member)
     bbox = draw.textbbox((0, 0), count_text, font=font_small)
     text_w = bbox[2] - bbox[0]
     draw.text(((_CARD_WIDTH - text_w) // 2, _CARD_HEIGHT - 50), count_text, fill=(*text_color[:2], 180) if bg.mode == "RGBA" else (200, 200, 200), font=font_small)
@@ -128,6 +146,50 @@ async def _generate_welcome_card(member: discord.Member, welcomer_config: dict) 
     bg.convert("RGB").save(buf, "PNG")
     buf.seek(0)
     return discord.File(buf, filename="welcome.png")
+
+
+async def _build_welcome(member: discord.Member, welcomer_config: dict) -> tuple[discord.Embed, discord.File | None]:
+    lang = datasys.load_lang_file(member.guild.id)
+    message_template = str(welcomer_config.get(
+        "message",
+        lang["systems"]["welcomer"]["default_welcome"]
+    ))
+
+    text = _format_message(message_template, member)
+
+    embed_color = _hex_to_color(welcomer_config.get("color", ""), config.Discord.color)
+
+    custom_title = str(welcomer_config.get("embed_title", "")).strip()
+    embed_title = _format_card_text(custom_title, member) if custom_title else lang["systems"]["welcomer"]["title"]
+
+    embed = discord.Embed(
+        title=embed_title,
+        description=text,
+        color=embed_color,
+    )
+
+    if member.avatar:
+        embed.set_thumbnail(url=member.avatar.url)
+
+    embed.set_footer(text=f"Member #{member.guild.member_count}")
+
+    # Generate welcome card if enabled
+    file = None
+    if welcomer_config.get("image_mode", "none") == "generate":
+        try:
+            file = await _generate_welcome_card(member, welcomer_config)
+            embed.set_image(url="attachment://welcome.png")
+        except Exception as e:
+            logger.error(f"Welcome card generation error: {e}")
+
+    return embed, file
+
+
+async def send_test_welcome(member: discord.Member, channel: discord.TextChannel, welcomer_config: dict) -> None:
+    """Dashboard test: render the welcome message for `member` from `welcomer_config` (may be unsaved)."""
+    embed, file = await _build_welcome(member, welcomer_config)
+    await channel.send(content=f"🧪 Welcomer test, requested from the dashboard by {member.mention}", embed=embed, file=file,
+                       allowed_mentions=discord.AllowedMentions.none())
 
 
 async def on_member_join(member: discord.Member, bot: commands.AutoShardedBot):
@@ -149,37 +211,7 @@ async def on_member_join(member: discord.Member, bot: commands.AutoShardedBot):
             logger.info(f"Welcomer: channel {channel_id} not found or not TextChannel, returning")
             return
 
-        lang = datasys.load_lang_file(member.guild.id)
-        message_template = str(welcomer_config.get(
-            "message",
-            lang["systems"]["welcomer"]["default_welcome"]
-        ))
-
-        text = _format_message(message_template, member)
-
-        embed_color = _hex_to_color(welcomer_config.get("color", ""), config.Discord.color)
-
-        embed = discord.Embed(
-            title=lang["systems"]["welcomer"]["title"],
-            description=text,
-            color=embed_color,
-        )
-
-        if member.avatar:
-            embed.set_thumbnail(url=member.avatar.url)
-
-        embed.set_footer(text=f"Member #{member.guild.member_count}")
-
-        # Generate welcome card if enabled
-        image_mode = welcomer_config.get("image_mode", "none")
-        file = None
-        if image_mode == "generate":
-            try:
-                file = await _generate_welcome_card(member, welcomer_config)
-                embed.set_image(url="attachment://welcome.png")
-            except Exception as e:
-                logger.error(f"Welcome card generation error: {e}")
-
+        embed, file = await _build_welcome(member, welcomer_config)
         await channel.send(embed=embed, file=file)
 
     except Exception as e:

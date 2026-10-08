@@ -112,6 +112,7 @@ _WELCOMER_DEF = _DD["welcomer"]
 _WELCOMER_COLS = [
     "enabled", "channel", "message", "leave_enabled", "leave_channel",
     "leave_message", "color", "image_mode", "card_color", "has_custom_bg", "leave_color",
+    "embed_title", "card_title", "card_subtitle", "card_footer",
 ]
 _WELCOMER_BOOLS = {"enabled", "leave_enabled", "has_custom_bg"}
 # channel / leave_channel default is int 0 in default_data; stored as TEXT but read back
@@ -142,6 +143,10 @@ def load_welcomer(gid: int) -> dict:
         "card_color":    str(r["card_color"]),
         "has_custom_bg": bool(r["has_custom_bg"]),
         "leave_color":   str(r["leave_color"]),
+        "embed_title":   str(r["embed_title"]),
+        "card_title":    str(r["card_title"]),
+        "card_subtitle": str(r["card_subtitle"]),
+        "card_footer":   str(r["card_footer"]),
     }
 
 
@@ -152,14 +157,17 @@ def save_welcomer(gid: int, data: dict) -> None:
     db.execute(
         "INSERT INTO cfg_welcomer "
         "(guild_id,enabled,channel,message,leave_enabled,leave_channel,"
-        "leave_message,color,image_mode,card_color,has_custom_bg,leave_color) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
+        "leave_message,color,image_mode,card_color,has_custom_bg,leave_color,"
+        "embed_title,card_title,card_subtitle,card_footer) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
         "ON CONFLICT(guild_id) DO UPDATE SET "
         "enabled=excluded.enabled,channel=excluded.channel,message=excluded.message,"
         "leave_enabled=excluded.leave_enabled,leave_channel=excluded.leave_channel,"
         "leave_message=excluded.leave_message,color=excluded.color,"
         "image_mode=excluded.image_mode,card_color=excluded.card_color,"
-        "has_custom_bg=excluded.has_custom_bg,leave_color=excluded.leave_color",
+        "has_custom_bg=excluded.has_custom_bg,leave_color=excluded.leave_color,"
+        "embed_title=excluded.embed_title,card_title=excluded.card_title,card_subtitle=excluded.card_subtitle,"
+        "card_footer=excluded.card_footer",
         (
             gid,
             _int(data.get("enabled", False)),
@@ -173,6 +181,10 @@ def save_welcomer(gid: int, data: dict) -> None:
             str(data.get("card_color", _WELCOMER_DEF["card_color"])),
             _int(data.get("has_custom_bg", False)),
             str(data.get("leave_color", _WELCOMER_DEF["leave_color"])),
+            str(data.get("embed_title", _WELCOMER_DEF["embed_title"])),
+            str(data.get("card_title", _WELCOMER_DEF["card_title"])),
+            str(data.get("card_subtitle", _WELCOMER_DEF["card_subtitle"])),
+            str(data.get("card_footer", _WELCOMER_DEF["card_footer"])),
         ),
     )
 

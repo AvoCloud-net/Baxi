@@ -53,6 +53,12 @@ _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("status_message_id", "TEXT DEFAULT ''"),
     ],
     "cfg_livestream": [("ping_role", "TEXT DEFAULT ''")],
+    "cfg_welcomer": [
+        ("embed_title", "TEXT DEFAULT ''"),
+        ("card_title", "TEXT DEFAULT 'Welcome, {displayname}!'"),
+        ("card_subtitle", "TEXT DEFAULT '{server}'"),
+        ("card_footer", "TEXT DEFAULT 'Member #{membercount}'"),
+    ],
 }
 
 
@@ -257,7 +263,11 @@ CREATE TABLE IF NOT EXISTS cfg_welcomer (
     image_mode      TEXT    DEFAULT 'none',
     card_color      TEXT    DEFAULT '#1a1a2e',
     has_custom_bg   INTEGER DEFAULT 0,
-    leave_color     TEXT    DEFAULT '#f59e0b'
+    leave_color     TEXT    DEFAULT '#f59e0b',
+    embed_title     TEXT    DEFAULT '',
+    card_title      TEXT    DEFAULT 'Welcome, {displayname}!',
+    card_subtitle   TEXT    DEFAULT '{server}',
+    card_footer     TEXT    DEFAULT 'Member #{membercount}'
 );
 
 CREATE TABLE IF NOT EXISTS cfg_livestream (

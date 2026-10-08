@@ -287,7 +287,11 @@ class datasys:
         "image_mode": "none",
         "card_color": "#1a1a2e",
         "has_custom_bg": False,
-        "leave_color": "#f59e0b"
+        "leave_color": "#f59e0b",
+        "embed_title": "",
+        "card_title": "Welcome, {displayname}!",
+        "card_subtitle": "{server}",
+        "card_footer": "Member #{membercount}"
     },
     "custom_commands": {},
     "livestream": {

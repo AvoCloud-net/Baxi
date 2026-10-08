@@ -903,7 +903,7 @@ input:not([type]):not(.input), input[type="text"]:not(.input), input[type="numbe
 input[type="password"]:not(.input), input[type="url"]:not(.input), input[type="email"]:not(.input),
 input[type="search"]:not(.input), input[type="tel"]:not(.input), input[type="date"]:not(.input),
 input[type="time"]:not(.input), input[type="datetime-local"]:not(.input),
-textarea:not(.textarea) {
+textarea:not(.textarea), .mp-editor:not(.textarea) {
   font-family: var(--avo-font-mono);
   font-size: var(--avo-ui-text);
   color: var(--avo-text);
@@ -913,7 +913,7 @@ textarea:not(.textarea) {
   padding: 0 0.75rem;
   height: var(--avo-ui-control-h);
 }
-textarea:not(.textarea) { height: auto; padding: 0.5rem 0.75rem; line-height: 1.5; resize: vertical; }
+textarea:not(.textarea), .mp-editor:not(.textarea) { height: auto; padding: 0.5rem 0.75rem; line-height: 1.5; resize: vertical; }
 input[type="number"] { font-variant-numeric: tabular-nums; }
 input::placeholder, textarea::placeholder { color: var(--avo-text-muted); }
 input:disabled:not([type="checkbox"]):not([type="radio"]), textarea:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -1302,6 +1302,47 @@ html.avo-light .hero-word .hw-ch.coral .hw-stroke { -webkit-text-stroke-color: r
   color: var(--avo-primary-on) !important;
   border-color: var(--avo-primary) !important;
 }
+
+/* ── Mention picker (scripts/mention-picker.js) ───────────────── *
+   A bar under each message textarea and one opaque popover (floating surface,
+   so no glass). Hover and focus change border/background only, never colour
+   transitions (§6.9). */
+.mp-editor { overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+.mp-editor:empty::before { content: attr(data-placeholder); color: var(--avo-text-muted); pointer-events: none; }
+.mp-editor:focus-visible { outline: 2px solid var(--avo-primary); outline-offset: 2px; }
+/* Pill: the way Discord shows a mention, in kit tokens. Dead ids (deleted channel
+   or role) read as muted, like Discord's "unknown". */
+.mp-pill {
+  display: inline-block; padding: 0 5px; margin: 0 1px; border-radius: var(--avo-radius);
+  background: var(--avo-surface-raised); border: 1px solid var(--avo-line-strong);
+  color: var(--avo-text); line-height: 1.35; white-space: nowrap; user-select: all;
+}
+.mp-pill-prefix { color: var(--avo-accent-text); margin-right: 1px; }
+.mp-pill.dead { color: var(--avo-text-muted); }
+.mp-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.mp-bar-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--avo-text-muted); margin-right: 2px; }
+.mp-btn { gap: 4px; }
+.mp-btn-icon { color: var(--avo-accent-text); font-weight: 600; }
+.mp-pop {
+  position: fixed; z-index: 1000; display: flex; flex-direction: column;
+  max-height: 320px; padding: 6px; gap: 6px;
+  background: var(--avo-surface-raised); border: 1px solid var(--avo-line-strong);
+  border-radius: var(--avo-radius-lg); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.mp-search { width: 100%; }
+.mp-list { overflow-y: auto; display: flex; flex-direction: column; }
+.mp-group { padding: 6px 8px 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--avo-text-muted); }
+.mp-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px;
+  text-align: left; background: transparent; border: 0; border-radius: var(--avo-radius);
+  color: var(--avo-text); cursor: pointer; font: inherit; font-size: 13px;
+}
+.mp-item:hover, .mp-item.active { background: var(--avo-surface); box-shadow: inset 2px 0 0 var(--avo-primary); }
+.mp-prefix { width: 20px; text-align: center; color: var(--avo-text-muted); flex: none; }
+.mp-avatar { border-radius: 50%; flex: none; }
+.mp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-sub { margin-left: auto; padding-left: 8px; font-size: 11px; color: var(--avo-text-muted); white-space: nowrap; }
+.mp-empty { padding: 10px 8px; font-size: 12px; color: var(--avo-text-muted); }
 
 /* ── Focus (§10) ──────────────────────────────────────────────── *
    The kit sets the coral ring on :focus-visible. Controls that already carry a

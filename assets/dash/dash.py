@@ -34,9 +34,16 @@ import assets.db as db
 import assets.games.onewordstory as onewordstory_game
 import assets.pulse as pulse_sys
 from assets.data import load_temp_actions, save_temp_actions
+import assets.message.welcomer as welcomer_sys
+from reds_simple_logger import Logger
+
+logger = Logger()
 
 # In-memory store for notification broadcast jobs { job_id: {...} }
 _notif_jobs: dict = {}
+
+# Last welcomer test per (guild_id, user_id), monotonic seconds (5s cooldown)
+_welcomer_test_last: dict = {}
 
 
 def get_feature_adoption() -> dict:
@@ -694,6 +701,19 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if isinstance(channel, discord.VoiceChannel)
             }
 
+            # Only the mention picker uses these: forum/media and stage channels are
+            # mentionable (<#id>) but have no dashboard selects of their own.
+            forum_channels = {
+                str(channel.id): channel.name
+                for channel in channels
+                if isinstance(channel, discord.ForumChannel)
+            }
+            stage_channels = {
+                str(channel.id): channel.name
+                for channel in channels
+                if isinstance(channel, discord.StageChannel)
+            }
+
             roles = await guild.fetch_roles()
 
             roles_list = {str(role.id): role.name for role in roles}
@@ -776,6 +796,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 channels=text_channels,
                 news_channels=news_channels,
                 voice_channels=voice_channels,
+                forum_channels=forum_channels,
+                stage_channels=stage_channels,
                 categorys=catrgorys_list,
                 roles=roles_list,
                 roles_positions=roles_positions,
@@ -1446,6 +1468,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "card_color": card_color,
                 "leave_color": leave_color,
                 "has_custom_bg": has_custom_bg,
+                "embed_title": str(welcomer.get("embed_title", ""))[:100],
+                "card_title": str(welcomer.get("card_title", ""))[:100],
+                "card_subtitle": str(welcomer.get("card_subtitle", ""))[:100],
+                "card_footer": str(welcomer.get("card_footer", ""))[:100],
             }
 
             save_data(int(guild_id), "welcomer", settings)
@@ -4130,6 +4156,61 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             save_data(int(guild_id), "welcomer", welcomer_data)
             return quart.jsonify({"success": True, "message": "Background removed."})
 
+    @app.route("/api/dash/welcomer-test/", methods=["POST"])  # type: ignore
+    @requires_authorization
+    async def welcomer_test():
+        guild_id = quart.request.args.get("guild_id") or quart.request.args.get("dash_login")
+        if not guild_id or not guild_id.isdigit():
+            return quart.jsonify({"success": False, "message": "Missing guild_id parameter."}), 400
+
+        try:
+            user = await discord_auth.fetch_user()
+            guild = await bot.fetch_guild(int(guild_id))
+            guild_member = await guild.fetch_member(user.id)
+            if not guild_member.guild_permissions.manage_guild:
+                return quart.jsonify({"success": False, "message": "You don't have permission to manage this guild."}), 403
+        except Exception:
+            return quart.jsonify({"success": False, "message": "Authorization failed."}), 403
+
+        now = time.monotonic()
+        key = (int(guild_id), user.id)
+        if now - _welcomer_test_last.get(key, 0.0) < 5:
+            return quart.jsonify({"success": False, "message": "Please wait a few seconds between tests."}), 429
+        _welcomer_test_last[key] = now
+
+        # Saved config overlaid with the (possibly unsaved) form values
+        data = await quart.request.get_json(silent=True) or {}
+        form = data.get("welcomer") if isinstance(data.get("welcomer"), dict) else {}
+        cfg = dict(load_data(int(guild_id), "welcomer"))
+        for k in ("message", "embed_title", "card_title", "card_subtitle", "card_footer"):
+            if k in form:
+                cfg[k] = str(form[k])[:1024 if k == "message" else 100]
+        for k in ("color", "card_color"):
+            if re.match(r'^#[0-9a-fA-F]{6}$', str(form.get(k, ""))):
+                cfg[k] = form[k]
+        if form.get("image_mode") in ("none", "generate"):
+            cfg["image_mode"] = form["image_mode"]
+
+        channel_val = str(form.get("channel") or cfg.get("channel") or "")
+        if not channel_val.isdigit() or int(channel_val) == 0:
+            return quart.jsonify({"success": False, "message": "Select a welcome channel first."}), 400
+
+        gobj = bot.get_guild(int(guild_id))
+        member = gobj.get_member(user.id) if gobj else None
+        channel = gobj.get_channel(int(channel_val)) if gobj else None
+        if member is None or not isinstance(channel, discord.TextChannel):
+            return quart.jsonify({"success": False, "message": "Welcome channel not found."}), 400
+
+        try:
+            await welcomer_sys.send_test_welcome(member, channel, cfg)
+        except discord.Forbidden:
+            return quart.jsonify({"success": False, "message": "Baxi is missing permissions in that channel."}), 403
+        except Exception as e:
+            logger.error(f"Welcomer test error: {e}")
+            return quart.jsonify({"success": False, "message": "Could not send the test message."}), 500
+
+        return quart.jsonify({"success": True, "message": f"Test message sent to #{channel.name}."})
+
     @app.route("/dg/announce", methods=["POST"])
     async def mc_announce():
         auth = quart.request.headers.get("Authorization", "")
@@ -4678,6 +4759,53 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 if p.manage_messages:
                     correct += 1
         return quart.jsonify({"total": total, "visible": visible, "correct_perms": correct})
+
+    @app.route("/api/dash/members/", methods=["GET"])
+    @requires_authorization
+    async def member_search_api():
+        """Member lookup for the dashboard's mention picker (name / nickname / username prefix)."""
+        guild_id_raw = quart.request.args.get("guild_id", "")
+        query = quart.request.args.get("q", "").strip()[:32]
+        if not guild_id_raw.isdigit():
+            return quart.jsonify({"error": "Missing guild_id"}), 400
+        try:
+            user = await discord_auth.fetch_user()
+            guild_obj = await bot.fetch_guild(int(guild_id_raw))
+            member_check = await guild_obj.fetch_member(user.id)
+            if not member_check.guild_permissions.manage_guild:
+                return quart.jsonify({"error": "Unauthorized"}), 403
+        except Exception:
+            return quart.jsonify({"error": "Authorization failed"}), 403
+
+        cached = bot.get_guild(int(guild_id_raw))
+        if not cached:
+            return quart.jsonify({"error": "Guild not in cache"}), 404
+        found = []
+        ids_raw = quart.request.args.get("ids", "")
+        if ids_raw:
+            # Exact lookup: the picker resolves ids already in a message to names.
+            for raw in ids_raw.split(",")[:10]:
+                if not re.fullmatch(r"\d{17,20}", raw):
+                    continue
+                try:
+                    found.append(cached.get_member(int(raw)) or await cached.fetch_member(int(raw)))
+                except Exception:
+                    continue
+        elif query:
+            try:
+                found = await cached.query_members(query=query, limit=10)
+            except Exception:
+                found = []
+        return quart.jsonify({"members": [
+            {
+                "id": str(m.id),
+                "name": m.display_name,
+                "username": m.name,
+                "avatar": m.display_avatar.replace(size=32).url,
+                "bot": m.bot,
+            }
+            for m in found
+        ]})
 
     @app.route("/attachments/<filename>")
     async def attachments(filename):

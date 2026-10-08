@@ -2147,6 +2147,12 @@
                             </div>
 
                             <div class="grid gap-2">
+                                <label for="welcomer-embed-title">Embed title:</label>
+                                <input type="text" id="welcomer-embed-title" placeholder="SYS // WELCOME" maxlength="100" class="w-full">
+                                <p class="text-muted text-xs">Leave empty for the default title. Placeholders: {user}, {username}, {displayname}, {server}, {membercount}.</p>
+                            </div>
+
+                            <div class="grid gap-2">
                                 <label for="welcomer-message">Welcome message:</label>
                                 <textarea id="welcomer-message" placeholder="Welcome {user} to {server}!" maxlength="1024"
                                     class="w-full min-h-[80px]"></textarea>
@@ -2178,6 +2184,19 @@
                                         <img id="welcomer-bg-img" class="rounded max-h-32 object-cover" alt="Background preview">
                                         <button type="button" class="btn mt-1 text-xs" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="removeWelcomerBg()">Remove background</button>
                                     </div>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="welcomer-card-title">Card title:</label>
+                                    <input type="text" id="welcomer-card-title" placeholder="Welcome, {displayname}!" maxlength="100" class="w-full">
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="welcomer-card-subtitle">Card subtitle:</label>
+                                    <input type="text" id="welcomer-card-subtitle" placeholder="{server}" maxlength="100" class="w-full">
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="welcomer-card-footer">Card footer:</label>
+                                    <input type="text" id="welcomer-card-footer" placeholder="Member #{membercount}" maxlength="100" class="w-full">
+                                    <p class="text-muted text-xs">Placeholders: {user}, {username}, {displayname}, {server}, {membercount}. Plain text only, mentions are not rendered in the image.</p>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-color">Card overlay color:</label>
@@ -2224,6 +2243,16 @@
                             </div>
 
                             <div class="card-actions">
+                                <button type="button" id="welcomer-test-btn" class="btn" data-variant="outline" data-size="default" onclick="sendWelcomerTest(this)">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M22 2 11 13"/>
+                                            <path d="M22 2 15 22l-4-9-9-4z"/>
+                                        </svg>
+                                        Send test
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
                                 <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
                                         <svg class="lucide" viewBox="0 0 24 24">
@@ -4708,6 +4737,10 @@
                     document.getElementById('welcomer-color').value = data.welcomer.color;
                     document.getElementById('welcomer-color-hex').value = data.welcomer.color;
                 }
+                document.getElementById('welcomer-embed-title').value = data.welcomer.embed_title || '';
+                document.getElementById('welcomer-card-title').value = data.welcomer.card_title ?? 'Welcome, {displayname}!';
+                document.getElementById('welcomer-card-subtitle').value = data.welcomer.card_subtitle ?? '{server}';
+                document.getElementById('welcomer-card-footer').value = data.welcomer.card_footer ?? 'Member #{membercount}';
                 document.getElementById('welcomer-image-mode').value = data.welcomer.image_mode || 'none';
                 document.getElementById('welcomer-image-upload-section').classList.toggle('hidden', (data.welcomer.image_mode || 'none') !== 'generate');
                 if (data.welcomer.card_color) {
@@ -7091,6 +7124,48 @@
             };
         }
 
+        function sendWelcomerTest(btn) {
+            const g = id => document.getElementById(id);
+            const payload = { welcomer: {
+                channel: g('welcomer-channel').value,
+                message: g('welcomer-message').value,
+                color: g('welcomer-color-hex').value.trim(),
+                image_mode: g('welcomer-image-mode').value,
+                card_color: g('welcomer-card-color-hex').value.trim(),
+                embed_title: g('welcomer-embed-title').value,
+                card_title: g('welcomer-card-title').value,
+                card_subtitle: g('welcomer-card-subtitle').value,
+                card_footer: g('welcomer-card-footer').value,
+            } };
+            const spinner = btn.querySelector('.spinner');
+            btn.disabled = true;
+            if (spinner) spinner.classList.remove('hidden');
+            const done = (ok, msg) => {
+                btn.disabled = false;
+                if (spinner) spinner.classList.add('hidden');
+                const toaster = document.getElementById('toaster');
+                if (toaster && toaster.toast) toaster.toast({
+                    category: ok ? 'success' : 'error',
+                    title: ok ? 'EXEC // TEST SENT' : 'EXEC // FAILED',
+                    description: msg,
+                    cancel: { label: 'DISMISS' }
+                });
+            };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/welcomer-test/?guild_id={{ guild.id }}&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== XMLHttpRequest.DONE) return;
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    done(resp.success, resp.message);
+                } catch (e) {
+                    done(false, 'An unexpected error occurred.');
+                }
+            };
+            xhr.send(JSON.stringify(payload));
+        }
+
         document.getElementById('welcomer-form').onsubmit = function (event) {
             event.preventDefault();
             const enabled = document.getElementById('welcomer-enabled').checked;
@@ -7103,7 +7178,11 @@
             const image_mode = document.getElementById('welcomer-image-mode').value;
             const card_color = document.getElementById('welcomer-card-color-hex').value.trim();
             const leave_color = document.getElementById('welcomer-leave-color-hex').value.trim();
-            const payload = { welcomer: { enabled, channel, message, leave_enabled, leave_channel, leave_message, color, image_mode, card_color, leave_color } };
+            const embed_title = document.getElementById('welcomer-embed-title').value;
+            const card_title = document.getElementById('welcomer-card-title').value;
+            const card_subtitle = document.getElementById('welcomer-card-subtitle').value;
+            const card_footer = document.getElementById('welcomer-card-footer').value;
+            const payload = { welcomer: { enabled, channel, message, leave_enabled, leave_channel, leave_message, color, image_mode, card_color, leave_color, embed_title, card_title, card_subtitle, card_footer } };
 
             // Upload background image if selected
             const bgFile = document.getElementById('welcomer-bg-upload').files[0];
@@ -9174,6 +9253,19 @@
     </script>
 
     <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
+    <script>
+        /* Source for the mention picker: ids come from the guild, names are escaped by tojson. */
+        window.BAXI_MENTIONS = {
+            guildId: {{ data.guild_id | tojson }},
+            channels: {{ channels | tojson }},
+            voice: {{ voice_channels | tojson }},
+            forum: {{ forum_channels | tojson }},
+            stage: {{ stage_channels | tojson }},
+            roles: {{ roles | tojson }},
+            rolePositions: {{ roles_positions | tojson }}
+        };
+    </script>
+    <script src="{{ url_for('static', filename='scripts/mention-picker.js') }}?v={{ static_versions.get('scripts/mention-picker.js', '') }}"></script>
     
 
     <script>

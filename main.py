@@ -98,7 +98,7 @@ def _inject_static_version():
     static_dir = config.Web.static_folder
     versions = {}
     try:
-        for fname in ("main.css", "scripts/main.js", "scripts/theme.js", "scripts/wordmark.js"):
+        for fname in ("main.css", "scripts/main.js", "scripts/mention-picker.js", "scripts/theme.js", "scripts/wordmark.js"):
             fpath = os.path.join(static_dir, fname)
             if os.path.isfile(fpath):
                 versions[fname] = int(os.path.getmtime(fpath))
