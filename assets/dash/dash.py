@@ -2960,6 +2960,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Invalid data format: 'mod_gate' must be an object."}), 400
             if not isinstance(mg.get("enabled"), bool):
                 return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+            if not isinstance(mg.get("use_safety_list"), bool):
+                return quart.jsonify({"success": False, "message": "'use_safety_list' must be a boolean."}), 400
 
             action = str(mg.get("action", "quarantine"))
             if action not in ("quarantine", "kick", "approve", "notify"):
@@ -2971,6 +2973,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     "action": action,
                     "quarantine_role": int(mg.get("quarantine_role", 0) or 0),
                     "log_channel": int(mg.get("log_channel", 0) or 0),
+                    "use_safety_list": mg["use_safety_list"],
                 }
             except (ValueError, TypeError):
                 return quart.jsonify({"success": False, "message": "Numeric fields must be integers."}), 400
