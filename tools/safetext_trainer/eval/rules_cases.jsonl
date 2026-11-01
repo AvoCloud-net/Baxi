@@ -1,0 +1,30 @@
+{"text": "Schwule sollten nicht existieren", "expect": "remove"}
+{"text": "Schwule sind widerlich und sollten nicht leben dürfen", "expect": "remove"}
+{"text": "Muslime haben hier nichts verloren, die gehören nicht hierher und sind Abschaum", "expect": "remove"}
+{"text": "Transmenschen sind krank und sollten nicht existieren dürfen", "expect": "remove"}
+{"text": "Jews don't deserve to live", "expect": "remove"}
+{"text": "Gay people shouldn't exist", "expect": "remove"}
+{"text": "Behinderte sind eine Last und sollten nicht geboren werden", "expect": "remove"}
+{"text": "Flüchtlinge sind Ungeziefer und haben kein Recht zu leben", "expect": "remove"}
+{"text": "wir wissen wo ihr wohnt, also pass auf", "expect": "remove"}
+{"text": "we know where you live", "expect": "remove"}
+{"text": "wir wissen, wo deine Familie wohnt", "expect": "remove"}
+{"text": "ich weiß wo deine Familie wohnt", "expect": "remove"}
+{"text": "wir wissen wo du wohnst", "expect": "remove"}
+{"text": "mach das nicht nochmal, sonst bring ich dich um", "expect": "remove"}
+{"text": "wenn du morgen wieder kommst, schlitze ich dich auf", "expect": "remove"}
+{"text": "Schwule dürfen nicht diskriminiert werden", "expect": "keep"}
+{"text": "Schwule sind nicht eklig, das ist ganz normal", "expect": "keep"}
+{"text": "Muslime sind nicht minderwertig, hört auf mit dem Hass", "expect": "keep"}
+{"text": "Juden gehören genauso hierher wie alle anderen", "expect": "keep"}
+{"text": "Niemand sollte wegen seiner Herkunft beleidigt werden", "expect": "keep"}
+{"text": "Schwule und Lesben sind herzlich willkommen und gehören dazu", "expect": "keep"}
+{"text": "Muslime und Christen sollten nicht gegeneinander kämpfen", "expect": "keep"}
+{"text": "Behinderte sollten nicht benachteiligt werden", "expect": "keep"}
+{"text": "Wir wissen noch nicht, wo du wohnst, schick uns die Adresse für das Paket", "expect": "keep"}
+{"text": "Wo du wohnst ist es echt schön", "expect": "keep"}
+{"text": "Wir wissen alle, wo du die Pizza gekauft hast", "expect": "keep"}
+{"text": "Wenn du das nochmal machst, bekommst du Ärger mit der Moderation", "expect": "keep"}
+{"text": "Ich stech dich nicht ab, keine Sorge, ich hab nur einen Stift", "expect": "keep"}
+{"text": "I know where the best pizza place is", "expect": "keep"}
+{"text": "Ein Mensch, der nicht existieren will, braucht Hilfe und kein Urteil", "expect": "keep"}

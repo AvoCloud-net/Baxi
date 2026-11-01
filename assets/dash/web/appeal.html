@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="{{ t.code }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxi - {{ t.title_tab }}</title>
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
+    <meta name="robots" content="noindex">
+
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
+
+    <style>
+        @media (min-width: 900px) { body { padding-left: 0 !important; } }
+        .appeal-wrap { max-width: 720px; margin: 0 auto; padding: 5rem 16px 4rem; }
+        .appeal-guild { display: inline-flex; align-items: center; gap: .5rem; font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
+        .appeal-guild img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+        .case-meta { display: grid; gap: .15rem; font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
+        .case-no { color: var(--avo-accent-text); }
+        .appeal-form { display: none; gap: .6rem; margin-top: .85rem; }
+        .appeal-form.open { display: grid; }
+        .appeal-form textarea { width: 100%; min-height: 7rem; }
+        .case-status { font-size: var(--avo-ui-label); margin-top: .75rem; }
+        .case-status.good { color: var(--avo-success); }
+        .case-status.bad { color: var(--avo-error); }
+        .case-note { margin-top: .5rem; font-size: var(--avo-ui-label); white-space: pre-wrap; word-break: break-word; }
+    </style>
+</head>
+
+<body class="avo-ui">
+
+    <nav class="site-nav" id="site-nav">
+        <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET">
+            <span class="avocloud-logo__slot">
+                <span class="avocloud-logo__icon">
+                    <svg viewBox="0 0 72 72" fill="none">
+                        <path d="M22 18 L12 18 L12 54 L22 54 M50 18 L60 18 L60 54 L50 54 M26 30 L33 36 L26 42"
+                            stroke="currentColor" stroke-width="6"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            pathLength="200"/>
+                        <rect class="logo-cursor" x="40" y="28" width="4" height="16" rx="2"/>
+                    </svg>
+                </span>
+                <span class="avocloud-logo__av">AVO</span>
+            </span>
+            <span class="avocloud-logo__rest-wrap">
+                <span class="avocloud-logo__rest">CLOUD<span class="avocloud-logo__dot">.NET</span></span>
+            </span>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+        </button>
+    </nav>
+
+    <main class="appeal-wrap">
+        <h1 class="text-3xl font-semibold" style="margin-bottom:.5rem;">{{ t.title }}</h1>
+
+        {% if guild %}
+        <p class="appeal-guild">
+            {% if guild.icon %}<img src="{{ guild.icon }}" alt="">{% endif %}
+            <span>{{ guild.name }}</span>
+            <span aria-hidden="true">·</span>
+            <a href="/appeal/">{{ t.back }}</a>
+        </p>
+        <p class="text-muted" style="margin:.85rem 0 1.5rem;">{{ t.intro.replace('{days}', days|string) }}</p>
+
+        {% if not cases %}
+        <div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
+            <p class="text-muted text-sm">{{ t.no_cases }}</p>
+        </div>
+        {% endif %}
+
+        <div class="grid gap-3">
+            {% for c in cases %}
+            <div class="card" id="case-{{ c.no }}" style="padding:1.1rem 1.25rem;">
+                <header class="flex items-start justify-between gap-3" style="flex-wrap:wrap;">
+                    <h2 class="text-base font-semibold" style="margin:0;"><span class="case-no num">#{{ c.no }}</span> {{ c.type }}</h2>
+                    <span class="text-muted text-xs">{{ c.when }}</span>
+                </header>
+                <div class="case-meta" style="margin-top:.5rem;">
+                    <span>{{ t.reason }}: {{ c.reason }}</span>
+                    {% if c.duration %}<span>{{ t.how_long }}: {{ c.duration }}</span>{% endif %}
+                </div>
+
+                {% if c.state == 'open' %}
+                <div style="margin-top:.85rem;">
+                    <button type="button" class="btn open-btn" data-variant="outline" data-size="default">
+                        <span class="btn-label">{{ t.appeal_button }}</span>
+                    </button>
+                </div>
+                <form class="appeal-form" data-case="{{ c.no }}">
+                    <label for="text-{{ c.no }}" class="text-sm font-medium">{{ t.label }}</label>
+                    <textarea class="input" id="text-{{ c.no }}" maxlength="1000"></textarea>
+                    <div>
+                        <button type="submit" class="btn" data-variant="primary" data-size="default">
+                            <span class="btn-label">{{ t.send }}</span>
+                        </button>
+                    </div>
+                </form>
+                <p class="case-status" id="status-{{ c.no }}" role="status"></p>
+                {% elif c.status %}
+                <p class="case-status {{ 'good' if c.state in ('lifted', 'lifted_plain') else ('bad' if c.state == 'kept' else '') }}">{{ c.status }}</p>
+                {% if c.team_note %}<p class="case-note"><strong>{{ t.team_note }}:</strong> {{ c.team_note }}</p>{% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        {% if guilds %}
+        <p class="text-muted" style="margin:.5rem 0 1.5rem;">{{ t.pick_intro }}</p>
+        <div class="grid gap-3">
+            {% for g in guilds %}
+            <a class="card" href="/appeal/{{ g.id }}" style="padding:1rem 1.25rem; display:flex; align-items:center; gap:.75rem;">
+                {% if g.icon %}<img src="{{ g.icon }}" alt="" width="32" height="32" style="border-radius:50%;">{% endif %}
+                <span class="font-semibold">{{ g.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center" style="margin-top:1.5rem;">
+            <p class="text-muted text-sm">{{ t.no_cases }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <p class="text-muted text-xs" style="margin-top:2rem;">{{ t.login_hint }}</p>
+    </main>
+
+    <script>
+        const T = {{ {'sending': t.sending, 'sent': t.sent, 'status_open': t.status_open}|tojson }};
+        const GUILD_ID = {{ (guild.id if guild else '')|tojson }};
+
+        document.querySelectorAll('.open-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const form = btn.closest('.card').querySelector('.appeal-form');
+                form.classList.add('open');
+                btn.parentNode.style.display = 'none';
+                form.querySelector('textarea').focus();
+            });
+        });
+
+        document.querySelectorAll('.appeal-form').forEach(function (form) {
+            form.addEventListener('submit', async function (ev) {
+                ev.preventDefault();
+                const no = form.dataset.case;
+                const status = document.getElementById('status-' + no);
+                const submit = form.querySelector('button[type=submit]');
+                submit.disabled = true;
+                status.textContent = T.sending;
+                try {
+                    const res = await fetch('/api/appeal/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ guild_id: GUILD_ID, case_no: parseInt(no, 10),
+                                               text: form.querySelector('textarea').value.trim() })
+                    });
+                    const r = await res.json();
+                    if (r.success) {
+                        form.classList.remove('open');
+                        status.textContent = T.status_open;
+                        status.classList.remove('bad');
+                    } else {
+                        status.textContent = r.message || '';
+                        status.classList.add('bad');
+                        submit.disabled = false;
+                    }
+                } catch (e) {
+                    status.textContent = '';
+                    submit.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

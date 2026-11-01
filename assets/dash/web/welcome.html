@@ -41,22 +41,14 @@
             padding: 5rem 1rem 3rem;
             gap: 1.25rem;
         }
-        /* Mono kicker, not a pill badge (BRANDING §6): "// LABEL" with the
-           coral slashes. The rounded outline chip was v1 vocabulary. */
+        /* A quiet label above the headline: sentence case, muted, no kicker. */
         .welcome-hero .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.6em;
-            font-family: var(--avo-font-mono);
-            font-size: 0.72rem;
-            font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
+            font-size: var(--avo-ui-label);
+            font-weight: 400;
             color: var(--avo-text-muted);
-        }
-        .welcome-hero .hero-badge::before {
-            content: '//';
-            color: var(--avo-accent-text);
         }
         .welcome-hero h1 {
             font-size: clamp(2rem, 6vw, 3.5rem);
@@ -72,19 +64,17 @@
         }
         /* Discord blurple stays — it is Discord's brand colour on a Discord
            login button, not a v1 leftover. Everything around it comes from the
-           tokens: 6px control radius, mono label, the four duration steps. */
+           tokens: pill shape, Grotesk label, the duration steps. */
         .discord-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.65rem;
             height: var(--avo-ui-control-h-primary); /* the one action this screen is about */
             padding: 0 1.5rem;
-            border-radius: var(--avo-radius);
-            font-family: var(--avo-font-mono);
-            font-size: var(--avo-text-xs);
+            border-radius: var(--avo-radius-pill);
+            font-family: var(--avo-font-body);
+            font-size: var(--avo-text-base);
             font-weight: 500;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
             background: #5865F2;
             color: #fff;
             border: none;
@@ -94,13 +84,7 @@
         .discord-btn:hover {
             background: #4752c4;
         }
-        .discord-btn svg {
-            flex-shrink: 0;
-            transition: transform var(--avo-dur-micro) var(--avo-ease-out);
-        }
-        .discord-btn:hover svg {
-            transform: translateX(2px);
-        }
+        .discord-btn svg { flex-shrink: 0; }
         .stats-strip {
             display: flex;
             justify-content: center;
@@ -111,10 +95,10 @@
         .stats-strip .stat {
             text-align: center;
         }
-        /* Big counters: the one UI face at 600, tabular so digits don't reflow (§4). */
+        /* Big counters: Plex Mono, tabular so digits don't reflow. */
         .stats-strip .stat-value {
-            font-family: var(--avo-font-massive);
-            font-weight: 600;
+            font-family: var(--avo-font-mono);
+            font-weight: 500;
             font-variant-numeric: tabular-nums;
             font-size: clamp(1.6rem, 4vw, 2.4rem);
             line-height: 1;
@@ -126,7 +110,7 @@
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 1rem;
         }
-        /* .card carries the corner marks from main.css; this only puts the row
+        /* .card is the flat v5 panel from the kit; this only puts the row
            layout back over basecoat's column default. */
         .feature-card {
             display: flex;
@@ -143,13 +127,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--avo-line-strong);
+            background: var(--avo-surface-raised);
             border-radius: var(--avo-radius);
         }
         .feature-icon svg {
             width: 1.1rem;
             height: 1.1rem;
-            stroke: var(--avo-primary);
+            stroke: var(--avo-text-muted);
             fill: none;
             stroke-width: var(--avo-icon-stroke);
             stroke-linecap: round;
@@ -187,7 +171,8 @@
     <div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
 
         <!-- Hero -->
-        <div class="welcome-hero">
+        <div class="welcome-hero px-host px-free">
+            <canvas class="px-canvas" data-dither aria-hidden="true"></canvas>
             <span class="hero-badge">v{{ version }} -  Baxi Dashboard</span>
 
             <!-- CAD construction reveal (BRANDING §5). Same component as the
@@ -242,7 +227,7 @@
 
             <!-- Features -->
             <section class="pb-16">
-                <div class="section-label">WHAT BAXI CAN DO</div>
+                <div class="section-label">What Baxi can do</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold">Features</h2>
@@ -316,7 +301,7 @@
                                     <svg viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
                                 </div>
                                 <div>
-                                    <p class="font-medium text-sm">Global Chat</p>
+                                    <p class="font-medium text-sm">Global chat</p>
                                     <p class="text-muted text-xs">Cross-server chat rooms with 24/7 moderation and a shared flagged users database.</p>
                                 </div>
                             </div>
@@ -517,6 +502,7 @@
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='scripts/dither.js') }}?v={{ static_versions.get('scripts/dither.js', '') }}"></script>
     <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     <script src="{{ url_for('static', filename='scripts/wordmark.js') }}?v={{ static_versions.get('scripts/wordmark.js', '') }}"></script>
     <script>

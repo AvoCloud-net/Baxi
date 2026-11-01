@@ -7,6 +7,7 @@ quart_cors
 quart_discord
 pillow
 cairosvg
+emoji>=2.10
 yt-dlp
 gTTS
 cryptography

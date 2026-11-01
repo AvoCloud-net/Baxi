@@ -19,6 +19,7 @@ from discord.ext import commands
 
 import config.config as config
 import assets.db as db
+import assets.idle as idle
 import assets.repo as repo
 from assets.repo import runtime as _runtime_repo
 
@@ -124,6 +125,7 @@ def _load_all(sid: int, bot_ref, dash_login: Optional[str]) -> dict:
 
 def save_data(sid: int, sys: str, data) -> None:
     db.ensure_guild(int(sid))
+    idle.invalidate(sys)  # background tasks pick up a feature switched on/off right away
 
     # 1001-bag keys
     if repo.is_1001_key(sys):
@@ -228,6 +230,10 @@ def load_temp_actions(sid: int) -> dict:
         return {"bans": [], "timeouts": []}
 
 
+def temp_action_guild_ids() -> set[int]:
+    return repo.temp_action_guild_ids()
+
+
 def save_temp_actions(sid: int, data: dict) -> None:
     repo.save_temp_actions(int(sid), data)
 
@@ -260,13 +266,21 @@ def update_activity(
         pass
 
 
-# ── Mod / filter events ───────────────────────────────────────────────────────
-
-def append_mod_event(guild_id: int, event: dict) -> None:
+def add_voice_time(guild_id: int, entries: list) -> None:
     try:
-        repo.append_mod_event(int(guild_id), event)
+        _runtime_repo.add_voice_time(int(guild_id), entries)
     except Exception:
         pass
+
+
+# ── Mod / filter events ───────────────────────────────────────────────────────
+
+def append_mod_event(guild_id: int, event: dict) -> int | None:
+    """Record a mod event; returns its case number (None if it could not be stored)."""
+    try:
+        return repo.append_mod_event(int(guild_id), event)
+    except Exception:
+        return None
 
 
 def append_filter_event(guild_id: int, event: dict) -> None:

@@ -4,8 +4,10 @@ import discord
 
 import assets.data as datasys
 import config.config as config
+from reds_simple_logger import Logger
 
 
+logger = Logger()
 _FOOTER = "Baxi · Audit Log"
 
 
@@ -80,51 +82,149 @@ def should_log(guild_id, event_type: str) -> bool:
 # Audit-log actor lookup ("who did it")
 # ----------------------------------------------------------------------------
 
-async def fetch_actor(guild, action, target_id=None, *, delay: float = 1.2, max_age: float = 20.0):
-    """Return ``(executor, reason)`` for the most recent audit-log entry matching
-    ``action`` (and optionally ``target_id``), or ``(None, None)``.
+# Audit entries already attributed to a gateway event. Discord writes one entry per
+# action, so an entry may explain exactly one event; without this a later, unrelated
+# event (e.g. a channel drag, which has no entry) would inherit the previous actor.
+_consumed: dict = {}
+# Batched entries (message deletes, member moves) are *reused* by Discord: the entry keeps
+# its original id/timestamp and only its `count` grows. entry.id -> increments already
+# attributed to an event, so each event consumes exactly one increment.
+_seen_counts: dict = {}
+_lookup_lock = asyncio.Lock()
+_CACHE_MAX = 2000
 
-    Discord populates audit logs a beat after the gateway event, so a small
-    ``delay`` is applied before the lookup. ``max_age`` guards against returning a
-    stale entry (e.g. an old batched message-delete record). Never raises.
-    """
-    if guild is None or action is None:
-        return None, None
+
+def _prune(cache: dict):
+    if len(cache) > _CACHE_MAX:
+        for key in list(cache)[: _CACHE_MAX // 2]:
+            cache.pop(key, None)
+
+
+def audit_available(guild) -> bool:
+    """True when Baxi may read the audit log (otherwise 'no entry' proves nothing)."""
     try:
         me = guild.me
-        if me is None or not me.guild_permissions.view_audit_log:
-            return None, None
+        return me is not None and me.guild_permissions.view_audit_log
     except Exception:
+        return False
+
+
+async def fetch_actor(
+    guild,
+    action,
+    target_id=None,
+    *,
+    delay: float = 1.2,
+    max_age: float = 20.0,
+    channel_id=None,
+    counted: bool = False,
+    retries: int = 0,
+    retry_delay: float = 2.0,
+):
+    """Return ``(executor, reason)`` for the audit-log entry that caused the current
+    gateway event, or ``(None, None)``.
+
+    ``action`` may be one ``AuditLogAction`` or a tuple of them (the newest unclaimed
+    match wins). ``target_id`` / ``channel_id`` narrow the match (``channel_id`` is the
+    channel stored in ``entry.extra`` for message deletes and member moves).
+
+    Discord populates audit logs a beat after the gateway event, so ``delay`` is applied
+    first. Entries are claimed once (see ``_consumed``). With ``counted=True`` the entry
+    is a batched one and an event only matches when its ``count`` grew since the last
+    event that used it, regardless of how old the entry itself is. ``retries`` repeats the
+    lookup (after ``retry_delay``) when Discord has not written the entry yet. Never raises.
+    """
+    if guild is None or action is None or not audit_available(guild):
         return None, None
-    if delay:
-        try:
-            await asyncio.sleep(delay)
-        except Exception:
-            pass
-    try:
-        async for entry in guild.audit_logs(limit=8, action=action):
+    actions = action if isinstance(action, (tuple, list, set)) else (action,)
+    for attempt in range(retries + 1):
+        wait = delay if attempt == 0 else retry_delay
+        if wait:
             try:
-                if (discord.utils.utcnow() - entry.created_at).total_seconds() > max_age:
-                    continue
+                await asyncio.sleep(wait)
             except Exception:
                 pass
-            if target_id is not None:
-                tid = getattr(entry.target, "id", None)
-                if tid is None or int(tid) != int(target_id):
-                    continue
-            return entry.user, getattr(entry, "reason", None)
-    except (discord.Forbidden, discord.HTTPException):
-        return None, None
-    except Exception:
-        return None, None
+        try:
+            async with _lookup_lock:
+                found = await _scan(guild, actions, target_id, channel_id, counted, max_age)
+        except (discord.Forbidden, discord.HTTPException) as err:
+            logger.warn(f"[ServerLog] audit-log lookup failed in guild {guild.id}: {err}")
+            return None, None
+        except Exception as err:
+            logger.error(f"[ServerLog] audit-log lookup error in guild {guild.id}: {type(err).__name__}: {err}")
+            return None, None
+        if found is not None:
+            return found
     return None, None
 
 
-def add_actor(embed: discord.Embed, actor, reason=None) -> discord.Embed:
-    """Append a 'Performed by' (and optional 'Reason') field to an embed."""
+async def _scan(guild, actions, target_id, channel_id, counted, max_age):
+    entries = []
+    for act in actions:
+        async for entry in guild.audit_logs(limit=15, action=act):
+            entries.append(entry)
+    entries.sort(key=lambda e: e.id, reverse=True)
+    now = discord.utils.utcnow()
+    for entry in entries:
+        if target_id is not None:
+            tid = getattr(entry.target, "id", None)
+            if tid is None or int(tid) != int(target_id):
+                continue
+        extra = getattr(entry, "extra", None)
+        if channel_id is not None:
+            cid = getattr(getattr(extra, "channel", None), "id", None)
+            if cid is None or int(cid) != int(channel_id):
+                continue
+        age = (now - entry.created_at).total_seconds()
+        if counted:
+            count = int(getattr(extra, "count", 1) or 1)
+            prior = _seen_counts.get(entry.id)
+            if prior is None:
+                if age > max_age:
+                    # Unknown history of an old batched entry: remember where it
+                    # stands, but don't guess that this event belongs to it.
+                    _seen_counts[entry.id] = count
+                    _prune(_seen_counts)
+                    continue
+                prior = 0
+            if count <= prior:
+                continue
+            _seen_counts[entry.id] = prior + 1
+            _prune(_seen_counts)
+        else:
+            if age > max_age or entry.id in _consumed:
+                continue
+            _consumed[entry.id] = now
+            _prune(_consumed)
+        return entry.user, getattr(entry, "reason", None)
+    return None
+
+
+async def prime_counts(bot):
+    """Record the current `count` of batched audit entries (member moves, message
+    deletes) for every guild that has the server log on, so the first event after a
+    restart can tell a fresh increment from history. Never raises."""
+    for guild in list(bot.guilds):
+        try:
+            if not (should_log(guild.id, "voice_move") or should_log(guild.id, "message_delete")):
+                continue
+            if not audit_available(guild):
+                continue
+            for act in (discord.AuditLogAction.member_move, discord.AuditLogAction.message_delete):
+                async for entry in guild.audit_logs(limit=15, action=act):
+                    count = int(getattr(getattr(entry, "extra", None), "count", 1) or 1)
+                    _seen_counts.setdefault(entry.id, count)
+            _prune(_seen_counts)
+        except Exception:
+            pass
+        await asyncio.sleep(0.5)
+
+
+def add_actor(embed: discord.Embed, actor, reason=None, label: str = "Performed by") -> discord.Embed:
+    """Append an actor field (default 'Performed by') and an optional 'Reason'."""
     if actor is not None:
         mention = getattr(actor, "mention", str(actor))
-        embed.add_field(name="Performed by", value=f"{mention} (`{actor.id}`)", inline=False)
+        embed.add_field(name=label, value=f"{mention} (`{actor.id}`)", inline=False)
     if reason:
         embed.add_field(name="Reason", value=_trunc(reason, 500), inline=False)
     return embed

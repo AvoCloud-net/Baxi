@@ -92,6 +92,11 @@ def _st(guild_id: int) -> GuildRaidState:
     return s
 
 
+def pending_guild_ids() -> set[int]:
+    """Guilds with a lockdown or soft slowmode still to lift (even if the system is off now)."""
+    return {gid for gid, s in _state.items() if s.raid_active or s.cc_until}
+
+
 def _cfg(guild_id: int) -> dict | None:
     try:
         cfg = dict(datasys.load_data(guild_id, "antiraid"))
@@ -216,10 +221,13 @@ class AntiRaid:
         if verdict.action == "timeout" and isinstance(message.author, discord.Member):
             mins = int((verdict.meta or {}).get("timeout_minutes", 10))
             try:
-                await message.author.timeout(
-                    discord.utils.utcnow() + datetime.timedelta(minutes=mins),
-                    reason="Baxi Anti-Raid: raider during lockdown",
-                )
+                from assets.moderation import cases
+                await cases.run_automatic(
+                    message.guild, message.author, "mute", datasys.load_lang_file(message.guild.id)["moderation"]["auto"]["raid"],
+                    lambda sfx: message.author.timeout(
+                        discord.utils.utcnow() + datetime.timedelta(minutes=mins),
+                        reason="Baxi Anti-Raid: raider during lockdown" + sfx),
+                    seconds=mins * 60, dm="background")
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -504,7 +512,11 @@ class AntiRaid:
             if member is None or _is_whitelisted(member, cfg):
                 continue
             try:
-                await member.timeout(until, reason="Baxi Anti-Raid: spammer during raid")
+                from assets.moderation import cases
+                await cases.run_automatic(
+                    guild, member, "mute", datasys.load_lang_file(guild.id)["moderation"]["auto"]["raid"],
+                    lambda sfx: member.timeout(until, reason="Baxi Anti-Raid: spammer during raid" + sfx),
+                    seconds=mins * 60, dm="background")
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -514,8 +526,12 @@ class AntiRaid:
         if action == "none" or _is_whitelisted(member, cfg):
             return
         try:
+            from assets.moderation import cases
+            raid_why = datasys.load_lang_file(member.guild.id)["moderation"]["auto"]["raid"]
             if action == "kick":
-                await member.kick(reason="Baxi Anti-Raid: joined during raid")
+                # a case for the record; no DM (a raider account that just joined)
+                await cases.run_automatic(member.guild, member, "kick", raid_why,
+                                          lambda sfx: member.kick(reason="Baxi Anti-Raid: joined during raid" + sfx), dm="none")
             elif action == "quarantine":
                 role_id = int(cfg.get("quarantine_role", 0) or 0)
                 role = member.guild.get_role(role_id) if role_id else None
@@ -523,10 +539,11 @@ class AntiRaid:
                     await member.add_roles(role, reason="Baxi Anti-Raid quarantine")
             else:  # timeout
                 mins = int(cfg.get("actions", {}).get("timeout_minutes", 10))
-                await member.timeout(
-                    discord.utils.utcnow() + datetime.timedelta(minutes=mins),
-                    reason="Baxi Anti-Raid: joined during raid",
-                )
+                await cases.run_automatic(
+                    member.guild, member, "mute", raid_why,
+                    lambda sfx: member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=mins),
+                                               reason="Baxi Anti-Raid: joined during raid" + sfx),
+                    seconds=mins * 60, dm="none")
         except (discord.Forbidden, discord.HTTPException):
             pass
 

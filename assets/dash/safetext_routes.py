@@ -121,6 +121,33 @@ def register(app, discord_auth, _require_bot_admin, bot=None) -> None:
         sample = await asyncio.to_thread(samples.next_unlabelled, skip)
         return quart.jsonify({"sample": sample, "stats": await asyncio.to_thread(samples.stats)})
 
+    @app.route("/api/safetext/samples/export")
+    @requires_authorization
+    async def safetext_samples_export():
+        """Download samples: ?kind=labelled|unlabelled &format=jsonl|csv."""
+        _user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return _deny()
+        import csv
+        import io
+        import json as _json
+        from assets.message.safetext import samples
+        kind = "unlabelled" if quart.request.args.get("kind") == "unlabelled" else "labelled"
+        fmt = "csv" if quart.request.args.get("format") == "csv" else "jsonl"
+        rows = await asyncio.to_thread(samples.export_rows, kind)
+        if fmt == "csv":
+            buf = io.StringIO()
+            cols = list(rows[0].keys()) if rows else ["id", "text"]
+            w = csv.DictWriter(buf, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+            body, mime = buf.getvalue(), "text/csv"
+        else:
+            body = "".join(_json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
+            mime = "application/x-ndjson"
+        return quart.Response(body, mimetype=mime, headers={
+            "Content-Disposition": f'attachment; filename="safetext_{kind}.{fmt}"'})
+
     @app.route("/api/safetext/samples/label", methods=["POST"])
     @requires_authorization
     async def safetext_samples_label():

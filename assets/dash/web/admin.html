@@ -46,11 +46,9 @@
             overflow-y: auto;
             overscroll-behavior: contain;
             scrollbar-width: thin;
-            /* One surface, inset from the viewport edge, full height and bound to
-               the viewport (BRANDING §9 Navigation): a panel, not a list. Its items
-               are rows in it. */
-            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2)), var(--avo-surface);
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+            /* One flat surface, inset from the viewport edge, full height and bound
+               to the viewport: a panel, not a list. Its items are rows in it. */
+            background: var(--avo-surface);
             border: 1px solid var(--adm-border);
             border-radius: var(--adm-radius);
             padding: 1rem 0.7rem 1.5rem;
@@ -58,33 +56,27 @@
             display: flex;
             flex-direction: column;
             gap: 0.1rem;
-            transition: transform var(--avo-dur-ui) var(--avo-ease-out);
+            transition: transform var(--avo-dur-micro) var(--avo-ease-out);
         }
         .admin-sidebar::-webkit-scrollbar { width: 8px; }
-        .admin-sidebar::-webkit-scrollbar-thumb { background: var(--avo-surface-high); }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: var(--avo-surface-raised); border-radius: var(--avo-radius-pill); }
 
         /* The wordmark is the shared .avocloud-logo from main.css — the panel is
            part of the same product, so it wears the same mark, not an emoji. */
         /* The wordmark stays Syne 800: `.admin-sidebar a` would otherwise hand it the mono row face. */
-        .admin-sidebar a.avocloud-logo { gap: 0; height: auto; opacity: 1; text-transform: none; font-size: 1rem; font-family: var(--avo-font-wordmark); font-weight: 800; letter-spacing: -0.02em; }
+        .admin-sidebar a.avocloud-logo { gap: 0; height: auto; opacity: 1; text-transform: none; font-size: 1rem; font-family: var(--avo-font-wordmark); font-weight: 800; letter-spacing: -0.015em; }
         .admin-sidebar .nav-brand { padding: .45rem .55rem .1rem; opacity: 1; }
         .admin-sidebar .nav-brand:hover { background: none; }
         .admin-sidebar .nav-brand-sub {
-            font-family: var(--avo-font-mono);
-            font-size: .6rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
-            opacity: .4; padding: 0 .6rem 1rem;
+            font-size: var(--avo-ui-label); font-weight: 400;
+            color: var(--avo-text-3); padding: 0 .6rem 1rem;
         }
 
         .nav-group-label {
-            display: flex; align-items: center; gap: 0.4em;
-            font-family: var(--avo-font-mono);
-            font-size: 0.62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-            opacity: .35; padding: 0.85rem 0.6rem 0.3rem;
+            font-size: var(--avo-ui-label); font-weight: 400;
+            color: var(--avo-text-3); padding: 0.85rem 0.6rem 0.3rem;
         }
-        .nav-group-label::before { content: '//'; color: var(--avo-accent-text); flex-shrink: 0; }
-        /* Mono, uppercase, one fixed row height — a rail row is a control,
-           same scale as everything else in this surface (BRANDING §9
-           Navigation / "one row, one height"). */
+        /* Grotesk, sentence case, one fixed row height: a rail row is a control. */
         .admin-sidebar a {
             position: relative;
             display: flex;
@@ -92,19 +84,17 @@
             gap: 0.6rem;
             height: 36px;
             padding: 0 0.6rem;
-            border-radius: 0; /* round the container, not the rows (§9) */
-            font-family: var(--avo-font-mono);
-            font-size: 0.75rem; font-weight: 500;
-            text-transform: uppercase; letter-spacing: 0.04em;
+            border-radius: 0; /* round the container, not the rows */
+            font-family: var(--avo-font-body);
+            font-size: var(--avo-ui-label); font-weight: 500;
+            text-transform: none; letter-spacing: 0;
             text-decoration: none;
             color: inherit;
             opacity: .68;
-            transition: opacity var(--avo-dur-micro) var(--avo-ease-out);
         }
         .admin-sidebar a:hover { opacity: 1; background: var(--avo-surface-raised); }
-        /* A coral 2px tick on the leading edge PLUS --fg text — colour is
-           never the only signal (BRANDING §9 Navigation). The label itself
-           does not turn coral; only the tick does. */
+        /* A coral 2px tick on the leading edge PLUS full-strength text: colour is
+           never the only signal. The label itself does not turn coral. */
         .admin-sidebar a.active {
             opacity: 1; color: var(--avo-text); background: var(--avo-surface-raised);
         }
@@ -146,19 +136,16 @@
         .sidebar-backdrop.open { display: block; }
 
         /* ══ View switching ═══════════════════════════════════════ */
-        /* 2.5rem/40px was inline on all sixteen sections and is not a step on
-           the scale (BRANDING §8: 4·8·12·16·24·32·48·64). */
+        /* One step off the space scale (4·8·12·16·24·32). */
         .admin-view { display: none; margin-bottom: var(--avo-space-6); }
-        /* A view appears at once: entrance animation on data is data you have to
-           wait for (BRANDING §9 motion budget). */
+        /* A view appears at once: no entrance animation on data. */
         .admin-view.active { display: block; }
 
         /* ── Status badge ─────────────────────────────────────────── */
-        /* A chip: flat, 6px, a 1px border, mono (BRANDING §5). Status is the
-           semantic colour on the border and the label, never a filled ground
-           (§9), and never coral: coral is brand, it does not mean a state (§3).
-           "Running" is info for that reason. */
-        .badge { display:inline-flex; align-items:center; gap:.3rem; font-family:var(--avo-font-mono); font-size:.68rem; letter-spacing:.04em; padding:.22rem .58rem; border-radius:var(--avo-radius); font-weight:500; border:1px solid var(--avo-line-strong); background:transparent; color:var(--avo-text-muted); white-space:nowrap; }
+        /* A pill with a 1px border. Status is the semantic colour on the border
+           and the label, never a filled ground, and never coral: coral is brand,
+           it does not mean a state. "Running" is info for that reason. */
+        .badge { display:inline-flex; align-items:center; gap:.3rem; font-size:var(--avo-ui-label); padding:.15rem .7rem; border-radius:var(--avo-radius-pill); font-weight:500; border:1px solid var(--avo-line-strong); background:transparent; color:var(--avo-text-muted); white-space:nowrap; }
         .badge-ok, .badge-live, .badge-clean { color:var(--avo-success); border-color:color-mix(in srgb, var(--avo-success) 45%, transparent); }
         .badge-running { color:var(--avo-info); border-color:color-mix(in srgb, var(--avo-info) 45%, transparent); }
         .badge-error, .badge-flagged { color:var(--avo-error); border-color:color-mix(in srgb, var(--avo-error) 45%, transparent); }
@@ -166,7 +153,7 @@
         .badge-idle, .badge-offline { color:var(--avo-text-muted); border-color:var(--avo-line-strong); }
 
         /* ── Score bar ───────────────────────────────────────────── */
-        .score-bar { height:4px; background: var(--avo-surface-high); overflow:hidden; }
+        .score-bar { height:4px; background: var(--avo-surface-raised); overflow:hidden; border-radius: var(--avo-radius-pill); }
         .score-bar-fill { height:100%; }
 
         /* ── Prism profile modal ─────────────────────────────────── */
@@ -177,9 +164,9 @@
         }
         #prism-modal-backdrop.open { display: flex; }
         #prism-modal {
-            background: var(--avo-surface-raised);
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line-strong);
-            border-radius: var(--avo-radius-lg);
+            border-radius: var(--avo-radius-xl);
             width: min(820px, 95vw);
             max-height: 85dvh;
             display: flex; flex-direction: column;
@@ -192,7 +179,7 @@
         }
         #prism-modal-body { overflow-y: auto; padding: 1rem 1.25rem 1.25rem; flex: 1; }
         .prism-event-table { width:100%; border-collapse:collapse; font-size:.78rem; margin-top:.5rem; }
-        .prism-event-table th { text-align:left; padding:.3rem .5rem; color:var(--avo-text-muted); font-family:var(--avo-font-mono); font-weight:500; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; border-bottom:1px solid var(--adm-border); }
+        .prism-event-table th { text-align:left; padding:.3rem .5rem; color:var(--avo-text-3); font-weight:400; font-size:var(--avo-ui-label); border-bottom:1px solid var(--adm-border); }
         .prism-event-table td { padding:.4rem .5rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:top; }
         .prism-event-table tr:last-child td { border-bottom: none; }
         .sev-critical { color:var(--avo-error); }
@@ -235,19 +222,18 @@
         .admin-main .card > header h2 { font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em; }
         .admin-main .card > header p  { margin-top: .2rem; }
         /* Typography belongs to the design system, not to a style= attribute.
-           h1 is Plex Mono 600 from main.css: one face in the UI theme (§4). */
+           h1 is Space Grotesk 600 from main.css. */
         .admin-title { font-size: 1.4rem; margin: 0; }
         .admin-subtitle { color: var(--avo-text-muted); font-size: .78rem; margin: .15rem 0 0; }
         .admin-user-chip {
             display: flex; align-items: center; gap: .5rem;
             padding: .25rem .5rem .25rem .25rem;
             background: transparent; border: 1px solid var(--avo-line-strong);
-            border-radius: var(--avo-radius);
+            border-radius: var(--avo-radius-pill);
         }
         .admin-user-chip img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
         .admin-user-chip span { font-size: .82rem; color: var(--avo-text-muted); }
-        /* A coral rule struck down the left edge, not a coral panel. Same
-           reason as the sidebar's active state (BRANDING §3). */
+        /* A flat panel with a 2px strip on the left edge, not a coral panel. */
         .adm-headline-panel {
             background: var(--adm-surface);
             border: 1px solid var(--adm-border);
@@ -255,11 +241,10 @@
             border-radius: var(--avo-radius-lg);
             padding: .75rem 1rem;
         }
-        /* Field label — the mono kicker at control scale (BRANDING §4). */
+        /* Field label: 13px, muted, sentence case. */
         .adm-field-label {
             display: block;
-            font-family: var(--avo-font-mono);
-            font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+            font-size: var(--avo-ui-label);
             color: var(--avo-text-muted);
         }
         /* Same eyebrow, used as a section heading inside a card: one gap off
@@ -268,11 +253,10 @@
         .adm-field { display: flex; flex-direction: column; gap: var(--avo-space-1); }
         /* Empty / loading state inside a table (CLAUDE.md empty-state rules
            scaled down to a single cell — the icon box would be absurd here). */
-        .admin-table td.is-empty { color: var(--avo-text-muted); font-family: var(--avo-font-mono); font-size: .75rem; padding: var(--avo-space-5) var(--avo-space-2); }
+        .admin-table td.is-empty { color: var(--avo-text-muted); font-size: var(--avo-ui-label); padding: var(--avo-space-5) var(--avo-space-2); }
 
-        /* A sub-section inside a result card: a hairline box with the container's
-           8px corner. They used to carry a different hue each (blue, green, two
-           corals); a rainbow of borders is the categorical palette §9 forbids. */
+        /* A sub-section inside a result card: a hairline box. One neutral border,
+           not a hue per section. */
         .adm-subpanel { border: 1px solid var(--avo-line); border-radius: var(--avo-radius-lg); padding: .75rem 1rem; }
 
         /* Global chat feed rows */
@@ -293,9 +277,9 @@
         .gc-msg-actions button { font-size: .72rem; }
 
         /* ── Stat number ─────────────────────────────────────────── */
-        /* Counters: the one UI face at 600, tabular so digits don't reflow (§4).
-           main.css does the same for .stat-tile-value. */
-        .stat-num { font-family:var(--avo-font-massive); font-size:2.25rem; font-weight:600; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+        /* Counters: Plex Mono, tabular so digits don't reflow. main.css does the
+           same for .stat-tile-value. */
+        .stat-num { font-family:var(--avo-font-mono); font-size:2.25rem; font-weight:500; line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
 
         /* ── Task grid ───────────────────────────────────────────── */
         .task-card {
@@ -317,11 +301,11 @@
             display:none;
         }
         .action-result.ok  { color:var(--avo-success); border-left:2px solid var(--avo-success); display:block; }
-        .action-result.err { color:var(--avo-error); border-left:2px solid var(--avo-error); display:block; }
+        .action-result.err { color:var(--avo-text); border-left:2px solid var(--avo-error); display:block; }
 
         /* ── Search table ────────────────────────────────────────── */
         .admin-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-        .admin-table th { text-align:left; padding:.5rem .6rem; background:var(--avo-surface-raised); color:var(--avo-text-muted); font-family:var(--avo-font-mono); font-weight:500; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; border-bottom:1px solid var(--adm-border); }
+        .admin-table th { text-align:left; padding:.5rem .6rem; color:var(--avo-text-3); font-weight:400; font-size:var(--avo-ui-label); border-top:1px solid var(--adm-border); border-bottom:1px solid var(--adm-border); }
         .admin-table td { padding:.5rem .6rem; border-bottom:1px solid var(--adm-border-soft); vertical-align:middle; }
         .admin-table tr:last-child td { border-bottom:none; }
         .admin-table tbody tr:hover td { background:var(--avo-surface-raised); }
@@ -337,23 +321,23 @@
         }
 
         /* ── Inputs / selects ────────────────────────────────────── *
-           One row, one height (§9): 32px, with the field fill. A textarea sizes to
+           One row, one height: 44px. A textarea sizes to
            its content. Focus is the 2px coral ring and nothing else: the border
            does not change, so focus never looks like hover (§10). */
         .admin-main input[type=text], .admin-main input[type=number],
         .admin-main .select, .admin-main select {
             height: var(--avo-ui-control-h);
-            background: var(--avo-plate-fill);
+            background: var(--avo-canvas);
             border: 1px solid var(--avo-line-strong);
             border-radius: var(--avo-radius);
-            padding: 0 0.75rem;
+            padding: 0 0.875rem;
             font-size: var(--avo-ui-text);
         }
         .admin-main textarea {
-            background: var(--avo-plate-fill);
+            background: var(--avo-canvas);
             border: 1px solid var(--avo-line-strong);
             border-radius: var(--avo-radius);
-            padding: 0.5rem 0.75rem;
+            padding: 0.625rem 0.875rem;
             font-size: var(--avo-ui-text);
         }
         .admin-main input:focus-visible, .admin-main textarea:focus-visible,
@@ -364,10 +348,10 @@
 
         /* ── Guild Activity tabs ─────────────────────────────────── */
         /* Active is the struck line plus the full-strength label, never colour
-           alone (§9 Navigation). The coral rule is the tab's one coral mark. */
+           alone. The coral rule is the tab's one coral mark. */
         .ga-tab {
             background:none; border:none; cursor:pointer; color:var(--avo-text-muted);
-            font-family:var(--avo-font-mono); font-size:.72rem; letter-spacing:.04em;
+            font-size:var(--avo-ui-label);
             padding:.3rem .55rem;
             border-bottom:2px solid transparent;
         }
@@ -545,7 +529,7 @@
 
     <!-- ── SYSTEM STATUS ──────────────────────────────────────── -->
     <section id="section-status" class="admin-view" data-view="section-status">
-        <div class="section-label">System Status</div>
+        <div class="section-label">System status</div>
         <div id="task-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <!-- populated by JS -->
             <div class="task-card" style="opacity:.4; font-size:.82rem;">Loading...</div>
@@ -567,7 +551,7 @@
 
     <!-- ── LIVE LOGS ──────────────────────────────────────────── -->
     <section id="section-logs" class="admin-view" data-view="section-logs">
-        <div class="section-label">Live Logs</div>
+        <div class="section-label">Live logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;">
                 <div>
@@ -594,6 +578,7 @@
                         <option value="UpdateStats">UpdateStats</option>
                         <option value="PhishingList">PhishingList</option>
                         <option value="GarbageCollector">GarbageCollector</option>
+                        <option value="Backup">Backup</option>
                         <option value="AdminDash">AdminDash</option>
                     </select>
                     <select id="log-level-filter" class="select select-compact" onchange="applyLogFilter()">
@@ -615,7 +600,7 @@
 
     <!-- ── GLOBAL STATS ───────────────────────────────────────── -->
     <section id="section-stats" class="admin-view" data-view="section-stats">
-        <div class="section-label">Global Stats</div>
+        <div class="section-label">Global stats</div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
             <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Guilds</h2></header><section><div class="stat-num" id="stat-guilds">–</div></section></div>
             <div class="card"><header><h2 class="text-muted" style="font-size:.78rem;">Unique Users</h2></header><section><div class="stat-num" id="stat-users">–</div></section></div>
@@ -636,7 +621,7 @@
 
     <!-- ── FEATURE ADOPTION ───────────────────────────────────── -->
     <section id="section-adoption" class="admin-view" data-view="section-adoption">
-        <div class="section-label">Feature Adoption</div>
+        <div class="section-label">Feature adoption</div>
         <div class="card">
             <header><h2>Feature Usage across all Guilds</h2></header>
             <section>
@@ -649,7 +634,7 @@
 
     <!-- ── PRISM USERS ────────────────────────────────────────── -->
     <section id="section-prism" class="admin-view" data-view="section-prism">
-        <div class="section-label">User Reports</div>
+        <div class="section-label">User reports</div>
 
         <!-- Manual network safety-list flag -->
         <div class="card" style="margin-bottom:1.5rem;">
@@ -708,8 +693,8 @@
             <header><h2>Recent reports</h2></header>
             <section>
                 <table class="admin-table">
-                    <thead><tr><th>Reported</th><th>By</th><th>Server</th><th>Reason</th><th>When</th></tr></thead>
-                    <tbody id="reports-body"><tr><td colspan="5" class="is-empty">Loading...</td></tr></tbody>
+                    <thead><tr><th>Reported</th><th>By</th><th>Server</th><th>Category</th><th>Reason / message</th><th>When</th></tr></thead>
+                    <tbody id="reports-body"><tr><td colspan="6" class="is-empty">Loading...</td></tr></tbody>
                 </table>
             </section>
         </div>
@@ -717,7 +702,7 @@
 
     <!-- ── FLAGGED USERS ──────────────────────────────────────── -->
     <section id="section-flagged" class="admin-view" data-view="section-flagged">
-        <div class="section-label">Flagged Users (users.json)</div>
+        <div class="section-label">Flagged users (users.json)</div>
         <div class="card">
             <header><h2>Globally Flagged Users</h2></header>
             <section>
@@ -756,7 +741,7 @@
 
     <!-- ── CHATFILTER LOGS ───────────────────────────────────── -->
     <section id="section-cf-logs" class="admin-view" data-view="section-cf-logs">
-        <div class="section-label">Chatfilter Logs</div>
+        <div class="section-label">Chatfilter logs</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
@@ -820,7 +805,7 @@
 
     <!-- ── SAFETEXT MODEL ─────────────────────────────────────── -->
     <section id="section-safetext" class="admin-view" data-view="section-safetext">
-        <div class="section-label">SafeText Model</div>
+        <div class="section-label">SafeText model</div>
         <div class="card" style="margin-bottom:1rem;">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
@@ -833,6 +818,11 @@
                 <div style="display:flex; gap:1.25rem; font-size:.8rem;">
                     <span>Open: <strong id="stq-open">–</strong></span>
                     <span>Labelled: <strong id="stq-labelled">–</strong></span>
+                </div>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; width:100%;">
+                    <a class="btn" data-variant="outline" data-size="sm" href="/api/safetext/samples/export?kind=labelled&format=jsonl" download>Labelled (JSONL)</a>
+                    <a class="btn" data-variant="outline" data-size="sm" href="/api/safetext/samples/export?kind=labelled&format=csv" download>Labelled (CSV)</a>
+                    <a class="btn" data-variant="outline" data-size="sm" href="/api/safetext/samples/export?kind=unlabelled&format=jsonl" download>Unlabelled (JSONL)</a>
                 </div>
             </header>
             <div id="stq-empty" class="text-muted" style="display:none; padding:1.5rem 0; text-align:center; font-size:.85rem;">
@@ -941,7 +931,9 @@
             body.innerHTML = _stEntries.map((e, idx) => {
                 const ts = new Date((e.ts||0)*1000).toLocaleString();
                 const conf = (e.confidence==null) ? '–' : Number(e.confidence).toFixed(3);
-                const msg = e.message || ('#'+(e.msg_hash||''));
+                const msgCell = e.message
+                    ? _stEsc(e.message)
+                    : `<span style="opacity:.45;" title="Not stored (clean, score &lt; 0.30) - only a hash is kept for data minimisation">#${_stEsc(e.msg_hash||'')}</span>`;
                 const guild = e.guild_name ? `${_stEsc(e.guild_name)} <span style="opacity:.4;font-size:.7rem;">${e.gid||''}</span>` : (e.gid||'');
                 const user  = e.user_name  ? `${_stEsc(e.user_name)}  <span style="opacity:.4;font-size:.7rem;">${e.user_id||''}</span>` : (e.user_id||'');
                 const hasMsg = !!e.message;
@@ -960,10 +952,10 @@
                     <button class="btn" data-variant="outline" data-size="sm" style="font-size:.7rem; margin-left:4px;"
                         data-idx="${idx}" data-logid="${logId}" data-model="${_stEsc(modelSaid)}"
                         onclick="safetextMark(this)">Mark</button>`
-                    : `<span style="opacity:.4;font-size:.7rem;">no raw msg</span>`;
+                    : `<span style="opacity:.4;font-size:.7rem;">not stored</span>`;
                 return `<tr>
                     <td>${ts}</td><td>${guild}</td><td>${user}</td>
-                    <td style="max-width:280px; word-break:break-word; opacity:.9;">${_stEsc(msg)}</td>
+                    <td style="max-width:280px; word-break:break-word; opacity:.9;">${msgCell}</td>
                     <td>${_stEsc(e.stage||'')}</td>
                     <td>${e.flagged?'<span style="color:var(--avo-error);">yes</span>':'no'}</td>
                     <td>${conf}</td>
@@ -1021,7 +1013,8 @@
             document.getElementById('stq-text').textContent = _stqSample.text;
             const tox = (_stqSample.toxicity == null) ? '–' : Number(_stqSample.toxicity).toFixed(3);
             document.getElementById('stq-meta').textContent =
-                `Filter said: ${_stqSample.verdict}${_stqSample.stage ? ' (' + _stqSample.stage + ')' : ''} · score ${tox} · ${_stqSample.lang} · ${new Date(_stqSample.ts * 1000).toLocaleString()}`;
+                `${_stqSample.verdict === 'reported' ? 'Reported by a user as: ' + (_stqSample.stage || '?') : 'Filter said: ' + _stqSample.verdict + (_stqSample.stage ? ' (' + _stqSample.stage + ')' : '')} · score ${tox} · ${_stqSample.lang} · ${new Date(_stqSample.ts * 1000).toLocaleString()}` +
+                (_stqSample.suggested ? ` · suggested by server mods: ${_stqSample.suggested}` : '');
         } catch (e) { console.error(e); }
     }
     async function stqLabel(label) {
@@ -1095,7 +1088,7 @@
 
     <!-- ── ACTIVE STREAMERS ───────────────────────────────────── -->
     <section id="section-streamers" class="admin-view" data-view="section-streamers">
-        <div class="section-label">Livestream Monitoring</div>
+        <div class="section-label">Livestream monitoring</div>
         <div class="card">
             <header><h2>Active Streamers being tracked</h2></header>
             <section>
@@ -1109,7 +1102,7 @@
 
     <!-- ── ALL GUILDS ─────────────────────────────────────────── -->
     <section id="section-guilds" class="admin-view" data-view="section-guilds">
-        <div class="section-label">All Guilds</div>
+        <div class="section-label">All guilds</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
@@ -1186,7 +1179,7 @@
 
     <!-- ── GUILD ACTIVITY ────────────────────────────────────────── -->
     <section id="section-guild-activity" class="admin-view" data-view="section-guild-activity">
-        <div class="section-label">Guild Activity</div>
+        <div class="section-label">Guild activity</div>
         <div class="card">
             <header style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
                 <div>
@@ -1229,7 +1222,7 @@
 
     <!-- ── GUILD CONFIG VIEWER ──────────────────────────────────── -->
     <section id="section-guild-config" class="admin-view" data-view="section-guild-config">
-        <div class="section-label">Guild Config Viewer</div>
+        <div class="section-label">Guild config viewer</div>
         <div class="card">
             <header>
                 <h2>Guild Settings Inspector</h2>
@@ -1267,7 +1260,7 @@
 
     <!-- ── USER SEARCH & DATA MANAGEMENT ───────────────────────── -->
     <section id="section-user-gdpr" class="admin-view" data-view="section-user-gdpr">
-        <div class="section-label">User Search &amp; Data Management</div>
+        <div class="section-label">User search &amp; data management</div>
         <div class="card">
             <header>
                 <h2>User Search</h2>
@@ -1306,7 +1299,7 @@
 
     <!-- ── GLOBAL CHAT ────────────────────────────────────────── -->
     <section id="section-globalchat" class="admin-view" data-view="section-globalchat">
-        <div class="section-label">Global Chat</div>
+        <div class="section-label">Global chat</div>
 
         <!-- Live feed -->
         <div class="card" style="margin-bottom:1.5rem;">
@@ -1405,6 +1398,27 @@
                                 </div>
                             </section>
                         </div>
+            <!-- Baxi AI priority users -->
+                        <div class="card" style="grid-column: 1 / -1;">
+                            <header>
+                                <h2>Baxi AI priority users</h2>
+                                <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Their requests jump the AI queue, skip the cooldown and don't count against a server's daily limit. Applies on every server. The spam rate limit still applies.</p>
+                            </header>
+                            <section>
+                                <div class="grid gap-3">
+                                    <div id="aiq-stats" class="text-muted" style="font-size:.8rem;"></div>
+                                    <div id="aiprio-list" class="grid gap-2"></div>
+                                    <div id="aiprio-empty" class="text-muted" style="font-size:.85rem;">No priority users yet.</div>
+                                    <div class="add-area mt-3">
+                                        <div style="display:flex; gap:.5rem;">
+                                            <input id="aiprio-uid" type="text" inputmode="numeric" placeholder="Discord user ID" style="flex:1;">
+                                            <button onclick="aiPriorityAdd()" class="btn" data-variant="primary" data-size="default">Add</button>
+                                        </div>
+                                    </div>
+                                    <div id="aiprio-result" class="action-result"></div>
+                                </div>
+                            </section>
+                        </div>
             <!-- Reboot Bot -->
                         <div class="card">
                             <header><h2>Reboot Bot</h2></header>
@@ -1429,7 +1443,7 @@
                                     <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
                                     <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                                 </div>
-                                <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;"></textarea>
+                                <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;border-radius:var(--avo-radius-lg);"></textarea>
                                 <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn" data-variant="primary" data-size="default">Send Notification</button>
 
                                 <!-- Progress UI (hidden until job starts) -->
@@ -1438,7 +1452,7 @@
                                         <span style="font-size:.8rem; opacity:.7;">Sending…</span>
                                         <span id="notif-progress-label" style="font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums;">0 / 0</span>
                                     </div>
-                                    <div style="background:var(--avo-surface-high); height:6px; overflow:hidden;">
+                                    <div style="background:var(--avo-surface-raised); height:6px; overflow:hidden; border-radius:var(--avo-radius-pill);">
                                         <div id="notif-progress-bar" style="height:100%; width:0%; background:var(--avo-primary);"></div>
                                     </div>
                                 </div>
@@ -1554,15 +1568,8 @@ function setResult(id, msg, ok) {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = 'action-result ' + (ok ? 'ok' : 'err');
-    // Error state carries a mono ERR serial (BRANDING §9 Status/error) —
-    // never just a coloured strip with no label.
-    if (ok) { el.textContent = msg; return; }
-    el.innerHTML = '';
-    const serial = document.createElement('span');
-    serial.style.cssText = 'font-family:var(--avo-font-mono);font-weight:700;margin-right:.5em;';
-    serial.textContent = 'ERR';
-    el.appendChild(serial);
-    el.appendChild(document.createTextNode(msg));
+    // Error state: the 2px strip plus the message in full text colour.
+    el.textContent = msg;
 }
 
 // ── Log Stream ────────────────────────────────────────────────
@@ -1773,6 +1780,7 @@ function renderAdoption() {
 // Legacy alias kept so the adminData load path doesn't error; reports load independently.
 function renderPrism() { loadReports(); }
 
+const _reportCats = { spam:'Spam / ads', harassment:'Harassment', hate:'Hate speech', nsfw:'NSFW', scam:'Scam / phishing', selfharm:'Self-harm', doxxing:'Doxxing', other:'Other' };
 let _reportsData = { reports: [], top_reported: [] };
 
 async function loadReports() {
@@ -1844,9 +1852,10 @@ function renderReports() {
             <div style="opacity:.4; font-size:.7rem;">${escHtml(r.reported_id)}</div></td>
         <td style="opacity:.8; font-size:.78rem;">${escHtml(r.reporter_name||'?')}</td>
         <td style="opacity:.7; font-size:.78rem;">${escHtml(r.guild_name||r.guild_id)}</td>
-        <td style="opacity:.85; font-size:.78rem; max-width:300px;">${escHtml(r.reason)}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:var(--avo-accent-text);">msg</a>` : ''}</td>
+        <td style="font-size:.72rem; white-space:nowrap;">${escHtml(_reportCats[r.category] || r.category || '–')}</td>
+        <td style="opacity:.85; font-size:.78rem; max-width:300px; word-break:break-word;">${escHtml(r.reason)}${r.message_text ? `<div style="opacity:.6; margin-top:2px; border-left:2px solid var(--avo-line); padding-left:6px;">${escHtml(r.message_text)}</div>` : ''}${r.message_link ? ` · <a href="${escHtml(r.message_link)}" target="_blank" rel="noopener" style="color:var(--avo-accent-text);">msg</a>` : ''}</td>
         <td style="opacity:.5; font-size:.72rem;">${(r.timestamp||'').replace('T',' ').slice(0,16)}</td>
-    </tr>`).join('') : '<tr><td colspan="5" class="is-empty">No reports match.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="6" class="is-empty">No reports match.</td></tr>';
 }
 
 async function runTask(taskKey) {
@@ -2050,7 +2059,7 @@ async function searchUser() {
     if (r.data.flagged_entry) {
         const f = r.data.flagged_entry;
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 25%, transparent); padding:.75rem 1rem;">
+        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 25%, transparent); padding:.75rem 1rem;border-radius:var(--avo-radius-lg);">
             <div class="adm-field-label adm-eyebrow">Global Flag Entry</div>
             <div style="display:flex; flex-wrap:wrap; gap:.4rem .75rem; font-size:.82rem; align-items:center;">
                 <span style="opacity:.7;">Reason: <span style="color:var(--avo-warning);">${escHtml(f.reason||'- ')}</span></span>
@@ -2063,14 +2072,14 @@ async function searchUser() {
     // GC ban / BA ban
     if (r.data.gc_ban !== null && r.data.gc_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 35%, transparent); padding:.75rem 1rem;">
+        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 35%, transparent); padding:.75rem 1rem;border-radius:var(--avo-radius-lg);">
             <div class="adm-field-label adm-eyebrow">Global Chat Ban (gc_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.gc_ban))}</div>
         </div>`);
     }
     if (r.data.ba_ban !== null && r.data.ba_ban !== undefined) {
         sections.insertAdjacentHTML('beforeend', `
-        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 35%, transparent); padding:.75rem 1rem;">
+        <div style="border:1px solid color-mix(in srgb, var(--avo-error) 35%, transparent); padding:.75rem 1rem;border-radius:var(--avo-radius-lg);">
             <div class="adm-field-label adm-eyebrow">Bot-Wide Ban (ba_ban)</div>
             <div style="font-size:.82rem; opacity:.8; word-break:break-word;">${escHtml(JSON.stringify(r.data.ba_ban))}</div>
         </div>`);
@@ -2256,7 +2265,7 @@ function gcFmtTime(s) {
 
 /* Lucide glyphs for the row actions. Inline SVG rather than a character so the
    stroke joins are right and the icon can step forward on hover with the rest
-   of the button gesture (BRANDING §5b). */
+   of the button. */
 const _ico = d => `<svg class="lucide" viewBox="0 0 24 24" style="width:13px;height:13px;flex-shrink:0;">${d}</svg>`;
 const ICO_TRASH = _ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>');
 const ICO_USER_X = _ico('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/>');
@@ -2286,9 +2295,6 @@ function gcRenderFeed() {
     if (!items.length) {
         list.innerHTML = `
         <div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center">
-            <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
-                <svg class="lucide" viewBox="0 0 24 24" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </div>
             <h3 class="text-base font-semibold tracking-tight">No messages</h3>
             <p class="text-muted text-sm">Nothing in the relayed feed matches this filter.</p>
         </div>`;
@@ -2418,6 +2424,37 @@ async function doAction(payload) {
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Baxi AI priority users ────────────────────────────────────
+function aiPriorityRender(d) {
+    const list = document.getElementById('aiprio-list');
+    document.getElementById('aiprio-empty').style.display = d.users.length ? 'none' : '';
+    list.innerHTML = d.users.map(u => `
+        <div class="card"><header class="flex items-center justify-between">
+            <div><h3 class="text-base font-semibold">${escHtml(u.name)}</h3><p class="text-muted text-xs num">${escHtml(u.id)}</p></div>
+            <button class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="aiPriorityRemove('${escHtml(u.id)}')">Remove</button>
+        </header></div>`).join('');
+    const q = d.queue || {};
+    document.getElementById('aiq-stats').textContent =
+        `Queue: ${q.active ?? 0} running, ${q.waiting ?? 0} waiting (busy from ${q.max_queue ?? '?'}) · daily limit ${q.daily_limit ?? '?'} per server`;
+}
+async function aiPriorityLoad() {
+    const r = await doAction({ action: 'ai_priority_list' });
+    if (r.ok) aiPriorityRender(r.data); else setResult('aiprio-result', r.message, false);
+}
+async function aiPriorityAdd() {
+    const uid = document.getElementById('aiprio-uid').value.trim();
+    if (!/^\d{17,20}$/.test(uid)) { setResult('aiprio-result', 'Enter a valid Discord user ID.', false); return; }
+    const r = await doAction({ action: 'ai_priority_add', user_id: uid });
+    setResult('aiprio-result', r.ok ? 'Added.' : r.message, r.ok);
+    if (r.ok) { document.getElementById('aiprio-uid').value = ''; aiPriorityRender(r.data); }
+}
+async function aiPriorityRemove(uid) {
+    const r = await doAction({ action: 'ai_priority_remove', user_id: uid });
+    setResult('aiprio-result', r.ok ? 'Removed.' : r.message, r.ok);
+    if (r.ok) aiPriorityRender(r.data);
+}
+aiPriorityLoad();
 
 async function adminAction(action) {
     const payload = { action };
@@ -2571,7 +2608,7 @@ async function adminAction(action) {
                     if (failedCount > 0) {
                         failedWrap.style.display = 'block';
                         failedList.innerHTML = failed.map(g => `
-                            <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:color-mix(in srgb, var(--avo-error) 7%, transparent); border:1px solid color-mix(in srgb, var(--avo-error) 15%, transparent); ">
+                            <div style="display:flex; align-items:baseline; gap:.5rem; padding:.3rem .5rem; background:color-mix(in srgb, var(--avo-error) 7%, transparent); border:1px solid color-mix(in srgb, var(--avo-error) 15%, transparent);border-radius:var(--avo-radius-lg);">
                                 <span style="font-size:.78rem; font-weight:600; color:var(--avo-error);">${escHtml(g.name)}</span>
                                 <span style="font-size:.7rem; opacity:.45;">${escHtml(g.id)}</span>
                                 <span style="font-size:.72rem; opacity:.6; margin-left:auto;">${escHtml(g.reason)}</span>
@@ -2650,7 +2687,7 @@ async function viewPrismProfile(uid) {
     };
     if (p.risk_signals && p.risk_signals.length) {
         signalsEl.innerHTML = p.risk_signals.map(s =>
-            `<span style="font-size:.7rem; padding:.2rem .5rem; background:color-mix(in srgb, var(--avo-warning) 15%, transparent); color:var(--avo-warning); border:1px solid color-mix(in srgb, var(--avo-warning) 25%, transparent);">${SIGNAL_LABELS[s] || s}</span>`
+            `<span style="font-size:.7rem; padding:.2rem .5rem; background:color-mix(in srgb, var(--avo-warning) 15%, transparent); color:var(--avo-warning); border:1px solid color-mix(in srgb, var(--avo-warning) 25%, transparent);border-radius:var(--avo-radius-lg);">${SIGNAL_LABELS[s] || s}</span>`
         ).join('');
         signalsWrap.style.display = '';
     } else {
@@ -2950,7 +2987,7 @@ function gcDetailCard(title, rows) {
             <span style="text-align:right;word-break:break-all;max-width:60%;">${value}</span>
         </div>`
     ).join('');
-    return `<div style="background:var(--adm-surface);border:1px solid var(--adm-border);padding:.75rem 1rem;">
+    return `<div style="background:var(--adm-surface);border:1px solid var(--adm-border);padding:.75rem 1rem;border-radius:var(--avo-radius-lg);">
         <div class="adm-field-label adm-eyebrow">${title}</div>
         ${rowsHtml}
     </div>`;

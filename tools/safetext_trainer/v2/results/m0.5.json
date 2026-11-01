@@ -1,0 +1,361 @@
+{
+ "name": "m0.5",
+ "env": {
+  "SAFETEXT_DEVICE": "cuda",
+  "SAFETEXT_MODEL": "/home/murauer/Documents/bwki-baxi/work/v2/models/A2_mix0.5"
+ },
+ "holdout_v2": {
+  "n": 90,
+  "tp": 31,
+  "fn": 15,
+  "fp": 1,
+  "tn": 43,
+  "recall": 0.6739130434782609,
+  "fp_rate": 0.022727272727272728,
+  "precision": 0.96875
+ },
+ "discord": {
+  "n": 309,
+  "tp": 97,
+  "fn": 0,
+  "fp": 0,
+  "tn": 212,
+  "recall": 1.0,
+  "fp_rate": 0.0,
+  "precision": 1.0
+ },
+ "fairness": {
+  "n": 282,
+  "tp": 0,
+  "fn": 0,
+  "fp": 5,
+  "tn": 277,
+  "recall": 0.0,
+  "fp_rate": 0.01773049645390071,
+  "precision": 0.0
+ },
+ "synthetic": {
+  "n": 160,
+  "tp": 49,
+  "fn": 19,
+  "fp": 2,
+  "tn": 90,
+  "recall": 0.7205882352941176,
+  "fp_rate": 0.021739130434782608,
+  "precision": 0.9607843137254902
+ },
+ "ge18_test": {
+  "n": 3532,
+  "tp": 138,
+  "fn": 1064,
+  "fp": 37,
+  "tn": 2293,
+  "recall": 0.11480865224625623,
+  "fp_rate": 0.01587982832618026,
+  "precision": 0.7885714285714286
+ },
+ "ge21_test": {
+  "n": 942,
+  "tp": 8,
+  "fn": 342,
+  "fp": 7,
+  "tn": 585,
+  "recall": 0.022857142857142857,
+  "fp_rate": 0.011824324324324325,
+  "precision": 0.5333333333333333
+ },
+ "hatecheck_de": {
+  "n": 3580,
+  "tp": 1470,
+  "fn": 1145,
+  "fp": 107,
+  "tn": 858,
+  "recall": 0.5621414913957935,
+  "fp_rate": 0.11088082901554404,
+  "precision": 0.932149651236525,
+  "functions": {
+   "derog_neg_emote_h": {
+    "n": 140,
+    "removed": 58,
+    "expect": "remove"
+   },
+   "derog_neg_attrib_h": {
+    "n": 140,
+    "removed": 103,
+    "expect": "remove"
+   },
+   "derog_dehum_h": {
+    "n": 140,
+    "removed": 125,
+    "expect": "remove"
+   },
+   "derog_impl_h": {
+    "n": 145,
+    "removed": 45,
+    "expect": "remove"
+   },
+   "threat_dir_h": {
+    "n": 140,
+    "removed": 81,
+    "expect": "remove"
+   },
+   "threat_norm_h": {
+    "n": 140,
+    "removed": 69,
+    "expect": "remove"
+   },
+   "slur_h": {
+    "n": 120,
+    "removed": 92,
+    "expect": "remove"
+   },
+   "profanity_h": {
+    "n": 140,
+    "removed": 87,
+    "expect": "remove"
+   },
+   "profanity_nh": {
+    "n": 100,
+    "removed": 2,
+    "expect": "keep"
+   },
+   "ref_subs_clause_h": {
+    "n": 140,
+    "removed": 62,
+    "expect": "remove"
+   },
+   "ref_subs_sent_h": {
+    "n": 140,
+    "removed": 67,
+    "expect": "remove"
+   },
+   "negate_pos_h": {
+    "n": 140,
+    "removed": 14,
+    "expect": "remove"
+   },
+   "negate_neg_nh": {
+    "n": 140,
+    "removed": 20,
+    "expect": "keep"
+   },
+   "phrase_question_h": {
+    "n": 140,
+    "removed": 61,
+    "expect": "remove"
+   },
+   "phrase_opinion_h": {
+    "n": 140,
+    "removed": 103,
+    "expect": "remove"
+   },
+   "ident_neutral_nh": {
+    "n": 140,
+    "removed": 0,
+    "expect": "keep"
+   },
+   "ident_pos_nh": {
+    "n": 210,
+    "removed": 7,
+    "expect": "keep"
+   },
+   "counter_quote_nh": {
+    "n": 155,
+    "removed": 28,
+    "expect": "keep"
+   },
+   "counter_ref_nh": {
+    "n": 155,
+    "removed": 49,
+    "expect": "keep"
+   },
+   "target_obj_nh": {
+    "n": 65,
+    "removed": 1,
+    "expect": "keep"
+   },
+   "target_indiv_nh": {
+    "n": 65,
+    "removed": 37,
+    "expect": "remove"
+   },
+   "spell_char_swap_h": {
+    "n": 140,
+    "removed": 75,
+    "expect": "remove"
+   },
+   "spell_char_del_h": {
+    "n": 140,
+    "removed": 78,
+    "expect": "remove"
+   },
+   "spell_space_del_h": {
+    "n": 155,
+    "removed": 91,
+    "expect": "remove"
+   },
+   "spell_space_add_h": {
+    "n": 155,
+    "removed": 100,
+    "expect": "remove"
+   },
+   "spell_leet_h": {
+    "n": 155,
+    "removed": 122,
+    "expect": "remove"
+   }
+  }
+ },
+ "hatecheck_en": {
+  "n": 3666,
+  "tp": 1459,
+  "fn": 1169,
+  "fp": 91,
+  "tn": 947,
+  "recall": 0.5551750380517504,
+  "fp_rate": 0.08766859344894026,
+  "precision": 0.9412903225806452,
+  "functions": {
+   "derog_neg_emote_h": {
+    "n": 140,
+    "removed": 70,
+    "expect": "remove"
+   },
+   "derog_neg_attrib_h": {
+    "n": 140,
+    "removed": 97,
+    "expect": "remove"
+   },
+   "derog_dehum_h": {
+    "n": 140,
+    "removed": 118,
+    "expect": "remove"
+   },
+   "derog_impl_h": {
+    "n": 140,
+    "removed": 41,
+    "expect": "remove"
+   },
+   "threat_dir_h": {
+    "n": 133,
+    "removed": 108,
+    "expect": "remove"
+   },
+   "threat_norm_h": {
+    "n": 140,
+    "removed": 117,
+    "expect": "remove"
+   },
+   "slur_h": {
+    "n": 144,
+    "removed": 91,
+    "expect": "remove"
+   },
+   "slur_homonym_nh": {
+    "n": 30,
+    "removed": 6,
+    "expect": "keep"
+   },
+   "slur_reclaimed_nh": {
+    "n": 81,
+    "removed": 37,
+    "expect": "keep"
+   },
+   "profanity_h": {
+    "n": 140,
+    "removed": 76,
+    "expect": "remove"
+   },
+   "profanity_nh": {
+    "n": 100,
+    "removed": 8,
+    "expect": "keep"
+   },
+   "ref_subs_clause_h": {
+    "n": 140,
+    "removed": 84,
+    "expect": "remove"
+   },
+   "ref_subs_sent_h": {
+    "n": 133,
+    "removed": 69,
+    "expect": "remove"
+   },
+   "negate_pos_h": {
+    "n": 140,
+    "removed": 21,
+    "expect": "remove"
+   },
+   "negate_neg_nh": {
+    "n": 133,
+    "removed": 0,
+    "expect": "keep"
+   },
+   "phrase_question_h": {
+    "n": 140,
+    "removed": 34,
+    "expect": "remove"
+   },
+   "phrase_opinion_h": {
+    "n": 133,
+    "removed": 94,
+    "expect": "remove"
+   },
+   "ident_neutral_nh": {
+    "n": 126,
+    "removed": 0,
+    "expect": "keep"
+   },
+   "ident_pos_nh": {
+    "n": 189,
+    "removed": 0,
+    "expect": "keep"
+   },
+   "counter_quote_nh": {
+    "n": 173,
+    "removed": 24,
+    "expect": "keep"
+   },
+   "counter_ref_nh": {
+    "n": 141,
+    "removed": 14,
+    "expect": "keep"
+   },
+   "target_obj_nh": {
+    "n": 65,
+    "removed": 2,
+    "expect": "keep"
+   },
+   "target_indiv_nh": {
+    "n": 65,
+    "removed": 35,
+    "expect": "remove"
+   },
+   "spell_char_swap_h": {
+    "n": 133,
+    "removed": 49,
+    "expect": "remove"
+   },
+   "spell_char_del_h": {
+    "n": 140,
+    "removed": 75,
+    "expect": "remove"
+   },
+   "spell_space_del_h": {
+    "n": 141,
+    "removed": 69,
+    "expect": "remove"
+   },
+   "spell_space_add_h": {
+    "n": 173,
+    "removed": 104,
+    "expect": "remove"
+   },
+   "spell_leet_h": {
+    "n": 173,
+    "removed": 107,
+    "expect": "remove"
+   }
+  }
+ }
+}

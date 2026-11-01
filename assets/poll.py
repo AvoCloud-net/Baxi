@@ -292,9 +292,9 @@ class PollTask:
 
     @tasks.loop(seconds=30)
     async def check_polls(self):
-        import assets.db as _db
+        from assets.repo.engagement import due_poll_guild_ids
         now = time.time()
-        for guild_id in _db.guild_ids():
+        for guild_id in due_poll_guild_ids(now):   # usually none: no per-guild reads
             try:
                 polls: dict = dict(datasys.load_data(guild_id, "polls"))
             except Exception:
@@ -407,3 +407,152 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
 
         await interaction.edit_original_response(content=f"Poll created in {channel.mention}!")
 
+
+    @bot.tree.command(name="pollstatus", description="Show the current state of the polls on this server (admin)")
+    @app_commands.describe(
+        include_closed="Also list closed polls (latest 5)",
+        poll="Show who voted for what in one poll (detail view)",
+    )
+    @app_commands.guild_only()
+    async def pollstatus_cmd(
+        interaction: discord.Interaction,
+        include_closed: bool = False,
+        poll: Optional[str] = None,
+    ):
+        await interaction.response.defer(ephemeral=True)
+        if interaction.guild is None:
+            return
+
+        if not isinstance(interaction.user, discord.Member) or not interaction.user.guild_permissions.manage_guild:
+            await interaction.edit_original_response(content="No permission.")
+            return
+
+        gid = interaction.guild.id
+        polls: dict = dict(datasys.load_data(gid, "polls"))
+        now = time.time()
+
+        if poll is not None:
+            entry = polls.get(poll)
+            if not entry:
+                await interaction.edit_original_response(content="Poll not found.")
+                return
+            answers: list[str] = entry.get("answers", [])
+            voters: list[list[str]] = [[] for _ in answers]
+            for uid, v in entry.get("user_votes", {}).items():
+                if 0 <= v < len(answers):
+                    voters[v].append(uid)
+            total = sum(len(v) for v in voters)
+            closed = bool(entry.get("closed")) or bool(entry.get("end_time") and now > entry["end_time"])
+
+            embed = discord.Embed(
+                title=f"{cfg.Icons.stats} {entry.get('question', '')[:200]}" + (" *(closed)*" if closed else ""),
+                color=cfg.Discord.warn_color if closed else cfg.Discord.color,
+            )
+            channel_id = entry.get("channel_id")
+            if channel_id:
+                embed.description = f"[Jump to poll](https://discord.com/channels/{gid}/{channel_id}/{poll})"
+            # 6000 chars cap for the whole embed → share the budget between answers
+            budget = min(1024, 5000 // max(len(answers), 1))
+            for i, (ans, uids) in enumerate(zip(answers, voters)):
+                pct = int(len(uids) / total * 100) if total else 0
+                ans_short = ans[:60] + ("…" if len(ans) > 60 else "")
+                shown, used = [], 0
+                for uid in uids:
+                    m = f"<@{uid}>"
+                    if used + len(m) + 1 > budget - 20:
+                        break
+                    shown.append(m)
+                    used += len(m) + 1
+                value = " ".join(shown) or "—"
+                if len(shown) < len(uids):
+                    value += f" … +{len(uids) - len(shown)} more"
+                embed.add_field(
+                    name=f"{'ABCDEFGHIJ'[i]}. {ans_short} — {len(uids)} ({pct}%)",
+                    value=value,
+                    inline=False,
+                )
+            embed.set_footer(text=f"Baxi · {total} votes")
+            await interaction.edit_original_response(embed=embed)
+            return
+
+        def _is_closed(e: dict) -> bool:
+            return bool(e.get("closed")) or bool(e.get("end_time") and now > e["end_time"])
+
+        # message ids are snowflakes → larger = newer
+        ordered = sorted(polls.items(), key=lambda kv: int(kv[0]), reverse=True)
+        open_polls = [(m, e) for m, e in ordered if not _is_closed(e)]
+        closed_polls = [(m, e) for m, e in ordered if _is_closed(e)][:5] if include_closed else []
+        selected = open_polls[:10] + closed_polls
+
+        if not selected:
+            await interaction.edit_original_response(content="There are no active polls on this server.")
+            return
+
+        embeds: list[discord.Embed] = []
+        for msg_id, entry in selected:
+            answers: list[str] = entry.get("answers", [])
+            counts = [0] * len(answers)
+            for v in entry.get("user_votes", {}).values():
+                if 0 <= v < len(answers):
+                    counts[v] += 1
+            total = sum(counts)
+
+            lines = []
+            for i, (ans, cnt) in enumerate(zip(answers, counts)):
+                pct = int(cnt / total * 100) if total else 0
+                ans_short = ans[:60] + ("…" if len(ans) > 60 else "")
+                lines.append(f"**{'ABCDEFGHIJ'[i]}.** {ans_short} — {cnt} ({pct}%)")
+
+            closed = _is_closed(entry)
+            embed = discord.Embed(
+                title=f"{cfg.Icons.stats} {entry.get('question', '')[:200]}" + (" *(closed)*" if closed else ""),
+                description="\n".join(lines) or "—",
+                color=cfg.Discord.warn_color if closed else cfg.Discord.color,
+            )
+            channel_id = entry.get("channel_id")
+            if channel_id:
+                url = f"https://discord.com/channels/{gid}/{channel_id}/{msg_id}"
+                embed.add_field(name="Message", value=f"[Jump to poll]({url})", inline=True)
+            if entry.get("end_time"):
+                label = "Ended" if closed else "Ends"
+                style = "f" if closed else "R"
+                embed.add_field(name=label, value=f"<t:{int(entry['end_time'])}:{style}>", inline=True)
+            vis = "visible" if entry.get("show_votes", True) else "hidden for members"
+            embed.set_footer(text=f"Baxi · {total} votes · counts {vis}")
+            embeds.append(embed)
+
+        # Discord caps a message at 10 embeds / 6000 chars in total
+        chunk: list[discord.Embed] = []
+        size = 0
+        first = True
+        for e in embeds:
+            e_len = len(e)
+            if chunk and (len(chunk) >= 10 or size + e_len > 5500):
+                if first:
+                    await interaction.edit_original_response(embeds=chunk)
+                    first = False
+                else:
+                    await interaction.followup.send(embeds=chunk, ephemeral=True)
+                chunk, size = [], 0
+            chunk.append(e)
+            size += e_len
+        if chunk:
+            if first:
+                await interaction.edit_original_response(embeds=chunk)
+            else:
+                await interaction.followup.send(embeds=chunk, ephemeral=True)
+
+    @pollstatus_cmd.autocomplete("poll")
+    async def pollstatus_poll_autocomplete(interaction: discord.Interaction, current: str):
+        if interaction.guild is None:
+            return []
+        polls: dict = dict(datasys.load_data(interaction.guild.id, "polls"))
+        out = []
+        for msg_id, e in sorted(polls.items(), key=lambda kv: int(kv[0]), reverse=True):
+            q = str(e.get("question", ""))
+            if current.lower() in q.lower():
+                tag = " (closed)" if e.get("closed") else ""
+                out.append(app_commands.Choice(name=(q[:90] + tag)[:100], value=msg_id))
+            if len(out) >= 25:
+                break
+        return out

@@ -319,6 +319,65 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     async def terms():
         return await render_template("terms.html")
 
+    @app.route("/discordgate/<code>")
+    @requires_authorization
+    async def discordgate_link(code: str):
+        """Deep link from the DiscordGate kick message: https://<bot>/discordgate/<CODE>.
+
+        The code carries no guild, so after Discord login we try it against every
+        guild the user shares with Baxi that has DiscordGate enabled. The first
+        MC server that knows the code wins; the user then lands on the usual
+        confirm page (/mc/link/<token>).
+        """
+        from assets.mc_link import resolve_token, is_linked, create_link_session
+
+        code = code.strip().upper()
+        if not re.fullmatch(r"[A-Z0-9]{4,16}", code):
+            return await render_template("error.html", message="This link code is invalid."), 400
+
+        try:
+            user = await discord_auth.fetch_user()
+            user_guilds = await discord_auth.fetch_guilds()
+        except Exception:
+            logger.error("[discordgate] could not fetch user/guilds", exc_info=True)
+            return await render_template("error.html", message="Could not read your Discord account. Please log in again."), 500
+
+        unreachable = False
+        for ug in user_guilds:
+            guild = bot.get_guild(int(ug.id))
+            if guild is None:
+                continue
+            conf = datasys.load_data(guild.id, "mc_link")
+            api_url = str(conf.get("api_url", "")).strip()
+            secret = str(conf.get("api_secret", "")).strip()
+            if not conf.get("enabled", False) or not api_url or not secret:
+                continue
+
+            data, err = await resolve_token(api_url, secret, code)
+            if err in ("unreachable", "unauthorized"):
+                unreachable = True
+            if not data or "uuid" not in data:
+                continue
+
+            token = create_link_session({
+                "guild_id": guild.id,
+                "discord_id": user.id,
+                "discord_name": user.name,
+                "discord_avatar_url": str(user.avatar_url) if user.avatar_url else "",
+                "uuid": data["uuid"],
+                "mc_name": data.get("name", "Unknown"),
+                "api_url": api_url,
+                "api_secret": secret,
+                "kind": "already_linked" if is_linked(guild.id, user.id) else "new",
+            })
+            return redirect(url_for("mc_link_confirm", token=token))
+
+        if unreachable:
+            msg = "A Minecraft server could not be reached. Please try again later or contact an admin."
+        else:
+            msg = "This code is invalid or expired, or you are not on the Discord server it belongs to."
+        return await render_template("error.html", message=msg), 404
+
     @app.route("/mc/link/<token>")
     async def mc_link_confirm(token: str):
         from assets.mc_link import get_link_session
@@ -801,6 +860,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 categorys=catrgorys_list,
                 roles=roles_list,
                 roles_positions=roles_positions,
+                # Roles Baxi can hand out: no @everyone, no bot/integration roles.
+                assignable_roles={str(r.id): r.name for r in roles if not r.managed and not r.is_default()},
                 bot_top_role_pos=bot_top_role_pos,
                 nick=bot_nick,
                 stats=stats,
@@ -840,6 +901,175 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if status not in (None, "pending", "approved", "rejected"):
             status = None
         return quart.jsonify({"success": True, "items": load_review_queue(int(guild_id), status)})
+
+    # ── Case files, team overview, appeal page (moderation: cases/appeals) ───────
+    @app.route("/api/dash/casefile/", methods=["GET"])
+    async def dash_casefile():
+        """Staff (Manage Server): a user's case file, or - for a name - the users to pick from."""
+        guild_id = quart.request.args.get("dash_login", "")
+        if not guild_id.isdigit() or not await _dash_guild_admin(guild_id):
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        gid = int(guild_id)
+        from assets.moderation import casefile
+        from assets.repo import cases as case_store
+        q = quart.request.args.get("q", "").strip()[:40]
+        uid = quart.request.args.get("user_id", "").strip()
+        if not uid and re.fullmatch(r"\d{17,20}", q):
+            uid = q
+        cached = bot.get_guild(gid)
+        if not uid:
+            if not q:
+                return quart.jsonify({"success": True, "mode": "pick", "candidates": []})
+            found: dict[str, str] = {}
+            if cached is not None:
+                ql = q.lower()
+                for m in cached.members:
+                    if ql in m.name.lower() or ql in m.display_name.lower():
+                        found[str(m.id)] = m.display_name
+                        if len(found) >= 8:
+                            break
+            for u in await asyncio.to_thread(case_store.search_users, gid, q):
+                found.setdefault(u["id"], u["name"])
+            return quart.jsonify({"success": True, "mode": "pick",
+                                  "candidates": [{"id": i, "name": n} for i, n in list(found.items())[:10]]})
+        if not re.fullmatch(r"\d{17,20}", uid):
+            return quart.jsonify({"success": False, "message": "Invalid user ID."}), 400
+        data = await asyncio.to_thread(casefile.build, gid, uid)
+        member = cached.get_member(int(uid)) if cached else None
+        if member is not None:
+            data["user_name"] = member.display_name
+        data["in_server"] = member is not None
+        bot_id = str(bot.user.id)
+        for e in data["entries"]:
+            if e["kind"] == "case":
+                e["automatic"] = e["mod_id"] in ("0", "", bot_id)
+        flag = await asyncio.to_thread(casefile.safety_flag, gid, int(uid))
+        data["safety_list"] = (flag or {}).get("category") if flag else None
+        # 50 entries per request; the page asks again with offset for "Show more"
+        try:
+            offset = max(0, int(quart.request.args.get("offset", 0)))
+        except ValueError:
+            offset = 0
+        data["total"] = len(data["entries"])
+        data["offset"] = offset
+        data["entries"] = data["entries"][offset:offset + 50]
+        return quart.jsonify({"success": True, "mode": "file", **data})
+
+    @app.route("/api/dash/modstats/", methods=["GET"])
+    async def dash_modstats():
+        guild_id = quart.request.args.get("dash_login", "")
+        if not guild_id.isdigit() or not await _dash_guild_admin(guild_id):
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        from assets.moderation import casefile
+        data = await asyncio.to_thread(casefile.stats, int(guild_id), bot.user.id)
+        return quart.jsonify({"success": True, **data})
+
+    def _nostore(html):
+        """Appeal pages show one person's moderation record: never cached."""
+        resp = quart.Response(html, content_type="text/html; charset=utf-8")
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
+    def _appeal_texts(guild_id: int | None, user=None) -> dict:
+        """The whole lang block for the appeal page: the server's language, or (no server
+        picked yet) the user's Discord language."""
+        import assets.data as _ds
+        if guild_id:
+            return _ds.load_lang_file(guild_id)
+        data = _ds.load_json(os.path.join("lang", "lang.json"))
+        return data["de" if str(getattr(user, "locale", "") or "").lower().startswith("de") else "en"]
+
+    def _appeal_cases(guild_id: int, user_id: int, lang: dict) -> list:
+        """View model of THIS user's cases (id comes from the login session, never the request)."""
+        from assets.moderation import appeals
+        m, p = lang["moderation"], lang["moderation"]["page"]
+        out = []
+        for c in appeals.cases_for_page(guild_id, user_id):
+            st = appeals.appeal_state(c)
+            # a ban made outside Baxi carries the audit-log text, which is internal: never shown here
+            reason = "" if c.get("external") else (c.get("reason") or "").strip()
+            out.append({
+                "no": c["no"],
+                "type": m["types"].get(c["type"], c["type"]),
+                "reason": m["no_reason"] if reason in ("", "N/A", "n/a") else reason,
+                "when": c["timestamp"][:16].replace("T", " ") + " UTC",
+                "duration": datasys_format_seconds(c.get("duration_s")),
+                "state": st,
+                "status": {"sent": p["status_open"], "lifted": p["status_lifted"], "kept": p["status_kept"],
+                           "lifted_plain": p["status_lifted_plain"], "expired": p["status_expired"]}.get(st, ""),
+                "team_note": c.get("appeal_note") or "" if st in ("lifted", "kept") else "",
+            })
+        return out
+
+    def datasys_format_seconds(sec):
+        if not sec:
+            return ""
+        import datetime as _dt
+        from assets.data import format_duration
+        return format_duration(_dt.timedelta(seconds=int(sec)))
+
+    @app.route("/appeal/")
+    @requires_authorization
+    async def appeal_index():
+        """Every server where the logged-in user has a case they can appeal."""
+        from assets.moderation import appeals
+        from assets.repo import cases as case_store
+        user = await discord_auth.fetch_user()
+        lang = _appeal_texts(None, user)
+        rows = []
+        for gid in await asyncio.to_thread(case_store.user_guilds_with_cases, user.id, appeals.page_since()):
+            g = bot.get_guild(gid)
+            if g is not None and appeals.cases_for_page(gid, user.id):
+                rows.append({"id": str(gid), "name": g.name, "icon": g.icon.url if g.icon else None})
+        if len(rows) == 1:
+            return redirect(f"/appeal/{rows[0]['id']}")
+        return _nostore(await render_template("appeal.html", t=lang["moderation"]["page"], guilds=rows, guild=None,
+                                               cases=[], user=user, days=14))
+
+    @app.route("/appeal/<int:guild_id>")
+    @requires_authorization
+    async def appeal_guild(guild_id: int):
+        """The caller's own cases on one server. Without any, the page is the same neutral one
+        for a server that does not exist, one Baxi is not on, and one where the user has no
+        cases: it must not reveal which servers Baxi is on."""
+        user = await discord_auth.fetch_user()
+        g = bot.get_guild(guild_id)
+        cases_vm, lang = [], _appeal_texts(None, user)
+        if g is not None:
+            lang_g = _appeal_texts(guild_id, user)
+            cases_vm = await asyncio.to_thread(_appeal_cases, guild_id, user.id, lang_g)
+            if cases_vm:
+                lang = lang_g
+        if not cases_vm:
+            return _nostore(await render_template("appeal.html", t=lang["moderation"]["page"], guilds=[], guild=None,
+                                                  cases=[], user=user, days=14))
+        return _nostore(await render_template(
+            "appeal.html", t=lang["moderation"]["page"], guilds=[], user=user, days=14, cases=cases_vm,
+            guild={"id": str(guild_id), "name": g.name, "icon": g.icon.url if g.icon else None}))
+
+    @app.route("/api/appeal/", methods=["POST"])
+    async def appeal_submit():
+        """Send an appeal from the page. Only for the logged-in user's own cases."""
+        if quart.request.headers.get("Sec-Fetch-Site") not in (None, "same-origin", "none"):
+            return quart.jsonify({"success": False, "message": "Not allowed."}), 403
+        if not await discord_auth.authorized:   # an awaitable property in quart_discord
+            return quart.jsonify({"success": False, "message": "Please log in again."}), 401
+        data = await quart.request.get_json(silent=True) or {}
+        try:
+            gid, no = int(data.get("guild_id")), int(data.get("case_no"))
+        except (TypeError, ValueError):
+            return quart.jsonify({"success": False, "message": "Invalid request."}), 400
+        user = await discord_auth.fetch_user()
+        from assets.moderation import appeals
+        status = await appeals.submit(bot, gid, no, user, str(data.get("text") or ""))
+        lang = _appeal_texts(gid if bot.get_guild(gid) else None, user)
+        if status == "ok":
+            return quart.jsonify({"success": True, "message": lang["moderation"]["page"]["sent"]})
+        if status in ("not_found", "not_yours", "no_guild"):
+            status = "unavailable"   # one answer for "no such case", "not yours", "no such server"
+            lang = _appeal_texts(None, user)   # and in the user's own language, not the server's
+        return quart.jsonify({"success": False, "status": status,
+                              "message": appeals._error_text(lang, status)}), 409 if status in ("already", "lifted") else 400
 
     async def _dash_guild_admin(guild_id):
         """Return (user, guild) if the logged-in user can manage *guild_id*, else None."""
@@ -891,6 +1121,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         else:
             warnings.pop(uid)
             save_data(int(guild_id), "warnings", warnings)
+            from assets.repo import cases as _cs
+            _cs.lift_warn_cases(int(guild_id), user_id=uid)
             msg = "All warnings removed."
 
         audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
@@ -2987,6 +3219,63 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             audit_log.append(audit_log_new)
             save_data(int(guild_id), "audit_log", audit_log)
 
+        elif system == "staff":
+            data: dict = await quart.request.get_json()
+            st = data.get("staff")
+            if not isinstance(st, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'staff' must be an object."}), 400
+            channel_raw = str(st.get("channel", "") or "").strip()
+            if channel_raw in ("0",):
+                channel_raw = ""
+            if channel_raw and not re.fullmatch(r"\d{17,20}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel."}), 400
+            if channel_raw:
+                _cached = bot.get_guild(int(guild_id))
+                _ch = _cached.get_channel(int(channel_raw)) if _cached else None
+                if not isinstance(_ch, discord.TextChannel):
+                    return quart.jsonify({"success": False, "message": "Pick a text channel of this server."}), 400
+
+            save_data(int(guild_id), "staff", {"channel": channel_raw})
+
+            # Move the open-cases notice to the new channel right away.
+            from assets import staff as _staff
+            _staff.schedule_refresh(bot, bot.get_guild(int(guild_id)))
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save", "user": user.name, "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "staff",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+        elif system == "mod_note":
+            # Case file notes from the dashboard: {action: add, user_id, text} | {action: remove, id}
+            data: dict = await quart.request.get_json()
+            from assets.repo import cases as _case_store
+            from assets.moderation.casefile import NOTE_MAX
+            user = await discord_auth.fetch_user()
+            if data.get("action") == "add":
+                uid_raw, text = str(data.get("user_id", "")), str(data.get("text", "")).strip()
+                if not re.fullmatch(r"\d{17,20}", uid_raw) or not text or len(text) > NOTE_MAX:
+                    return quart.jsonify({"success": False, "message": f"A user and a note of up to {NOTE_MAX} characters are required."}), 400
+                cached_g = bot.get_guild(int(guild_id))
+                target = cached_g.get_member(int(uid_raw)) if cached_g else None
+                known = await asyncio.to_thread(_case_store.cases_for_user, int(guild_id), uid_raw, 1)
+                uname = target.name if target else (known[0]["user_name"] if known else uid_raw)
+                nid = await asyncio.to_thread(_case_store.add_note, int(guild_id), uid_raw, uname, user.id, user.name, text)
+                return quart.jsonify({"success": True, "id": nid, "message": f"Note N{nid} saved. Only moderators can see it."})
+            if data.get("action") == "remove":
+                try:
+                    nid = int(data.get("id"))
+                except (TypeError, ValueError):
+                    return quart.jsonify({"success": False, "message": "Invalid note."}), 400
+                ok = await asyncio.to_thread(_case_store.delete_note, int(guild_id), nid)   # Manage Server is required for this endpoint
+                return quart.jsonify({"success": ok, "message": "Note removed." if ok else "Note not found."}), (200 if ok else 404)
+            return quart.jsonify({"success": False, "message": "Unknown action."}), 400
+
         elif system == "mod_review_resolve":
             data: dict = await quart.request.get_json()
             pos = data.get("pos")
@@ -3001,16 +3290,59 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "dismiss":  ("rejected", None),            # report unfounded
                 "confirm":  ("approved", None),            # deleted msg really was bad -> train
                 "harmless": ("rejected", None),            # deleted msg was fine -> train SAFE
+                # chatfilter_borderline (assets/moderation/borderline.py)
+                "ok":          ("rejected", None),                # message stays -> label SAFE
+                "delete":      ("approved", "manage_messages"),   # delete -> label toxic
+                "delete_warn": ("approved", "moderate_members"),  # delete + warn -> label toxic
+                # appeal (assets/moderation/appeals.py)
+                "lift":        ("approved", None),                # undo the case (permission depends on its type)
+                "keep":        ("rejected", None),                # the case stays
             }
 
             if not isinstance(pos, int) or action not in _REVIEW_ACTIONS:
                 return quart.jsonify({"success": False, "message": "pos (int) and a known action required."}), 400
 
             from assets.repo import load_review_queue, resolve_review_item
+            from assets.moderation import borderline as _borderline
             items = load_review_queue(int(guild_id))
             item = next((it for it in items if it["pos"] == pos), None)
             if item is None:
                 return quart.jsonify({"success": False, "message": "Review item not found."}), 404
+            if item.get("status") != "pending":
+                return quart.jsonify({"success": False, "message": "Already handled."}), 409
+            if (item.get("kind") == _borderline.KIND) != (action in _borderline.ACTIONS):
+                return quart.jsonify({"success": False, "message": "That action does not fit this entry."}), 400
+            if (item.get("kind") == "appeal") != (action in ("lift", "keep")):
+                return quart.jsonify({"success": False, "message": "That action does not fit this entry."}), 400
+
+            if action in ("lift", "keep"):
+                # Appeal: Lift undoes the case where possible, Keep leaves it; the user is told by DM.
+                from assets.moderation import appeals as _appeals
+                from assets.repo.moderation import claim_review_item as _claim, release_review_item as _release
+                a_status, _ = _REVIEW_ACTIONS[action]
+                a_need = _appeals.lift_permission(str((item.get("context") or {}).get("case_type", ""))) if action == "lift" else None
+                if a_need and not getattr(guild_member.guild_permissions, a_need, False):
+                    return quart.jsonify({"success": False, "message": f"You need the '{a_need}' permission to lift this."}), 403
+                a_user = await discord_auth.fetch_user()
+                if not _claim(int(guild_id), pos, a_status, resolved_by=a_user.name):
+                    return quart.jsonify({"success": False, "message": "Already handled."}), 409
+                try:
+                    a_note = await _appeals.apply_decision(bot, int(guild_id), item, action,
+                                                           str(data.get("reason") or ""), a_user.name)
+                except discord.Forbidden:
+                    _release(int(guild_id), pos)
+                    return quart.jsonify({"success": False, "message": "Baxi is missing permissions to undo this (role hierarchy or ban/timeout rights)."}), 403
+                except Exception as _ap_err:
+                    _release(int(guild_id), pos)
+                    return quart.jsonify({"success": False, "message": f"Action failed: {_ap_err}"}), 500
+                from assets import staff as _staff_a
+                _staff_a.schedule_refresh(bot, bot.get_guild(int(guild_id)))
+                audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+                audit_log.append({"type": "save", "user": a_user.name, "success": True,
+                                  "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                                  "sys": f"mod_review:{action}"})
+                save_data(int(guild_id), "audit_log", audit_log)
+                return quart.jsonify({"success": True, "message": a_note or "Entry closed."})
 
             status, needed_perm = _REVIEW_ACTIONS[action]
             if needed_perm and not getattr(guild_member.guild_permissions, needed_perm, False):
@@ -3024,14 +3356,37 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             reason = f"Baxi review queue - {action} by {user.name}"
             note = ""
 
-            # 1. The Discord-side action, if any.
+            # 0. Claim the item atomically: two staffers (or the expiry) must not both act.
+            from assets.repo.moderation import claim_review_item, release_review_item, blank_review_excerpt
+            if not claim_review_item(int(guild_id), pos, status, resolved_by=user.name):
+                return quart.jsonify({"success": False, "message": "Already handled."}), 409
+
+            # 1. The Discord-side action, if any. If it fails, the item is pending again.
             try:
-                if action == "kick":
-                    await guild.kick(discord.Object(id=target_id), reason=reason)
-                    note = f"{target_name} was kicked."
-                elif action == "ban":
-                    await guild.ban(discord.Object(id=target_id), reason=reason, delete_message_seconds=0)
-                    note = f"{target_name} was banned."
+                if action in ("kick", "ban"):
+                    # A case for it, attributed to the staffer who pressed the button.
+                    from types import SimpleNamespace as _NS
+                    from assets.moderation import cases as _cases
+                    _cg = bot.get_guild(int(guild_id)) or guild
+                    _lang = datasys.load_lang_file(int(guild_id))
+                    _tgt = _cg.get_member(target_id) or _NS(id=target_id, name=target_name)
+                    _no, _blocked = _cases.begin(_cg, _tgt, action, user, _lang["moderation"]["auto"]["staff"], _lang)
+                    if _blocked:
+                        release_review_item(int(guild_id), pos)
+                        return quart.jsonify({"success": False, "message": _blocked}), 400
+                    if hasattr(_tgt, "send"):
+                        await _cases.notify(_cg, _tgt, _no, action, _lang["moderation"]["auto"]["staff"],
+                                            permanent=action == "ban")
+                    try:
+                        if action == "kick":
+                            await guild.kick(discord.Object(id=target_id), reason=f"{reason} (case #{_no})" if _no else reason)
+                        else:
+                            await guild.ban(discord.Object(id=target_id), reason=f"{reason} (case #{_no})" if _no else reason,
+                                            delete_message_seconds=0)
+                    except Exception:
+                        _cases.discard(int(guild_id), _no)
+                        raise
+                    note = f"{target_name} was {'kicked' if action == 'kick' else 'banned'}" + (f" (case #{_no})." if _no else ".")
                 elif action == "allow" and kind in ("join_gate", "prism_flag"):
                     role_id = int(dict(load_data(int(guild_id), "mod_gate")).get("quarantine_role", 0) or 0)
                     if role_id:
@@ -3040,11 +3395,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         note = f"Quarantine role removed from {target_name}."
                     else:
                         note = f"{target_name} cleared."
+                elif kind == _borderline.KIND:
+                    note = await _borderline.apply(bot, int(guild_id), item, action, guild_member)
             except discord.NotFound:
                 note = f"{target_name} is no longer in this server - entry closed anyway."
             except discord.Forbidden:
-                return quart.jsonify({"success": False, "message": "Baxi is missing permissions for that action (role hierarchy or missing kick/ban rights)."}), 403
+                release_review_item(int(guild_id), pos)
+                return quart.jsonify({"success": False, "message": "Baxi is missing permissions for that action (role hierarchy or missing kick/ban/manage-messages rights)."}), 403
             except Exception as e:
+                release_review_item(int(guild_id), pos)
                 return quart.jsonify({"success": False, "message": f"Action failed: {e}"}), 500
 
             updated = resolve_review_item(int(guild_id), pos, status, resolved_by=user.name)
@@ -3073,8 +3432,16 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         target_id, target_name, int(guild_id),
                         reason="Staff allowed a flagged member (review queue)",
                     )
+                elif kind == _borderline.KIND:
+                    await _borderline.learn(int(guild_id), item, action, user.name)
             except Exception as _re_err:
                 print(f"[mod_review_resolve] side-effect error: {_re_err}")
+            blank_review_excerpt(int(guild_id), pos)   # the text was only needed for the decision
+            if updated is not None:
+                updated.get("context", {}).pop("excerpt", None)
+
+            from assets import staff as _staff
+            _staff.schedule_refresh(bot, bot.get_guild(int(guild_id)))   # one case fewer in the staff notice
 
             audit_log_new: dict = {
                 "type": "save", "user": user.name, "success": True,
@@ -3385,6 +3752,60 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Time Capsule settings saved!"})
 
+        elif system == "birthdays":
+            data: dict = await quart.request.get_json()
+            pl = data.get("birthdays")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'birthdays' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "")).strip()
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            role_raw = str(pl.get("role", "")).strip()
+            if role_raw and not re.fullmatch(r"\d{17,19}", role_raw):
+                return quart.jsonify({"success": False, "message": "Invalid role ID."}), 400
+            message = str(pl.get("message", "")).strip()
+            if len(message) > 1000:
+                return quart.jsonify({"success": False, "message": "The message can be at most 1000 characters."}), 400
+            tz_name = str(pl.get("timezone", "") or "Europe/Vienna")
+            if not pulse_sys.is_valid_timezone(tz_name):
+                return quart.jsonify({"success": False, "message": "Invalid timezone."}), 400
+            bd_guild = bot.get_guild(int(guild_id))
+            if pl["enabled"] and not channel_raw and (bd_guild is None or bd_guild.system_channel is None):
+                return quart.jsonify({"success": False, "message": "This server has no system channel. Select a birthday channel first."}), 400
+            if message:
+                # Baxi posts this later on its own: never store what the server's chatfilter would block.
+                from assets.message.chatfilter import text_is_clean
+                bd_channel = int(channel_raw) if channel_raw else (bd_guild.system_channel.id if bd_guild and bd_guild.system_channel else 0)
+                if not await text_is_clean(int(guild_id), bd_channel, bot.user.id if bot.user else 0, message):
+                    return quart.jsonify({"success": False, "message": "The message was blocked by this server's chat filter. Please reword it."}), 400
+
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+                "message": message,
+                "role": role_raw,
+                "timezone": tz_name,
+            }
+            save_data(int(guild_id), "birthdays", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "birthdays",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Birthday settings saved!"})
+
         elif system == "pulse":
             data: dict = await quart.request.get_json()
             pl = data.get("pulse")
@@ -3514,6 +3935,24 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             save_data(int(guild_id), "audit_log", audit_log)
 
             return quart.jsonify({"success": True, "message": "All scores have been reset."})
+
+        elif system == "mc_link_clear_links":
+            from assets.mc_link import clear_guild_links
+            removed = await clear_guild_links(int(guild_id))
+
+            user = await discord_auth.fetch_user()
+            audit_log_new = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "mc_link_clear_links",
+            }
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": f"Cleared {removed} existing link(s)."})
 
         elif system == "auto_release":
             data: dict = await quart.request.get_json()
@@ -4692,6 +5131,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "send_messages",
                         "add_reactions",
                     }
+                elif system == "birthdays":
+                    required_perms = {
+                        "view_channel",
+                        "send_messages",
+                    }
                 elif system == "reaction_role_channel":
                     required_perms = {
                         "view_channel",
@@ -5511,6 +5955,51 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             share.admin_log("info", f"Restart-notice TTS played in {count} voice channel(s) on {scope} by {user.name} (vol={volume}, custom={'yes' if custom_msg else 'no'})", source="AdminDash")
             return quart.jsonify({"success": True, "message": f"Played restart notice in {count} voice channel(s)."})
 
+        elif action in ("ai_priority_list", "ai_priority_add", "ai_priority_remove"):
+            import assets.message.assistant as assistant
+            ids = assistant.load_priority_users()
+            if action != "ai_priority_list":
+                uid_str = str(data.get("user_id", "")).strip()
+                if not uid_str.isdigit():
+                    return quart.jsonify({"success": False, "message": "Invalid user_id."}), 400
+                uid = int(uid_str)
+                if action == "ai_priority_add":
+                    if uid in ids:
+                        return quart.jsonify({"success": False, "message": "Already a priority user."}), 400
+                    try:
+                        target = await bot.fetch_user(uid)
+                    except discord.NotFound:
+                        return quart.jsonify({"success": False, "message": "User not found."}), 404
+                    except Exception as e:
+                        return quart.jsonify({"success": False, "message": str(e)}), 500
+                    ids.append(uid)
+                    share.admin_log("info", f"Baxi AI priority user added: {target.name} ({uid}) by {user.name}", source="AdminDash")
+                else:
+                    if uid not in ids:
+                        return quart.jsonify({"success": False, "message": "Not a priority user."}), 404
+                    ids.remove(uid)
+                    share.admin_log("info", f"Baxi AI priority user removed: {uid} by {user.name}", source="AdminDash")
+                assistant.save_priority_users(ids)
+            users_out = []
+            for uid in ids:
+                u = bot.get_user(uid)
+                if u is None:
+                    try:
+                        u = await bot.fetch_user(uid)
+                    except Exception:
+                        u = None
+                users_out.append({
+                    "id": str(uid),
+                    "name": getattr(u, "name", None) or "unknown user",
+                    "avatar": str(u.display_avatar.url) if u is not None else "",
+                })
+            return quart.jsonify({
+                "success": True,
+                "message": "OK",
+                "users": users_out,
+                "queue": assistant.queue_stats(),
+            })
+
         elif action == "reboot":
             share.admin_log("warning", f"Bot reboot triggered by {user.name}", source="AdminDash")
 
@@ -5694,6 +6183,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "TempActions":   "check_temp_actions",
                 "PhishingList":  "update_phishing_list",
                 "GarbageCollector": "collect",
+                "Backup":           "backup",
                 "YouTubeVideos":    "check_videos",
                 "TikTokVideos":     "check_videos",
                 "TwitterPosts":     "check_posts",
@@ -6478,9 +6968,11 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             mod_events = list(load_data(int(guild_id), "mod_events"))
         except Exception:
             pass
+        # Insights counts the classic four; unban/unmute/removed-message cases are for the case file.
         mod_events = [
             e for e in mod_events
-            if datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
+            if e.get("type") in ("warn", "mute", "kick", "ban")
+            and datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff
         ]
 
         # Filter events
@@ -6579,6 +7071,34 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 u_totals[uid]["count"] += uv.get("count", 0)
         top_active_users = sorted(u_totals.values(), key=lambda x: x["count"], reverse=True)[:10]
 
+        # Voice time (seconds per day / user / channel). `count` is minutes so the shared
+        # rank-list renderer can scale its bars; `label` is the display string.
+        voice_days = {d: v for d, v in activity_raw.get("voice_by_day", {}).items() if d >= cutoff_date}
+
+        def _voice_label(secs: int) -> str:
+            h, m = divmod(int(secs) // 60, 60)
+            return f"{h} h {m:02d} min" if h else f"{m} min"
+
+        voice_timeline = [{"date": d, "hours": round(v.get("total", 0) / 3600, 2)} for d, v in sorted(voice_days.items())]
+        total_voice_secs = sum(v.get("total", 0) for v in voice_days.values())
+        vu_totals: dict = defaultdict(lambda: {"name": "", "secs": 0})
+        vc_totals: dict = defaultdict(lambda: {"name": "", "secs": 0})
+        for day_data in voice_days.values():
+            for uid, uv in day_data.get("by_user", {}).items():
+                vu_totals[uid]["name"] = uv.get("name", uid)
+                vu_totals[uid]["secs"] += uv.get("secs", 0)
+            for cid, cv in day_data.get("by_channel", {}).items():
+                vc_totals[cid]["name"] = cv.get("name", cid)
+                vc_totals[cid]["secs"] += cv.get("secs", 0)
+        top_voice_users = [
+            {"name": v["name"], "count": v["secs"] // 60, "label": _voice_label(v["secs"])}
+            for v in sorted(vu_totals.values(), key=lambda x: x["secs"], reverse=True)[:10]
+        ]
+        top_voice_channels = [
+            {"name": v["name"], "count": v["secs"] // 60, "label": _voice_label(v["secs"])}
+            for v in sorted(vc_totals.values(), key=lambda x: x["secs"], reverse=True)[:10]
+        ]
+
         # Hourly distribution (summed across days)
         hourly: dict = {str(h): 0 for h in range(24)}
         for day_data in msg_days.values():
@@ -6653,6 +7173,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "top_active_users": top_active_users,
             "hourly_dist": hourly,
             "member_timeline": member_timeline,
+            "total_voice_label": _voice_label(total_voice_secs),
+            "voice_timeline": voice_timeline,
+            "top_voice_users": top_voice_users,
+            "top_voice_channels": top_voice_channels,
             "total_joins": total_joins,
             "total_leaves": total_leaves,
             # Derived headline metrics

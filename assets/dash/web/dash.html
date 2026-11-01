@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <meta name="theme-color" content="#141518" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#111215" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#F4F6F7" media="(prefers-color-scheme: light)">
     <title>Baxi Dashboard -  {{data.name}}</title>
     <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
@@ -36,7 +36,7 @@
             justify-content: center;
             gap: 1.25rem;
             background: var(--avo-canvas);
-            transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
+            transition: opacity var(--avo-dur-micro) linear, visibility var(--avo-dur-micro) linear;
         }
         #page-loader.hidden {
             opacity: 0;
@@ -47,14 +47,11 @@
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            font-family: var(--avo-font-mono);
             font-size: var(--avo-ui-label);
             font-weight: 500;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
             color: var(--avo-text-muted);
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius);
+            border-radius: var(--avo-radius-pill);
             border: 1px solid var(--avo-line-strong);
         }
         #page-loader .loader-spinner {
@@ -63,15 +60,12 @@
             --avo-spinner-ring: 4px;
         }
         #page-loader .loader-note {
-            font-family: var(--avo-font-mono);
             font-size: var(--avo-ui-label);
-            letter-spacing: 0.06em;
             color: var(--avo-text-muted);
         }
 
-        /* Nav search: a field (32px, flat, 1px outline, the field fill) with a
-           leading icon. Focus is the coral ring on the wrapper, and the border
-           stays put, so focus never looks like hover (§9 Forms, §10). */
+        /* Nav search: a field (44px, flat, 1px outline) with a leading icon.
+           Focus is the coral ring on the wrapper, and the border stays put. */
         .nav-search {
             position: relative;
             flex: 1;
@@ -82,10 +76,10 @@
             align-items: center;
             gap: 0.45rem;
             height: var(--avo-ui-control-h);
-            background: var(--avo-plate-fill);
+            background: var(--avo-canvas);
             border: 1px solid var(--avo-line-strong);
-            border-radius: var(--avo-radius);
-            padding: 0 0.7rem;
+            border-radius: var(--avo-radius-pill);
+            padding: 0 1rem;
         }
         .nav-search-wrap:focus-within {
             outline: var(--avo-focus-w) solid var(--avo-primary);
@@ -103,16 +97,16 @@
             font-size: var(--avo-ui-text); color: inherit; width: 100%; min-width: 0; height: 100%;
         }
         #nav-search-input::placeholder { color: var(--avo-text-muted); }
-        /* A floating menu: opaque, never glass (§5). Its rows are hairline
-           divisions of one surface, not rounded panels of their own. */
+        /* A floating menu: opaque. Its rows are hairline divisions of one
+           surface, not rounded panels of their own. */
         .nav-search-results {
             position: absolute;
             top: calc(100% + 6px);
             left: 0; right: 0;
-            background: var(--avo-surface-raised);
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line-strong);
             border-radius: var(--avo-radius-lg);
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge-raised);
+            overflow: hidden;
             z-index: 9999;
             list-style: none; margin: 0; padding: 0;
             max-height: 340px; overflow-y: auto;
@@ -120,34 +114,31 @@
         .nav-search-results.hidden { display: none; }
         .nav-search-item {
             display: flex; align-items: center; gap: 0.6rem;
-            height: var(--avo-ui-row-h);
-            padding: 0 0.7rem;
+            height: var(--avo-ui-control-h);
+            padding: 0 1rem;
             cursor: pointer; font-size: var(--avo-ui-text); color: inherit;
         }
         .nav-search-item:hover,
-        .nav-search-item.ns-active { background: var(--avo-surface-high); }
-        .nav-search-item.ns-active { box-shadow: inset 2px 0 0 var(--avo-primary); }
+        .nav-search-item.ns-active { background: var(--avo-surface-raised); }
         .nav-search-item svg {
             width: var(--avo-icon-sm); height: var(--avo-icon-sm); flex-shrink: 0; color: var(--avo-text-muted);
             stroke: currentColor; fill: none;
             stroke-width: var(--avo-icon-stroke); stroke-linecap: round; stroke-linejoin: round;
         }
         .nav-search-group {
-            font-family: var(--avo-font-mono);
-            font-size: var(--avo-text-micro); color: var(--avo-text-muted); text-transform: uppercase;
-            letter-spacing: 0.12em; padding: 0.6rem 0.7rem 0.25rem;
+            font-size: var(--avo-ui-label); color: var(--avo-text-3);
+            padding: 0.6rem 1rem 0.25rem;
         }
         .nav-search-empty {
-            padding: 0.6rem 0.7rem; font-size: var(--avo-ui-text); color: var(--avo-text-muted); text-align: center;
+            padding: 0.75rem 1rem; font-size: var(--avo-ui-text); color: var(--avo-text-muted); text-align: center;
         }
         @media (max-width: 700px) { .nav-search { display: none; } }
 
         /* PRISM score card. --score-border is set per user by renderPrismScores;
            hover only brightens the hairline to the user's risk colour: no lift,
-           no drop shadow. Glass on the panel, never on its contents. */
+           no drop shadow. */
         .prism-score-card {
-            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line);
             border-radius: var(--avo-radius-lg);
             padding: 16px 12px;
@@ -170,9 +161,8 @@
 
         /* Range slider: the filled part is a gradient on the TRACK pseudo (--p = the
            filled %) so no external ::-webkit-slider-runnable-track rule can paint
-           over it. A hard two-stop split, not a wash. The track is a plain
-           rectangle and the thumb a small 6px-cornered block (§5: no pills, no
-           round caps). !important beats Basecoat's own range styling. */
+           over it. A hard two-stop split, not a wash. The track is a pill
+           and the thumb a round knob. !important beats Basecoat's own range styling. */
         input[type="range"].dash-range {
             -webkit-appearance: none !important;
             appearance: none !important;
@@ -185,38 +175,38 @@
         }
         input[type="range"].dash-range::-webkit-slider-runnable-track {
             height: 6px;
-            border-radius: 0;
+            border-radius: var(--avo-radius-pill);
             border: none;
             background: linear-gradient(to right,
                 var(--avo-primary) calc(var(--p, 0) * 1%),
-                var(--avo-surface-high) calc(var(--p, 0) * 1%)) !important;
+                var(--avo-surface-raised) calc(var(--p, 0) * 1%)) !important;
         }
         input[type="range"].dash-range::-webkit-slider-thumb {
             -webkit-appearance: none !important;
             appearance: none !important;
-            width: 10px;
+            width: 18px;
             height: 18px;
             margin-top: -6px;        /* (6px track - 18px thumb) / 2 */
-            border-radius: var(--avo-radius);
+            border-radius: 50%;
             background: var(--avo-primary) !important;
             border: 2px solid var(--avo-canvas);
         }
         input[type="range"].dash-range::-moz-range-track {
             height: 6px;
-            border-radius: 0;
+            border-radius: var(--avo-radius-pill);
             border: none;
-            background: var(--avo-surface-high) !important;
+            background: var(--avo-surface-raised) !important;
         }
         input[type="range"].dash-range::-moz-range-progress {
             height: 6px;
-            border-radius: 0;
+            border-radius: var(--avo-radius-pill);
             background: var(--avo-primary) !important;
         }
         input[type="range"].dash-range::-moz-range-thumb {
-            width: 10px;
+            width: 18px;
             height: 18px;
             border: 2px solid var(--avo-canvas);
-            border-radius: var(--avo-radius);
+            border-radius: 50%;
             background: var(--avo-primary) !important;
         }
         /* The ring, as everywhere: coral, 2px, on the whole control. */
@@ -321,9 +311,8 @@
             <p class="text-muted">{{ guild.name }}</p>
         </div>
 
-        <!-- Top.gg vote banner. A glass panel with the kit's corner marks (main.css
-             .vote-banner). Coral is a spark, never a section ground (BRANDING §3):
-             the only coral here is the icon, the marks and the CTA's tint. -->
+        <!-- Top.gg vote banner. A flat panel (main.css .vote-banner). Coral is a spark,
+             never a section ground: nothing here is coral. -->
         <div class="vote-banner">
             <div class="vote-banner__row">
                 <div class="vote-banner__copy">
@@ -425,6 +414,10 @@
                 <svg viewBox="0 0 24 24"><path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 12.5 5 14l2.5-2.5"/><path d="M3 19.5 5 21l2.5-2.5"/></svg>
                 Review Queue
             </a>
+            <a href="#mod_cases" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><circle cx="12" cy="13" r="2"/><path d="M8 17.5c.6-1.5 2-2.5 4-2.5s3.4 1 4 2.5"/></svg>
+                Case files
+            </a>
 
             <span class="dash-nav-group-label">Community</span>
             <a href="#minigames" class="dash-nav-item">
@@ -450,6 +443,10 @@
             <a href="#capsule" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 Time Capsule
+            </a>
+            <a href="#birthdays" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+                Birthdays
             </a>
             <a href="#suggestions" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
@@ -548,7 +545,7 @@
 
             <!-- Home hub: tile grid of all systems, grouped by category (built by JS from the sidebar) -->
             <section class="pb-16 dash-section is-active" id="home">
-                <div class="section-label">DASHBOARD</div>
+                <div class="section-label">Dashboard</div>
                 <div id="hub-root"></div>
             </section>
 
@@ -557,7 +554,7 @@
 
             <!-- General Config -->
             <section class="pb-16 dash-section" id="config-general">
-                <div class="section-label">GENERAL CONFIG</div>
+                <div class="section-label">General config</div>
                 <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -687,7 +684,7 @@
 
             <!-- NETWORK SAFETY (formerly PRISM) -->
             <section class="pb-16 dash-section" id="prism">
-                <div class="section-label">NETWORK SAFETY</div>
+                <div class="section-label">Network safety</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -753,7 +750,7 @@
 
             <!-- Chatfilter Config -->
             <section class="pb-16 dash-section" id="config-chatfilter">
-                <div class="section-label">CHATFILTER CONFIG</div>
+                <div class="section-label">Chatfilter config</div>
                 <div class="card">
                         <header style="position:relative;">
                             <span class="adoption-badge"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>loved by community</span>
@@ -958,7 +955,7 @@
 
             <!-- Suggestions -->
             <section class="pb-16 dash-section" id="suggestions">
-                <div class="section-label">SUGGESTIONS</div>
+                <div class="section-label">Suggestions</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1084,7 +1081,7 @@
 
             <!-- Sticky Messages -->
             <section class="pb-16 dash-section" id="sticky-messages">
-                <div class="section-label">STICKY MESSAGES</div>
+                <div class="section-label">Sticky messages</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1153,7 +1150,7 @@
 
             <!-- Global Chat -->
             <section class="pb-16 dash-section" id="globalchat">
-                <div class="section-label">GLOBAL CHAT</div>
+                <div class="section-label">Global chat</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1206,7 +1203,7 @@
 
             <!-- Support Ticket -->
             <section class="pb-16 dash-section" id="ticket">
-                <div class="section-label">SUPPORT TICKET</div>
+                <div class="section-label">Support ticket</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1359,7 +1356,7 @@
 
             <!-- Anti-Spam Config -->
             <section class="pb-16 dash-section" id="antispam">
-                <div class="section-label">ANTI-SPAM</div>
+                <div class="section-label">Anti-spam</div>
                 <div class="card">
                     <header style="position:relative;">
                         <span class="adoption-badge"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>loved by community</span>
@@ -1477,7 +1474,7 @@
 
             <!-- Anti-Raid -->
             <section class="pb-16 dash-section" id="antiraid">
-                <div class="section-label">ANTI-RAID</div>
+                <div class="section-label">Anti-raid</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1700,7 +1697,7 @@
 
             <!-- Mod-Gate Config -->
             <section class="pb-16 dash-section" id="mod_gate">
-                <div class="section-label">MOD-GATE</div>
+                <div class="section-label">Mod-gate</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1780,9 +1777,89 @@
                 </div>
             </section>
 
+            <!-- Case files + team overview -->
+            <section class="pb-16 dash-section" id="mod_cases">
+                <div class="section-label">Case files</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+                                <circle cx="12" cy="13" r="2"/>
+                                <path d="M8 17.5c.6-1.5 2-2.5 4-2.5s3.4 1 4 2.5"/>
+                            </svg>
+                            Case files
+                        </h2>
+                        <p class="text-muted">Everything the team knows about one person on this server: cases, appeals, notes. Only staff see this. Every action has a case number (#123).</p>
+                    </header>
+                    <section>
+                        <form id="cf-search-form" class="flex gap-2" style="margin-bottom:1rem;" autocomplete="off">
+                            <input type="text" id="cf-search" class="input flex-1" placeholder="Name or user ID" aria-label="Search for a person" maxlength="40">
+                            <button type="submit" class="btn" data-variant="outline" data-size="default" style="flex-shrink:0;">
+                                <span class="btn-label">Search</span>
+                            </button>
+                        </form>
+                        <div id="cf-candidates" class="flex flex-wrap gap-2 hidden"></div>
+                        <div id="cf-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
+                            <h3 class="text-base font-semibold tracking-tight">No one selected</h3>
+                            <p class="text-muted text-sm">Search for a member, or paste a user ID to open their file.</p>
+                        </div>
+                        <div id="cf-file" class="grid gap-4 hidden">
+                            <div>
+                                <h3 class="text-base font-semibold" id="cf-name" style="margin:0;"></h3>
+                                <p class="text-muted text-xs num" id="cf-id" style="margin:.15rem 0 0;"></p>
+                                <p class="text-sm" id="cf-summary" style="margin:.5rem 0 0;"></p>
+                                <p class="text-muted text-xs" id="cf-safety" style="margin:.25rem 0 0;"></p>
+                            </div>
+                            <div class="add-area mt-3">
+                                <div class="grid gap-2">
+                                    <label for="cf-note-text" class="font-medium text-sm">Add a note</label>
+                                    <textarea id="cf-note-text" class="input" maxlength="500" rows="2" placeholder="Only staff can see notes. The person never does."></textarea>
+                                    <div>
+                                        <button type="button" class="btn" id="cf-note-add" data-variant="primary" data-size="default">
+                                            <span class="btn-label">Add note</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cf-timeline" class="grid gap-2"></div>
+                            <div><button type="button" class="btn hidden" id="cf-more" data-variant="outline" data-size="default"><span class="btn-label">Show more</span></button></div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="card mt-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                            Team overview
+                        </h2>
+                        <p class="text-muted">The last 30 days, listed by name. This is an overview of the workload, not a ranking.</p>
+                    </header>
+                    <section>
+                        <div class="flex flex-wrap gap-6" style="margin-bottom:1rem;">
+                            <div><div class="text-muted text-xs">Typical time to decide a queue item</div><div class="num text-xl font-semibold" id="ms-median">-</div></div>
+                            <div><div class="text-muted text-xs">Open appeals</div><div class="num text-xl font-semibold" id="ms-appeals">-</div></div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="w-full text-sm" id="ms-table">
+                                <thead><tr class="text-muted text-xs" style="text-align:left;">
+                                    <th class="font-medium" style="padding:.4rem .5rem .4rem 0;">Moderator</th>
+                                    <th class="font-medium num">Warnings</th><th class="font-medium num">Mutes</th>
+                                    <th class="font-medium num">Kicks</th><th class="font-medium num">Bans</th>
+                                    <th class="font-medium num">Removed messages</th>
+                                </tr></thead>
+                                <tbody id="ms-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-muted text-sm hidden" id="ms-empty">No moderation actions in the last 30 days.</p>
+                    </section>
+                </div>
+            </section>
+
             <!-- Review Queue -->
             <section class="pb-16 dash-section" id="mod_review">
-                <div class="section-label">REVIEW QUEUE</div>
+                <div class="section-label">Review queue</div>
                 <div class="card">
                     <header class="flex items-center justify-between">
                         <div>
@@ -1805,19 +1882,58 @@
                     <section>
                         <div id="mod_review-list" class="grid gap-3"></div>
                         <div id="mod_review-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 md:p-10 text-center hidden">
-                            <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
-                                <svg class="lucide" viewBox="0 0 24 24" width="20" height="20"><path d="M20 6 9 17l-5-5"/></svg>
-                            </div>
                             <h3 class="text-base font-semibold tracking-tight">All clear</h3>
                             <p class="text-muted text-sm">Nothing is waiting for a decision right now.</p>
                         </div>
+                    </section>
+                </div>
+
+                <!-- Staff channel (assets/staff.py): one channel for everything staff must know -->
+                <div class="card mt-6">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24">
+                                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+                            </svg>
+                            Staff channel
+                        </h2>
+                        <p class="text-muted">Baxi keeps one message here that shows how many cases are open, with a button to this queue.</p>
+                    </header>
+                    <section>
+                        <form id="staff-form" class="form grid gap-6 settings-form">
+                            <div class="grid gap-2">
+                                <label for="staff-channel">Channel:</label>
+                                <select id="staff-channel" class="select w-full">
+                                    <option value="">- Not set -</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">#{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-muted text-xs">Left empty, Baxi uses the Mod-Gate log channel, then the suggestions log channel.</p>
+                            </div>
+
+                            <div class="card-actions">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24">
+                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
+                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
+                                        </svg>
+                                        Save
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
+                            </div>
+                        </form>
                     </section>
                 </div>
             </section>
 
             <!-- Verification Config -->
             <section class="pb-16 dash-section" id="verify">
-                <div class="section-label">VERIFICATION</div>
+                <div class="section-label">Verification</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1920,7 +2036,7 @@
 
             <!-- Button Roles -->
             <section class="pb-16 dash-section" id="reaction-roles">
-                <div class="section-label">BUTTON ROLES</div>
+                <div class="section-label">Button roles</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -1933,7 +2049,7 @@
                     </header>
                     <section>
                         <!-- How it works -->
-                        <div style="background:color-mix(in srgb,var(--avo-primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--avo-primary) 25%,transparent);padding:14px 16px;margin-bottom:1.5rem;">
+                        <div style="background:color-mix(in srgb,var(--avo-primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--avo-primary) 25%,transparent);padding:14px 16px;margin-bottom:1.5rem;border-radius:var(--avo-radius-lg);">
                             <p class="text-sm font-semibold mb-2" style="color:var(--avo-accent-text);">How it works -  2 steps</p>
                             <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
                                 <li class="text-sm flex gap-3 items-start">
@@ -2021,7 +2137,7 @@
 
             <!-- Auto-Escalation / Warn Config -->
             <section class="pb-16 dash-section" id="warn-config">
-                <div class="section-label">MODERATION</div>
+                <div class="section-label">Moderation</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2112,7 +2228,7 @@
 
             <!-- Welcomer Config -->
             <section class="pb-16 dash-section" id="welcomer">
-                <div class="section-label">WELCOMER</div>
+                <div class="section-label">Welcomer</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2272,7 +2388,7 @@
 
             <!-- Server Log -->
             <section class="pb-16 dash-section" id="serverlog">
-                <div class="section-label">SERVER LOG</div>
+                <div class="section-label">Server log</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2421,7 +2537,7 @@
 
             <!-- Auto-Roles -->
             <section class="pb-16 dash-section" id="auto-roles">
-                <div class="section-label">AUTO-ROLES</div>
+                <div class="section-label">Auto-roles</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2478,7 +2594,7 @@
 
             <!-- Auto-Release -->
             <section class="pb-16 dash-section" id="auto-release">
-                <div class="section-label">AUTO-RELEASE</div>
+                <div class="section-label">Auto-release</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2557,7 +2673,7 @@
 
             <!-- AI Assistant -->
             <section class="pb-16 dash-section" id="assistant">
-                <div class="section-label">AI ASSISTANT</div>
+                <div class="section-label">AI assistant</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2649,7 +2765,7 @@
 
             <!-- MC Account Link -->
             <section class="pb-16 dash-section" id="mc-link">
-                <div class="section-label">DISCORDGATE</div>
+                <div class="section-label">DiscordGate</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -2819,6 +2935,16 @@
                                 </select>
                             </div>
 
+                            <hr class="my-2">
+                            <div class="section-label" style="margin:0;">MAINTENANCE</div>
+                            <p class="text-muted text-xs">Moved to a new Minecraft server? Baxi keeps its old link list when the new server reports no links at all, so players would stay "already linked". This removes every stored link of this Discord server from Baxi. Nothing is changed on the Minecraft server, and the linked role is not removed from members.</p>
+                            <div>
+                                <button type="button" id="mcl-clear-links-btn" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);">
+                                    <svg class="lucide" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    <span class="btn-label">Clear all existing links</span>
+                                </button>
+                            </div>
+
                             <div class="card-actions">
                                 <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                     <span class="btn-text">
@@ -2839,7 +2965,7 @@
 
             <!-- Livestream Config -->
             <section class="pb-16 dash-section" id="livestream">
-                <div class="section-label">LIVESTREAM</div>
+                <div class="section-label">Livestream</div>
                 <div class="card">
                     <header style="position:relative;">
                         <span class="adoption-badge"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></svg>loved by community</span>
@@ -2939,7 +3065,7 @@
 
             <!-- YouTube Video Tracking -->
             <section class="pb-16 dash-section" id="youtube-videos">
-                <div class="section-label">YOUTUBE VIDEO TRACKING</div>
+                <div class="section-label">YouTube video tracking</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3036,7 +3162,7 @@
 
             <!-- TikTok Video Tracking -->
             <section class="pb-16 dash-section" id="tiktok">
-                <div class="section-label">TIKTOK VIDEO TRACKING</div>
+                <div class="section-label">TikTok video tracking</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3131,7 +3257,7 @@
             </section>
 
             <section class="pb-16 dash-section" id="twitter">
-                <div class="section-label">X (TWITTER) POST TRACKING</div>
+                <div class="section-label">X (Twitter) post tracking</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3227,7 +3353,7 @@
 
             <!-- Instagram Tracking -->
             <section class="pb-16 dash-section" id="instagram">
-                <div class="section-label">INSTAGRAM TRACKING</div>
+                <div class="section-label">Instagram tracking</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3238,7 +3364,7 @@
                     </header>
 
                     <!-- Instagram unavailable notice -->
-                    <div style="border:1px solid var(--avo-warning);background:color-mix(in srgb, var(--avo-warning) 8%, transparent);display:flex;gap:1rem;align-items:flex-start;padding:1rem;">
+                    <div style="border:1px solid var(--avo-warning);background:color-mix(in srgb, var(--avo-warning) 8%, transparent);display:flex;gap:1rem;align-items:flex-start;padding:1rem;border-radius:var(--avo-radius-lg);">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--avo-warning);width:22px;height:22px;flex-shrink:0;margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                         <div>
                             <p style="font-weight:600;color:var(--avo-warning);margin-bottom:0.35rem;">Instagram Tracking currently unavailable</p>
@@ -3312,7 +3438,7 @@
 
             <!-- Server Stats Channels -->
             <section class="pb-16 dash-section" id="stats-channels">
-                <div class="section-label">SERVER STATS CHANNELS</div>
+                <div class="section-label">Server stats channels</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3429,7 +3555,7 @@
 
             <!-- Custom Commands -->
             <section class="pb-16 dash-section" id="customcmds">
-                <div class="section-label">CUSTOM COMMANDS</div>
+                <div class="section-label">Custom commands</div>
                 <div class="card">
                     <header style="position:relative;">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3541,7 +3667,7 @@
 
             <!-- Temp Voice Channels -->
             <section class="pb-16 dash-section" id="temp-voice">
-                <div class="section-label">TEMP VOICE CHANNELS</div>
+                <div class="section-label">Temp voice channels</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3569,14 +3695,6 @@
 
                             <!-- Empty state (shown when there are no triggers) -->
                             <div id="tv-triggers-empty" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center hidden">
-                                <div class="bg-muted size-10 rounded-lg flex items-center justify-center">
-                                    <svg class="lucide" viewBox="0 0 24 24" style="width:20px;height:20px;">
-                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                        <line x1="12" y1="19" x2="12" y2="22"/>
-                                        <line x1="8" y1="22" x2="16" y2="22"/>
-                                    </svg>
-                                </div>
                                 <h3 class="text-base font-semibold tracking-tight">No trigger channels yet</h3>
                                 <p class="text-muted text-sm">Add a trigger channel below. When a user joins it, a private voice channel is created for them automatically.</p>
                             </div>
@@ -3665,7 +3783,7 @@
 
             <!-- Music -->
             <section class="pb-16 dash-section" id="music">
-                <div class="section-label">MUSIC</div>
+                <div class="section-label">Music</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -3802,7 +3920,7 @@
 
             <!-- Minigames -->
             <section class="pb-16 dash-section" id="minigames">
-                <div class="section-label">MINIGAMES</div>
+                <div class="section-label">Minigames</div>
 
                 <!-- Counting Game -->
                 <div class="card mb-6">
@@ -3855,7 +3973,7 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);">
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);border-radius:var(--avo-radius-lg);">
                                 <p class="text-muted text-xs" style="margin:0;">
                                     <strong>Current count:</strong> <span id="counting-current-display">- </span> &nbsp;|&nbsp;
                                     <strong>High score:</strong> <span id="counting-highscore-display">- </span>
@@ -3930,7 +4048,7 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);">
+                            <div class="grid gap-2" style="padding:12px 16px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);border-radius:var(--avo-radius-lg);">
                                 <p class="text-muted text-xs" style="margin:0;">
                                     <strong>Words so far:</strong> <span id="onewordstory-length-display">- </span> &nbsp;|&nbsp;
                                     <strong>Longest story:</strong> <span id="onewordstory-highscore-display">- </span>
@@ -4024,14 +4142,14 @@
 
             <!-- Level System -->
             <section class="pb-16 dash-section" id="leveling">
-                <div class="section-label">LEVEL SYSTEM</div>
+                <div class="section-label">Level system</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <svg class="lucide" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                             Level System
                         </h2>
-                        <p class="text-muted">Every user earns XP individually by sending messages. Longer messages give more XP. Celebrate level-ups with automatic announcements and role rewards.</p>
+                        <p class="text-muted">Members level up by chatting (XP at most once a minute) and by talking in voice (5 XP per minute with at least one other person, not deafened).</p>
                     </header>
                     <section>
                         <form id="leveling-form" class="form grid gap-6 settings-form">
@@ -4048,7 +4166,7 @@
                             <div class="grid gap-2">
                                 <label class="label" for="leveling-announcement">Level-up announcement</label>
                                 <select id="leveling-announcement" class="select" style="max-width:300px">
-                                    <option value="same_channel">Same channel as the message</option>
+                                    <option value="same_channel">Where it was earned (text or voice channel)</option>
                                     <option value="channel">Specific channel</option>
                                     <option value="off">Off</option>
                                 </select>
@@ -4069,7 +4187,7 @@
                             <!-- Role rewards -->
                             <div class="grid gap-2">
                                 <label class="label">Role Rewards</label>
-                                <p class="text-muted text-xs">When the server reaches a level, a role is automatically assigned to all members.</p>
+                                <p class="text-muted text-xs">When a member reaches a level, they get the role automatically.</p>
                                 <div id="leveling-role-rewards-list" class="grid gap-2"></div>
                                 <button type="button" id="leveling-add-reward-btn" class="btn" data-variant="primary" data-size="default" style="width:fit-content;margin-top:4px;display:flex;align-items:center;gap:6px;">
                                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -4093,7 +4211,7 @@
 
             <!-- Pulse -->
             <section class="pb-16 dash-section" id="pulse">
-                <div class="section-label">PULSE</div>
+                <div class="section-label">Pulse</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -4209,7 +4327,7 @@
 
             <!-- Starboard -->
             <section class="pb-16 dash-section" id="starboard">
-                <div class="section-label">STARBOARD</div>
+                <div class="section-label">Starboard</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -4280,7 +4398,7 @@
 
             <!-- Quote Book -->
             <section class="pb-16 dash-section" id="quotes">
-                <div class="section-label">QUOTE BOOK</div>
+                <div class="section-label">Quote book</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -4330,7 +4448,7 @@
 
             <!-- Time Capsule -->
             <section class="pb-16 dash-section" id="capsule">
-                <div class="section-label">TIME CAPSULE</div>
+                <div class="section-label">Time capsule</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -4372,9 +4490,90 @@
                 </div>
             </section>
 
+            <!-- Birthdays -->
+            <section class="pb-16 dash-section" id="birthdays">
+                <div class="section-label">Birthdays</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+                            Birthdays
+                        </h2>
+                        <p class="text-muted">Members save their birthday with <code>/birthday set</code> and Baxi congratulates them on their day at 9:00, or as soon as Baxi is online that day.</p>
+                    </header>
+                    <section>
+                        <form id="birthdays-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="birthdays-enabled" role="switch">
+                                    <span class="font-medium">Enable birthdays</span>
+                                </label>
+                            </div>
+                            <div class="grid gap-2">
+                                <label for="birthdays-channel">Channel:</label>
+                                <select id="birthdays-channel" class="select w-full">
+                                    <option value="">Server's system channel</option>
+                                    {% for id, name in channels.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="channel-perm-feedback hidden" id="feedback-birthdays-channel"></div>
+                                <p class="text-muted text-xs">Without a channel, Baxi posts in the server's system channel.</p>
+                            </div>
+                            <div class="grid gap-2">
+                                <label for="birthdays-message">Message:</label>
+                                <textarea id="birthdays-message" data-vars="user,username,displayname,server" data-no-mentions placeholder="🎂 Happy birthday, {user}!" maxlength="1000"
+                                    class="w-full min-h-[80px]"></textarea>
+                                <p class="text-muted text-xs">Leave empty for the default text in the server's language.</p>
+                            </div>
+                            <div class="grid gap-2">
+                                <label for="birthdays-role">Birthday role for 24 hours:</label>
+                                <select id="birthdays-role" class="select w-full">
+                                    <option value="">No role</option>
+                                    {% for id, name in assignable_roles.items() %}
+                                    <option value="{{ id }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div id="birthdays-role-warning" class="channel-perm-feedback hidden"></div>
+                            </div>
+                            <div class="grid gap-2">
+                                <label for="birthdays-timezone">Timezone:</label>
+                                <select id="birthdays-timezone" class="select w-full">
+                                    <option value="Europe/Berlin">Europe/Berlin</option>
+                                    <option value="Europe/Vienna">Europe/Vienna</option>
+                                    <option value="Europe/Zurich">Europe/Zurich</option>
+                                    <option value="Europe/London">Europe/London</option>
+                                    <option value="Europe/Paris">Europe/Paris</option>
+                                    <option value="Europe/Moscow">Europe/Moscow</option>
+                                    <option value="America/New_York">America/New_York</option>
+                                    <option value="America/Chicago">America/Chicago</option>
+                                    <option value="America/Denver">America/Denver</option>
+                                    <option value="America/Los_Angeles">America/Los_Angeles</option>
+                                    <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+                                    <option value="Asia/Dubai">Asia/Dubai</option>
+                                    <option value="Asia/Kolkata">Asia/Kolkata</option>
+                                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                                    <option value="Australia/Sydney">Australia/Sydney</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                            <div class="card-actions">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Audit Log -->
             <section class="pb-16 dash-section" id="auditlog">
-                <div class="section-label">AUDIT LOG</div>
+                <div class="section-label">Audit log</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -4531,6 +4730,7 @@
                 <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Save changes
             </span>
+            <span class="spinner avo-spinner sm hidden" role="status" aria-label="Saving"></span>
         </button>
     </div>
 
@@ -4543,8 +4743,8 @@
                 'home',
                 'config-general',
                 'auditlog',
-                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review',
-                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'capsule', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
+                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'mod_cases',
+                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'capsule', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
@@ -4941,6 +5141,10 @@
                 document.getElementById('mod_gate-action').value = 'quarantine';
             }
 
+            // Staff channel
+            document.getElementById('staff-channel').value =
+                (data.staff && data.staff.channel && String(data.staff.channel) !== '0') ? String(data.staff.channel) : '';
+
             // Counting Game
             if (data.counting) {
                 document.getElementById('counting-enabled').checked = data.counting.enabled === true;
@@ -4995,6 +5199,14 @@
             if (data.capsule) {
                 document.getElementById('capsule-enabled').checked = data.capsule.enabled === true;
                 document.getElementById('capsule-channel').value = (data.capsule.channel && String(data.capsule.channel) !== '0') ? String(data.capsule.channel) : '';
+            }
+            if (data.birthdays) {
+                const bd = data.birthdays;
+                document.getElementById('birthdays-enabled').checked = bd.enabled === true;
+                document.getElementById('birthdays-channel').value = (bd.channel && String(bd.channel) !== '0') ? String(bd.channel) : '';
+                document.getElementById('birthdays-message').value = bd.message || '';
+                document.getElementById('birthdays-role').value = bd.role ? String(bd.role) : '';
+                document.getElementById('birthdays-timezone').value = bd.timezone || 'Europe/Vienna';
             }
 
             // Pulse
@@ -5160,7 +5372,7 @@
                                 <div>
                                     <h3 class="text-base font-semibold flex items-center gap-2">
                                         ${s.display_name || s.login}
-                                        <span style="font-size:0.65rem;padding:1px 6px;background:${platformColor};color:#fff;font-weight:600;letter-spacing:0.03em;">${platformLabel}</span>
+                                        <span style="font-size:0.65rem;padding:1px 6px;background:${platformColor};color:#fff;font-weight:600;">${platformLabel}</span>
                                     </h3>
                                     <a href="${profileUrl}" target="_blank" class="text-muted text-xs hover:underline">${profileUrl.replace('https://', '')}</a>
                                 </div>
@@ -6095,7 +6307,7 @@
                 const actions = (Array.isArray(cmd.actions) && cmd.actions.length)
                     ? cmd.actions
                     : [{ type: 'text', reply: false }];
-                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:var(--avo-surface-raised);border:1px solid var(--avo-line-strong);padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;">${ccEsc(ccActionSummary(a))}</span>`).join('');
+                const actionsHtml = actions.map(a => `<span style="display:inline-block;background:var(--avo-surface-raised);border:1px solid var(--avo-line-strong);padding:2px 8px;font-size:11px;margin:2px 4px 2px 0;border-radius:var(--avo-radius-lg);">${ccEsc(ccActionSummary(a))}</span>`).join('');
 
                 const gate = cmd.gate || {};
                 const gateParts = [
@@ -6273,7 +6485,7 @@
                 // glass blur and z-order from one place instead of a second
                 // hand-tuned copy. display is still toggled inline below.
                 prismPopover.className = 'popup';
-                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:var(--avo-surface-raised);border:1px solid var(--avo-line-strong);border-radius:var(--avo-radius-lg);padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;box-shadow:inset 0 1px 0 var(--avo-glass-edge-raised);">
+                prismPopover.innerHTML = `<div id="prism-popover-box" style="background:var(--avo-surface);border:1px solid var(--avo-line-strong);border-radius:var(--avo-radius-xl);padding:28px 24px 24px;width:340px;max-width:92vw;position:relative;">
                     <button id="prism-popover-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--avo-text-muted);padding:4px;line-height:1;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -6316,8 +6528,8 @@
                 card.style.setProperty('--score-border', scoreBord);
 
                 let badges = '';
-                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--avo-text-muted) !important;margin-top:6px;">Opt-Out</span>`;
-                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--avo-warning) !important;margin-top:6px;">Manual Flag</span>`;
+                if (isOptedOut) badges += `<span style="font-size:0.6rem;font-weight:700;color:var(--avo-text-muted) !important;margin-top:6px;">Opt-Out</span>`;
+                if (u.manual_flag) badges += `<span style="font-size:0.6rem;font-weight:700;color:var(--avo-warning) !important;margin-top:6px;">Manual Flag</span>`;
 
                 card.innerHTML = `
                     <div style="position:relative;margin-bottom:10px;">
@@ -6341,27 +6553,27 @@
                 card.addEventListener('click', () => {
                     const manualReason = u.manual_reason ? u.manual_reason.replace(/</g,'&lt;') : '';
                     const manualSection = u.manual_flag ? `
-                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-warning) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-warning) 28%, transparent);">
+                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-warning) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-warning) 28%, transparent);border-radius:var(--avo-radius-lg);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--avo-warning)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-warning) !important;letter-spacing:.06em;text-transform:uppercase;">Manual Flag</span>
+                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-warning) !important;">Manual Flag</span>
                             </div>
                             <p style="font-size:0.74rem;color:var(--avo-text-muted-2) !important;line-height:1.55;margin:0;">This user has been manually flagged by the <strong style="color:var(--avo-text) !important;font-weight:600;">Baxi Team</strong> for the following reason:</p>
                             <p style="font-size:0.76rem;color:var(--avo-text) !important;line-height:1.5;margin:8px 0 0;padding:8px 10px;background:color-mix(in srgb, var(--avo-warning) 8%, transparent);font-style:italic;">${manualReason || 'No reason provided.'}</p>
                         </div>` : '';
 
                     const optOutSection = isOptedOut ? `
-                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-text-muted) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-text-muted) 28%, transparent);">
+                        <div style="margin-top:14px;padding:12px 14px;background:color-mix(in srgb, var(--avo-text-muted) 10%, transparent);border:1px solid color-mix(in srgb, var(--avo-text-muted) 28%, transparent);border-radius:var(--avo-radius-lg);">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--avo-text-muted)"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-text-muted) !important;letter-spacing:.06em;text-transform:uppercase;">Prism Opt-Out</span>
+                                <span style="font-size:0.68rem;font-weight:700;color:var(--avo-text-muted) !important;">Prism Opt-Out</span>
                             </div>
                             <p style="font-size:0.74rem;color:var(--avo-text-muted-2) !important;line-height:1.55;margin:0;">This user has opted out of Prism trust scoring. No score is being tracked. Moderation systems (chat filter, anti-spam, etc.) remain active.</p>
                         </div>` : '';
 
                     const summarySection = u.llm_summary ? `
                         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--avo-line);">
-                            <span style="font-size:0.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--avo-text-muted-2) !important;">AI Analysis</span>
+                            <span style="font-size:0.63rem;font-weight:700;color:var(--avo-text-muted-2) !important;">AI Analysis</span>
                             <p style="font-size:0.78rem;color:var(--avo-text-muted-2) !important;line-height:1.6;margin:7px 0 0;">${u.llm_summary.replace(/</g,'&lt;')}</p>
                         </div>` : '';
 
@@ -6373,7 +6585,7 @@
                                 <div style="font-size:0.68rem;color:var(--avo-text-muted-2) !important;margin-top:3px;">ID: ${u.uid}</div>
                             </div>
                         </div>
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${scoreBg};border:1px solid ${scoreBord};">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${scoreBg};border:1px solid ${scoreBord};border-radius:var(--avo-radius-lg);">
                             <span style="font-size:0.72rem;font-weight:600;color:${scoreColor} !important;">Trust Score</span>
                             <span style="font-size:1.05rem;font-weight:600;color:${scoreColor} !important;">${isOptedOut ? '- ' : score}&nbsp;<span style="font-size:0.64rem;">${scoreLabel}</span></span>
                         </div>
@@ -6722,6 +6934,20 @@
             });
         }
         // ─────────────────────────────────────────────────────────────────────
+
+        document.getElementById('mcl-clear-links-btn').onclick = function () {
+            if (!confirm('Remove ALL existing Minecraft links of this Discord server from Baxi? Players will have to link again. This cannot be undone.')) return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=mc_link_clear_links&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({}));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
 
         document.getElementById('mc-link-form').onsubmit = function (event) {
             event.preventDefault();
@@ -7146,9 +7372,9 @@
                 const toaster = document.getElementById('toaster');
                 if (toaster && toaster.toast) toaster.toast({
                     category: ok ? 'success' : 'error',
-                    title: ok ? 'EXEC // TEST SENT' : 'EXEC // FAILED',
+                    title: ok ? 'Test sent' : 'Failed',
                     description: msg,
-                    cancel: { label: 'DISMISS' }
+                    cancel: { label: 'Dismiss' }
                 });
             };
             const xhr = new XMLHttpRequest();
@@ -7308,6 +7534,26 @@
             };
         };
 
+        // ── Staff channel ──────────────────────────────────────────────────────
+        document.getElementById('staff-form').onsubmit = function (event) {
+            event.preventDefault();
+            const channel = document.getElementById('staff-channel').value || '';
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=staff&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({ staff: { channel } }));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        showSaveToast(resp.success, resp.message);
+                    } catch (e) {
+                        showSaveToast(false, 'An unexpected error occurred.');
+                    }
+                }
+            };
+        };
+
         // ── Review Queue ───────────────────────────────────────────────────────
         // Every item is a thing Baxi noticed. The card says what Baxi already did,
         // and each button spells out what it does — no abstract approve/reject.
@@ -7318,7 +7564,7 @@
         }
 
         function modReviewBadge(kind) {
-            const labels = { join_gate: 'Risky join', prism_flag: 'Safety flag', deleted_msg: 'Deleted message', user_report: 'User report' };
+            const labels = { join_gate: 'Risky join', prism_flag: 'Safety flag', deleted_msg: 'Deleted message', user_report: 'User report', chatfilter_borderline: 'Borderline message', appeal: 'Appeal' };
             return modReviewEscape(labels[kind] || kind || 'item');
         }
 
@@ -7338,6 +7584,8 @@
             }
             if (item.kind === 'deleted_msg') return 'A moderator deleted this message. Baxi did not act on the author.';
             if (item.kind === 'user_report') return 'A member reported this user. Baxi did not act.';
+            if (item.kind === 'chatfilter_borderline') return 'The chat filter almost removed this message and left it up. Without a decision the entry closes after 24 hours.';
+            if (item.kind === 'appeal') return 'The person asks the team to reverse case #' + (ctx.case_no || '?') + '. Until you decide, the case stays as it is.';
             return '';
         }
 
@@ -7356,8 +7604,20 @@
                 { a: 'confirm',  l: 'Was rule-breaking', tone: 'ok',  h: 'Baxi’s chat filter learns to catch messages like this by itself.' },
                 { a: 'harmless', l: 'Was harmless',      tone: 'bad', h: 'Baxi learns this kind of message is fine and stops flagging it.' }
             ];
+            if (kind === 'chatfilter_borderline') return [
+                { a: 'ok',          l: 'OK',            tone: 'ok',   h: 'The message stays. Baxi learns that it is fine.' },
+                { a: 'delete',      l: 'Delete',        tone: 'warn', h: 'Baxi deletes the message and learns to remove messages like it by itself.' },
+                { a: 'delete_warn', l: 'Delete + warn', tone: 'bad',  h: 'Same as Delete, and the author gets a warning.' }
+            ];
+            if (kind === 'appeal') return [
+                { a: 'lift', l: 'Accept appeal',  tone: 'ok',   h: 'Lifts the case where that is possible (removes the warning, mute or ban). A kick or a removed message cannot be undone, then only the record is cleared. The person is told by DM.' },
+                { a: 'keep', l: 'Decline appeal', tone: 'warn', h: 'The case stays as it is. The person is told by DM.' }
+            ];
             return [{ a: 'done', l: 'Close', tone: 'ok', h: 'Removes this entry from the queue.' }];
         }
+
+        const MOD_CASE_TYPES = { warn: 'Warning', mute: 'Mute', kick: 'Kick', ban: 'Ban', unban: 'Unban', unmute: 'Unmute',
+                                 filter: 'Message removed (chat filter)', delete: 'Message removed (moderator)' };
 
         const MOD_REVIEW_TONES = {
             ok:   'background:var(--avo-success); border-color:var(--avo-success);',
@@ -7380,6 +7640,27 @@
                     (ctx.deleted_by_name ? '<p class="text-muted text-xs">Deleted by ' + modReviewEscape(ctx.deleted_by_name) +
                         (ctx.channel_name ? ' in #' + modReviewEscape(ctx.channel_name) : '') + '</p>' : '') +
                     '</div>';
+            } else if (item.kind === 'chatfilter_borderline') {
+                const jump = ctx.jump_url ? ' · <a href="' + modReviewEscape(ctx.jump_url) + '" target="_blank" rel="noopener">view message</a>' : '';
+                contextHtml =
+                    '<div class="grid gap-1">' +
+                    '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.excerpt) + '</p>' +
+                    '<p class="text-muted text-xs">' + (ctx.channel_name ? 'In #' + modReviewEscape(ctx.channel_name) : '') +
+                        (typeof ctx.score === 'number' ? ' · <span title="Score ' + modReviewEscape(ctx.score.toFixed(3)) + ', removal from ' + modReviewEscape(Number(ctx.threshold || 0).toFixed(3)) + '">just below the removal limit</span>' : '') +
+                        jump + '</p>' +
+                    '</div>';
+            } else if (item.kind === 'appeal') {
+                contextHtml =
+                    '<div class="grid gap-1">' +
+                    '<p class="text-sm" style="white-space:pre-wrap;word-break:break-word;">' + modReviewEscape(ctx.text) + '</p>' +
+                    '<p class="text-muted text-xs">Case <span class="num">#' + modReviewEscape(ctx.case_no) + '</span> · ' +
+                        modReviewEscape(MOD_CASE_TYPES[ctx.case_type] || ctx.case_type) +
+                        (ctx.case_mod ? ' by ' + modReviewEscape(ctx.case_mod) : '') +
+                        ' · ' + modReviewFmtTime(ctx.case_time) + '</p>' +
+                    '<p class="text-muted text-xs">Reason given: ' + modReviewEscape(ctx.case_reason || 'none') + '</p>' +
+                    '</div>' +
+                    '<div class="grid gap-1"><label class="text-xs text-muted" for="mr-reason-' + item.pos + '">Message to the person (optional)</label>' +
+                    '<input type="text" class="input mod_review-reason" id="mr-reason-' + item.pos + '" maxlength="300" placeholder="e.g. Sorry, this was a mistake."></div>';
             } else if (item.kind === 'user_report') {
                 const link = ctx.message_link ? ' · <a href="' + modReviewEscape(ctx.message_link) + '" target="_blank" rel="noopener">view message</a>' : '';
                 contextHtml =
@@ -7438,12 +7719,19 @@
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=mod_review_resolve&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.send(JSON.stringify({ pos: parseInt(item.pos, 10), action: action }));
+            const reasonEl = card.querySelector('.mod_review-reason');
+            xhr.send(JSON.stringify({ pos: parseInt(item.pos, 10), action: action, reason: reasonEl ? reasonEl.value.trim() : '' }));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     let ok = false, msg = 'An unexpected error occurred.';
                     try { const r = JSON.parse(xhr.responseText); ok = r.success; msg = r.message || msg; }
                     catch (e) { ok = false; }
+                    if (xhr.status === 409) {
+                        // someone else decided (or it expired): drop the card, reload the rest
+                        showSaveToast(false, 'Already handled.');
+                        modReviewRefresh();
+                        return;
+                    }
                     showSaveToast(ok, msg);
                     if (ok) {
                         card.parentNode && card.parentNode.removeChild(card);
@@ -7506,6 +7794,171 @@
 
         // Count the queue once on load so the badge is there before you go looking.
         window.addEventListener('load', modReviewRefresh);
+
+        // ── Case files + team overview ─────────────────────────────────────────
+        (function () {
+            const GID = '{{ data.dash_login }}';
+            const esc = modReviewEscape;
+            const $ = function (id) { return document.getElementById(id); };
+            let currentId = null;
+
+            function fmt(iso) { return modReviewFmtTime(iso); }
+            function ago(ts) {
+                const d = Math.max(0, Math.floor((Date.now() / 1000 - ts) / 86400));
+                return d === 0 ? 'today' : (d === 1 ? 'yesterday' : d + ' days ago');
+            }
+            function plural(n, one, other) { return n + ' ' + (n === 1 ? one : other); }
+            function getJson(url) {
+                return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+            }
+            function post(system, body) {
+                return fetch('/api/dash/save/?system=' + system + '&dash_login=' + GID, {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                }).then(function (r) { return r.json(); });
+            }
+
+            function summary(file) {
+                const c = file.counts || {}, parts = [];
+                if (c.warn) parts.push(plural(c.warn, 'warning', 'warnings'));
+                if (c.mute) parts.push(plural(c.mute, 'mute', 'mutes'));
+                if (c.kick) parts.push(plural(c.kick, 'kick', 'kicks'));
+                if (c.ban) parts.push(plural(c.ban, 'ban', 'bans'));
+                if (c.removed) parts.push(plural(c.removed, 'removed message', 'removed messages'));
+                if (!parts.length) return 'No cases yet.';
+                return parts.join(', ') + (file.last_action_ts ? ' · last action ' + ago(file.last_action_ts) : '');
+            }
+
+            function entryHtml(e) {
+                const meta = 'class="text-muted text-xs"';
+                if (e.kind === 'case') {
+                    const state = e.lifted ? ' · lifted' : (e.appeal === 'open' ? ' · appeal open' : (e.appeal === 'kept' ? ' · appeal declined' : ''));
+                    const who = e.automatic ? 'Baxi (automatic)' : (e.mod_name || '?');
+                    return '<div><strong><span class="num">#' + esc(e.no) + '</span> ' + esc(MOD_CASE_TYPES[e.type] || e.type) + '</strong> ' +
+                        '<span ' + meta + '>' + fmt(e.ts) + ' · ' + esc(who) + esc(state) + '</span>' +
+                        '<p class="text-sm" style="margin:.15rem 0 0;white-space:pre-wrap;word-break:break-word;">' + esc(e.reason || 'No reason given') + '</p></div>';
+                }
+                if (e.kind === 'appeal') {
+                    const st = { open: 'waiting for a decision', lifted: 'accepted', kept: 'declined' }[e.state] || e.state;
+                    return '<div><strong>Appeal for <span class="num">#' + esc(e.no) + '</span></strong> <span ' + meta + '>' + fmt(e.ts) + ' · ' + esc(st) + '</span>' +
+                        (e.note ? '<p class="text-sm" style="margin:.15rem 0 0;white-space:pre-wrap;word-break:break-word;">' + esc(e.note) + '</p>' : '') + '</div>';
+                }
+                if (e.kind === 'note') {
+                    return '<div class="flex items-start justify-between gap-3"><div><strong>Note <span class="num">N' + esc(e.id) + '</span></strong> ' +
+                        '<span ' + meta + '>' + fmt(e.ts) + ' · ' + esc(e.author_name) + '</span>' +
+                        '<p class="text-sm" style="margin:.15rem 0 0;white-space:pre-wrap;word-break:break-word;">' + esc(e.text) + '</p></div>' +
+                        '<button type="button" class="btn cf-note-del" data-variant="outline" data-size="default" data-id="' + esc(e.id) + '" style="color:var(--avo-error);border-color:var(--avo-error);flex-shrink:0;">' +
+                        '<svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>' +
+                        '<span class="btn-label">Remove</span></button></div>';
+                }
+                return '<div><strong>Chat filter hit</strong> <span ' + meta + '>' + fmt(e.ts) + (e.category ? ' · ' + esc(e.category) : '') + '</span></div>';
+            }
+
+            function showFile(file, append) {
+                currentId = file.user_id;
+                $('cf-empty').classList.add('hidden');
+                $('cf-candidates').classList.add('hidden');
+                $('cf-file').classList.remove('hidden');
+                $('cf-name').textContent = file.user_name || file.user_id;
+                $('cf-id').textContent = file.user_id + (file.in_server ? '' : ' · not on the server');
+                $('cf-summary').textContent = summary(file);
+                $('cf-safety').textContent = file.safety_list ? 'On the network safety list (' + file.safety_list + ').' : '';
+                const box = $('cf-timeline');
+                if (!append) box.innerHTML = '';
+                const more = $('cf-more');
+                const shown = (file.offset || 0) + file.entries.length;
+                more.classList.toggle('hidden', shown >= (file.total || 0));
+                more.dataset.offset = shown;
+                if (!file.entries.length && !append) {
+                    box.innerHTML = '<p class="text-muted text-sm">Nothing recorded for this person.</p>';
+                }
+                file.entries.forEach(function (e) {
+                    const row = document.createElement('div');
+                    row.className = 'card';
+                    row.style.cssText = 'padding:.75rem 1rem;';
+                    row.innerHTML = entryHtml(e);
+                    box.appendChild(row);
+                });
+                box.querySelectorAll('.cf-note-del').forEach(function (b) {
+                    b.onclick = function () {
+                        if (!window.confirm('Remove note N' + b.dataset.id + '?')) return;
+                        post('mod_note', { action: 'remove', id: parseInt(b.dataset.id, 10) }).then(function (r) {
+                            showSaveToast(r.success, r.message);
+                            if (r.success) openUser(currentId);
+                        });
+                    };
+                });
+            }
+
+            function openUser(id, offset) {
+                const off = offset || 0;
+                getJson('/api/dash/casefile/?dash_login=' + GID + '&user_id=' + encodeURIComponent(id) + '&offset=' + off).then(function (r) {
+                    if (r.success && r.mode === 'file') showFile(r, off > 0); else showSaveToast(false, r.message || 'Could not load the case file.');
+                });
+            }
+            $('cf-more').addEventListener('click', function () { openUser(currentId, parseInt($('cf-more').dataset.offset || '0', 10)); });
+
+            $('cf-search-form').addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                const q = $('cf-search').value.trim();
+                if (!q) return;
+                getJson('/api/dash/casefile/?dash_login=' + GID + '&q=' + encodeURIComponent(q)).then(function (r) {
+                    if (!r.success) { showSaveToast(false, r.message); return; }
+                    if (r.mode === 'file') { showFile(r); return; }
+                    const box = $('cf-candidates');
+                    box.innerHTML = '';
+                    $('cf-file').classList.add('hidden');
+                    if (!r.candidates.length) {
+                        $('cf-empty').classList.remove('hidden');
+                        box.classList.add('hidden');
+                        showSaveToast(false, 'No one found. Try the user ID.');
+                        return;
+                    }
+                    $('cf-empty').classList.add('hidden');
+                    box.classList.remove('hidden');
+                    r.candidates.forEach(function (c) {
+                        const b = document.createElement('button');
+                        b.type = 'button'; b.className = 'btn'; b.dataset.variant = 'outline'; b.dataset.size = 'default';
+                        b.innerHTML = '<span class="btn-label">' + esc(c.name) + '</span>';
+                        b.onclick = function () { openUser(c.id); };
+                        box.appendChild(b);
+                    });
+                });
+            });
+
+            $('cf-note-add').addEventListener('click', function () {
+                const t = $('cf-note-text'), text = t.value.trim();
+                if (!text || !currentId) return;
+                post('mod_note', { action: 'add', user_id: currentId, text: text }).then(function (r) {
+                    showSaveToast(r.success, r.message);
+                    if (r.success) { t.value = ''; openUser(currentId); }
+                });
+            });
+
+            function loadStats() {
+                getJson('/api/dash/modstats/?dash_login=' + GID).then(function (r) {
+                    if (!r.success) return;
+                    $('ms-median').textContent = r.median_minutes == null ? '-'
+                        : (r.median_minutes < 90 ? Math.round(r.median_minutes) + ' min' : (r.median_minutes / 60).toFixed(1) + ' h');
+                    $('ms-appeals').textContent = r.open_appeals;
+                    const body = $('ms-body');
+                    body.innerHTML = '';
+                    $('ms-empty').classList.toggle('hidden', r.mods.length > 0);
+                    $('ms-table').classList.toggle('hidden', r.mods.length === 0);
+                    r.mods.forEach(function (m) {
+                        const c = m.counts || {};
+                        const tr = document.createElement('tr');
+                        tr.style.borderTop = '1px solid var(--avo-line)';
+                        const cell = function (n) { return '<td class="num" style="padding:.45rem 0;">' + (n || 0) + '</td>'; };
+                        tr.innerHTML = '<td style="padding:.45rem .5rem .45rem 0;">' + esc(m.automatic ? 'Baxi (automatic)' : m.mod_name) + '</td>' +
+                            cell(c.warn) + cell(c.mute) + cell(c.kick) + cell(c.ban) + cell((c.filter || 0) + (c.delete || 0));
+                        body.appendChild(tr);
+                    });
+                });
+            }
+
+            window.modCasesOpen = loadStats;
+        })();
 
         // ── Active warnings ────────────────────────────────────────────────────
         const _WL_TRASH = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
@@ -7787,6 +8240,28 @@
             } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=capsule&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── Birthdays ──────────────────────────────────────────────────────────
+        document.getElementById('birthdays-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = { birthdays: {
+                enabled: document.getElementById('birthdays-enabled').checked,
+                channel: document.getElementById('birthdays-channel').value,
+                message: document.getElementById('birthdays-message').value.trim(),
+                role: document.getElementById('birthdays-role').value,
+                timezone: document.getElementById('birthdays-timezone').value,
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=birthdays&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {
@@ -8534,7 +9009,7 @@
                     </header>
                     <section>
                         <!-- Editable panel settings -->
-                        <div style="background:color-mix(in srgb,var(--avo-primary) 5%,transparent);border:1px solid var(--avo-line);padding:12px;margin-bottom:1rem;">
+                        <div style="background:color-mix(in srgb,var(--avo-primary) 5%,transparent);border:1px solid var(--avo-line);padding:12px;margin-bottom:1rem;border-radius:var(--avo-radius-lg);">
                             <p class="text-sm font-medium mb-3">Panel settings</p>
                             <div class="grid gap-3">
                                 <div class="grid gap-1">
@@ -8978,6 +9453,8 @@
             checkChannelPermissions('starboard', v('starboard-channel'), 'feedback-starboard-channel', 'starboard-form', 'ch');
             checkChannelPermissions('quotes', v('quotes-channel'), 'feedback-quotes-channel', 'quotes-form', 'ch');
             checkChannelPermissions('capsule', v('capsule-channel'), 'feedback-capsule-channel', 'capsule-form', 'ch');
+            checkChannelPermissions('birthdays', v('birthdays-channel'), 'feedback-birthdays-channel', 'birthdays-form', 'ch');
+            checkRoleHierarchyFeedback(v('birthdays-role'), 'birthdays-role-warning', 'birthdays-form', 'role');
             checkChannelPermissions('pulse',             v('pulse-channel'),                  'feedback-pulse-channel',               'pulse-form',            'ch');
             checkChannelPermissions('leveling',          v('leveling-announcement-channel'),  'feedback-leveling-channel',            'leveling-form',         'ch');
             // Notification channel
@@ -9016,6 +9493,8 @@
             on('starboard-channel', 'starboard', 'feedback-starboard-channel', 'starboard-form', 'ch');
             on('quotes-channel', 'quotes', 'feedback-quotes-channel', 'quotes-form', 'ch');
             on('capsule-channel', 'capsule', 'feedback-capsule-channel', 'capsule-form', 'ch');
+            on('birthdays-channel', 'birthdays', 'feedback-birthdays-channel', 'birthdays-form', 'ch');
+            onRole('birthdays-role', 'birthdays-role-warning', 'birthdays-form', 'role');
             on('pulse-channel',                  'pulse',                'feedback-pulse-channel',              'pulse-form',           'ch');
             on('leveling-announcement-channel',  'leveling',             'feedback-leveling-channel',           'leveling-form',        'ch');
             on('notification-channel',           'notification',         'feedback-notification-channel',       'general-form',         'notif_ch');
@@ -9134,10 +9613,11 @@
             const toaster = document.getElementById('toaster');
             if (toaster && toaster.toast) toaster.toast({
                 category: success ? 'success' : 'error',
-                title: success ? 'EXEC // SAVED' : 'EXEC // FAILED',
+                title: success ? 'Saved' : 'Save failed',
                 description: message || (success ? 'Settings applied successfully.' : 'Failed to save. Please try again.'),
-                cancel: { label: 'DISMISS' }
+                cancel: { label: 'Dismiss' }
             });
+            if (window.avoSaveDone) window.avoSaveDone();
             document.querySelectorAll('.submit-btn[disabled]').forEach(btn => {
                 btn.disabled = false;
                 btn.querySelector('.spinner')?.classList.add('hidden');
@@ -9201,7 +9681,21 @@
                 render();
             }
 
+            /* The bar button shows the tick ring from click until the first toast
+               (showSaveToast) says how the save went; 12s is the safety net. */
+            var busyTimer = null;
+            function busy(on) {
+                btn.disabled = on;
+                if (on) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+                var sp = btn.querySelector('.spinner');
+                if (sp) sp.classList.toggle('hidden', !on);
+                clearTimeout(busyTimer);
+                if (on) busyTimer = setTimeout(function () { busy(false); }, 12000);
+            }
+            window.avoSaveDone = function () { busy(false); };
+
             function save() {
+                busy(true);
                 /* Snapshot first: requestSubmit runs the handler synchronously,
                    and a handler that touches a field would otherwise re-add its
                    own form to the set we are iterating. */
@@ -9230,6 +9724,7 @@
                     }
                     form.requestSubmit();
                 });
+                if (!forms.length) busy(false);
             }
 
             btn.addEventListener('click', save);
@@ -9266,6 +9761,7 @@
         };
     </script>
     <script src="{{ url_for('static', filename='scripts/mention-picker.js') }}?v={{ static_versions.get('scripts/mention-picker.js', '') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/avo-select.js') }}?v={{ static_versions.get('scripts/avo-select.js', '') }}"></script>
     
 
     <script>
@@ -9397,6 +9893,7 @@
                 if (id === 'home') refreshHubStatus();
                 // Auto-load data-backed sections every time they are opened.
                 if (id === 'mod_review' && typeof modReviewRefresh === 'function') modReviewRefresh();
+                if (id === 'mod_cases' && typeof modCasesOpen === 'function') modCasesOpen();
                 if (!opts.noHash && location.hash !== '#' + id) {
                     history.pushState(null, '', '#' + id);
                 }
@@ -9427,7 +9924,10 @@
             });
 
             buildHub();
-            showSection((location.hash || '#home').slice(1), { noHash: true, instant: true });
+            // ?section=... survives the Discord login (a #fragment does not); links
+            // from Discord (e.g. the staff-channel notice) carry both.
+            showSection((location.hash || '').slice(1) || new URLSearchParams(location.search).get('section') || 'home',
+                        { noHash: true, instant: true });
 
             /* Toggle states are populated on window.load (createDynamicFields);
                refresh the hub dots once they're set. */
@@ -9583,7 +10083,7 @@
         <!-- src is set on first open so the Ko-fi widget is never loaded for people who don't ask for it -->
         <iframe id="kofiframe" data-src="https://ko-fi.com/avocloudnet/?hidefeed=true&widget=true&embed=true&preview=true"
                 title="Ko-fi — avocloudnet" loading="lazy"
-                style="border:none;width:100%;height:min(712px, 65vh);border-radius:8px;background:#f9f9f9;"></iframe>
+                style="border:none;width:100%;height:min(712px, 65vh);border-radius:var(--avo-radius-lg);background:#f9f9f9;"></iframe>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('kofi-dialog').close()">Close</button>
         </footer>

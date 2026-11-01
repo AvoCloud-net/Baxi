@@ -52,7 +52,8 @@ class RiskContext:
 
     # ── Construction ─────────────────────────────────────────────────────────────
     @classmethod
-    def build(cls, user_id: int, guild_id: int, account_age_days: int | None = None) -> "RiskContext":
+    def build(cls, user_id: int, guild_id: int, account_age_days: int | None = None,
+              member_days: int | None = None) -> "RiskContext":
         key = (guild_id, user_id)
         now = time.time()
         cached = _cache.get(key)
@@ -60,7 +61,7 @@ class RiskContext:
             cached.verdicts = []   # fresh verdict list for this message; reuse standing
             return cached
 
-        signals = assess(user_id, guild_id, account_age_days=account_age_days)
+        signals = assess(user_id, guild_id, account_age_days=account_age_days, member_days=member_days)
         ctx = cls(user_id=user_id, guild_id=guild_id, signals=signals, _built_at=now)
         _cache[key] = ctx
         return ctx

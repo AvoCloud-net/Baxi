@@ -33,12 +33,10 @@
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            font-size: var(--avo-ui-label);
+            font-weight: 500;
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius);
+            border-radius: var(--avo-radius-pill);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
@@ -118,9 +116,9 @@
             gap: 0.35rem;
             font-size: 0.75rem;
             font-weight: 600;
-            padding: 0.2rem 0.6rem;
-            border-radius: var(--avo-radius);
-            background: color-mix(in srgb, var(--avo-primary) 12%, transparent);
+            padding: 0.2rem 0.75rem;
+            border-radius: var(--avo-radius-pill);
+            background: var(--avo-surface-raised);
             color: var(--avo-accent-text);
             margin-bottom: 0.5rem;
         }
@@ -128,11 +126,9 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            opacity: 0.45;
+            font-size: var(--avo-ui-label);
+            font-weight: 400;
+            opacity: 0.6;
             margin-bottom: 1rem;
         }
         .back-link {
@@ -212,7 +208,7 @@
 
                 <!-- Table of Contents -->
                 <section>
-                    <div class="section-label">ON THIS PAGE</div>
+                    <div class="section-label">On this page</div>
                     <div class="card">
                         <header>
                             <h2 class="text-base font-semibold">Contents</h2>
@@ -244,7 +240,7 @@
 
                 <!-- Section 1: Data Security -->
                 <section id="data-security">
-                    <div class="section-label">SECTION 1</div>
+                    <div class="section-label">Section 1</div>
                     <div class="card">
                         <header>
                             <div class="update-badge">
@@ -276,7 +272,7 @@
 
                 <!-- Section 2: Legal Basis -->
                 <section id="legal-basis">
-                    <div class="section-label">SECTION 2</div>
+                    <div class="section-label">Section 2</div>
                     <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold">Legal Basis</h2>
@@ -308,7 +304,7 @@
 
                 <!-- Section 3: Your Rights -->
                 <section id="your-rights">
-                    <div class="section-label">SECTION 3</div>
+                    <div class="section-label">Section 3</div>
                     <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold">Your Rights</h2>
@@ -339,7 +335,7 @@
 
                 <!-- Section 4: Baxi Data -->
                 <section id="baxi-data">
-                    <div class="section-label">SECTION 4</div>
+                    <div class="section-label">Section 4</div>
                     <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold">Data Processed by Baxi</h2>
@@ -445,6 +441,43 @@
                                     <p>Baxi's anti-spam system analyses message frequency, mention counts, and repeated content in real time to detect spam. This processing happens entirely in memory -  no message content is stored by the anti-spam system. If a spam event triggers a moderation action (e.g. mute or warn), only the moderation log entry is retained.</p>
                                 </div>
                                 <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.10</span>
+                                        Birthdays
+                                    </div>
+                                    <p>A birthday is only stored if you save it yourself with <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday set</code>. It is used for one thing: so that servers which have switched birthdays on can congratulate you on your day. The following data is stored:</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li>Your User ID, the day and the month of your birthday -  never the year. This entry is shared by all servers, so you only enter it once.</li>
+                                        <li>The servers on which you hid your birthday with <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday hide</code> (Guild ID and User ID).</li>
+                                        <li>Per server: the date Baxi last congratulated you and, if the server uses a birthday role, when to take it back. This makes sure you are congratulated at most once a year per server, even if the date is changed, and is deleted automatically after about a year.</li>
+                                    </ul>
+                                    <p style="margin-top: 0.75rem;">On servers that have birthdays switched on, the day and month are visible to the server's members: in the birthday post and in <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday upcoming</code>. Use <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday hide</code> to keep it private on a server, and <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday show</code> to undo that.</p>
+                                    <p style="margin-top: 0.75rem;">You can delete your birthday at any time with <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/birthday remove</code> in any server with Baxi. This removes the date and all of your per-server hides immediately.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.11</span>
+                                        Activity counts and Server Wrapped
+                                    </div>
+                                    <p>For the activity statistics (Pulse) Baxi counts how many messages are sent per day, hour, channel and member, how long members spend in voice channels, and how many members join and leave. These are numbers only - no message content. The daily counts are normally kept for 90 days.</p>
+                                    <p style="margin-top: 0.75rem;">Once a year, in December, Baxi shows every server a look back at its year ("Server Wrapped"). For this, the daily counts of the current year are kept until the end of January of the following year, and Baxi additionally counts how many messages each member writes per channel (to show them their favourite channel). The server's look back shows totals, the busiest day and hour, new members, the most active members, the message with the most stars on the starboard, the quote of the year and the most quoted member. The quote of the year is chosen by a members' vote in early December: Baxi posts a poll with some of the quotes saved that year in the server's quotes channel, and who voted for what is stored in the poll like in any other poll. Messages and quotes are only used if they come from a channel that everyone on the server can see, and never from NSFW channels or from bots. It is first shown to the server's team, who decide whether to post it. With <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/wrapped</code> every member sees their own look back, visible only to them.</p>
+                                    <p style="margin-top: 0.75rem;">If you do not want to be named in a server's look back, run <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/wrapped top_lists: Hide my name</code> on that server. Baxi then leaves you out of the top lists, does not show your message or quote there or put your quotes up for the vote, and stops counting your messages per channel for Wrapped (what was counted so far is deleted). Your own <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/wrapped</code> still works from the general activity counts described above, which Baxi keeps for everyone. The opt-out entry (Guild ID and User ID) is kept after the year ends, so it keeps working next year; you can show your name again at any time with <code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/wrapped top_lists: Show my name</code>. Members who have left the server are not named. The computed look backs and the extra counts are deleted automatically at the end of January; before the look back is released, nothing of the following year is stored for it.</p>
+                                </div>
+                                <div class="legal-item">
+                                    <div class="legal-section-title">
+                                        <span class="legal-section-num">3.12</span>
+                                        Moderation cases, notes and appeals
+                                    </div>
+                                    <p>When a moderator or Baxi acts against a member (warning, mute, kick, ban, unban, a removed message), the server gets a numbered case (#123). Baxi stores, per server: the case number, the type, the reason, who acted, the date, how long it lasts, and whether it was appealed or lifted. Baxi sends the member a direct message with the same facts and an "Appeal" button.</p>
+                                    <ul class="legal-list" style="margin-top: 0.75rem;">
+                                        <li><strong>Who sees cases:</strong> the member sees their own cases (in the direct message and on the appeal page after logging in with Discord, never anyone else's). The server's staff see all cases in the case file (<code style="font-family: var(--avo-font-mono); font-size: 0.8em; padding: 0.1rem 0.3rem; background: color-mix(in srgb, currentColor 8%, transparent);">/case</code> and the dashboard).</li>
+                                        <li><strong>Notes:</strong> moderators can save short notes about a member. They contain the note text, the member's and the author's User ID and name, and the date. Notes are never shown to the member. Anyone who can add notes can see them; the author or someone with "Manage Server" can delete a note at any time.</li>
+                                        <li><strong>Appeals:</strong> a member can appeal each case once, within 14 days. The text you write goes to the server's staff in the review queue. Appeal texts are deleted 30 days after staff decided. What stays on the case is only the outcome (lifted or kept) and the short reason staff gave. If an appeal against a removed message is accepted, the server's chat filter learns that the message was fine; if the server takes part in filter training, the message is offered anonymously to the Baxi team as a suggestion, never as a final label.</li>
+                                        <li><strong>Retention:</strong> cases and notes are deleted automatically one year after they were created. Sooner on request: contact us (Section 6) or ask the server's staff.</li>
+                                        <li><strong>Team overview:</strong> the dashboard shows how many actions each moderator took in the last 30 days and how long the review queue takes. This is a workload overview for the server's staff, not a ranking.</li>
+                                    </ul>
+                                </div>
+                                <div class="legal-item">
                                     <div class="legal-highlight">
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                                         Privacy-first
@@ -458,7 +491,7 @@
 
                 <!-- Section 5: Third-Party Services -->
                 <section id="third-party">
-                    <div class="section-label">SECTION 5</div>
+                    <div class="section-label">Section 5</div>
                     <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold">Third-Party Services</h2>
@@ -504,7 +537,7 @@
 
                 <!-- Section 6: Contact -->
                 <section id="contact">
-                    <div class="section-label">SECTION 6</div>
+                    <div class="section-label">Section 6</div>
                     <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold">Contact</h2>

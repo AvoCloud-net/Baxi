@@ -6,6 +6,7 @@ import time as _time
 bot = None
 
 globalchat_message_data: dict = {}
+globalchat_dirty: bool = False   # set by every write to it; GCDH saves only then
 
 phishing_url_list: set = set()
 
@@ -104,6 +105,12 @@ task_status: dict = {
         "last_run": None,
         "detail": "Posts the weekly activity recap for guilds that enabled it (checked every 10 min)",
     },
+    "VoiceActivity": {
+        "name": "Voice Activity",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Credits voice time per member and channel for BaxiInsights / Pulse (every 5 min)",
+    },
     "Starboard": {
         "name": "Starboard Throwback",
         "status": "idle",
@@ -115,6 +122,24 @@ task_status: dict = {
         "status": "idle",
         "last_run": None,
         "detail": "Delivers due time capsules (checked every 5 min)",
+    },
+    "Birthdays": {
+        "name": "Birthdays",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Congratulates today's birthdays and removes the birthday role after 24h (checked every 10 min)",
+    },
+    "Backup": {
+        "name": "DB Backup",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Uploads a snapshot of the SQLite database to the backup server every 12h",
+    },
+    "RestMode": {
+        "name": "Rest Mode",
+        "status": "idle",
+        "last_run": None,
+        "detail": "Frees the chatfilter model and heap memory after 10 min without activity",
     },
     "MusicIdle": {
         "name": "Music Idle Watcher",

@@ -1,9 +1,9 @@
 {
   "base": "https://cdn.avocloud.net",
   "versions": {
-    "avocloud-ui": "4.2.1",
+    "avocloud-ui": "5.0.2",
     "avocloud-ui-fonts": "4.4.0",
-    "avocloud-logo": "4.2.1",
+    "avocloud-logo": "5.0.2",
     "basecoat": "1.0.2",
     "tailwindcss-browser": "4.3.3",
     "gsap": "3.13.0",

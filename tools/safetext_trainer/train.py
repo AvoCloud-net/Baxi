@@ -106,7 +106,10 @@ def replay_rows(work: Path, n: int, seed: int = 13) -> list[dict]:
 
 
 # ── training ─────────────────────────────────────────────────────────────────
-def train(rows: list[dict], out_dir: Path, cfg: dict) -> None:
+def train(rows: list[dict], out_dir: Path, cfg: dict, base_model: str = BASE_MODEL,
+          progress=None) -> None:
+    """Fine-tune *base_model* (hub id or local dir). progress(epoch, step, steps, loss, lr)
+    replaces the plain log line when given (retrain.py draws a live view with it)."""
     import torch
     from peft import LoraConfig, TaskType, get_peft_model
     from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
@@ -116,8 +119,8 @@ def train(rows: list[dict], out_dir: Path, cfg: dict) -> None:
     if device == "cpu":
         say("  WARNUNG: keine GPU gefunden - Training auf der CPU dauert sehr lange.")
     torch.manual_seed(13)
-    tok = AutoTokenizer.from_pretrained(BASE_MODEL)
-    model = AutoModelForSequenceClassification.from_pretrained(BASE_MODEL)
+    tok = AutoTokenizer.from_pretrained(base_model)
+    model = AutoModelForSequenceClassification.from_pretrained(base_model)
     model = get_peft_model(model, LoraConfig(
         task_type=TaskType.SEQ_CLS, r=cfg["lora_r"], lora_alpha=2 * cfg["lora_r"],
         lora_dropout=0.1, target_modules=r".*encoder.*\.(query|key|value|dense)$",
@@ -149,7 +152,9 @@ def train(rows: list[dict], out_dir: Path, cfg: dict) -> None:
             scaler.update()
             sched.step()
             step += 1
-            if step % 50 == 0 or step == steps:
+            if progress is not None:
+                progress(epoch + 1, step, steps, loss.item(), sched.get_last_lr()[0])
+            elif step % 50 == 0 or step == steps:
                 say(f"  Epoche {epoch + 1}/{cfg['epochs']}  Schritt {step}/{steps}  loss {loss.item():.4f}")
 
     merged = model.merge_and_unload().to("cpu").eval()

@@ -35,6 +35,7 @@ Returns the chatfilter result dict: {code, flagged, distance, reason, json[, sup
 """
 from __future__ import annotations
 
+import os
 import re
 from typing import Any, Dict
 
@@ -64,6 +65,23 @@ THRESHOLDS = {
 }
 # Score the counterfactual ("... people ...") must keep for group hate.
 _COUNTERFACTUAL = {"low": 0.9, "medium": 0.7, "high": 0.5}
+# Borderline ("Grenzfall") for the mod queue: a message on the score-only path for
+# targeted messages (addressed at someone, no joke/praise, no excused insult) whose
+# score - the lower of the raw score and the re-score with curse words masked -
+# lands this far below the level's "targeted" threshold:
+#   low [0.93, 0.99)   medium [0.89, 0.95)   high [0.84, 0.90)
+# The message stays; staff decide in the dashboard (assets/moderation/borderline.py).
+# Kept narrow on purpose: the model rates any rough language high, so a wider band
+# would fill the queue with banter. Untargeted messages are never borderline (the
+# score alone never deletes them either).
+BORDERLINE_BAND = 0.06
+# Experiment overrides for offline evaluation (unset in production).
+if os.environ.get("SAFETEXT_CF_FLOOR") is not None:
+    _COUNTERFACTUAL = {k: float(os.environ["SAFETEXT_CF_FLOOR"]) for k in _COUNTERFACTUAL}
+if os.environ.get("SAFETEXT_THR_TARGETED") is not None:
+    THRESHOLDS["medium"]["targeted"] = float(os.environ["SAFETEXT_THR_TARGETED"])
+if os.environ.get("SAFETEXT_THR_GROUP") is not None:
+    THRESHOLDS["medium"]["group"] = float(os.environ["SAFETEXT_THR_GROUP"])
 _LETTER = re.compile(r"[^\W\d_]")
 
 
@@ -82,7 +100,7 @@ def _level(chatfilter_data: dict, strictness: float) -> str:
     idx = LEVELS.index(base) if base in LEVELS else 1
     if strictness > 1.2:
         idx += 1
-    elif strictness < 0.9:
+    elif strictness < 0.9 and base != "high":      # "high" (Strict) is never relaxed, whoever writes
         idx -= 1
     return LEVELS[max(0, min(len(LEVELS) - 1, idx))]
 
@@ -152,7 +170,10 @@ def _insult_result(match: str, tox: float | None, signals: dict) -> Dict[str, An
 # ── model stage ──────────────────────────────────────────────────────────────
 async def _model_stage(norm: Normalized, level: str, targeted: bool, joke: bool,
                        enabled: set[str], praise: bool = False,
+                       borderline: dict | None = None,
                        ) -> tuple[Dict[str, Any] | None, float | None]:
+    """*borderline*: if given, filled with {score, threshold} when the message passes
+    but is a borderline case (see BORDERLINE_BAND)."""
     pats = lexicon.patterns()
     text = norm.ml_text
     if len(_LETTER.findall(text)) < 2 or mildwords.is_only_mild(text):
@@ -202,13 +223,28 @@ async def _model_stage(norm: Normalized, level: str, targeted: bool, joke: bool,
         return _insult_result(mild, tox, signals), tox
 
     # Score-only decisions: re-score without curse words first.
-    if targeted and not lenient and not excused_insult and tox >= thr["targeted"]:
+    score_only = targeted and not lenient and not excused_insult
+    eff: float | None = None
+    if score_only and tox >= thr["targeted"]:
         eff = await neutralized()
         if eff >= thr["targeted"]:
             return _flagged("2", label="toxic_targeted", confidence=round(eff, 4),
                             **signals), tox
     if thr["profanity"] is not None and tox >= thr["profanity"] and pats.profanity.search(text):
         return _flagged("2", label="profanity", confidence=round(tox, 4), **signals), tox
+
+    floor = round(thr["targeted"] - BORDERLINE_BAND, 4)
+    if borderline is not None and score_only and tox >= floor:
+        try:
+            if eff is None:
+                eff = await neutralized()
+        except Exception as e:   # re-score failed: no borderline, but keep the verdict and tox
+            logger.error(f"SafeText | borderline re-score error: {type(e).__name__}: {e}")
+            eff = None
+        # Raw and masked score must both reach the floor, the lower one stay below the
+        # threshold: high only because of curse words (masked low) is not a case.
+        if eff is not None and floor <= min(tox, eff) < thr["targeted"]:
+            borderline.update(score=round(min(tox, eff), 4), threshold=thr["targeted"])
 
     return None, tox
 
@@ -286,6 +322,7 @@ async def check(
 
     # 12. model (rules-only "SafeText" system: lexicon insults without the model)
     tox: float | None = None
+    borderline: dict = {}
     if not use_ml and "2" in enabled:
         lenient = ctx.praise or (ctx.joke and level != "high")
         if mild := _mild_insult(norm, level, targeted, lenient, None)[0]:
@@ -294,7 +331,8 @@ async def check(
             return done("insult", res)
     if use_ml and enabled & {"2", "3"} and norm.ml_text:
         try:
-            res, tox = await _model_stage(norm, level, targeted, ctx.joke, enabled, ctx.praise)
+            res, tox = await _model_stage(norm, level, targeted, ctx.joke, enabled, ctx.praise,
+                                          borderline=borderline)
         except Exception as e:
             logger.error(f"SafeText | model stage error: {type(e).__name__}: {e}")
             res = None
@@ -303,6 +341,8 @@ async def check(
             return done("model", res, confidence=tox)
 
     group = bool(search(pats.groups, norm))
+    if borderline:   # passes, but staff should take a look (mod queue)
+        extra = {**extra, "borderline": borderline}
     return done("clean", _safe(toxicity=tox, targeted=targeted, group=group, level=level,
                                joke=ctx.joke, **extra), confidence=tox)
 

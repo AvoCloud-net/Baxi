@@ -8,8 +8,13 @@ from reds_simple_logger import Logger
 import assets.data as datasys
 import assets.repo as repo
 import config.config as config
+from assets.moderation import cases
 
 logger = Logger()
+
+
+def _case_footer(lang: dict, case_no: Optional[int]) -> str:
+    return f"{lang['moderation']['dm']['f_case']} #{case_no} · Baxi · avocloud.net" if case_no else "Baxi · avocloud.net"
 
 
 async def add_warning(
@@ -19,7 +24,11 @@ async def add_warning(
     reason: str,
     bot: commands.AutoShardedBot,
     channel: Optional[Union[discord.TextChannel, discord.abc.Messageable]] = None,
+    extra: Optional[dict] = None,
 ) -> dict:
+    """Warn *user*: stores the warning, opens a case (#n), tells the user by DM (with the
+    Appeal button) and runs the escalation ladder. *extra* is stored on the case (e.g. the
+    removed message's log_id)."""
     warn_config: dict = dict(datasys.load_data(guild_id, "warn_config"))
     lang = datasys.load_lang_file(guild_id)
 
@@ -49,22 +58,17 @@ async def add_warning(
             warnings[user_key] = active
             datasys.save_data(guild_id, "warnings", warnings)
 
-    # Log mod event for BaxiInsights
-    try:
-        datasys.append_mod_event(guild_id, {
-            "type": "warn",
-            "user_id": str(user.id),
-            "user_name": user.name,
-            "mod_id": str(moderator.id) if moderator else "0",
-            "mod_name": moderator.name if moderator else "System",
-            "reason": reason,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-        })
-    except Exception:
-        pass
+    # The case (#n): shown in the DM, the channel notice and the case file.
+    case_no = cases.record(guild_id, "warn", user, moderator, reason, warn_id=warn_id, **(extra or {}))
+    warn_entry["case"] = case_no
 
     # Warnings are stored per-guild only (no cross-server recording — compliance).
     warn_count = len(warnings[user_key])
+
+    guild = getattr(user, "guild", None)
+    # Warnings Baxi gives by itself (chat filter, anti-spam) are DM'd at most once per 10 minutes.
+    automatic = moderator is None or getattr(moderator, "id", None) == getattr(bot.user, "id", None)
+    dm_ok = await cases.notify(guild, user, case_no, "warn", reason, throttle=automatic) if guild else False
 
     # Send warning embed
     if channel is not None:
@@ -75,7 +79,9 @@ async def add_warning(
             ),
             color=config.Discord.warn_color,
         )
-        embed.set_footer(text="Baxi · avocloud.net")
+        embed.set_footer(text=_case_footer(lang, case_no))
+        if not dm_ok:
+            embed.add_field(name="\u200b", value=cases.dm_failed_note(lang, user, guild_id), inline=False)
         await channel.send(embed=embed)
 
     # Escalation
@@ -93,6 +99,7 @@ async def remove_warning(guild_id: int, user_id: int, warn_id: str) -> bool:
         return False
     # Targeted delete — no full save needed
     repo.remove_warning(guild_id, user_key, warn_id)
+    cases.store.lift_warn_cases(guild_id, warn_id=warn_id)   # the case file shows it as lifted
     return True
 
 
@@ -171,16 +178,6 @@ def _normalize_steps(warn_config: dict) -> list[dict]:
     return normalized
 
 
-async def _dm_user(user: discord.Member, embed: discord.Embed) -> None:
-    """Best-effort DM to the user. Silently ignores closed DMs."""
-    try:
-        await user.send(embed=embed)
-    except (discord.Forbidden, discord.HTTPException):
-        pass
-    except Exception as e:
-        logger.error(f"Warning escalation DM error: {e}")
-
-
 async def _check_escalation(
     user: discord.Member,
     warn_count: int,
@@ -201,16 +198,36 @@ async def _check_escalation(
 
     action = step["action"]
     warn_strings = lang["commands"]["admin"]["warn"]
+    gid = user.guild.id
+    bot_user = bot.user
+    case_no = None
+    acted = False   # set once the Discord action went through (then the case stays)
+    auto = lang["moderation"]["auto"]
 
     try:
+        if action in ("ban", "kick", "timeout"):
+            # Can Baxi do it at all? If not: no case, no DM (Baxi logs it, the warning stands).
+            blocked = cases.can_act(user.guild, user, {"timeout": "mute"}.get(action, action), lang)
+            if blocked:
+                logger.error(f"Warning escalation ({action}) skipped for {user.name} in {user.guild.name}: {blocked}")
+                return
+
         if action == "ban":
-            await user.ban(reason=f"Auto-ban: {warn_count} warnings reached")
+            why = str(auto["escalation_ban"]).format(count=warn_count)
+            case_no = cases.record(gid, "ban", user, bot_user, why)
+            await cases.notify(user.guild, user, case_no, "ban", why, permanent=True)   # before: banned users can't be reached
+            await user.ban(reason=f"{why} (case #{case_no})" if case_no else why)
+            acted = True
             title = f"{config.Icons.people_crossed} AUTO BAN // {user.name} // {warn_count} WARNINGS"
             desc = str(warn_strings["escalation_ban"]).format(user=user.mention, count=warn_count)
             color = config.Discord.danger_color
 
         elif action == "kick":
-            await user.kick(reason=f"Auto-kick: {warn_count} warnings reached")
+            why = str(auto["escalation_kick"]).format(count=warn_count)
+            case_no = cases.record(gid, "kick", user, bot_user, why)
+            await cases.notify(user.guild, user, case_no, "kick", why)
+            await user.kick(reason=f"{why} (case #{case_no})" if case_no else why)
+            acted = True
             title = f"{config.Icons.people_crossed} AUTO KICK // {user.name} // {warn_count} WARNINGS"
             desc = str(warn_strings["escalation_kick"]).format(user=user.mention, count=warn_count)
             color = config.Discord.danger_color
@@ -218,16 +235,21 @@ async def _check_escalation(
         elif action == "timeout":
             duration = step["duration"] or 600
             duration_minutes = duration // 60
+            why = str(auto["escalation_mute"]).format(count=warn_count)
+            case_no = cases.record(gid, "mute", user, bot_user, why, duration_s=duration)
             await user.timeout(
-                discord.utils.utcnow() + datetime.timedelta(seconds=duration)
+                discord.utils.utcnow() + datetime.timedelta(seconds=duration),
+                reason=f"{why} (case #{case_no})" if case_no else why,
             )
+            acted = True
+            await cases.notify(user.guild, user, case_no, "mute", why, seconds=duration)
             title = f"{config.Icons.alert} AUTO MUTE // {user.name} // {warn_count} WARNINGS"
             desc = str(warn_strings["escalation_mute"]).format(
                 user=user.mention, duration=duration_minutes, count=warn_count
             )
             color = config.Discord.warn_color
 
-        else:  # notify — no punishment, just inform
+        else:  # notify — no punishment, just inform the team (the user already got the warning DM)
             title = f"{config.Icons.alert} {user.name} // {warn_count} WARNINGS"
             desc = str(warn_strings.get("escalation_notify", warn_strings["escalation_mute"])).format(
                 user=user.mention, count=warn_count, duration=0
@@ -235,13 +257,15 @@ async def _check_escalation(
             color = config.Discord.warn_color
 
         embed = discord.Embed(title=title, description=desc, color=color)
-        embed.set_footer(text="Baxi · avocloud.net")
+        embed.set_footer(text=_case_footer(lang, case_no))
         if channel:
             await channel.send(embed=embed)
-        if step["dm"]:
-            await _dm_user(user, embed)
 
     except discord.Forbidden:
+        if not acted:
+            cases.discard(gid, case_no)
         logger.error(f"Warning escalation: Missing permissions for {user.name} in {user.guild.name}")
     except Exception as e:
+        if not acted:
+            cases.discard(gid, case_no)
         logger.error(f"Warning escalation error: {e}")

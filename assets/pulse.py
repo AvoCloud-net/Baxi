@@ -21,6 +21,7 @@ import discord
 from discord.ext import commands, tasks
 
 import assets.data as datasys
+import assets.idle as idle
 import assets.pulse_card as pulse_card
 import config.config as config
 from assets.share import set_task_status
@@ -81,6 +82,9 @@ class Report:
     days_with_data: int = 0
     top_channels: list[tuple[str, str, int]] = field(default_factory=list)   # (id, name, count)
     top_users: list[tuple[str, str, int]] = field(default_factory=list)      # (id, name, count)
+    voice_secs: int = 0
+    top_voice_users: list[tuple[str, str, int]] = field(default_factory=list)     # (id, name, seconds)
+    top_voice_channels: list[tuple[str, str, int]] = field(default_factory=list)  # (id, name, seconds)
 
     @property
     def enough_data(self) -> bool:
@@ -150,6 +154,27 @@ def _sum_users(msg_days: dict, keys: list[str]) -> dict[str, dict]:
     return totals
 
 
+def _sum_voice(voice_days: dict, keys: list[str]) -> tuple[int, dict[str, dict], dict[str, dict]]:
+    """(total seconds, per user, per channel) over the given days."""
+    total = 0
+    users: dict[str, dict] = {}
+    channels: dict[str, dict] = {}
+    for k in keys:
+        day = voice_days.get(k) or {}
+        total += int(day.get("total", 0))
+        for bucket, target in ((day.get("by_user"), users), (day.get("by_channel"), channels)):
+            for ident, v in (bucket or {}).items():
+                entry = target.setdefault(ident, {"name": v.get("name", ident), "secs": 0})
+                entry["secs"] += int(v.get("secs", 0))
+                if v.get("name"):
+                    entry["name"] = v["name"]
+    return total, users, channels
+
+
+def _top(totals: dict[str, dict], key: str, n: int = 5) -> list[tuple[str, str, int]]:
+    return [(i, v["name"], v[key]) for i, v in sorted(totals.items(), key=lambda x: x[1][key], reverse=True)[:n]]
+
+
 def build_report(guild_id: int, days: int, tz: ZoneInfo, today: datetime.date | None = None) -> Report:
     """Aggregate the last ``days`` days (plus the ``days`` before, for deltas)."""
     days = max(1, min(int(days), MAX_WINDOW_DAYS))
@@ -186,6 +211,8 @@ def build_report(guild_id: int, days: int, tz: ZoneInfo, today: datetime.date | 
             if cv.get("name"):
                 entry["name"] = cv["name"]
 
+    voice_secs, voice_users, voice_channels = _sum_voice(activity.get("voice_by_day", {}) or {}, keys)
+
     users = _sum_users(msg_days, keys)
     prev_users = _sum_users(msg_days, prev_keys)
 
@@ -212,14 +239,11 @@ def build_report(guild_id: int, days: int, tz: ZoneInfo, today: datetime.date | 
         leaves=sum(int((member_days.get(k) or {}).get("leaves", 0)) for k in keys),
         streak=streak,
         days_with_data=days_with_data,
-        top_channels=[
-            (cid, v["name"], v["count"])
-            for cid, v in sorted(ch_totals.items(), key=lambda x: x[1]["count"], reverse=True)[:5]
-        ],
-        top_users=[
-            (uid, v["name"], v["count"])
-            for uid, v in sorted(users.items(), key=lambda x: x[1]["count"], reverse=True)[:5]
-        ],
+        top_channels=_top(ch_totals, "count"),
+        top_users=_top(users, "count"),
+        voice_secs=voice_secs,
+        top_voice_users=_top(voice_users, "secs"),
+        top_voice_channels=_top(voice_channels, "secs"),
     )
 
 
@@ -311,12 +335,25 @@ def _n(value: int, t: dict) -> str:
     return f"{value:,}".replace(",", t["thousands_sep"])
 
 
+def _fmt_duration(secs: int) -> str:
+    minutes = max(int(secs) // 60, 0)
+    h, m = divmod(minutes, 60)
+    return f"{h} h {m:02d} min" if h else f"{m} min"
+
+
 def _tz_label(tz: ZoneInfo) -> str:
     return datetime.datetime.now(tz).strftime("%Z")
 
 
 def _who(guild: discord.Guild | None, uid: str, name: str) -> str:
     return f"<@{uid}>" if guild is not None and guild.get_member(int(uid)) else f"**{discord.utils.escape_markdown(name)}**"
+
+
+def _voice_channel(guild: discord.Guild | None, cid: str, name: str) -> str:
+    """Mention while the channel exists; temp-voice channels are deleted, so fall back to the stored name."""
+    if guild is not None and guild.get_channel(int(cid)) is not None:
+        return f"<#{cid}>"
+    return f"**{discord.utils.escape_markdown(name)}**"
 
 
 def build_server_embed(guild: discord.Guild, report: Report, t: dict, *, recap: bool = False,
@@ -371,6 +408,27 @@ def build_server_embed(guild: discord.Guild, report: Report, t: dict, *, recap: 
             ),
             inline=False,
         )
+
+    if report.voice_secs >= 60:
+        embed.add_field(name=t["voice_time"], value=f"**{_fmt_duration(report.voice_secs)}**", inline=True)
+        if show_members and report.top_voice_users:
+            embed.add_field(
+                name=t["top_voice_members"],
+                value="\n".join(
+                    f"`{i}.` {_who(guild, uid, name)} · {_fmt_duration(secs)}"
+                    for i, (uid, name, secs) in enumerate(report.top_voice_users[:3], 1)
+                ),
+                inline=False,
+            )
+        if report.top_voice_channels:
+            embed.add_field(
+                name=t["top_voice_channels"],
+                value="\n".join(
+                    f"`{i}.` {_voice_channel(guild, cid, name)} · {_fmt_duration(secs)}"
+                    for i, (cid, name, secs) in enumerate(report.top_voice_channels[:3], 1)
+                ),
+                inline=False,
+            )
 
     embed.set_footer(text=t["footer"])
     return embed
@@ -482,7 +540,7 @@ class PulseTask:
         try:
             set_task_status("Pulse", "running", "Checking weekly recaps...")
             posted = 0
-            for guild in list(self.bot.guilds):
+            for guild in idle.guilds_with(self.bot, "pulse"):
                 try:
                     cfg = load_cfg(guild.id)
                     due, today = recap_due(cfg)

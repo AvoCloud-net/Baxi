@@ -1,8 +1,10 @@
 import discord
 
+from config.env import get, get_int  # server-specific values come from .env
+
 
 class Discord:
-    shard_count = 1  # Single shard for development/testing; use None for production auto-detect
+    shard_count = get_int("SHARD_COUNT", 1) or None  # Single shard for development/testing; use None for production auto-detect
     prefix = "b?"
     color         = discord.Color.from_rgb(255, 107, 74)   # #FF6B4A -  Coral (avocloud primary)
     danger_color  = discord.Color.from_rgb(220, 56, 56)    # #DC3838 -  Red    (brand v2 semantic)
@@ -12,24 +14,28 @@ class Discord:
     version = "7.0.0"
     # Central avocloud channel that receives network-wide alerts (was the old Prism global
     # channel). User reports are mirrored here for operator oversight.
-    report_channel = 1303089032640725065
+    report_channel = get_int("REPORT_CHANNEL_ID")
 
 
 class Web:
     web_folder = "assets/dash/web"
     static_folder = "assets/dash/static"
-    port = 1637
-    host = "0.0.0.0"
-    url = "baxi.avocloud.net"
+    port = get_int("WEB_PORT", 1637)
+    host = get("WEB_HOST", "0.0.0.0")
+    url = get("WEB_URL", "baxi.avocloud.net")
 
 
 class Chatfilter:
-    chatfilter_url = "http://solyra.avocloud.net:1652/chatfilter"
-    ai_url = "https://owui.avocloud.net/api/chat/completions"
     feedback_file_path = "data/ai_feedback.json"
     feedback_max_entries = 15  # FIFO cap on admin-corrected few-shot examples
-    phishing_list_url = "https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.txt"
-    phishing_list_source = "https://github.com/Discord-AntiScam/scam-links"
+    # Domain blocklists merged into one set (12h refresh). A source that fails keeps the
+    # previous data of the others. Formats: plain list / hosts file ("127.0.0.1 host").
+    phishing_list_urls = (
+        "https://phishing.army/download/phishing_army_blocklist.txt",   # PhishTank, OpenPhish, CERT.PL ...
+        "https://urlhaus.abuse.ch/downloads/hostfile/",                 # abuse.ch malware hosts
+        "https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.txt",  # archived 2026-01, Discord scams up to then
+    )
+    phishing_list_source = "https://phishing.army, https://urlhaus.abuse.ch, https://github.com/Discord-AntiScam/scam-links"
 
 
 class Assistant:
@@ -42,7 +48,7 @@ class Assistant:
 	# Ollama server base URL. "/api/chat" is appended by the module.
 	# Plain local Ollama needs no auth — set config.auth.Assistant.api_key only if
 	# your endpoint sits behind a bearer-token proxy.
-	ollama_url = "http://100.79.104.152:11434"
+	ollama_url = get("OLLAMA_URL", "http://100.79.104.152:11434")
 	
 	# Default model. smollm2:1.7b = fastest/smallest, but its German is mediocre
 	# (fine for short casual replies, shaky on nuance / longer answers). If German
@@ -52,19 +58,38 @@ class Assistant:
 	#   "llama3.2:3b" → solid multilingual alternative
 	model = "gemma3:4b"
 	
-	temperature    = 0.8      # etwas mehr Persönlichkeit/Frechheit, weniger steife Antworten
-	repeat_penalty = 1.25     # gegen "wiederholt sich" (Hauptregler bei kleinem Modell)
-	repeat_last_n  = 256      # Fensterbreite für repeat_penalty
-	presence_penalty = 0.4    # drängt zu neuen Formulierungen statt Schleifen
+	# Sampling: auf grammatikalisch saubere deutsche Sätze getrimmt. Hohe Penalties
+	# (>1.15) bestrafen Artikel/Endungen (der/die/das, -en, -er), die im Deutschen
+	# ständig wiederkehren, und erzeugen kaputte Grammatik und erfundene Wörter.
+	temperature    = 0.6      # genug Persönlichkeit, aber stabile Satzbildung
+	top_p          = 0.9      # schneidet den unwahrscheinlichen Schwanz ab
+	top_k          = 40       # dito (falsche Endungen, Fantasiewörter)
+	repeat_penalty = 1.08     # leicht, nur gegen echte Schleifen
+	repeat_last_n  = 64       # kurzes Fenster, damit Funktionswörter nicht bestraft werden
+	presence_penalty = 0.0    # aus: zwingt sonst zu unnatürlichen Formulierungen
+	# CPU-Threads für Ollama. Ohne Angabe nimmt es auf silica nur 2 (gemessen: Prompt
+	# 1350 Token 47 s). 12 = Optimum (12,6 s, 11,8 tok/s); 16 bremst die Generierung
+	# (Effizienz-Kerne, andere Dienste auf dem Server), 2-4 sind deutlich langsamer.
+	num_thread     = 12
 	num_ctx        = 8192     # genug Platz für history_limit=6 + Systemprompt + Input
-	max_tokens     = 2048     # qwen3 Thinking teilt sich das Budget mit der Antwort — großzügig, sonst wird vor der Antwort abgeschnitten
+	max_tokens     = 1024     # qwen3 Thinking teilt sich das Budget mit der Antwort — großzügig, sonst wird vor der Antwort abgeschnitten
 	request_timeout = 120     # qwen3 Thinking läuft immer mit → mehr Zeit für echte Hänger
 	history_limit  = 6        # passt, lassen
 	summary_history = 50      # passt, lassen
 	max_input_chars = 1500    # passt, lassen
 	default_cooldown = 10     # passt, lassen
 	insult_timeout_seconds = 60   # passt, lassen
-	daily_message_limit = 50      # max assistant replies per user per day (1 concurrent per user)
+	daily_message_limit = 300     # max Baxi-AI-Antworten pro SERVER und Tag (Priority-User zählen nicht mit)
+	rate_limit_per_minute = 5     # Anti-Spam: max Anfragen pro User und Minute
+	guild_rate_limit_per_minute = 20   # Anti-Spam: max Anfragen pro Server und Minute
+	# Warteschlange: Ollama bearbeitet eine Anfrage nach der anderen (OLLAMA_NUM_PARALLEL=1).
+	# Wartet schon max_queue oder mehr, kommt "Baxi ist ausgelastet". Priority-User
+	# (Admin-Dashboard) werden vorgezogen und dürfen noch priority_queue_extra weiter rein.
+	max_concurrent = 1
+	max_queue = 6
+	priority_queue_extra = 4
+	max_conversation_turns = 12   # Baxi-Antworten pro Reply-Kette, danach muss ein neues Gespräch starten (0 = aus)
+	queue_wait_timeout = 90       # Sekunden, die eine Anfrage maximal auf einen freien Platz wartet
 	
 
 
@@ -153,6 +178,11 @@ class Instagram:
     check_interval_seconds = 900
 
 
+class Backup:
+    interval_hours = 12      # DB snapshot -> backup server; retention/mirroring is handled server-side
+    retry_minutes = (1, 5, 15)  # waits between attempts when an upload fails
+
+
 class Meta:
     oauth_url    = "https://www.facebook.com/v21.0/dialog/oauth"
     token_url    = "https://graph.facebook.com/v21.0/oauth/access_token"
@@ -163,7 +193,7 @@ class Meta:
 
 class Globalchat:
     attachments_dir = "attachments"
-    attachments_url = "http://solyra.avocloud.net:1600/attachments/"
+    attachments_url = get("ATTACHMENTS_URL", "http://solyra.avocloud.net:1600/attachments/")
 
 
 class datasys:
@@ -244,6 +274,18 @@ class datasys:
         "quarantine_role": 0,       # role applied for quarantine / approve hold
         "log_channel": 0,           # staff channel for gate alerts (0 = fallback)
         "use_safety_list": True,    # consume the opt-in human-gated network safety list
+    },
+    # One channel for everything staff must know (mod queue, later appeals, Wrapped
+    # preview). Empty = fall back to mod_gate.log_channel, then suggestions.log_channel.
+    "staff": {
+        "channel": "",
+    },
+    # Internal: the one mod-queue summary message in the staff channel (assets/staff.py).
+    "staff_queue_notice": {
+        "channel": "",
+        "message": "",
+        "count": 0,
+        "newest": -1,
     },
     "antiraid": {
         "enabled": False,
@@ -399,6 +441,13 @@ class datasys:
     "capsule": {
         "enabled": False,
         "channel": "",
+    },
+    "birthdays": {
+        "enabled": False,
+        "channel": "",              # empty = the server's system channel
+        "message": "",              # empty = default text from lang.json
+        "role": "",                 # optional, held for 24 h
+        "timezone": "Europe/Vienna",
     },
     "quotes": {
         "enabled": False,

@@ -32,6 +32,14 @@ def _account_age_days(user: discord.abc.User) -> int:
     return (datetime.datetime.now(datetime.timezone.utc) - user.created_at).days
 
 
+def _member_days(user: discord.abc.User) -> int | None:
+    """Days since the author joined this guild (None for non-members / unknown)."""
+    joined = getattr(user, "joined_at", None)
+    if joined is None:
+        return None
+    return (datetime.datetime.now(datetime.timezone.utc) - joined).days
+
+
 class ModerationEngine:
     def __init__(self):
         # AntiSpam holds in-memory sliding windows; keep one instance for engine lifetime.
@@ -43,6 +51,7 @@ class ModerationEngine:
             user_id=message.author.id,
             guild_id=message.guild.id,
             account_age_days=_account_age_days(message.author),
+            member_days=_member_days(message.author),
         )
 
     async def process(self, message: discord.Message, bot: commands.AutoShardedBot) -> ModerationResult:

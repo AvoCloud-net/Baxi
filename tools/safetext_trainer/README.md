@@ -22,6 +22,20 @@ Modell ist gleich groß und gleich schnell wie das alte.
 4. **Server:** Der Bot prüft die Prüfsummen und wechselt innerhalb einer Minute.
    Rollback: Admin-Panel → SafeText → Model Versions → *Activate* / *Use base model*.
 
+## Schnellweg: `retrain.py` (weitertrainieren mit Live-Ansicht)
+
+```bash
+python tools/safetext_trainer/retrain.py
+```
+Holt die **neueste Modellversion** vom Server, liest den neuesten Export
+`~/Downloads/safetext_labelled*.jsonl` (Admin-Dash → Training Queue → *Labelled*), trainiert
+das Modell darauf weiter und zeigt dabei Fortschritt, Loss, Tempo, ETA und GPU-Werte live.
+Danach Vergleich Startmodell vs. neu und Upload nur nach deiner Bestätigung.
+Optionen: `--samples datei…`, `--from newest|active|base|<ordner>`, `--epochs`, `--lr`,
+`--no-upload`. Die Labels aus allen Exporten sammeln sich lokal an
+(`<work>/retrain/labels.jsonl`), neu trainiert wird auf den Labels, die das Startmodell noch
+nicht kennt, plus einer Wiederholung älterer Labels und Replay-Daten.
+
 ## Einrichtung (einmalig)
 
 ```bash

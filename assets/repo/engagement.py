@@ -41,6 +41,13 @@ def load_giveaways(gid: int) -> dict:
     return out
 
 
+def due_giveaway_guild_ids(now: float) -> set[int]:
+    """Guilds with a running giveaway whose end time has passed (one query for all guilds)."""
+    rows = db.query("SELECT DISTINCT guild_id FROM giveaways "
+                    "WHERE COALESCE(ended, 0) = 0 AND COALESCE(end_time, 0) <= ?", (now,))
+    return {int(r["guild_id"]) for r in rows}
+
+
 def save_giveaways(gid: int, data: dict) -> None:
     db.ensure_guild(gid)
     with db.transaction() as cx:
@@ -100,6 +107,13 @@ def load_polls(gid: int) -> dict:
         entry.update(extra)
         out[r["message_id"]] = entry
     return out
+
+
+def due_poll_guild_ids(now: float) -> set[int]:
+    """Guilds with an open timed poll whose end time has passed (one query for all guilds)."""
+    rows = db.query("SELECT DISTINCT guild_id FROM polls "
+                    "WHERE COALESCE(closed, 0) = 0 AND end_time > 0 AND end_time <= ?", (now,))
+    return {int(r["guild_id"]) for r in rows}
 
 
 def save_polls(gid: int, data: dict) -> None:

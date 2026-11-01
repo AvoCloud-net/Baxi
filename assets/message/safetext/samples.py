@@ -42,6 +42,10 @@ logger = Logger()
 
 SAMPLES_FILE = Path("data/safetext/samples.jsonl")
 LABELS_FILE = Path("data/safetext/labels.jsonl")
+# Server-mod decisions from the mod queue are only *suggestions*: {id, ts, label}.
+# Never downloaded by the trainer and ignored by _labels(); a bot admin confirms them
+# in the labelling queue, where the suggestion is shown as a hint.
+SUGGESTIONS_FILE = Path("data/safetext/suggestions.jsonl")
 RETENTION_DAYS = 30
 MAX_UNLABELLED = 20_000
 REVIEW_SCORE = 0.50          # model score from which a targeted / group message counts
@@ -134,6 +138,31 @@ def record(*, gid: int, text: str, lang: str, result: dict) -> Optional[str]:
         "stage": str(j.get("label") or ""),
         "toxicity": j.get("toxicity", j.get("confidence")),
     }
+    return _store(entry, gid)
+
+
+def record_report(*, gid: int, text: str, lang: str, category: str) -> Optional[str]:
+    """Store a user-reported message as a sample (only for opted-in guilds, see caller).
+
+    Skipped for self-harm reports (health data). The category the reporter picked is
+    kept as a hint (`stage`) for the labeller; the label itself stays a human decision.
+    """
+    if category == "selfharm" or not text.strip():
+        return None
+    clean = scrub(text)[:1000]
+    if len(clean) < 2:
+        return None
+    sample_id = hashlib.sha256(normalize(clean).key.encode("utf-8")).hexdigest()[:16]
+    return _store({
+        "id": sample_id, "ts": int(time.time()), "gid": str(gid), "text": clean,
+        "lang": lang, "verdict": "reported", "reason": "user report",
+        "stage": category, "toxicity": None,
+    }, gid)
+
+
+def _store(entry: dict, gid: int) -> Optional[str]:
+    global _known_keys
+    sample_id = entry["id"]
     day = int(time.time() // 86400)
     try:
         with _lock:
@@ -168,8 +197,28 @@ def next_unlabelled(skip: set[str] | None = None) -> Optional[dict]:
     skip = skip or set()
     for s in reversed(_read_jsonl(SAMPLES_FILE)):
         if s["id"] not in labels and s["id"] not in skip:
+            if hint := _suggestions().get(s["id"]):
+                s = {**s, "suggested": hint["label"]}   # shown as "suggested by server mods"
             return s
     return None
+
+
+def _suggestions() -> dict[str, dict]:
+    """Latest server-mod suggestion per sample id."""
+    return {str(e.get("id")): e for e in _read_jsonl(SUGGESTIONS_FILE)}
+
+
+def suggest(sample_id: str, value: str) -> bool:
+    """Record a server-mod decision as a hint for the bot-admin labeller. Not a label:
+    the trainer never sees it; it counts only once a bot admin labels the sample."""
+    value = value.strip().upper().removeprefix("AI-")
+    if value not in LABELS - {"DISCARD"}:
+        return False
+    if not any(s["id"] == sample_id for s in _read_jsonl(SAMPLES_FILE)):
+        return False
+    with _lock:
+        _append(SUGGESTIONS_FILE, {"id": sample_id, "ts": int(time.time()), "label": value})
+    return True
 
 
 def label(sample_id: str, value: str, admin: str) -> dict:
@@ -198,6 +247,36 @@ def stats() -> dict:
         "labelled": len(labelled),
         "by_label": counts,
     }
+
+
+LABEL_NAMES = {"SAFE": "safe", "1": "nsfw", "2": "insult_toxic", "3": "hate",
+               "4": "personal_data", "5": "self_harm_incite"}
+
+
+def export_rows(kind: str) -> list[dict]:
+    """Rows for the admin download.
+
+    kind="unlabelled": samples still waiting for a label (for labelling elsewhere).
+    kind="labelled":   training set - one row per sample with its newest label,
+                       DISCARD left out. `y` is the binary target the trainer uses
+                       (0 = okay, 1 = must be removed), `label` the AI-1..5 class.
+    Rows carry no guild or user id.
+    """
+    samples = _read_jsonl(SAMPLES_FILE)
+    labels = _labels()
+    rows: list[dict] = []
+    for s in samples:
+        lab = labels.get(s["id"])
+        base = {"id": s["id"], "text": s["text"], "lang": s.get("lang", ""),
+                "filter_verdict": s.get("verdict", ""), "filter_stage": s.get("stage", ""),
+                "toxicity": s.get("toxicity")}
+        if kind == "unlabelled":
+            if lab is None:
+                rows.append(base)
+        elif lab is not None and lab["label"] in LABEL_NAMES:
+            rows.append({**base, "label": lab["label"], "label_name": LABEL_NAMES[lab["label"]],
+                         "y": int(lab["label"] != "SAFE")})
+    return rows
 
 
 def delete_guild(gid: int) -> int:
@@ -233,6 +312,11 @@ def prune() -> int:
         if removed:
             _rewrite(SAMPLES_FILE, keep)
             _known_keys = None
+        # suggestions only make sense while their sample waits for a label
+        sugg = _read_jsonl(SUGGESTIONS_FILE)
+        open_ids = {s["id"] for s in keep if s["id"] not in labels}
+        if sugg and any(e.get("id") not in open_ids for e in sugg):
+            _rewrite(SUGGESTIONS_FILE, [e for e in sugg if e.get("id") in open_ids])
     return removed
 
 

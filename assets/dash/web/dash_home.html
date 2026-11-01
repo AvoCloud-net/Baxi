@@ -110,15 +110,18 @@
 
     <div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
         <div class="page-header">
-            <h1 class="text-3xl font-bold mb-1">{{greeting}}</h1>
-            <p class="text-muted">Welcome to your Baxi control center.</p>
+            <div class="px-host px-card">
+                <canvas class="px-canvas" data-dither aria-hidden="true"></canvas>
+                <h1 class="text-3xl font-bold mb-1">{{greeting}}</h1>
+                <p class="text-muted">Welcome to your Baxi control center.</p>
+            </div>
         </div>
 
         <main class="pb-24">
 
             <!-- Baxi Stats -->
             <section class="pb-16" id="stats">
-                <div class="section-label">BAXI STATS</div>
+                <div class="section-label">Baxi stats</div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                     <div class="stat-tile">
@@ -165,7 +168,7 @@
 
             <!-- Access -->
             <section class="pb-16" id="access">
-                <div class="section-label">ACCESS</div>
+                <div class="section-label">Access</div>
                 <div class="card">
                         <header>
                             <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -205,13 +208,6 @@
                             </p>
                             {% else %}
                             <div class="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
-                                <span class="bg-muted size-10 rounded-lg flex items-center justify-center">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                                        <polyline points="10 17 15 12 10 7"/>
-                                        <line x1="15" y1="12" x2="3" y2="12"/>
-                                    </svg>
-                                </span>
                                 <h3 class="text-base font-semibold tracking-tight">No manageable servers</h3>
                                 <p class="text-muted text-sm">You need the <strong>Manage Server</strong> permission on a server where Baxi is present.</p>
                             </div>
@@ -238,6 +234,7 @@
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='scripts/dither.js') }}?v={{ static_versions.get('scripts/dither.js', '') }}"></script>
     <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
     
     {% if show_intro %}
@@ -325,7 +322,7 @@
         <!-- src is set on first open so the Ko-fi widget is never loaded for people who don't ask for it -->
         <iframe id="kofiframe" data-src="https://ko-fi.com/avocloudnet/?hidefeed=true&widget=true&embed=true&preview=true"
                 title="Ko-fi — avocloudnet" loading="lazy"
-                style="border:none;width:100%;height:min(712px, 65vh);border-radius:8px;background:#f9f9f9;"></iframe>
+                style="border:none;width:100%;height:min(712px, 65vh);border-radius:var(--avo-radius-lg);background:#f9f9f9;"></iframe>
         <footer>
             <button class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('kofi-dialog').close()">Close</button>
         </footer>

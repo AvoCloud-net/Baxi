@@ -23,48 +23,44 @@
             position: fixed; inset: 0; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
             background: var(--avo-canvas);
-            transition: opacity var(--avo-dur-ui) var(--avo-ease-out), visibility var(--avo-dur-ui) var(--avo-ease-out);
+            transition: opacity var(--avo-dur-micro) linear, visibility var(--avo-dur-micro) linear;
         }
         #page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
         /* The kit's tick ring (.avo-spinner), one step bigger for a page loader. */
         #page-loader .loader-spinner { width: 2.5rem; height: 2.5rem; --avo-spinner-ring: 4px; }
-        #page-loader .loader-note { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); letter-spacing: 0.06em; color: var(--avo-text-muted); }
+        #page-loader .loader-note { font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
 
-        /* Panels: glass with the kit's corner marks (main.css lists .stat-card and
-           .chart-card with the rest). One chart per panel, titled by a `//` kicker
-           (BRANDING §9 Data visualisation). */
+        /* Panels: flat surface, hairline, 20px. One chart per panel, titled by a
+           plain heading in the panel head. */
         .stat-card, .chart-card {
             position: relative;
             border-radius: var(--avo-radius-lg);
-            background-image: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
-            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-            backdrop-filter: blur(var(--avo-glass-blur));
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line);
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
         }
-        .stat-card { padding: var(--avo-ui-pad-plate); display: flex; flex-direction: column; gap: 0.3rem; }
-        .stat-card .label { font-family: var(--avo-font-mono); font-size: var(--avo-text-kicker); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--avo-text-muted); }
-        .stat-card .value { font-size: 1.9rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-        .stat-card .sub   { font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
+        .stat-card { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.3rem; }
+        .stat-card .label { font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
+        .stat-card .value { font-family: var(--avo-font-mono); font-size: var(--avo-text-stat); font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+        .stat-card .sub   { font-size: var(--avo-ui-label); color: var(--avo-text-3); }
 
-        /* Inline info marker with a hover/tap tooltip: a 6px-cornered box, not a
-           circle (§5), and a floating tooltip is opaque, not glass. */
+        /* Inline info marker with a hover/tap tooltip: a round hairline marker and
+           an opaque floating tooltip. */
         .info-i {
             position: absolute; top: 0.85rem; right: 0.9rem;
-            width: 1.15rem; height: 1.15rem; border-radius: var(--avo-radius);
+            width: 1.25rem; height: 1.25rem; border-radius: 50%;
             border: 1px solid var(--avo-line-strong); color: var(--avo-text-muted);
             font-family: var(--avo-font-mono); font-size: 0.68rem; font-weight: 600; font-style: normal;
             display: flex; align-items: center; justify-content: center;
             cursor: help; user-select: none;
         }
-        .info-i:hover, .info-i:focus-visible { color: var(--avo-text); border-color: var(--avo-primary); }
+        .info-i:hover, .info-i:focus-visible { color: var(--avo-text); border-color: var(--avo-text-muted); }
         .info-i .tip {
             position: absolute; bottom: 150%; right: -0.35rem;
             width: max-content; max-width: 230px;
-            background: var(--avo-surface-raised);
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line-strong);
             border-radius: var(--avo-radius);
-            padding: 0.55rem 0.7rem;
+            padding: 0.6rem 0.8rem;
             font-size: var(--avo-ui-label); font-weight: 500; line-height: 1.4;
             text-transform: none; letter-spacing: normal; text-align: left;
             color: var(--avo-text); opacity: 0;
@@ -75,27 +71,25 @@
 
         .chart-card { padding: 1.5rem; }
         .chart-card h3 {
-            display: flex; align-items: center; gap: 0.6em;
-            font-family: var(--avo-font-mono); font-size: var(--avo-text-kicker); font-weight: 500;
-            letter-spacing: 0.22em; text-transform: uppercase; color: var(--avo-text-muted);
+            font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.01em;
+            color: var(--avo-text);
             margin-bottom: 1rem;
         }
-        .chart-card h3::before { content: '//'; color: var(--avo-primary); flex-shrink: 0; }
 
         .rank-row {
             display: flex; align-items: center; justify-content: space-between;
-            height: var(--avo-ui-row-h); padding: 0; border-bottom: 1px solid var(--avo-line);
+            height: 48px; padding: 0; border-bottom: 1px solid var(--avo-line);
             font-size: var(--avo-ui-text);
         }
         .rank-row:last-child { border-bottom: none; }
         .rank-num { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; color: var(--avo-text-muted); width: 1.5rem; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-        .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--avo-surface-high); overflow: hidden; }
+        .rank-bar-wrap { flex: 1; margin: 0 0.75rem; height: 4px; background: var(--avo-surface-raised); overflow: hidden; border-radius: var(--avo-radius-pill); }
         .rank-bar { height: 100%; background: var(--avo-primary); }
         .rank-count { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; color: var(--avo-text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-        /* Mod-action chips: flat, 6px, a 1px border. Status colour is the border
-           and the label, never a fill (§9), and never coral (§3). */
-        .tag { font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500; padding: 0.1rem 0.5rem; border: 1px solid var(--avo-line-strong); border-radius: var(--avo-radius); }
+        /* Mod-action chips: a pill with a 1px border. Status colour is the border
+           and the label, never a fill, and never coral. */
+        .tag { font-size: var(--avo-ui-label); font-weight: 500; padding: 0.1rem 0.6rem; border: 1px solid var(--avo-line-strong); border-radius: var(--avo-radius-pill); }
         .tag::before, .tag::after { content: none; }
         .tag-warn { color: var(--avo-warning); border-color: color-mix(in srgb, var(--avo-warning) 45%, transparent); }
         .tag-kick { color: var(--avo-info);    border-color: color-mix(in srgb, var(--avo-info) 45%, transparent); }
@@ -109,16 +103,15 @@
         .section   { margin-bottom: 2.5rem; }
 
         .time-bar { display: flex; gap: 0.5rem; margin-bottom: 1.75rem; }
-        /* A control row: the 32px step (§9). The active/hover fill is main.css. */
+        /* A chip group. The pressed fill is main.css. */
         .time-bar button {
-            height: var(--avo-ui-control-h); padding: 0 1rem; border-radius: var(--avo-radius);
+            height: var(--avo-ui-control-h-compact); padding: 0 1rem; border-radius: var(--avo-radius-pill);
             border: 1px solid var(--avo-line-strong);
-            font-family: var(--avo-font-mono); font-size: var(--avo-ui-label); font-weight: 500;
-            letter-spacing: 0.08em; text-transform: uppercase;
+            font-size: var(--avo-ui-label); font-weight: 500;
             cursor: pointer; background: transparent;
         }
 
-        .health-track { height: 6px; background: var(--avo-surface-high); overflow: hidden; margin-top: 0.4rem; }
+        .health-track { height: 6px; background: var(--avo-surface-raised); overflow: hidden; margin-top: 0.4rem; border-radius: var(--avo-radius-pill); }
         .health-fill  { height: 100%; }
 
         .no-data { color: var(--avo-text-muted); font-size: var(--avo-ui-text); padding: 0.5rem 0; }
@@ -139,9 +132,9 @@
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
                 z-index: 600;
-                background: var(--avo-surface-raised);
+                background: var(--avo-surface);
                 border-top: 1px solid var(--avo-line-strong);
-                padding: 0.45rem 0.5rem env(safe-area-inset-bottom, 0.45rem);
+                padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
                 gap: 0.3rem;
                 overflow-x: auto;
                 overflow-y: visible;
@@ -154,21 +147,14 @@
                 white-space: nowrap;
                 height: var(--avo-ui-control-h-compact);
                 padding: 0 0.85rem;
-                font-family: var(--avo-font-mono);
                 font-size: var(--avo-ui-label);
                 font-weight: 500;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                border-radius: var(--avo-radius);
+                border-radius: var(--avo-radius-pill);
                 border: 1px solid var(--avo-line-strong);
                 background: transparent;
                 cursor: pointer;
             }
-            #mobile-nav button:hover, #mobile-nav button:active {
-                background: var(--avo-primary);
-                color: var(--avo-primary-on);
-                border-color: var(--avo-primary);
-            }
+            #mobile-nav button:hover, #mobile-nav button:active { background: var(--avo-surface-raised); }
             #mobile-nav .mnav-sep {
                 flex-shrink: 0;
                 width: 1px;
@@ -220,9 +206,10 @@
             Back to Dashboard
         </button>
         <hr role="separator" />
-        <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.4;padding:0 0.75rem 0.25rem;">Sections</span>
+        <span style="font-size:var(--avo-ui-label);color:var(--avo-text-3);padding:0 0.75rem 0.25rem;">Sections</span>
         <button onclick="scrollToSection('sec-overview')" class="btn" data-variant="outline" data-size="lg">Overview</button>
         <button onclick="scrollToSection('sec-messages')" class="btn" data-variant="outline" data-size="lg">Messages</button>
+        <button onclick="scrollToSection('sec-voice')" class="btn" data-variant="outline" data-size="lg">Voice</button>
         <button onclick="scrollToSection('sec-members')" class="btn" data-variant="outline" data-size="lg">Members</button>
         <button onclick="scrollToSection('sec-moderation')" class="btn" data-variant="outline" data-size="lg">Moderation</button>
         <hr role="separator" />
@@ -238,6 +225,7 @@
         <div class="mnav-sep"></div>
         <button onclick="scrollToSection('sec-overview')">Overview</button>
         <button onclick="scrollToSection('sec-messages')">Messages</button>
+        <button onclick="scrollToSection('sec-voice')">Voice</button>
         <button onclick="scrollToSection('sec-members')">Members</button>
         <button onclick="scrollToSection('sec-moderation')">Moderation</button>
         <div class="mnav-sep"></div>
@@ -268,6 +256,12 @@
                     <span class="info-i" tabindex="0">i<span class="tip">Total messages sent across all channels in the selected period.</span></span>
                     <span class="label">Messages</span>
                     <span class="value" id="st-msgs">{{ data.total_messages }}</span>
+                    <span class="sub">last {{ days }} days</span>
+                </div>
+                <div class="stat-card">
+                    <span class="info-i" tabindex="0">i<span class="tip">Total time members spent in voice channels (AFK channel and bots excluded).</span></span>
+                    <span class="label">Voice Time</span>
+                    <span class="value" id="st-voice">{{ data.total_voice_label }}</span>
                     <span class="sub">last {{ days }} days</span>
                 </div>
                 <div class="stat-card">
@@ -406,6 +400,53 @@
             </div>
         </section>
 
+        <!-- ══ VOICE ═════════════════════════════════════════════════════════ -->
+        <section class="section" id="sec-voice">
+            <p class="section-title">Voice Activity</p>
+            <div class="chart-card" style="margin-bottom:1rem;">
+                <h3>Voice Hours per Day</h3>
+                <canvas id="chart-voice-timeline" height="85"></canvas>
+            </div>
+            <div class="grid-2">
+                <div class="chart-card">
+                    <h3>Most Active in Voice</h3>
+                    <div id="list-voice-users">
+                        {% if data.top_voice_users %}
+                            {% set max_v = data.top_voice_users[0].count if data.top_voice_users[0].count else 1 %}
+                            {% for v in data.top_voice_users %}
+                            <div class="rank-row">
+                                <span class="rank-num">{{ loop.index }}</span>
+                                <span style="font-weight:600;flex:0 0 auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span>
+                                <div class="rank-bar-wrap"><div class="rank-bar" style="width:{{ (v.count / max_v * 100)|round|int }}%;"></div></div>
+                                <span class="rank-count">{{ v.label }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No data yet -  starts tracking from now on.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Most Used Voice Channels</h3>
+                    <div id="list-voice-channels">
+                        {% if data.top_voice_channels %}
+                            {% set max_v = data.top_voice_channels[0].count if data.top_voice_channels[0].count else 1 %}
+                            {% for v in data.top_voice_channels %}
+                            <div class="rank-row">
+                                <span class="rank-num">{{ loop.index }}</span>
+                                <span style="font-weight:600;flex:0 0 auto;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔊 {{ v.name }}</span>
+                                <div class="rank-bar-wrap"><div class="rank-bar" style="width:{{ (v.count / max_v * 100)|round|int }}%;"></div></div>
+                                <span class="rank-count">{{ v.label }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No data yet -  starts tracking from now on.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ══ MEMBERS ═══════════════════════════════════════════════════════ -->
         <section class="section" id="sec-members">
             <p class="section-title">Member Changes</p>
@@ -504,7 +545,7 @@
             </div>
         </section>
 
-        <p style="font-family:var(--avo-font-mono);font-size:var(--avo-text-serial);letter-spacing:0.12em;text-transform:uppercase;color:var(--avo-text-muted);text-align:center;margin-bottom:2rem;">BaxiInsights · Baxi v{{ data.version }} · avocloud.net · No message content is stored.</p>
+        <p style="font-size:var(--avo-ui-label);color:var(--avo-text-3);text-align:center;margin-bottom:2rem;">BaxiInsights · Baxi v{{ data.version }} · avocloud.net · No message content is stored.</p>
     </div>
 
     <script>
@@ -589,9 +630,21 @@
                 data: {
                     labels: d.msg_timeline.map(e => e.date),
                     datasets: [{ label: 'Messages', data: d.msg_timeline.map(e => e.count),
-                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }],
+                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 4 }],
                 },
                 options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
+            });
+
+            // ── Voice hours per day ──────────────────────────────────────────
+            const ctxVT = document.getElementById('chart-voice-timeline');
+            if (ctxVT) charts.voiceTimeline = new Chart(ctxVT, {
+                type: 'bar',
+                data: {
+                    labels: (d.voice_timeline || []).map(e => e.date),
+                    datasets: [{ label: 'Hours', data: (d.voice_timeline || []).map(e => e.hours),
+                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 4 }],
+                },
+                options: { responsive:true, plugins:{legend:{display:false}}, scales: { ...sc, y: { ...sc.y, ticks: { ...sc.y.ticks, precision: 1 } } } },
             });
 
             // ── Hourly ───────────────────────────────────────────────────────
@@ -604,7 +657,7 @@
                 charts.hourly = new Chart(ctxH, {
                     type: 'bar',
                     data: { labels: hours, datasets: [{ label: 'Messages', data: hours.map((_,i)=>d.hourly_dist[String(i)]||0),
-                        backgroundColor: hourColors, borderRadius: 0 }] },
+                        backgroundColor: hourColors, borderRadius: 4 }] },
                     options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
                 });
             }
@@ -635,7 +688,7 @@
                 data: { labels:['Lvl 1','Lvl 2','Lvl 3','Lvl 4','Lvl 5'],
                     datasets:[{label:'Hits', data:['1','2','3','4','5'].map(k=>d.severity_dist[k]||0),
                         // One series, so one colour: the level is on the axis.
-                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }] },
+                        backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 4 }] },
                 options: { responsive:true, plugins:{legend:{display:false}}, scales: sc },
             });
 
@@ -649,13 +702,15 @@
                     charts.category = new Chart(ctxCat, {
                         type: 'bar',
                         data: { labels: catKeys, datasets: [{ label: 'Hits', data: catKeys.map(k => d.category_counts[k]),
-                            backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 0 }] },
+                            backgroundColor: SA[0], borderColor: S[0], borderWidth: 1, borderRadius: 4 }] },
                         options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
                             scales: { x: { ...sc.y, beginAtZero: true }, y: { ...sc.x, ticks: { color } } } },
                     });
                 }
             }
         }
+
+        const escHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
         function renderRankList(items, labelFn, maxCount) {
             if (!items?.length) return '<p class="no-data">No data in this period.</p>';
@@ -665,7 +720,7 @@
                     <span class="rank-num">${i+1}</span>
                     <span style="font-weight:600;flex:0 0 auto;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${labelFn(it)}</span>
                     <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(it.count/max*100)}%"></div></div>
-                    <span class="rank-count">${it.count}</span>
+                    <span class="rank-count">${it.label ?? it.count}</span>
                 </div>`).join('');
         }
 
@@ -717,6 +772,9 @@
             const el = id => document.getElementById(id);
             if (el('list-active-channels')) el('list-active-channels').innerHTML = renderRankList(d.top_active_channels, c=>'#'+c.name, maxCh);
             if (el('list-active-users'))    el('list-active-users').innerHTML    = renderRankList(d.top_active_users,    u=>u.name, maxUsr);
+            if (el('list-voice-users'))     el('list-voice-users').innerHTML     = renderRankList(d.top_voice_users,    u=>escHtml(u.name));
+            if (el('list-voice-channels'))  el('list-voice-channels').innerHTML  = renderRankList(d.top_voice_channels, c=>'🔊 '+escHtml(c.name));
+            set('st-voice', d.total_voice_label);
             if (el('list-offenders'))       el('list-offenders').innerHTML       = renderOffenders(d.top_offenders);
             if (el('list-filter-users'))    el('list-filter-users').innerHTML    = renderRankList(d.top_filter_users,   u=>u.user_name);
             if (el('list-filter-channels')) el('list-filter-channels').innerHTML = renderRankList(d.top_filter_channels,c=>'#'+c.channel_name);
@@ -745,6 +803,10 @@
             mod_counts:          {{ data.mod_counts | tojson }},
             msg_timeline:        {{ data.msg_timeline | tojson }},
             member_timeline:     {{ data.member_timeline | tojson }},
+            total_voice_label:   {{ data.total_voice_label | tojson }},
+            voice_timeline:      {{ data.voice_timeline | tojson }},
+            top_voice_users:     {{ data.top_voice_users | tojson }},
+            top_voice_channels:  {{ data.top_voice_channels | tojson }},
             timeline:            {{ data.timeline | tojson }},
             hourly_dist:         {{ data.hourly_dist | tojson }},
             severity_dist:       {{ data.severity_dist | tojson }},

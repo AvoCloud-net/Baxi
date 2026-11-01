@@ -436,6 +436,16 @@ async def remove_link(guild_id: int, discord_id: int):
         _save()
 
 
+async def clear_guild_links(guild_id: int) -> int:
+    """Drop every stored link of one guild (Baxi side only). Returns how many were removed."""
+    ensure_loaded()
+    async with _lock:
+        removed = len(_links.get(str(guild_id), {}))
+        _links[str(guild_id)] = {}
+        _save()
+    return removed
+
+
 def is_bedrock_uuid(uuid: str) -> bool:
     return uuid.startswith("00000000-0000-0000")
 

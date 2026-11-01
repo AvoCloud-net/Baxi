@@ -13,11 +13,18 @@ The model scores *toxic language*, not *insults* - "scheiße, verloren" gets the
 same score as "du hurensohn". The pipeline combines the score with lexicon
 signals (who is addressed, insult severity, profanity masking) to decide.
 
-Stability: the model loads in the background; until it is ready (or if loading
-fails - retried every 10 minutes) `toxicity()` returns None and the pipeline
-runs on its rules alone instead of queueing messages. Each inference has a
-timeout. Long messages are scored in overlapping chunks (max score wins), so
-abuse after the first 256 tokens is not cut off.
+Process: in the bot the model runs in its own process (model_worker.py), started
+on the first message that needs a score - so a bot whose guilds all have the
+chatfilter off, or set to rules-only, never loads it - and stopped after
+SAFETEXT_IDLE_UNLOAD seconds without use (default 15 min, 0 = keep it). Stopping
+the process returns all of its memory to the OS and the bot never imports torch.
+Scripts that call preload() run the model in-process instead.
+
+Stability: until the process is ready (or if starting fails - retried every 10
+minutes) `toxicity()` returns None and the pipeline runs on its rules alone
+instead of queueing messages. Each inference has a timeout. Long messages are
+scored in overlapping chunks (max score wins), so abuse after the first 256
+tokens is not cut off.
 
 Versions: fine-tuned versions (built offline by tools/safetext_trainer) live in
 data/safetext/models/<version>/ with a manifest.json of SHA-256 hashes.
@@ -30,6 +37,7 @@ import asyncio
 import hashlib
 import json
 import os
+import sys
 import threading
 import time
 from collections import OrderedDict
@@ -51,18 +59,30 @@ TIMEOUT     = float(os.environ.get("SAFETEXT_TIMEOUT", "5"))
 _RETRY_AFTER = 600
 _CACHE_SIZE = 2048
 _CHUNK_WORDS, _CHUNK_STEP, _MAX_CHUNKS = 120, 100, 4
+WORKER      = Path(__file__).with_name("model_worker.py")
+IDLE_UNLOAD = int(os.environ.get("SAFETEXT_IDLE_UNLOAD") or 900)
+_START_TIMEOUT = 900   # the first start may download the model (~1 GB)
 
 _model = None
 _tokenizer = None
 _toxic_index = 1
 _load_lock = threading.Lock()
 _infer_lock = threading.Lock()
-_loading: asyncio.Task | None = None
 _failed_at: float | None = None
 _cache: "OrderedDict[str, float]" = OrderedDict()
 _loaded_from: str | None = None
 _active_mtime: float | None = None
 _active_checked_at = 0.0
+_inprocess = False          # preload() was called: score in this process (scripts)
+
+# model process (bot)
+_proc: asyncio.subprocess.Process | None = None
+_proc_source: str | None = None
+_proc_lock = asyncio.Lock()
+_starting: asyncio.Task | None = None
+_generation = 0             # bumped by reload_models(); a process started for an older one is dropped
+_next_id = 0
+_last_used = 0.0
 
 
 # ── versions ─────────────────────────────────────────────────────────────────
@@ -143,7 +163,11 @@ def _resolve_source() -> str:
 
 
 def current_source() -> str | None:
-    return _loaded_from
+    return _loaded_from or _proc_source
+
+
+def is_loaded() -> bool:
+    return _model is not None or _proc is not None
 
 
 def _load() -> None:
@@ -195,29 +219,6 @@ def _check_active() -> None:
         reload_models()
 
 
-async def _load_in_background() -> None:
-    global _failed_at
-    try:
-        await asyncio.to_thread(_load)
-        _failed_at = None
-    except Exception as e:
-        _failed_at = time.monotonic()
-        logger.error(f"SafeText | model load failed, running rules-only "
-                     f"(retry in {_RETRY_AFTER // 60} min): {type(e).__name__}: {e}")
-
-
-def _ensure_loading() -> bool:
-    """True if the model is ready; otherwise start loading it (once) and return False."""
-    global _loading
-    if _model is not None:
-        return True
-    if _failed_at is not None and time.monotonic() - _failed_at < _RETRY_AFTER:
-        return False
-    if _loading is None or _loading.done():
-        _loading = asyncio.get_running_loop().create_task(_load_in_background())
-    return False
-
-
 def _chunks(text: str) -> list[str]:
     words = text.split()
     if len(words) <= _CHUNK_WORDS:
@@ -235,6 +236,116 @@ def _run(text: str) -> float:
         return float(probs.max())
 
 
+# ── model process ────────────────────────────────────────────────────────────
+def _kill(proc: asyncio.subprocess.Process) -> None:
+    if proc.returncode is None:
+        try:
+            proc.terminate()
+        except ProcessLookupError:
+            pass
+    try:
+        asyncio.get_running_loop().create_task(proc.wait())   # reap
+    except RuntimeError:
+        pass
+
+
+def stop_worker(reason: str = "") -> bool:
+    """Stop the model process (all of its memory goes back to the OS). The next
+    message that needs a score starts it again. Returns False if none was running."""
+    global _proc, _proc_source
+    proc, _proc, _proc_source = _proc, None, None
+    if proc is None:
+        return False
+    _kill(proc)
+    logger.info(f"SafeText | model process stopped{f' ({reason})' if reason else ''}")
+    return True
+
+
+async def _start_worker(generation: int) -> None:
+    global _proc, _proc_source, _failed_at, _last_used
+    logger.working(f"SafeText | starting model process ({_resolve_source()})")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, str(WORKER),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, cwd=os.getcwd(),
+        )
+    except OSError as e:
+        _failed_at = time.monotonic()
+        logger.error(f"SafeText | could not start model process, running rules-only "
+                     f"(retry in {_RETRY_AFTER // 60} min): {e}")
+        return
+    try:
+        line = await asyncio.wait_for(proc.stdout.readline(), _START_TIMEOUT)
+        msg = json.loads(line) if line else {"error": f"exited with code {await proc.wait()}"}
+    except (asyncio.TimeoutError, ValueError) as e:
+        msg = {"error": f"{type(e).__name__}: {e}"}
+    if not msg.get("ready"):
+        _kill(proc)
+        _failed_at = time.monotonic()
+        logger.error(f"SafeText | model load failed, running rules-only "
+                     f"(retry in {_RETRY_AFTER // 60} min): {msg.get('error')}")
+        return
+    if generation != _generation:   # reload_models() ran while it was loading
+        _kill(proc)
+        return
+    _proc, _proc_source, _failed_at = proc, msg.get("source"), None
+    _last_used = time.monotonic()
+    logger.info(f"SafeText | toxicity model ready in process {proc.pid} ({_proc_source})")
+    if IDLE_UNLOAD > 0:
+        asyncio.get_running_loop().create_task(_idle_watch(proc))
+
+
+async def _idle_watch(proc: asyncio.subprocess.Process) -> None:
+    while _proc is proc:
+        await asyncio.sleep(60)
+        if _proc is proc and time.monotonic() - _last_used >= IDLE_UNLOAD:
+            stop_worker(f"unused for {IDLE_UNLOAD // 60} min")
+
+
+def _ensure_worker() -> bool:
+    """True if the model process is ready; otherwise start it (once) and return False."""
+    global _starting
+    if _proc is not None:
+        if _proc.returncode is None:
+            return True
+        stop_worker("exited")
+    if _failed_at is not None and time.monotonic() - _failed_at < _RETRY_AFTER:
+        return False
+    if _starting is None or _starting.done():
+        _starting = asyncio.get_running_loop().create_task(_start_worker(_generation))
+    return False
+
+
+async def _score_in_worker(text: str) -> float | None:
+    global _next_id, _last_used, _failed_at
+    async with _proc_lock:
+        proc = _proc
+        if proc is None:
+            return None
+        _next_id += 1
+        rid = _next_id
+        try:
+            proc.stdin.write((json.dumps({"id": rid, "text": text}) + "\n").encode())
+            await proc.stdin.drain()
+            # A reply to a request that timed out earlier may still be queued: skip it.
+            while (line := await proc.stdout.readline()):
+                msg = json.loads(line)
+                if msg.get("id") == rid:
+                    break
+            else:
+                raise ConnectionResetError("model process closed its output")
+        except (ConnectionError, ValueError) as e:
+            if _proc is proc:
+                stop_worker(f"crashed: {e}")
+                _failed_at = time.monotonic()
+            return None
+    _last_used = time.monotonic()
+    if "error" in msg:
+        logger.warn(f"SafeText | inference failed - rules only for this message: {msg['error']}")
+        return None
+    return float(msg["score"])
+
+
 async def toxicity(text: str) -> float | None:
     """Probability (0..1) that *text* is toxic language, or None while the model
     is unavailable. Cached per exact text."""
@@ -242,12 +353,20 @@ async def toxicity(text: str) -> float | None:
     if (hit := _cache.get(text)) is not None:
         _cache.move_to_end(text)
         return hit
-    if not _ensure_loading():
+    if _inprocess:
+        if _model is None:
+            await asyncio.to_thread(_load)
+        job = asyncio.to_thread(_run, text)
+    elif _ensure_worker():
+        job = _score_in_worker(text)
+    else:
         return None
     try:
-        score = await asyncio.wait_for(asyncio.to_thread(_run, text), TIMEOUT)
+        score = await asyncio.wait_for(job, TIMEOUT)
     except asyncio.TimeoutError:
         logger.warn(f"SafeText | inference timed out after {TIMEOUT}s - rules only for this message")
+        return None
+    if score is None:
         return None
     _cache[text] = score
     if len(_cache) > _CACHE_SIZE:
@@ -255,22 +374,19 @@ async def toxicity(text: str) -> float | None:
     return score
 
 
-async def warmup() -> None:
-    """Load the model in the background at bot start (non-blocking for callers)."""
-    _ensure_loading()
-    if _loading is not None:
-        await _loading
-
-
 def preload() -> None:
-    """Blocking preload (scripts / tests)."""
+    """Blocking in-process load (scripts / tests); scoring then stays in this process."""
+    global _inprocess
+    _inprocess = True
     _load()
 
 
 def reload_models() -> None:
     """Drop the loaded model so the next call re-reads it (unload first: never two
     copies in RAM; rules-only for the few seconds the reload takes)."""
-    global _model, _tokenizer, _failed_at, _loaded_from
+    global _model, _tokenizer, _failed_at, _loaded_from, _generation
+    _generation += 1
+    stop_worker("reload")
     with _load_lock:
         _model = None
         _tokenizer = None

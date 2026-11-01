@@ -158,6 +158,36 @@ def update_activity(
     save_activity(guild_id, activity)
 
 
+def add_voice_time(gid: int, entries: list[tuple[str, str, str, str, int]]) -> None:
+    """Add voice time to today's bucket. ``entries``: (channel_id, channel_name, user_id,
+    user_name, seconds). One load/save per call, so callers batch per guild."""
+    entries = [e for e in entries if e[4] > 0]
+    if not entries:
+        return
+    activity = load_activity(gid)
+    today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    cutoff = (
+        datetime.datetime.utcnow() - datetime.timedelta(days=_INSIGHTS_MAX_DAYS)
+    ).strftime("%Y-%m-%d")
+
+    days = activity.setdefault("voice_by_day", {})
+    for d in list(days):
+        if d < cutoff:
+            del days[d]
+    day = days.setdefault(today, {"total": 0, "by_channel": {}, "by_user": {}})
+    for channel_id, channel_name, user_id, user_name, secs in entries:
+        day["total"] = day.get("total", 0) + secs
+        ch = day["by_channel"].setdefault(channel_id, {"name": channel_name or channel_id, "secs": 0})
+        ch["secs"] += secs
+        if channel_name:
+            ch["name"] = channel_name
+        u = day["by_user"].setdefault(user_id, {"name": user_name or user_id, "secs": 0})
+        u["secs"] += secs
+        if user_name:
+            u["name"] = user_name
+    save_activity(gid, activity)
+
+
 # ── Temp actions ──────────────────────────────────────────────────────────────
 
 def load_temp_actions(gid: int) -> dict:
@@ -167,6 +197,12 @@ def load_temp_actions(gid: int) -> dict:
         "bans":     [json.loads(r["data_json"]) for r in ban_rows],
         "timeouts": [json.loads(r["data_json"]) for r in to_rows],
     }
+
+
+def temp_action_guild_ids() -> set[int]:
+    """Guilds with at least one pending temp ban or timeout (one query, not one per guild)."""
+    rows = db.query("SELECT guild_id FROM temp_bans UNION SELECT guild_id FROM temp_timeouts")
+    return {int(r["guild_id"]) for r in rows}
 
 
 def save_temp_actions(gid: int, data: dict) -> None:

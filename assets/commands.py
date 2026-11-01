@@ -16,10 +16,12 @@ from assets.buttons import (
     ClearConfirmView,
 )
 from assets.message.warnings import add_warning, remove_warning, get_warnings
+from assets.moderation import cases
 import assets.message.tempvoice as tempvoice
 import assets.trust as sentinel
 import assets.share as share
 import assets.games.onewordstory as onewordstory_game
+import asyncio
 import time
 import reds_simple_logger
 
@@ -136,8 +138,22 @@ def base_commands(bot: commands.AutoShardedBot):
             embed.add_field(
                 name="Quotes & time capsules",
                 value="A quote of you is stored only if someone saved it on purpose - you can remove it "
-                      "with `/quote remove`. Time capsules are kept only until delivered (cancel with "
+                      "with `/quote remove`. Reacting to a quote stores which emoji you picked, so you can "
+                      "take it back; it is deleted with the quote. Time capsules are kept only until delivered (cancel with "
                       "`/capsule cancel`). Starboard posts vanish when the original message is deleted.",
+                inline=False,
+            )
+            import assets.birthdays as birthdays_sys
+            bday = birthdays_sys.get_birthday(interaction.user.id)
+            embed.add_field(
+                name="Birthday",
+                value=(
+                    f"Stored: **{bday[0]:02d}.{bday[1]:02d}.** (day and month, no year), hidden on "
+                    f"**{birthdays_sys.hidden_count(interaction.user.id)}** server(s). "
+                    "Delete it everywhere with `/birthday remove`."
+                    if bday else
+                    "No birthday stored. Baxi only stores one if you save it with `/birthday set`."
+                ),
                 inline=False,
             )
             embed.add_field(
@@ -302,8 +318,20 @@ def base_commands(bot: commands.AutoShardedBot):
     # queue for the server's team — they do NOT touch the network safety list (that stays
     # gated behind a moderator ban). Staff approve/reject in the dashboard.
 
+    REPORT_CATEGORIES = {
+        "spam": "Spam / advertising",
+        "harassment": "Harassment / insults",
+        "hate": "Hate speech",
+        "nsfw": "NSFW / explicit content",
+        "scam": "Scam / phishing",
+        "selfharm": "Self-harm",
+        "doxxing": "Doxxing / personal data",
+        "other": "Other",
+    }
+
     async def _submit_report(interaction: discord.Interaction, reported: discord.abc.User,
-                             reason: str, message: Optional[discord.Message] = None):
+                             reason: str, message: Optional[discord.Message] = None,
+                             category: str = "other"):
         guild = interaction.guild
         if guild is None:
             await interaction.response.send_message("Reports only work inside a server.", ephemeral=True)
@@ -320,6 +348,7 @@ def base_commands(bot: commands.AutoShardedBot):
             "reporter_id": str(interaction.user.id),
             "reporter_name": interaction.user.name,
             "reported_id": str(reported.id),
+            "category": category,
         }
         if message is not None:
             context["message"] = (message.content or "")[:500]
@@ -328,6 +357,8 @@ def base_commands(bot: commands.AutoShardedBot):
 
         try:
             repo.add_review_item(guild.id, reported.id, reported.name, "user_report", context)
+            from assets import staff
+            staff.schedule_refresh(bot, guild)
         except Exception as e:
             logger.error(f"[report] enqueue failed: {e}")
             await interaction.response.send_message("Could not submit your report. Try again later.", ephemeral=True)
@@ -341,9 +372,22 @@ def base_commands(bot: commands.AutoShardedBot):
                 "guild_id": str(guild.id), "guild_name": guild.name,
                 "reason": context["reason"], "message_link": context.get("message_link", ""),
                 "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+                "category": category, "message_text": context.get("message", ""),
             })
         except Exception as e:
             logger.error(f"[report] global store failed: {e}")
+
+        # Reported message -> anonymised training queue (only if the guild opted in).
+        if message is not None and message.content:
+            try:
+                from assets.message.safetext import samples as _samples
+                if _samples.enabled_for(datasys.load_data(guild.id, "chatfilter") or {}):
+                    await asyncio.to_thread(
+                        _samples.record_report, gid=guild.id, text=message.content,
+                        lang=str(datasys.load_data(guild.id, "lang") or "en"), category=category,
+                    )
+            except Exception as e:
+                logger.error(f"[report] sample record failed: {e}")
 
         # Server-team notification + central avocloud channel mirror.
         try:
@@ -383,6 +427,7 @@ def base_commands(bot: commands.AutoShardedBot):
             description=(
                 f"**Reported:** {reported.mention} (`{reported.id}`)\n"
                 f"**By:** <@{context['reporter_id']}>\n"
+                f"**Category:** {REPORT_CATEGORIES.get(context.get('category'), 'Other')}\n"
                 f"**Reason:** {context['reason']}"
                 + (f"\n**Message:** [jump]({context['message_link']})" if context.get("message_link") else "")
             ),
@@ -404,6 +449,7 @@ def base_commands(bot: commands.AutoShardedBot):
                 f"**Reported:** {reported.mention} (`{reported.id}`)\n"
                 f"**By:** {interaction.user.mention} (`{interaction.user.id}`)\n"
                 f"**Server:** {guild.name} (`{guild.id}`)\n"
+                f"**Category:** {REPORT_CATEGORIES.get(context.get('category'), 'Other')}\n"
                 f"**Reason:** {context['reason']}"
                 + (f"\n**Message:** [jump]({context['message_link']})" if context.get("message_link") else "")
             ),
@@ -413,26 +459,37 @@ def base_commands(bot: commands.AutoShardedBot):
 
     class ReportModal(discord.ui.Modal, title="Report user"):
         reason = discord.ui.TextInput(
-            label="Why are you reporting this?",
+            label="Details (optional)",
             style=discord.TextStyle.paragraph,
-            required=True, max_length=400,
-            placeholder="Spam, harassment, scam links, …",
+            required=False, max_length=400,
+            placeholder="What happened?",
         )
 
         def __init__(self, reported: discord.abc.User, message: Optional[discord.Message] = None):
             super().__init__()
             self._reported = reported
             self._message = message
+            self._category = discord.ui.Select(
+                placeholder="What is this about?",
+                options=[discord.SelectOption(label=v, value=k) for k, v in REPORT_CATEGORIES.items()],
+            )
+            self.add_item(discord.ui.Label(text="Category", component=self._category))
 
         async def on_submit(self, interaction: discord.Interaction):
-            await _submit_report(interaction, self._reported, str(self.reason), self._message)
+            category = self._category.values[0] if self._category.values else "other"
+            reason = str(self.reason).strip() or REPORT_CATEGORIES.get(category, "Other")
+            await _submit_report(interaction, self._reported, reason, self._message, category)
 
     @bot.tree.command(name="report", description="Report a user to the server team.")
-    @app_commands.describe(user="The user you want to report.", reason="What's wrong (optional).")
+    @app_commands.describe(user="The user you want to report.", reason="What's wrong (optional).",
+                           category="What kind of problem it is.")
+    @app_commands.choices(category=[app_commands.Choice(name=v, value=k) for k, v in REPORT_CATEGORIES.items()])
     @app_commands.checks.cooldown(3, 120.0)
-    async def report_cmd(interaction: discord.Interaction, user: discord.Member, reason: Optional[str] = None):
-        if reason:
-            await _submit_report(interaction, user, reason)
+    async def report_cmd(interaction: discord.Interaction, user: discord.Member,
+                         reason: Optional[str] = None, category: Optional[app_commands.Choice[str]] = None):
+        if reason or category:
+            cat = category.value if category else "other"
+            await _submit_report(interaction, user, reason or REPORT_CATEGORIES[cat], None, cat)
         else:
             await interaction.response.send_modal(ReportModal(user))
 
@@ -578,14 +635,14 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
+        user_member = interaction.guild.get_member(user)
+        if user_member is None:
+            user_member = await bot.fetch_user(user)
         embed = discord.Embed(
             title=f'{config.Icons.people_crossed} {lang["commands"]["admin"]["unban"]["title"]} // {user_member.name}',
             description=lang["commands"]["admin"]["unban"]["confirmation"],
             color=config.Discord.success_color,
         )
-        user_member = interaction.guild.get_member(user)
-        if user_member is None:
-            user_member = await bot.fetch_user(user)
 
         embed.add_field(
             name=lang["commands"]["admin"]["user"],
@@ -672,40 +729,26 @@ def utility_commands(bot: commands.AutoShardedBot):
         until = discord.utils.utcnow() + parsed
         until_naive = datetime.datetime.now(timezone.utc) + parsed
 
+        blocked = cases.can_act(interaction.guild, user, "mute", lang)
+        if blocked:
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description=f"{config.Icons.cross} {blocked}", color=config.Discord.danger_color))
+        case_no = cases.record(interaction.guild.id, "mute", user, interaction.user, reason,
+                               duration_s=int(parsed.total_seconds()))
         try:
-            dm_embed = discord.Embed(
-                title=f"ACTION // MUTE // {interaction.guild.name}",
-                color=config.Discord.warn_color,
-            )
-            dm_embed.add_field(name="Duration", value=duration_str, inline=False)
-            dm_embed.add_field(name="Reason", value=reason, inline=False)
-            dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
-            dm_embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
-            dm_embed.set_footer(text="Baxi · avocloud.net")
-            await user.send(embed=dm_embed)
-        except (discord.Forbidden, discord.HTTPException):
-            pass
-
-        try:
-            await user.timeout(until, reason=reason)
+            await user.timeout(until, reason=f"{reason} (case #{case_no})"[:500] if case_no else reason)
         except discord.Forbidden:
+            cases.discard(interaction.guild.id, case_no)
             return await interaction.edit_original_response(
                 embed=discord.Embed(description=f"{config.Icons.cross} Missing permissions to timeout this user.", color=config.Discord.danger_color)
             )
-
-        # Log mod event for BaxiInsights
-        try:
-            datasys.append_mod_event(interaction.guild.id, {
-                "type": "mute",
-                "user_id": str(user.id),
-                "user_name": user.name,
-                "mod_id": str(interaction.user.id),
-                "mod_name": interaction.user.name,
-                "reason": reason,
-                "timestamp": datetime.datetime.utcnow().isoformat(),
-            })
-        except Exception:
-            pass
+        except Exception as e:   # no phantom case, no command left "thinking"
+            cases.discard(interaction.guild.id, case_no)
+            logger.error(f"[mute] timeout failed @ {interaction.guild.id}: {type(e).__name__}: {e}")
+            return await interaction.edit_original_response(
+                embed=discord.Embed(description=f"{config.Icons.cross} {lang['moderation']['cannot']['failed']}", color=config.Discord.danger_color))
+        dm_ok = await cases.notify(interaction.guild, user, case_no, "mute", reason,
+                                   seconds=int(parsed.total_seconds()))
 
         ta = datasys.load_temp_actions(interaction.guild.id)
         ta["timeouts"].append({
@@ -726,6 +769,10 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed.add_field(name="Duration", value=duration_str, inline=False)
         embed.add_field(name="Reason", value=reason, inline=False)
         embed.add_field(name="Expires", value=f"<t:{int(until_naive.timestamp())}:F>", inline=False)
+        if case_no:
+            embed.add_field(name=lang["moderation"]["dm"]["f_case"], value=f"#{case_no}", inline=False)
+        if not dm_ok:
+            embed.add_field(name="\u200b", value=cases.dm_failed_note(lang, user, interaction.guild.id), inline=False)
         embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
@@ -752,21 +799,13 @@ def utility_commands(bot: commands.AutoShardedBot):
         ta["timeouts"] = [t for t in ta["timeouts"] if t.get("user_id") != user.id]
         datasys.save_temp_actions(interaction.guild.id, ta)
 
-        try:
-            dm_embed = discord.Embed(
-                title=f"ACTION // UNMUTE // {interaction.guild.name}",
-                description="You can now send messages again.",
-                color=config.Discord.success_color,
-            )
-            dm_embed.add_field(name="Moderator", value=str(interaction.user), inline=False)
-            dm_embed.set_footer(text="Baxi · avocloud.net")
-            await user.send(embed=dm_embed)
-        except (discord.Forbidden, discord.HTTPException):
-            pass
+        lang = datasys.load_lang_file(interaction.guild.id)
+        case_no = cases.record(interaction.guild.id, "unmute", user, interaction.user, reason)
+        await cases.notify(interaction.guild, user, case_no, "unmute", reason)
 
         embed = discord.Embed(
             title=f"{config.Icons.info} ACTION // UNMUTE",
-            description=f"{user.mention} has been unmuted.",
+            description=f"{user.mention} has been unmuted." + (f"\n{lang['moderation']['dm']['f_case']} #{case_no}" if case_no else ""),
             color=config.Discord.success_color,
         )
         embed.set_footer(text="Baxi · avocloud.net")
@@ -887,7 +926,9 @@ def utility_commands(bot: commands.AutoShardedBot):
 
             # Load mod events via facade
             mod_events: list = list(datasys.load_data(guild_id, "mod_events"))
-            recent_mod = [e for e in mod_events if datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
+            # only warn/mute/kick/ban count here; removed messages are the filter hits below (once)
+            recent_mod = [e for e in mod_events if e.get("type") in ("warn", "mute", "kick", "ban")
+                          and datetime.datetime.fromisoformat(e.get("timestamp", "2000-01-01")) >= cutoff]
             warns  = sum(1 for e in recent_mod if e.get("type") == "warn")
             kicks  = sum(1 for e in recent_mod if e.get("type") == "kick")
             bans   = sum(1 for e in recent_mod if e.get("type") == "ban")
@@ -939,48 +980,12 @@ def leveling_commands(bot: commands.AutoShardedBot):
     def _check_enabled(leveling_cfg: dict) -> bool:
         return bool(leveling_cfg.get("enabled", False))
 
-    @bot.tree.command(name="level", description="Show your current level and XP progress on this server")
-    async def level_cmd(interaction: discord.Interaction):
-        await interaction.response.defer()
-        if interaction.guild is None:
-            lang = datasys.load_lang_file(0)
-            await interaction.followup.send(lang["commands"]["guild_only"], ephemeral=True)
-            return
-
-        guild_id = interaction.guild.id
-        lang = datasys.load_lang_file(guild_id)
-        t: dict = lang["leveling"]
-
-        if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
-            await interaction.edit_original_response(embed=_disabled_embed(t))
-            return
-
-        entry = leveling_sys.get_user_entry(guild_id, interaction.user.id)
-        total_xp: int = int(entry.get("xp", 0))
-        cur_level, xp_into, xp_needed = leveling_sys.xp_progress(total_xp)
-
-        bar_filled = int((xp_into / xp_needed) * 20) if xp_needed else 20
-        bar = "█" * bar_filled + "░" * (20 - bar_filled)
-
-        embed = Embed(
-            title=t["level_title"].format(user=interaction.user.display_name),
-            color=config.Discord.color,
-        )
-        embed.add_field(name=t["level_field"], value=str(cur_level), inline=True)
-        embed.add_field(name=t["xp_field"], value=f"{total_xp:,} XP", inline=True)
-        embed.add_field(
-            name=t["progress_field"],
-            value=f"`{bar}` {xp_into:,} / {xp_needed:,} XP",
-            inline=False,
-        )
-        embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        embed.set_footer(text="Baxi · avocloud.net")
-        await interaction.edit_original_response(embed=embed)
-
     @bot.tree.command(name="leaderboard", description="Show the top users for a given system on this server")
     @app_commands.describe(sys="Which leaderboard to show")
     @app_commands.choices(sys=[
         app_commands.Choice(name="Level", value="level"),
+        app_commands.Choice(name="Level · Text", value="level_text"),
+        app_commands.Choice(name="Level · Voice", value="level_voice"),
         app_commands.Choice(name="Flag Quiz", value="flagquiz"),
     ])
     async def leaderboard_cmd(interaction: discord.Interaction, sys: app_commands.Choice[str]):
@@ -1027,36 +1032,12 @@ def leveling_commands(bot: commands.AutoShardedBot):
             await interaction.edit_original_response(embed=_disabled_embed(t))
             return
 
-        users: dict = leveling_sys._load_users(guild_id)
-        if not users:
-            await interaction.edit_original_response(embed=Embed(
-                title=t["leaderboard_title"].format(guild=interaction.guild.name),
-                description=t["leaderboard_empty"],
-                color=config.Discord.color,
-            ))
-            return
-
-        sorted_users = sorted(users.items(), key=lambda x: int(x[1].get("xp", 0)), reverse=True)[:10]
-
-        medals = [config.Icons.medal, config.Icons.medal, config.Icons.medal]
-        lines = []
-        for i, (uid, data) in enumerate(sorted_users):
-            prefix = medals[i] if i < 3 else f"`{i + 1}.`"
-            member = interaction.guild.get_member(int(uid))
-            name = member.display_name if member else data.get("name", f"User {uid}")
-            lvl = leveling_sys.current_level_from_xp(int(data.get("xp", 0)))
-            xp_val = int(data.get("xp", 0))
-            lines.append(f"{prefix} **{name}** -  Level {lvl} · {xp_val:,} XP")
-
-        embed = Embed(
-            title=t["leaderboard_title"].format(guild=interaction.guild.name),
-            description="\n".join(lines),
-            color=config.Discord.color,
+        source = {"level_text": "text", "level_voice": "voice"}.get(sys.value, "total")
+        await interaction.edit_original_response(
+            embed=leveling_sys.leaderboard_embed(interaction.guild, t, source),
         )
-        embed.set_footer(text="Baxi · avocloud.net")
-        await interaction.edit_original_response(embed=embed)
 
-    @bot.tree.command(name="rank", description="Show a user's level on this server")
+    @bot.tree.command(name="rank", description="Show your level card on this server, or another member's")
     @app_commands.describe(user="The user to look up (defaults to yourself)")
     async def rank_cmd(interaction: discord.Interaction, user: Optional[discord.Member] = None):
         await interaction.response.defer()
@@ -1074,36 +1055,8 @@ def leveling_commands(bot: commands.AutoShardedBot):
             return
 
         target = user or interaction.user
-        users: dict = leveling_sys._load_users(guild_id)
-        entry: dict = users.get(str(target.id), {})
-
-        total_xp = int(entry.get("xp", 0))
-        msgs = int(entry.get("messages", 0))
-        cur_level, xp_into, xp_needed = leveling_sys.xp_progress(total_xp)
-
-        sorted_users = sorted(users.items(), key=lambda x: int(x[1].get("xp", 0)), reverse=True)
-        rank_pos = next((i + 1 for i, (uid, _) in enumerate(sorted_users) if uid == str(target.id)), None)
-
-        bar_filled = int((xp_into / xp_needed) * 20) if xp_needed else 20
-        bar = "█" * bar_filled + "░" * (20 - bar_filled)
-
-        embed = Embed(
-            title=t["rank_title"].format(user=target.display_name),
-            color=config.Discord.color,
-        )
-        embed.add_field(name=t["level_field"], value=str(cur_level), inline=True)
-        embed.add_field(name=t["rank_xp_field"], value=f"{total_xp:,} XP", inline=True)
-        embed.add_field(name=t["rank_msgs_field"], value=f"{msgs:,}", inline=True)
-        embed.add_field(
-            name=t["progress_field"],
-            value=f"`{bar}` {xp_into:,} / {xp_needed:,} XP",
-            inline=False,
-        )
-        if rank_pos is not None:
-            embed.add_field(name=t["rank_pos_field"], value=f"#{rank_pos}", inline=True)
-        embed.set_thumbnail(url=target.display_avatar.url)
-        embed.set_footer(text="Baxi · avocloud.net")
-        await interaction.edit_original_response(embed=embed)
+        # Card with avatar, level, progress and the text / voice split; text-only if it fails.
+        await interaction.followup.send(**await leveling_sys.rank_payload(target, interaction.guild, t))
 
     ows_group = app_commands.Group(name="onewordstory", description="One Word Story commands")
 

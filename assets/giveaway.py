@@ -233,9 +233,9 @@ class GiveawayTask:
 
     @tasks.loop(seconds=30)
     async def check_giveaways(self):
-        import assets.db as _db
+        from assets.repo.engagement import due_giveaway_guild_ids
         now = time.time()
-        for guild_id in _db.guild_ids():
+        for guild_id in due_giveaway_guild_ids(now):   # usually none: no per-guild reads
             try:
                 giveaways: dict = dict(datasys.load_data(guild_id, "giveaways"))
             except Exception:

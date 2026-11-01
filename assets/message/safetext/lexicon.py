@@ -83,6 +83,16 @@ THREATS = [
     "ich stech dich ab", "ich schlag dich tot", "ich vergewaltige dich",
     "ich hau dir auf die fresse", "ich box dich", "ich werde dich finden",
     "wir finden dich", "ich krieg dich", "wir kriegen dich", "you're dead", "youre dead meat",
+    # "we know where you live" in all persons; family counts like the person itself
+    "wir wissen wo du wohnst", "wir wissen wo ihr wohnt", "wir wissen wo sie wohnen",
+    "ich weiß wo ihr wohnt", "ich weiß wo deine familie wohnt", "wir wissen wo deine familie wohnt",
+    "ich weiß wo deine eltern wohnen", "wir wissen wo deine eltern wohnen",
+    "we know where you live", "we know where your family lives", "i know where your family lives",
+    # verb after the condition: "wenn du das nochmal machst, steche ich dich ab"
+    "ich steche dich ab", "steche ich dich ab", "stech ich dich ab", "bring ich dich um",
+    "bringe ich dich um", "schlag ich dich tot", "mach ich dich kalt", "töte ich dich",
+    "ich schlitz dich auf", "ich schlitze dich auf", "schlitze ich dich auf", "schlitz ich dich auf",
+    "ich stech euch ab", "ich bring euch um",
 ]
 
 # ── insults ──────────────────────────────────────────────────────────────────
@@ -183,6 +193,10 @@ HOSTILE_STRONG = [
     "nicht ausstehen", "nicht leiden", "can't stand", "cannot stand", "detest*",
     "verabscheue*", "gehören in einen zoo", "belong in a zoo", "gehören in die küche",
     "belong in the kitchen", "zurück in die küche", "back to the kitchen",
+    "nicht existieren", "nicht existieren dürfen", "nicht leben dürfen", "nicht leben sollen",
+    "nicht geboren werden", "nicht zur welt kommen", "shouldn't exist", "should not exist",
+    "don't deserve to live", "do not deserve to live", "shouldn't be allowed to live",
+    "kein recht zu leben",
 ]
 HOSTILE_WEAK = [
     "hasse", "hasst", "hassen", "verachte*", "abscheu", "ekel*", "widerlich*",
@@ -355,7 +369,18 @@ def _clause_before(v: str, pos: int) -> str:
     return v[cut + 1:pos]
 
 
-_NEG_EXEMPT = re.compile(r"nicht ausstehen|nicht leiden|can'?t stand|cannot stand")
+# A "nicht" inside these phrases does not turn hostility around: "can't stand" is hostile,
+# and so are demands to exclude or erase a group ("sollten nicht existieren").
+_EXCLUSION = (
+    r"(?:nicht|nie)(?: mehr| erst| gar)*(?: \w+){0,2} (?:existier\w*|leben(?: duerfen| dürfen| sollen| sollten)?|"
+    r"geboren|zur welt kommen|hierher(?: gehoeren| gehören)?|hier hergehoeren|hier hergehören|"
+    r"dazugehoeren|dazugehören|hier sein|hier wohnen|hier leben)"
+    r"|(?:shouldn'?t|should not|must not|mustn'?t|don'?t deserve to|do not deserve to|"
+    r"shouldn'?t be allowed to) (?:exist|live|be born)"
+    r"|(?:don'?t|do not) (?:belong|deserve to live)"
+    r"|kein recht (?:zu leben|auf leben|hier)"
+)
+_NEG_EXEMPT = re.compile(r"nicht ausstehen|nicht leiden|can'?t stand|cannot stand|" + _EXCLUSION)
 
 
 def _clause_around(v: str, start: int, end: int) -> str:
@@ -399,7 +424,8 @@ def negated_near_group(norm) -> bool:
         for m in pats.groups.finditer(v):
             start = max(v.rfind(c, 0, m.start()) for c in ".,;!?:") + 1
             ends = [i for i in (v.find(c, m.end()) for c in ".,;!?:") if i != -1]
-            if _NEGATION_BEFORE.search(v[start:min(ends) if ends else len(v)]):
+            clause = _NEG_EXEMPT.sub(" ", v[start:min(ends) if ends else len(v)])
+            if _NEGATION_BEFORE.search(clause):
                 return True
     return False
 

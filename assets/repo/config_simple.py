@@ -195,6 +195,14 @@ _CF_DEF = _DD["chatfilter"]
 _CF_CATS_DEF = {str(k): True for k in range(1, 6)}
 
 
+def _json_list(raw) -> list:
+    try:
+        v = json.loads(raw or "[]")
+    except (TypeError, ValueError):
+        return []
+    return v if isinstance(v, list) else []
+
+
 def load_chatfilter(gid: int) -> dict:
     rows = db.query("SELECT * FROM cfg_chatfilter WHERE guild_id=?", (gid,))
     if not rows:
@@ -211,6 +219,12 @@ def load_chatfilter(gid: int) -> dict:
         "system":           str(r["system"]),
         "phishing_filter":  bool(r["phishing_filter"]),
         "warn_on_violation": bool(r["warn_on_violation"]),
+        "sensitivity":      str(r["sensitivity"] or "medium"),
+        "exempt_staff":     bool(r["exempt_staff"]),
+        "training_opt_in":  bool(r["training_opt_in"]),
+        "c_goodwords":      _json_list(r["c_goodwords"]),
+        "c_badwords":       _json_list(r["c_badwords"]),
+        "bypass":           _json_list(r["bypass"]),
         "ai_categories":    cats,
     }
 
@@ -219,16 +233,26 @@ def save_chatfilter(gid: int, data: dict) -> None:
     db.ensure_guild(gid)
     with db.transaction() as cx:
         cx.execute(
-            "INSERT INTO cfg_chatfilter (guild_id,enabled,system,phishing_filter,warn_on_violation) "
-            "VALUES (?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET "
+            "INSERT INTO cfg_chatfilter (guild_id,enabled,system,phishing_filter,warn_on_violation,"
+            "sensitivity,exempt_staff,training_opt_in,c_goodwords,c_badwords,bypass) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(guild_id) DO UPDATE SET "
             "enabled=excluded.enabled,system=excluded.system,"
-            "phishing_filter=excluded.phishing_filter,warn_on_violation=excluded.warn_on_violation",
+            "phishing_filter=excluded.phishing_filter,warn_on_violation=excluded.warn_on_violation,"
+            "sensitivity=excluded.sensitivity,exempt_staff=excluded.exempt_staff,"
+            "training_opt_in=excluded.training_opt_in,c_goodwords=excluded.c_goodwords,"
+            "c_badwords=excluded.c_badwords,bypass=excluded.bypass",
             (
                 gid,
                 _int(data.get("enabled", False)),
                 str(data.get("system", "AI")),
                 _int(data.get("phishing_filter", False)),
                 _int(data.get("warn_on_violation", False)),
+                str(data.get("sensitivity", "medium")),
+                _int(data.get("exempt_staff", True)),
+                _int(data.get("training_opt_in", False)),
+                json.dumps(list(data.get("c_goodwords", []))),
+                json.dumps(list(data.get("c_badwords", []))),
+                json.dumps([str(c) for c in data.get("bypass", [])]),
             ),
         )
         cx.execute("DELETE FROM cfg_chatfilter_ai_category WHERE guild_id=?", (gid,))

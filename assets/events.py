@@ -13,6 +13,7 @@ from io import BytesIO
 import random
 
 import assets.data as datasys
+import assets.idle as idle
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
@@ -54,8 +55,12 @@ from assets.tasks import (
 )
 from assets.giveaway import GiveawayTask
 from assets.pulse import PulseTask
+import assets.voice_activity as voice_activity
 from assets.starboard import StarboardTask
 from assets.capsule import CapsuleTask
+from assets.birthdays import BirthdayTask
+from assets.wrapped import WrappedTask
+from assets.backup import BackupTask
 from assets.poll import PollTask
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -172,13 +177,14 @@ def events(bot: commands.AutoShardedBot, web):
         # commands and try to re-.start() already-running task loops.
         if getattr(bot, "_baxi_started", False):
             try:
-                await bot.change_presence(activity=discord.Activity(
-                    type=discord.ActivityType.playing,
-                    name=f"on {len(bot.guilds)} Worlds! - v{config.Discord.version}"))
+                await bot.change_presence(status=idle.presence_status(),
+                                          activity=idle.presence_activity(bot))
             except Exception:
                 pass
             return
         bot._baxi_started = True
+
+        asyncio.create_task(serverlog.prime_counts(bot))
 
         logger.info("Almost ready...")
 
@@ -205,12 +211,8 @@ def events(bot: commands.AutoShardedBot, web):
             await bot.tree.sync()
             logger.info("Bot synced with discord!")
             logger.info(f"Bot started with {bot.shard_count} shards!")
-            await bot.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.playing,
-                    name=f"on {len(bot.guilds)} Worlds! - v{config.Discord.version}",
-                )
-            )
+            await bot.change_presence(status=idle.presence_status(),
+                                      activity=idle.presence_activity(bot))
             logger.info("Starting background tasks...")
             logger.working("Starting GCDHT task...")
             GCDTH_task = GCDH_Task(bot)
@@ -256,6 +258,12 @@ def events(bot: commands.AutoShardedBot, web):
             share.task_instances["Pulse"] = pulse_task
             logger.debug.success("Pulse recap task started.")
 
+            logger.working("Starting Voice activity task...")
+            voice_task = voice_activity.VoiceActivityTask(bot)
+            voice_task.tick.start()
+            share.task_instances["VoiceActivity"] = voice_task
+            logger.debug.success("Voice activity task started.")
+
             logger.working("Starting Starboard task...")
             starboard_task = StarboardTask(bot)
             starboard_task.tick.start()
@@ -268,9 +276,38 @@ def events(bot: commands.AutoShardedBot, web):
             share.task_instances["Capsule"] = capsule_task
             logger.debug.success("Time capsule task started.")
 
-            # Chatfilter model loads in the background; rules-only until it is ready.
-            from assets.message.safetext import models as _safetext_models
-            asyncio.create_task(_safetext_models.warmup())
+            logger.working("Starting ModQueueExpiry task...")
+            from assets.moderation.borderline import BorderlineExpiryTask
+            mq_expiry_task = BorderlineExpiryTask(bot)
+            mq_expiry_task.tick.start()
+            share.task_instances["ModQueueExpiry"] = mq_expiry_task
+            logger.debug.success("Mod queue expiry task started.")
+
+            logger.working("Starting Birthday task...")
+            birthday_task = BirthdayTask(bot)
+            birthday_task.tick.start()
+            share.task_instances["Birthdays"] = birthday_task
+            logger.debug.success("Birthday task started.")
+
+            logger.working("Starting Wrapped task...")
+            wrapped_task = WrappedTask(bot)
+            wrapped_task.tick.start()
+            share.task_instances["Wrapped"] = wrapped_task
+            logger.debug.success("Wrapped task started.")
+
+            logger.working("Starting Backup task...")
+            backup_task = BackupTask()
+            backup_task.backup.start()
+            share.task_instances["Backup"] = backup_task
+            logger.debug.success("DB backup task started.")
+
+            # The chatfilter model is not loaded here: it starts in its own process on the
+            # first message that needs it and stops again when unused (safetext/models.py).
+            logger.working("Starting RestMode task...")
+            rest_task = idle.RestModeTask(bot)
+            rest_task.watch.start()
+            share.task_instances["RestMode"] = rest_task
+            logger.debug.success("Rest mode watcher started.")
 
             logger.working("Starting PhishingList task...")
             phishing_list_task = PhishingListTask()
@@ -569,16 +606,23 @@ def events(bot: commands.AutoShardedBot, web):
             if not message.author.bot and serverlog.should_log(message.guild.id, "message_delete"):
                 embed = serverlog.build_message_delete(message)
                 actor, reason = await serverlog.fetch_actor(
-                    message.guild, discord.AuditLogAction.message_delete, message.author.id,
+                    message.guild, discord.AuditLogAction.message_delete,
+                    message.author.id, channel_id=message.channel.id, counted=True,
                 )
                 if actor is not None:
-                    serverlog.add_actor(embed, actor, reason)
-                else:
+                    serverlog.add_actor(embed, actor, reason, label="Deleted by")
+                elif serverlog.audit_available(message.guild):
                     # Discord writes no audit entry when a user deletes their own
-                    # message — so no actor means the author deleted it themselves.
+                    # message — so no fresh entry means the author deleted it themselves.
                     embed.add_field(
-                        name="Performed by",
+                        name="Deleted by",
                         value=f"{message.author.mention} (`{message.author.id}`) · self-deleted",
+                        inline=False,
+                    )
+                else:
+                    embed.add_field(
+                        name="Deleted by",
+                        value="*unknown — Baxi lacks the View Audit Log permission*",
                         inline=False,
                     )
                 await serverlog.send_log(bot, message.guild.id, "message_delete", embed)
@@ -635,7 +679,16 @@ def events(bot: commands.AutoShardedBot, web):
         if not serverlog.should_log(guild.id, "channel_update"):
             return
         embed = serverlog.build_channel_update(before, after)
-        actor, reason = await serverlog.fetch_actor(guild, discord.AuditLogAction.channel_update, after.id)
+        actor, reason = await serverlog.fetch_actor(
+            guild,
+            (
+                discord.AuditLogAction.channel_update,
+                discord.AuditLogAction.overwrite_create,
+                discord.AuditLogAction.overwrite_update,
+                discord.AuditLogAction.overwrite_delete,
+            ),
+            after.id,
+        )
         serverlog.add_actor(embed, actor, reason)
         await serverlog.send_log(bot, guild.id, "channel_update", embed)
 
@@ -779,6 +832,29 @@ def events(bot: commands.AutoShardedBot, web):
         except Exception:
             pass
 
+    async def _log_voice_move(member: discord.Member, before_channel, after_channel):
+        try:
+            guild = member.guild
+            if not serverlog.should_log(guild.id, "voice_move"):
+                return
+            embed = serverlog.build_voice_move(member, before_channel, after_channel)
+            # Moving someone else is logged as `member_move` (target is not recorded, only
+            # the destination); moving yourself leaves no entry, so no field is added.
+            actor, _ = await serverlog.fetch_actor(
+                guild, discord.AuditLogAction.member_move,
+                channel_id=after_channel.id, counted=True, retries=2,
+            )
+            if actor is not None and actor.id != member.id:
+                serverlog.add_actor(embed, actor, label="Moved by")
+            elif actor is None:
+                logger.info(
+                    f"[ServerLog] no member_move audit entry for {member.id} -> {after_channel.id} "
+                    f"in guild {guild.id} (self-move, missing permission, or entry not matched)"
+                )
+            await serverlog.send_log(bot, guild.id, "voice_move", embed)
+        except Exception:
+            pass
+
     @bot.event
     async def on_voice_state_update(
         member: discord.Member,
@@ -804,12 +880,17 @@ def events(bot: commands.AutoShardedBot, web):
                 and after.channel is not None
                 and before.channel.id != after.channel.id
             ):
-                await serverlog.send_log(
-                    bot, guild.id, "voice_move",
-                    serverlog.build_voice_move(member, before.channel, after.channel),
-                )
+                # Own task: the audit-log lookup waits ~1s and must not delay the
+                # temp-voice handling below.
+                asyncio.create_task(_log_voice_move(member, before.channel, after.channel))
         except Exception:
             pass
+
+        # BaxiInsights: voice time (counts only)
+        try:
+            voice_activity.on_voice_state(member, before, after, bot)
+        except Exception as e:
+            logger.error(f"[VoiceActivity] state update failed: {e}")
 
         # Music: log + clean up player on bot voice state transitions
         if bot.user and member.id == bot.user.id:
@@ -1014,8 +1095,10 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         is_globalchat = _is_globalchat_channel(message, gc_data)
 
         # Chatfilter first, so minigame / suggestion / custom-command channels are covered too.
+        cf_verdict = ChatfilterVerdict()
         if await run_chatfilter(
             message, bot, risk_ctx=risk_ctx, guild_terms=guild_terms, is_globalchat=is_globalchat,
+            verdict=cf_verdict,
         ):
             return
 
@@ -1036,8 +1119,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
         if await suggestions_sys.check_suggestion(message, bot):
             return
 
-        # Level system -  award XP for this message
-        asyncio.create_task(leveling_sys.process_xp(message, bot))
+        # Level system -  award XP for this message (anti-spam passed above; the chat
+        # filter's verdict decides the rest, see leveling.earns_xp)
+        asyncio.create_task(leveling_sys.process_xp(message, bot, cf_verdict))
 
         guild_id: int = message.guild.id if message.guild is not None else 0
         lang = datasys.load_lang_file(guild_id)
@@ -1141,6 +1225,15 @@ async def _send_support_dm(user: discord.abc.User) -> None:
         pass  # DMs closed
 
 
+class ChatfilterVerdict:
+    """What run_chatfilter decided, for later pipeline steps (leveling decides XP from it)."""
+    __slots__ = ("removed", "borderline")
+
+    def __init__(self) -> None:
+        self.removed = False      # flagged and removed
+        self.borderline = False   # kept, queued for staff review (mod queue)
+
+
 async def run_chatfilter(
     message: discord.Message,
     bot: commands.AutoShardedBot,
@@ -1148,10 +1241,11 @@ async def run_chatfilter(
     risk_ctx=None,
     guild_terms: bool | None = None,
     is_globalchat: bool | None = None,
+    verdict: ChatfilterVerdict | None = None,
 ) -> bool:
     """Check *message* and act on the verdict. Returns True when the message must not
     be processed further (it was removed, or it is a self-harm message in the global
-    chat that must not be relayed)."""
+    chat that must not be relayed). If *verdict* is given, it is filled in."""
     assert message.guild is not None
     guild_id = message.guild.id
     cf: dict = dict(datasys.load_data(guild_id, "chatfilter"))
@@ -1189,15 +1283,29 @@ async def run_chatfilter(
     )
 
     # Opt-in: noteworthy messages feed the (anonymised) training queue.
+    sample_id = None
     try:
         from assets.message.safetext import samples as _samples
         if _samples.enabled_for(cf):
-            await asyncio.to_thread(
+            sample_id = await asyncio.to_thread(
                 _samples.record, gid=guild_id, text=content,
                 lang=str(datasys.load_data(guild_id, "lang") or "en"), result=result,
             )
     except Exception as _sample_err:
         logger.error(f"[Chatfilter] sample record failed: {_sample_err}")
+
+    # Borderline: the message stays, staff decide in the mod queue (not for the
+    # shared global chat, where this server's staff cannot judge for everyone).
+    _borderline = (result.get("json") or {}).get("borderline")
+    if _borderline and not result.get("flagged") and cf.get("enabled") and not is_globalchat:
+        from assets.moderation import borderline as _bl
+        await _bl.enqueue(bot, message, content, _borderline, sample_id)
+        if verdict is not None:
+            verdict.borderline = True
+    elif getattr(message, "edited_at", None) is not None and not is_globalchat:
+        # Edited and no longer borderline: an open case for it closes by itself.
+        from assets.moderation import borderline as _bl
+        await _bl.close_for_message(bot, message)
 
     if result.get("support"):
         await _send_support_dm(message.author)
@@ -1213,21 +1321,30 @@ async def run_chatfilter(
     if not result.get("flagged"):
         return False
 
-    await del_chatfilter(message=message, reason=result["reason"], bot=bot,
-                         cf_system=cf.get("system", "AI"))
-    if (
+    if verdict is not None:
+        verdict.removed = True
+    from assets.moderation import cases as _cases_mod
+    lang_cf = datasys.load_lang_file(guild_id)
+    will_warn = bool(
         cf.get("enabled") and cf.get("warn_on_violation")
         and isinstance(message.author, discord.Member) and not message.author.bot
-    ):
+    )
+    # One event, one case: with warn_on_violation the warning IS the case (it carries the
+    # removed message's log id), otherwise the removal itself is.
+    log_id = await del_chatfilter(message=message, reason=result["reason"], bot=bot,
+                                  cf_system=cf.get("system", "AI"), open_case=not will_warn,
+                                  sample_id=sample_id)
+    if will_warn:
         try:
             from assets.message.warnings import add_warning
             await add_warning(
                 guild_id=guild_id,
                 user=message.author,
                 moderator=bot.user,
-                reason=f"Chatfilter: {result['reason']}",
+                reason=_cases_mod.filter_why(lang_cf, result["reason"]),
                 bot=bot,
                 channel=message.channel,
+                extra={"log_id": log_id, "sample_id": sample_id},
             )
         except Exception as _warn_err:
             logger.error(f"[Chatfilter] warn_on_violation failed: {_warn_err}")
@@ -1236,8 +1353,10 @@ async def run_chatfilter(
 
 async def del_chatfilter(
     message: discord.Message, reason: str, bot: commands.AutoShardedBot,
-    cf_system: str = "SafeText",
-):
+    cf_system: str = "SafeText", open_case: bool = True, sample_id: str | None = None,
+) -> str:
+    """Remove a flagged message, log it and (open_case) record it as a case with a DM that
+    carries the Appeal button. Returns the chat-filter log id."""
     chatfilter_logs: dict = dict(load_data(1001, "chatfilter_log"))
     id = os.urandom(8).hex()
     assert message.guild is not None, "Message guild unknown!"
@@ -1368,6 +1487,16 @@ async def del_chatfilter(
     # (Removed: cross-server Prism recording of chatfilter violations — compliance.
     #  The deletion + per-guild filter-event log above are the moderation action.)
 
+    if open_case and deleted and not message.author.bot:
+        from assets.moderation import cases as _cases
+        _why = _cases.filter_why(lang, reason)
+        _no = _cases.record(message.guild.id, "filter", message.author, bot.user, _why,
+                            log_id=id, sample_id=sample_id, message_id=str(message.id),
+                            channel_id=str(message.channel.id))
+        if _no:
+            embed.description = (embed.description or "") + "\n" + str(
+                lang["moderation"]["chatfilter_case"]).format(no=_no, url=_cases.appeal_url(message.guild.id))
+            await _cases.notify(message.guild, message.author, _no, "filter", _why)
     await message.channel.send(embed=embed)
     if not deleted and reason == "phishing":
         await message.channel.send(
@@ -1375,6 +1504,7 @@ async def del_chatfilter(
                 user=message.author.mention
             )
         )
+    return id
 
 
 async def _mc_chat_bridge(message):

@@ -24,9 +24,13 @@ _migrate.run()
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands, tempvoice_commands
 from assets.giveaway import giveaway_commands
 from assets.pulse_commands import pulse_commands
-from assets.quotes import quote_commands
+from assets.quotes import quote_commands, QuoteReactionButton
 from assets.capsule import capsule_commands
+from assets.birthdays import birthday_commands
+from assets.wrapped import wrapped_commands, WrappedButton
 import assets.starboard as starboard
+from assets.moderation import casefile
+import assets.idle as idle
 from assets.poll import poll_commands, PollButton, PollCloseButton
 from assets.dash.cdn import cdn_context
 from assets.dash.log import highlight_word
@@ -75,7 +79,8 @@ class PersistentViewBot(commands.AutoShardedBot):
         self.add_view(SuggestionView())
         self.add_view(GiveawayView())
         self.add_view(TempVoiceControlView(self))
-        self.add_dynamic_items(RoleButton, TicketButton, PollButton, PollCloseButton)
+        from assets.moderation.appeals import AppealButton
+        self.add_dynamic_items(RoleButton, TicketButton, PollButton, PollCloseButton, QuoteReactionButton, WrappedButton, AppealButton)
         _tv_load_state()
 
 
@@ -98,7 +103,7 @@ def _inject_static_version():
     static_dir = config.Web.static_folder
     versions = {}
     try:
-        for fname in ("main.css", "scripts/main.js", "scripts/mention-picker.js", "scripts/theme.js", "scripts/wordmark.js"):
+        for fname in ("main.css", "scripts/main.js", "scripts/mention-picker.js", "scripts/avo-select.js", "scripts/theme.js", "scripts/wordmark.js"):
             fpath = os.path.join(static_dir, fname)
             if os.path.isfile(fpath):
                 versions[fname] = int(os.path.getmtime(fpath))
@@ -128,8 +133,12 @@ tempvoice_commands(bot=bot)
 pulse_commands(bot=bot)
 quote_commands(bot=bot)
 capsule_commands(bot=bot)
+birthday_commands(bot=bot)
+wrapped_commands(bot=bot)
 starboard.starboard_commands(bot=bot)
+casefile.register(bot)
 starboard.register(bot)
+idle.register(bot)
 
 web.jinja_env.filters['highlight_word'] = highlight_word
 

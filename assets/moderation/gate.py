@@ -59,8 +59,10 @@ async def check_join(member: discord.Member, bot: commands.AutoShardedBot) -> bo
     if enforce:
         try:
             if action == "kick":
-                await member.kick(reason="Baxi mod-gate: on safety list / flagged")
-                acted = True
+                from assets.moderation import cases
+                acted = await cases.run_automatic(
+                    guild, member, "kick", datasys.load_lang_file(guild.id)["moderation"]["auto"]["gate"],
+                    lambda sfx: member.kick(reason="Baxi mod-gate: on safety list / flagged" + sfx))
             elif action in ("quarantine", "approve"):
                 role_id = int(cfg.get("quarantine_role", 0) or 0)
                 if role_id:
@@ -76,6 +78,8 @@ async def check_join(member: discord.Member, bot: commands.AutoShardedBot) -> bo
 
     try:
         repo.add_review_item(guild.id, member.id, member.name, "join_gate", context)
+        from assets import staff
+        staff.schedule_refresh(bot, guild)
     except Exception as e:
         logger.error(f"[ModGate] review enqueue failed: {e}")
 

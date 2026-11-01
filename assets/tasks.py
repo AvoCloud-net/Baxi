@@ -13,9 +13,9 @@ from assets.livestream import (
     IGNotFound, IGRateLimited, IGBlocked, IGTransient,
 )
 import assets.data as datasys
+import assets.idle as idle
 import config.config as config
 import config.auth as auth
-import copy
 import random
 
 logger = Logger()
@@ -24,38 +24,23 @@ logger = Logger()
 class GCDH_Task:
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
-        self.old_data: dict = {}
 
     @tasks.loop(seconds=15)
     async def sync_globalchat_message_data(self):
+        import assets.share as share
+        if not share.globalchat_dirty:
+            return   # nothing written since the last save: no work, no log noise
         set_task_status("GCDH", "running", "Syncing global chat data...")
-        async def save_globalchat_message_data():
-            if self.old_data == globalchat_message_data:
-                return "ncds", True
-            else:
-                try:
-                    datasys.save_data(
-                        1001, "globalchat_message_data", globalchat_message_data
-                    )
-                    return "Success", True
-                except Exception as e:
-                    return f"{e}", False
-
-        response, success = await asyncio.create_task(
-            save_globalchat_message_data(), name="GCDH"
-        )
-
-        if success:
-            if response == "ncds":
-                logger.debug.info("[GCDH] No change in data detected")
-                set_task_status("GCDH", "ok", "No changes detected")
-            else:
-                logger.debug.success("[GCDH] Data synced with data-structure")
-                set_task_status("GCDH", "ok", "Data synced successfully")
-                self.old_data = copy.deepcopy(globalchat_message_data)
-        else:
-            logger.error(f"[GCDH] Sync failed: {response}")
-            set_task_status("GCDH", "error", f"Sync failed: {response}")
+        share.globalchat_dirty = False
+        try:
+            datasys.save_data(1001, "globalchat_message_data", globalchat_message_data)
+        except Exception as e:
+            share.globalchat_dirty = True   # retry next tick
+            logger.error(f"[GCDH] Sync failed: {e}")
+            set_task_status("GCDH", "error", f"Sync failed: {e}")
+            return
+        logger.debug.success("[GCDH] Data synced with data-structure")
+        set_task_status("GCDH", "ok", "Data synced successfully")
 
 
 class UpdateStatsTask:
@@ -186,7 +171,7 @@ class LivestreamTask:
     def _rebuild_twitch_queue(self):
         """Rebuild the round-robin Twitch queue from all enabled guilds."""
         self._check_queue.clear()
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "livestream"):
             ls_config = dict(datasys.load_data(guild.id, "livestream"))
             if not ls_config.get("enabled", False):
                 continue
@@ -195,8 +180,9 @@ class LivestreamTask:
                 if platform == "twitch" and streamer.get("login"):
                     self._check_queue.append((guild.id, streamer))
 
-        logger.info(f"[Livestream] Twitch queue rebuilt: {len(self._check_queue)} checks queued")
-        admin_log("info", f"Twitch queue rebuilt: {len(self._check_queue)} checks queued", source="Livestream")
+        if self._check_queue:   # an empty rebuild every minute is just log noise
+            logger.info(f"[Livestream] Twitch queue rebuilt: {len(self._check_queue)} checks queued")
+            admin_log("info", f"Twitch queue rebuilt: {len(self._check_queue)} checks queued", source="Livestream")
 
     # --------------------------------------------------- YouTube + TikTok (5 min)
 
@@ -212,7 +198,7 @@ class LivestreamTask:
 
     async def _do_yt_tt_check(self):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as session:
-            for guild in self.bot.guilds:
+            for guild in idle.guilds_with(self.bot, "livestream"):
                 ls_config = dict(datasys.load_data(guild.id, "livestream"))
                 if not ls_config.get("enabled", False):
                     continue
@@ -573,7 +559,7 @@ class StatsChannelsTask:
             set_task_status("StatsChannels", "error", f"Error: {e}")
 
     async def _do_update(self):
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "stats_channels"):
             try:
                 sc_config = dict(datasys.load_data(guild.id, "stats_channels"))
                 if not sc_config.get("enabled", False):
@@ -679,7 +665,10 @@ class TempActionsTask:
     async def _do_check(self):
         now = datetime.datetime.now(datetime.timezone.utc)
 
-        for guild in self.bot.guilds:
+        for gid in datasys.temp_action_guild_ids():
+            guild = self.bot.get_guild(gid)
+            if guild is None:
+                continue
             try:
                 ta = datasys.load_temp_actions(guild.id)
                 changed = False
@@ -767,9 +756,12 @@ class AntiRaidTask:
     @tasks.loop(seconds=5)
     async def tick(self):
         try:
+            from assets.moderation.antiraid import antiraid, pending_guild_ids
+            gids = idle.guild_ids_with(self.bot, "antiraid") | pending_guild_ids()
+            if not gids:
+                return   # no guild uses Anti-Raid: nothing to roll
             set_task_status("AntiRaid", "running", "Rolling raid windows...")
-            from assets.moderation.antiraid import antiraid
-            for guild in list(self.bot.guilds):
+            for guild in [g for gid in gids if (g := self.bot.get_guild(gid)) is not None]:
                 try:
                     await antiraid.tick(guild, self.bot)
                 except Exception as e:
@@ -783,7 +775,7 @@ class AntiRaidTask:
 class PhishingListTask:
     """Background task that downloads and refreshes the phishing domain list every 12 hours.
 
-    Source: https://github.com/Discord-AntiScam/scam-links
+    Sources: see config.Chatfilter.phishing_list_urls
     """
 
     @tasks.loop(hours=12)
@@ -797,22 +789,37 @@ class PhishingListTask:
             set_task_status("PhishingList", "error", f"Error: {e}")
 
     async def _fetch_list(self):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
-            async with session.get(config.Chatfilter.phishing_list_url) as response:
-                if response.status == 200:
-                    text = await response.text()
-                    domains = set()
-                    for line in text.splitlines():
-                        line = line.strip().lower()
-                        if line and not line.startswith("#"):
-                            domains.add(line)
-                    phishing_url_list.clear()
-                    phishing_url_list.update(domains)
-                    logger.debug.success(
-                        f"[PhishingList] Updated: {len(phishing_url_list)} phishing domains loaded"
-                    )
-                else:
-                    logger.error(f"[PhishingList] Fetch returned HTTP {response.status}")
+        domains: set[str] = set()
+        ok = 0
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
+            for url in config.Chatfilter.phishing_list_urls:
+                try:
+                    async with session.get(url) as response:
+                        if response.status != 200:
+                            logger.error(f"[PhishingList] {url} returned HTTP {response.status}")
+                            continue
+                        text = await response.text()
+                except Exception as e:
+                    logger.error(f"[PhishingList] {url} failed: {e}")
+                    continue
+                ok += 1
+                for line in text.splitlines():
+                    line = line.split("#", 1)[0].strip().lower()
+                    if not line:
+                        continue
+                    host = line.split()[-1]  # hosts-file lines: "127.0.0.1 domain"
+                    if "." in host and host not in self._IGNORE:
+                        domains.add(host)
+        if not ok:
+            return  # every source failed: keep the old list
+        phishing_url_list.clear()
+        phishing_url_list.update(domains)
+        logger.debug.success(
+            f"[PhishingList] Updated: {len(phishing_url_list)} domains from {ok}/{len(config.Chatfilter.phishing_list_urls)} sources"
+        )
+
+    # Test entries some feeds include on purpose.
+    _IGNORE = {"amiprotected.it", "www.amiprotected.it"}
 
 
 class GarbageCollectorTask:
@@ -1002,7 +1009,7 @@ class YouTubeVideoTask:
             all_channel_ids = set()
             guild_data = {}  # guild_id -> (yv_config, [(ch_entry, channel_id), ...])
             
-            for guild in self.bot.guilds:
+            for guild in idle.guilds_with(self.bot, "youtube_videos"):
                 yv_config = dict(datasys.load_data(guild.id, "youtube_videos"))
                 if not yv_config.get("enabled", False):
                     continue
@@ -1254,7 +1261,7 @@ class TikTokVideoTask:
         all_usernames: set = set()
         guild_data: dict = {}
 
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "tiktok"):
             tt_config = dict(datasys.load_data(guild.id, "tiktok"))
             if not tt_config.get("enabled", False):
                 continue
@@ -1509,7 +1516,7 @@ class TwitterPostTask:
         all_usernames: set = set()
         guild_data: dict = {}
 
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "twitter"):
             tw_config = dict(datasys.load_data(guild.id, "twitter"))
             if not tw_config.get("enabled", False):
                 continue
@@ -1709,7 +1716,7 @@ class InstagramTask:
     async def _do_check(self):
         import time
 
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "instagram"):
             ig_config = dict(datasys.load_data(guild.id, "instagram"))
             if not ig_config.get("enabled", False):
                 continue
@@ -1946,6 +1953,8 @@ class MusicIdleTask:
     @tasks.loop(seconds=30)
     async def watch(self):
         import assets.share as share
+        if not share.music_players:
+            return   # nothing playing anywhere
         set_task_status("MusicIdle", "running", "Scanning music players...")
         now = datetime.datetime.now(datetime.timezone.utc)
         disconnected = 0
@@ -2006,7 +2015,9 @@ class Radio247Task:
         from assets.music.player import MusicPlayer, Track
         from assets.music.sources import RADIO_PRESETS, is_safe_radio_url
 
-        for guild in self.bot.guilds:
+        # Guilds with 24/7 on, plus guilds with a player (to stop a radio whose 24/7 was turned off).
+        gids = idle.guild_ids_with(self.bot, "music", "radio_247_enabled") | set(share.music_players)
+        for guild in [g for gid in gids if (g := self.bot.get_guild(gid)) is not None]:
             gid = guild.id
             try:
                 conf = dict(datasys.load_data(gid, "music") or {})
@@ -2119,7 +2130,7 @@ class McLinkSyncTask:
 
         synced = 0
         total_added = total_updated = total_removed = 0
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "mc_link"):
             cfg = dict(datasys.load_data(guild.id, "mc_link"))
             if not cfg.get("enabled", False):
                 continue
@@ -2178,7 +2189,7 @@ class McStatusBoardTask:
         from assets.mc_link import fetch_server_stats, render_status_embed
 
         posted = 0
-        for guild in self.bot.guilds:
+        for guild in idle.guilds_with(self.bot, "mc_link"):
             cfg = dict(datasys.load_data(guild.id, "mc_link"))
             if not cfg.get("enabled", False):
                 continue

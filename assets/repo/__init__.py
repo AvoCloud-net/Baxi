@@ -71,7 +71,7 @@ from assets.repo.runtime import (
     load_custom_commands, save_custom_commands,
     load_audit_log, save_audit_log,
     load_activity, save_activity,
-    load_temp_actions, save_temp_actions,
+    load_temp_actions, save_temp_actions, temp_action_guild_ids,
 )
 from assets.repo.entities import (
     load_users, save_users,

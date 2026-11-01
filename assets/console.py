@@ -47,6 +47,19 @@ def _parse_id(raw: str) -> int | None:
     return int(raw)
 
 
+# Set by run_console: stdin is owned by its reader thread there, so interactive prompts must
+# take the next line from this queue instead of calling input().
+_live_queue: "asyncio.Queue[str | None] | None" = None
+
+
+async def _ask(prompt: str) -> str:
+    print(prompt, end="", flush=True)
+    if _live_queue is None:
+        return await asyncio.to_thread(input)
+    line = await _live_queue.get()
+    return "q" if line is None else line
+
+
 # ── commands ──────────────────────────────────────────────────────────────────
 
 def cmd_help(args: list[str]) -> None:
@@ -202,6 +215,9 @@ _TASK_METHODS = {
     "Pulse":            "tick",
     "Starboard":        "tick",
     "Capsule":          "tick",
+    "Birthdays":        "tick",
+    "Wrapped":          "tick",
+    "RestMode":         "watch",
 }
 
 
@@ -237,6 +253,106 @@ async def cmd_run_task(args: list[str]) -> None:
     _ok(f"Triggered task '{key}'. Watch the log for its output.")
 
 
+async def cmd_wrapped(args: list[str]) -> None:
+    import assets.wrapped as wrapped
+    if args and len(args) > 1 and args[1] in ("preview", "vote") and not share.task_instances:
+        _err("preview/vote need the running bot (use the live console).")
+        return
+    for line in await wrapped.admin_command(datasys.bot_instance, args):
+        _info(line)
+
+
+async def cmd_backup(args: list[str]) -> None:
+    import assets.backup as backup
+    problem = backup.config_problem()
+    if problem:
+        _err(f"Backup server not configured: {problem} (config/auth.py -> class Backup, or BACKUP_* env vars)")
+        return
+    _info("Creating DB snapshot and uploading to the backup server...")
+    meta = await asyncio.to_thread(backup.backup_now, "manual, console")
+    replicas = ", ".join(f"{r['target']}: {r['status']}" for r in meta.get("replicas", [])) or "none"
+    _ok(f"Uploaded {meta['filename']} (id {meta['id']}, {meta['size'] / 1024:.0f} KiB) · replicas: {replicas}")
+
+
+async def cmd_restore(args: list[str]) -> None:
+    import datetime
+    import tempfile
+    import assets.backup as backup
+    from assets.backup_client import BackupError
+
+    live = _live_queue is not None
+    if args and args[0].lower() == "cancel":
+        _ok("Staged restore removed.") if backup.cancel_staged() else _info("No restore is staged.")
+        return
+    problem = backup.config_problem()
+    if problem:
+        _err(f"Backup server not configured: {problem} (config/auth.py -> class Backup, or BACKUP_* env vars)")
+        return
+    skip_confirm = "--yes" in args
+    args = [a for a in args if a != "--yes"]
+
+    _info("Fetching backup list from the backup server...")
+    backups = await asyncio.to_thread(backup.list_backups)
+    if not backups:
+        _err("The backup server has no backups for this project.")
+        return
+
+    if args:
+        want = args[0].lower()
+        if want == "latest":
+            chosen = backups[0]
+        elif want.isdigit() and any(b["id"] == int(want) for b in backups):
+            chosen = next(b for b in backups if b["id"] == int(want))
+        else:
+            _err(f"No backup '{args[0]}'. Use 'latest' or one of the IDs: {', '.join(str(b['id']) for b in backups)}")
+            return
+    else:
+        for i, b in enumerate(backups, start=1):
+            when = datetime.datetime.fromtimestamp(b["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
+            tag = "  (latest)" if i == 1 else ""
+            print(f"  [{i:>2}] {when}  {b['size'] / 1024:>7.0f} KiB  id {b['id']:<5} {b.get('note') or ''}{tag}", flush=True)
+        raw = (await _ask(f"Restore which backup? [1-{len(backups)}, Enter = 1 latest, q = cancel]: ")).strip().lower()
+        if raw in ("q", "quit", "n"):
+            _info("Cancelled.")
+            return
+        if raw == "":
+            raw = "1"
+        if not raw.isdigit() or not 1 <= int(raw) <= len(backups):
+            _err(f"'{raw}' is not a number between 1 and {len(backups)}.")
+            return
+        chosen = backups[int(raw) - 1]
+
+    when = datetime.datetime.fromtimestamp(chosen["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
+    with tempfile.TemporaryDirectory(prefix="baxi-restore-") as tmp:
+        _info(f"Downloading {chosen['filename']} ({when}, {chosen['size'] / 1024:.0f} KiB)...")
+        try:
+            snapshot = await asyncio.to_thread(backup.download_snapshot, chosen, tmp)
+        except BackupError as e:
+            _err(str(e))
+            return
+        _ok("Downloaded, checksum and integrity check passed.")
+        if not skip_confirm:
+            if live:
+                _info("The restore is applied when the bot starts the next time (restart it afterwards).")
+            _info(f"This REPLACES the current database ({db._DB_PATH}); the old one is kept as a .pre-restore-<timestamp> copy.")
+            if (await _ask("Type 'yes' to restore: ")).strip().lower() != "yes":
+                _info("Cancelled.")
+                return
+        await asyncio.to_thread(backup.stage_snapshot, snapshot)
+
+    if live:
+        _ok(f"Restore of the backup from {when} is staged.")
+        _info("Restart the bot now to apply it (panel: Restart). Until then nothing has changed.")
+        _info("Changed your mind? Run 'restore cancel' before restarting.")
+    else:
+        db.close()
+        kept = await asyncio.to_thread(db.apply_pending_restore, db._DB_PATH)
+        _ok(f"Restored backup from {when} into {db._DB_PATH}.")
+        if kept:
+            _info(f"Previous DB saved as {kept}")
+        _info("Start the bot again to use the restored data.")
+
+
 # ── registry ──────────────────────────────────────────────────────────────────
 
 COMMANDS: dict[str, dict[str, object]] = {
@@ -249,6 +365,9 @@ COMMANDS: dict[str, dict[str, object]] = {
     "twitter_reseed":   {"fn": cmd_twitter_reseed,   "usage": "<guild_id> [user]", "help": "clear last_post_id so the next poll re-seeds"},
     "tasks":            {"fn": cmd_tasks,            "usage": "",                  "help": "list running background tasks + status"},
     "run_task":         {"fn": cmd_run_task,         "usage": "<key>",             "help": "trigger a background task now (e.g. run_task TwitterPosts)"},
+    "wrapped":          {"fn": cmd_wrapped,          "usage": "<guild_id> [status|preview|vote [min]|reset]", "help": "Server Wrapped: status, or a test run for one guild (staff preview / quote vote) before December"},
+    "backup":           {"fn": cmd_backup,          "usage": "",                  "help": "snapshot the DB and upload it to the backup server now"},
+    "restore":          {"fn": cmd_restore,          "usage": "[id|latest|cancel] [--yes]", "help": "download a backup from the backup server and restore the DB (live bot: applied on next start; default: pick from list)"},
     "query":            {"fn": cmd_query,            "usage": "<SELECT ...>",      "help": "run a read-only SQL SELECT"},
 }
 
@@ -281,8 +400,10 @@ async def run_console(bot=None) -> None:
     """
     import threading
 
+    global _live_queue
     loop = asyncio.get_running_loop()
     queue: "asyncio.Queue[str | None]" = asyncio.Queue()
+    _live_queue = queue
 
     def _reader() -> None:
         try:

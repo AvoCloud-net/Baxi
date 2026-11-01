@@ -32,12 +32,43 @@ def _connect(path: str) -> sqlite3.Connection:
     return c
 
 
+RESTORE_SUFFIX = ".restore-pending"
+
+
+def apply_pending_restore(path: str) -> str | None:
+    """If ``<path>.restore-pending`` exists (staged by the ``restore`` console command), swap it in.
+
+    Must run before the DB is opened. The old DB is kept as ``<path>.pre-restore-<timestamp>``;
+    returns that path, or None if nothing was pending / there was no old DB.
+    """
+    pending = path + RESTORE_SUFFIX
+    if not os.path.exists(pending):
+        return None
+    import datetime
+    import shutil
+    kept = None
+    if os.path.exists(path):
+        kept = f"{path}.pre-restore-{datetime.datetime.now():%Y%m%d-%H%M%S}"
+        n = 1
+        while os.path.exists(kept):   # two restores in the same second must not overwrite each other
+            n += 1
+            kept = f"{path}.pre-restore-{datetime.datetime.now():%Y%m%d-%H%M%S}-{n}"
+        shutil.move(path, kept)
+    for suffix in ("-wal", "-shm"):   # stale WAL files would be replayed onto the restored DB
+        if os.path.exists(path + suffix):
+            os.remove(path + suffix)
+    os.replace(pending, path)
+    print(f"[restore] restored database applied; previous DB kept as {kept}", flush=True)
+    return kept
+
+
 def init(db_path: str | None = None) -> None:
     """Connect and create all tables (IF NOT EXISTS).  Call once at startup."""
     global _conn, _DB_PATH
     if db_path is not None:
         _DB_PATH = db_path
     with _LOCK:
+        apply_pending_restore(_DB_PATH)
         _conn = _connect(_DB_PATH)
         _create_schema(_conn)
         _migrate_columns(_conn)
@@ -48,18 +79,58 @@ def init(db_path: str | None = None) -> None:
 # never alters an existing table, so we add any missing columns here (idempotent).
 _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
     "cfg_mod_gate": [("use_safety_list", "INTEGER DEFAULT 1")],
+    "cfg_chatfilter": [
+        ("sensitivity", "TEXT DEFAULT 'medium'"),
+        ("exempt_staff", "INTEGER DEFAULT 1"),
+        ("training_opt_in", "INTEGER DEFAULT 0"),
+        ("c_goodwords", "TEXT DEFAULT '[]'"),
+        ("c_badwords", "TEXT DEFAULT '[]'"),
+        ("bypass", "TEXT DEFAULT '[]'"),
+    ],
     "cfg_mc_link": [
         ("status_channel", "TEXT DEFAULT ''"),
         ("status_message_id", "TEXT DEFAULT ''"),
     ],
+    "global_reports": [
+        ("category", "TEXT DEFAULT ''"),
+        ("message_text", "TEXT DEFAULT ''"),
+    ],
     "cfg_livestream": [("ping_role", "TEXT DEFAULT ''")],
+    "quotes": [
+        ("post_channel_id", "TEXT DEFAULT ''"),
+        ("post_message_id", "TEXT DEFAULT ''"),
+        ("reaction_order", "TEXT DEFAULT ''"),
+    ],
     "cfg_welcomer": [
         ("embed_title", "TEXT DEFAULT ''"),
         ("card_title", "TEXT DEFAULT 'Welcome, {displayname}!'"),
         ("card_subtitle", "TEXT DEFAULT '{server}'"),
         ("card_footer", "TEXT DEFAULT 'Member #{membercount}'"),
     ],
+    "leveling_users": [
+        ("text_xp", "INTEGER DEFAULT 0"),
+        ("voice_xp", "INTEGER DEFAULT 0"),
+    ],
 }
+
+# Data fixes that run after the column migrations at every start. Each must be idempotent.
+_DATA_MIGRATIONS: list[str] = [
+    # Leveling: XP from before the text/voice split counts as text XP. Afterwards every write
+    # keeps xp = text_xp + voice_xp, so this matches nothing and the total (and level) never moves.
+    "UPDATE leveling_users SET text_xp = COALESCE(xp, 0) - COALESCE(voice_xp, 0), "
+    "voice_xp = COALESCE(voice_xp, 0) "
+    "WHERE COALESCE(text_xp, 0) + COALESCE(voice_xp, 0) < COALESCE(xp, 0)",
+    # Covered by the primary key (guild_id, user_id) and ix_leveling_users_total.
+    "DROP INDEX IF EXISTS ix_leveling_users_guild",
+    # Case numbers start at 1 (they were mod_events.pos from 0). Two steps because SQLite
+    # checks the primary key row by row: flip to negative, then back. Matches nothing once done.
+    "UPDATE mod_events SET pos = -(pos + 1) WHERE guild_id IN (SELECT guild_id FROM mod_events WHERE pos = 0)",
+    "UPDATE mod_events SET pos = -pos WHERE pos < 0",
+    # Legacy guilds get their case counter from the highest number they ever used, so pruning
+    # old cases can never hand a number out twice. INSERT OR IGNORE: an existing counter wins.
+    "INSERT OR IGNORE INTO mod_case_counter (guild_id, next_no) "
+    "SELECT guild_id, MAX(pos) + 1 FROM mod_events GROUP BY guild_id",
+]
 
 
 def _migrate_columns(conn: sqlite3.Connection) -> None:
@@ -71,6 +142,20 @@ def _migrate_columns(conn: sqlite3.Connection) -> None:
         for name, ddl in cols:
             if name not in existing:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
+    for sql in _DATA_MIGRATIONS:
+        conn.execute(sql)
+
+
+def close() -> None:
+    """Checkpoint and close the shared connection (used before the DB file is replaced)."""
+    global _conn
+    with _LOCK:
+        if _conn is not None:
+            try:
+                _conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            finally:
+                _conn.close()
+                _conn = None
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -181,7 +266,10 @@ CREATE TABLE IF NOT EXISTS guilds (
 CREATE TABLE IF NOT EXISTS cfg_chatfilter (
     guild_id INTEGER PRIMARY KEY REFERENCES guilds(guild_id) ON DELETE CASCADE,
     enabled INTEGER DEFAULT 0, system TEXT DEFAULT 'AI',
-    phishing_filter INTEGER DEFAULT 0, warn_on_violation INTEGER DEFAULT 0
+    phishing_filter INTEGER DEFAULT 0, warn_on_violation INTEGER DEFAULT 0,
+    sensitivity TEXT DEFAULT 'medium', exempt_staff INTEGER DEFAULT 1,
+    training_opt_in INTEGER DEFAULT 0,
+    c_goodwords TEXT DEFAULT '[]', c_badwords TEXT DEFAULT '[]', bypass TEXT DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS cfg_chatfilter_ai_category (
@@ -710,6 +798,31 @@ CREATE TABLE IF NOT EXISTS mod_events (
 );
 
 CREATE INDEX IF NOT EXISTS ix_mod_events_ts ON mod_events(guild_id, timestamp);
+-- "my servers" (appeal page): looks a user up across guilds
+CREATE INDEX IF NOT EXISTS ix_mod_events_user ON mod_events(user_id, guild_id);
+-- case file: one user's cases in one guild, newest first
+CREATE INDEX IF NOT EXISTS ix_mod_events_guild_user ON mod_events(guild_id, user_id, pos);
+
+-- Case numbers (= mod_events.pos) only ever go up, even when old cases are pruned.
+CREATE TABLE IF NOT EXISTS mod_case_counter (
+    guild_id INTEGER PRIMARY KEY,
+    next_no  INTEGER NOT NULL
+);
+
+-- Moderator notes about a user. Never shown to the user.
+CREATE TABLE IF NOT EXISTS mod_notes (
+    guild_id   INTEGER,
+    id         INTEGER,
+    user_id    TEXT,
+    user_name  TEXT DEFAULT '',
+    author_id  TEXT,
+    author_name TEXT DEFAULT '',
+    text       TEXT,
+    created_at TEXT,
+    PRIMARY KEY (guild_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_mod_notes_user ON mod_notes(guild_id, user_id);
 
 CREATE TABLE IF NOT EXISTS filter_events (
     guild_id  INTEGER,
@@ -726,8 +839,8 @@ CREATE TABLE IF NOT EXISTS mod_review_queue (
     pos          INTEGER,
     user_id      TEXT,
     user_name    TEXT,
-    kind         TEXT,                       -- join_gate | deleted_msg | prism_flag
-    status       TEXT DEFAULT 'pending',     -- pending | approved | rejected
+    kind         TEXT,                       -- join_gate | deleted_msg | prism_flag | user_report | chatfilter_borderline | appeal
+    status       TEXT DEFAULT 'pending',     -- pending | approved | rejected | expired
     context_json TEXT DEFAULT '{}',
     created_at   TEXT,
     resolved_by  TEXT DEFAULT '',
@@ -736,12 +849,14 @@ CREATE TABLE IF NOT EXISTS mod_review_queue (
 );
 
 CREATE INDEX IF NOT EXISTS ix_mod_review_status ON mod_review_queue(guild_id, status);
+CREATE INDEX IF NOT EXISTS ix_mod_review_due ON mod_review_queue(status, kind, created_at);
 
 CREATE TABLE IF NOT EXISTS activity (
     guild_id  INTEGER PRIMARY KEY,
     data_json TEXT
 );
 
+-- xp is the total (text_xp + voice_xp), kept as its own column for the leaderboard index.
 CREATE TABLE IF NOT EXISTS leveling_users (
     guild_id INTEGER,
     user_id  TEXT,
@@ -749,10 +864,12 @@ CREATE TABLE IF NOT EXISTS leveling_users (
     level    INTEGER DEFAULT 0,
     messages INTEGER DEFAULT 0,
     name     TEXT,
+    text_xp  INTEGER DEFAULT 0,
+    voice_xp INTEGER DEFAULT 0,
     PRIMARY KEY (guild_id, user_id)
 );
 
-CREATE INDEX IF NOT EXISTS ix_leveling_users_guild ON leveling_users(guild_id);
+CREATE INDEX IF NOT EXISTS ix_leveling_users_total ON leveling_users(guild_id, xp DESC);
 
 CREATE TABLE IF NOT EXISTS quotes (
     guild_id          INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
@@ -764,11 +881,24 @@ CREATE TABLE IF NOT EXISTS quotes (
     source_message_id TEXT DEFAULT '',
     saved_by          TEXT DEFAULT '',
     created_at        TEXT DEFAULT '',
+    post_channel_id   TEXT DEFAULT '',
+    post_message_id   TEXT DEFAULT '',
+    reaction_order    TEXT DEFAULT '',
     PRIMARY KEY (guild_id, quote_id)
 );
 
 CREATE INDEX IF NOT EXISTS ix_quotes_author ON quotes(guild_id, author_id);
 CREATE INDEX IF NOT EXISTS ix_quotes_source ON quotes(guild_id, source_message_id);
+
+-- One row per user and emoji on a quote. emoji is a key: "u<hex>-<hex>" (unicode) or "c<id>" (custom).
+CREATE TABLE IF NOT EXISTS quote_reactions (
+    guild_id   INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    quote_id   INTEGER,
+    emoji      TEXT,
+    user_id    TEXT,
+    created_at TEXT DEFAULT '',
+    PRIMARY KEY (guild_id, quote_id, emoji, user_id)
+);
 
 CREATE TABLE IF NOT EXISTS time_capsules (
     capsule_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -799,6 +929,89 @@ CREATE TABLE IF NOT EXISTS starboard_entries (
 
 CREATE INDEX IF NOT EXISTS ix_starboard_board ON starboard_entries(guild_id, board_message_id);
 
+-- Birthdays: the date belongs to the user (day + month, no year), one row for all servers.
+CREATE TABLE IF NOT EXISTS user_birthdays (
+    user_id TEXT PRIMARY KEY,
+    day     INTEGER,
+    month   INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS ix_birthdays_date ON user_birthdays(month, day);
+
+-- Servers on which a user hid their birthday (no announcement, not in /birthday upcoming).
+CREATE TABLE IF NOT EXISTS birthday_hidden (
+    guild_id INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    user_id  TEXT,
+    PRIMARY KEY (guild_id, user_id)
+);
+
+-- Last congratulation per server and user (at most once in 300 days) and the 24 h birthday role.
+-- Rows without a pending role are pruned after about a year.
+CREATE TABLE IF NOT EXISTS birthday_celebrations (
+    guild_id      INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    user_id       TEXT,
+    celebrated_on TEXT,              -- local date (YYYY-MM-DD) in the server's timezone
+    celebrated_at INTEGER,
+    role_id       TEXT DEFAULT '',
+    role_until    INTEGER DEFAULT 0, -- unix time; 0 = no role to take back
+    PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_birthday_role_due ON birthday_celebrations(role_until);
+
+-- Server Wrapped (assets/wrapped.py). Completed days of the activity blob, kept past its
+-- 90-day window so the yearly recap covers more than three months. Counts only.
+CREATE TABLE IF NOT EXISTS wrapped_days (
+    guild_id    INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    day         TEXT,                -- UTC date, same key as activity.msg_by_day
+    msg_json    TEXT DEFAULT '{}',
+    voice_json  TEXT DEFAULT '{}',
+    member_json TEXT DEFAULT '{}',
+    PRIMARY KEY (guild_id, day)
+);
+
+-- Messages per user and channel ("your favourite channel"), counts only.
+CREATE TABLE IF NOT EXISTS wrapped_user_channels (
+    guild_id   INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    year       INTEGER,
+    user_id    TEXT,
+    channel_id TEXT,
+    count      INTEGER DEFAULT 0,
+    PRIMARY KEY (guild_id, year, user_id, channel_id)
+);
+
+-- The computed recap (once per guild and year) and the per-user part of it.
+CREATE TABLE IF NOT EXISTS wrapped_results (
+    guild_id    INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    year        INTEGER,
+    data_json   TEXT,
+    computed_at INTEGER,
+    PRIMARY KEY (guild_id, year)
+);
+
+CREATE TABLE IF NOT EXISTS wrapped_users (
+    guild_id  INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    year      INTEGER,
+    user_id   TEXT,
+    data_json TEXT,
+    PRIMARY KEY (guild_id, year, user_id)
+);
+
+-- What was already sent (vote, staff preview, shares) - makes every step restart-safe.
+CREATE TABLE IF NOT EXISTS wrapped_state (
+    guild_id  INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    year      INTEGER,
+    data_json TEXT DEFAULT '{}',
+    PRIMARY KEY (guild_id, year)
+);
+
+-- Members who do not want to be named in the server recap.
+CREATE TABLE IF NOT EXISTS wrapped_optout (
+    guild_id INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    user_id  TEXT,
+    PRIMARY KEY (guild_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS bot_admins (
     pos      INTEGER PRIMARY KEY,
     admin_id TEXT
@@ -820,7 +1033,9 @@ CREATE TABLE IF NOT EXISTS global_reports (
     guild_name     TEXT,
     reason         TEXT,
     message_link   TEXT DEFAULT '',
-    timestamp      TEXT
+    timestamp      TEXT,
+    category       TEXT DEFAULT '',
+    message_text   TEXT DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS ix_global_reports_reported ON global_reports(reported_id);

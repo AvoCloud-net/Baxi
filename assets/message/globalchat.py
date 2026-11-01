@@ -4,6 +4,7 @@ import assets.data as datasys
 import config.config as config
 import discord
 import asyncio
+import assets.share as share
 from assets.share import globalchat_message_data
 from discord import (
     Message,
@@ -77,6 +78,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
             "messages": [],
             "replies": [],
         }
+        share.globalchat_dirty = True
         assert message.guild is not None, "Message guild none"
         assert message.author.avatar is not None, "Message authr avatar none"
         guild = await bot.fetch_guild(int(guild_id))
@@ -491,6 +493,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                     "replyid": referenced_mid,
                 }
             )
+        share.globalchat_dirty = True
 
         async def gc_send_msg():
             for server_id, server in gc_data.items():
@@ -562,6 +565,7 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                             "mid": sent_message.id,
                         }
                     )
+                share.globalchat_dirty = True
 
         await asyncio.create_task(gc_send_msg(), name="gc_send_msg")
         await message.delete()

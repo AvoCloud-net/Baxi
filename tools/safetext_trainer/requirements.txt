@@ -9,3 +9,4 @@ pandas
 pyarrow
 paramiko
 reds_simple_logger
+rich

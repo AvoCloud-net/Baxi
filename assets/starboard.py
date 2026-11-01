@@ -19,6 +19,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 import assets.data as datasys
+import assets.idle as idle
 import assets.db as db
 import config.config as config
 from assets.share import set_task_status
@@ -328,7 +329,7 @@ class StarboardTask:
         try:
             set_task_status("Starboard", "running", "Checking weekly throwbacks...")
             posted = 0
-            for guild in list(self.bot.guilds):
+            for guild in idle.guilds_with(self.bot, "starboard"):
                 try:
                     cfg = load_cfg(guild.id, fresh=True)
                     due, week = throwback_due(cfg)

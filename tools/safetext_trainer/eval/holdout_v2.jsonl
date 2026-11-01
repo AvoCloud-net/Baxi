@@ -1,0 +1,90 @@
+{"id": "h2_000", "text": "Du wirst bereuen, dass du das geschrieben hast. Wir kennen deine Adresse.", "expect": "remove", "type": "drohung"}
+{"id": "h2_001", "text": "Ich warte morgen nach der Schule auf dich, dann gibt es Prügel.", "expect": "remove", "type": "drohung"}
+{"id": "h2_002", "text": "Dir passiert bald etwas Schlimmes, glaub mir.", "expect": "remove", "type": "drohung"}
+{"id": "h2_003", "text": "Schlaf besser nicht ein, wir kommen heute Nacht vorbei.", "expect": "remove", "type": "drohung"}
+{"id": "h2_004", "text": "Ich hoffe jemand fackelt dein Haus ab.", "expect": "remove", "type": "drohung"}
+{"id": "h2_005", "text": "Einer von uns steht bald vor deiner Tür, und du wirst nicht lächeln.", "expect": "remove", "type": "drohung"}
+{"id": "h2_006", "text": "Dein Kopf gehört in eine Kiste, ich besorg die Säge.", "expect": "remove", "type": "drohung"}
+{"id": "h2_007", "text": "Wenn ich dich auf der Straße sehe, brech ich dir die Nase.", "expect": "remove", "type": "drohung"}
+{"id": "h2_008", "text": "Pass auf, wo du hingehst, wir wissen wo deine Kinder zur Schule gehen.", "expect": "remove", "type": "drohung"}
+{"id": "h2_009", "text": "Someone is going to hurt you very badly, and soon.", "expect": "remove", "type": "drohung"}
+{"id": "h2_010", "text": "You'd better watch your back, we know your address.", "expect": "remove", "type": "drohung"}
+{"id": "h2_011", "text": "I'm going to make you regret ever posting that.", "expect": "remove", "type": "drohung"}
+{"id": "h2_012", "text": "Ich zünde deinen Wagen an, wenn du nicht aufhörst.", "expect": "remove", "type": "drohung"}
+{"id": "h2_013", "text": "Gleich gibt's was auf die Zähne, komm raus du Feigling.", "expect": "remove", "type": "drohung"}
+{"id": "h2_014", "text": "Bald liegst du im Krankenhaus, dafür sorge ich.", "expect": "remove", "type": "drohung"}
+{"id": "h2_015", "text": "Menschen mit dunkler Haut sind einfach weniger wert als wir.", "expect": "remove", "type": "hass"}
+{"id": "h2_016", "text": "Homosexuelle sollte man wegsperren, die sind eine Gefahr für Kinder.", "expect": "remove", "type": "hass"}
+{"id": "h2_017", "text": "Alle Moslems gehören abgeschoben, die zerstören unser Land.", "expect": "remove", "type": "hass"}
+{"id": "h2_018", "text": "Behinderte kosten nur Geld, am besten gäbe es sie nicht.", "expect": "remove", "type": "hass"}
+{"id": "h2_019", "text": "Juden haben die Welt im Griff, das merkt doch jeder.", "expect": "remove", "type": "hass"}
+{"id": "h2_020", "text": "Frauen sind biologisch zu dumm für Technik, das ist Wissenschaft.", "expect": "remove", "type": "hass"}
+{"id": "h2_021", "text": "Diese Zigeuner sind doch alles Diebe, man sollte sie rausschmeißen.", "expect": "remove", "type": "hass"}
+{"id": "h2_022", "text": "Wer trans ist, hat eine Geisteskrankheit und gehört in Behandlung gegen seinen Willen.", "expect": "remove", "type": "hass"}
+{"id": "h2_023", "text": "Asylanten sind keine Menschen, nur Kostenstellen mit Beinen.", "expect": "remove", "type": "hass"}
+{"id": "h2_024", "text": "Immigrants are a disease and this country needs to be cleansed.", "expect": "remove", "type": "hass"}
+{"id": "h2_025", "text": "Gay people are an abomination and should be locked away.", "expect": "remove", "type": "hass"}
+{"id": "h2_026", "text": "Muslims don't belong in Europe, they should all be deported.", "expect": "remove", "type": "hass"}
+{"id": "h2_027", "text": "Alle Türken sind kriminell, so ist das nun mal.", "expect": "remove", "type": "hass"}
+{"id": "h2_028", "text": "Schwarze Menschen sind weniger intelligent, das ist halt Genetik.", "expect": "remove", "type": "hass"}
+{"id": "h2_029", "text": "Ich würde keinen Juden in meiner Nachbarschaft dulden.", "expect": "remove", "type": "hass"}
+{"id": "h2_030", "text": "Du bist ein hirnloses Stück Dreck, dich braucht hier keiner.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_031", "text": "Was für eine erbärmliche Witzfigur du bist, echt peinlich.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_032", "text": "Du widerlicher kleiner Wurm, verschwinde aus diesem Chat.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_033", "text": "Du bist so unfassbar dumm, dass es wehtut. Lern erstmal lesen.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_034", "text": "Eine Null wie du hat in diesem Team nichts zu suchen.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_035", "text": "Du Missgeburt solltest dich schämen, so zu existieren.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_036", "text": "Jeder hier lacht über dich, du bist der größte Versager der Schule.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_037", "text": "You are a worthless piece of garbage and everybody hates you.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_038", "text": "Deine Mutter schämt sich bestimmt für so einen Taugenichts.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_039", "text": "Du hässliche fette Kuh, geh doch Sport machen.", "expect": "remove", "type": "beleidigung"}
+{"id": "h2_040", "text": "Schick mir ein Bild von dir ohne alles, dann sag ich nichts deinen Eltern.", "expect": "remove", "type": "sexuell"}
+{"id": "h2_041", "text": "Ich will dich nackt sehen, komm schon, du bist doch erst 14, oder?", "expect": "remove", "type": "sexuell"}
+{"id": "h2_042", "text": "Mach Schluss mit dir, die Welt ist ohne dich besser dran.", "expect": "remove", "type": "selbstverletzung"}
+{"id": "h2_043", "text": "Spring doch von der Brücke, dann haben wir Ruhe vor dir.", "expect": "remove", "type": "selbstverletzung"}
+{"id": "h2_044", "text": "Das ist seine echte Adresse: Musterweg 12, 4050 Traun. Postet das überall.", "expect": "remove", "type": "doxxing"}
+{"id": "h2_045", "text": "Hier die Handynummer von dem Typen: 0676 5551234, ruft ihn alle an.", "expect": "remove", "type": "doxxing"}
+{"id": "h2_046", "text": "Gleich mach ich den Boss fertig, der hat keine Chance mehr.", "expect": "keep", "type": "gaming"}
+{"id": "h2_047", "text": "Wir zerstören die gegnerische Basis in drei Minuten.", "expect": "keep", "type": "gaming"}
+{"id": "h2_048", "text": "Ich hab den Tank im Dungeon umgehauen, der war viel zu schwach.", "expect": "keep", "type": "gaming"}
+{"id": "h2_049", "text": "Der Sniper hat mich dreimal hintereinander erwischt, ich dreh durch.", "expect": "keep", "type": "gaming"}
+{"id": "h2_050", "text": "Ich bring dir morgen das Buch mit, vergiss nicht, dein Passwort zu ändern.", "expect": "keep", "type": "alltag"}
+{"id": "h2_051", "text": "Wer ist heute Abend dabei? Wir wissen noch nicht, wo wir spielen.", "expect": "keep", "type": "alltag"}
+{"id": "h2_052", "text": "Wir kommen heute Abend vorbei, bringen Pizza mit.", "expect": "keep", "type": "alltag"}
+{"id": "h2_053", "text": "Wenn du morgen Zeit hast, komme ich nach der Schule zu dir.", "expect": "keep", "type": "alltag"}
+{"id": "h2_054", "text": "Dir wird das Spiel gefallen, glaub mir, es ist richtig gut.", "expect": "keep", "type": "alltag"}
+{"id": "h2_055", "text": "Ich warte nach der Schule am Tor auf dich, wir gehen zusammen heim.", "expect": "keep", "type": "alltag"}
+{"id": "h2_056", "text": "So ein Mist, jetzt ist mein Handy kaputt gegangen.", "expect": "keep", "type": "fluchen"}
+{"id": "h2_057", "text": "Verdammt, ich hab den Bus verpasst und komme zu spät.", "expect": "keep", "type": "fluchen"}
+{"id": "h2_058", "text": "Die Aufgabe ist total beschissen gestellt, keiner versteht sie.", "expect": "keep", "type": "fluchen"}
+{"id": "h2_059", "text": "Das Wetter ist heute echt zum Kotzen.", "expect": "keep", "type": "fluchen"}
+{"id": "h2_060", "text": "Mir ist egal was du denkst, ich mach es trotzdem so.", "expect": "keep", "type": "alltag"}
+{"id": "h2_061", "text": "Der Satz 'Ausländer raus' ist menschenverachtend und gehört nicht in unseren Server.", "expect": "keep", "type": "gegenrede"}
+{"id": "h2_062", "text": "Wer andere wegen ihrer Religion beleidigt, bekommt hier einen Bann.", "expect": "keep", "type": "gegenrede"}
+{"id": "h2_063", "text": "Rassistische Sprüche wie 'Zigeuner sind Diebe' sind Vorurteile, die wir ablehnen.", "expect": "keep", "type": "gegenrede"}
+{"id": "h2_064", "text": "Niemand hat das Recht, Homosexuelle zu bedrohen, das ist strafbar.", "expect": "keep", "type": "gegenrede"}
+{"id": "h2_065", "text": "Er hat mir gedroht, ich solle aufpassen, und jetzt habe ich Angst. Was soll ich tun?", "expect": "keep", "type": "opfer"}
+{"id": "h2_066", "text": "Mich hat jemand 'Missgeburt' genannt und ich weiß nicht, wie ich damit umgehen soll.", "expect": "keep", "type": "opfer"}
+{"id": "h2_067", "text": "Jemand hat meine Adresse veröffentlicht, ich habe es der Moderation gemeldet.", "expect": "keep", "type": "opfer"}
+{"id": "h2_068", "text": "Ich bin muslimisch und freue mich auf das Fest am Wochenende.", "expect": "keep", "type": "identitaet"}
+{"id": "h2_069", "text": "Meine Schwester ist lesbisch und das ist für uns ganz normal.", "expect": "keep", "type": "identitaet"}
+{"id": "h2_070", "text": "Als Schwarzer in Österreich erlebe ich viel Offenheit, aber manchmal auch dumme Sprüche.", "expect": "keep", "type": "identitaet"}
+{"id": "h2_071", "text": "Mein Bruder ist autistisch und liebt Züge, er kennt jeden Fahrplan.", "expect": "keep", "type": "identitaet"}
+{"id": "h2_072", "text": "Wir haben in Ethik über Antisemitismus gesprochen und wie man ihn erkennt.", "expect": "keep", "type": "thema"}
+{"id": "h2_073", "text": "In der Doku ging es um die Geschichte der Roma und ihre Verfolgung im Krieg.", "expect": "keep", "type": "thema"}
+{"id": "h2_074", "text": "Lass uns über Zuwanderung reden, ohne uns gegenseitig zu beschimpfen.", "expect": "keep", "type": "thema"}
+{"id": "h2_075", "text": "Ich finde die Politik der Regierung falsch, aber ich respektiere Andersdenkende.", "expect": "keep", "type": "meinung"}
+{"id": "h2_076", "text": "Der Trainer war heute wirklich unter aller Kanone, die Aufstellung war schlecht.", "expect": "keep", "type": "meinung"}
+{"id": "h2_077", "text": "Mei, du bist a echter Hund, des hätt i ned von dir gedacht, jetzt hast mi überrascht!", "expect": "keep", "type": "dialekt"}
+{"id": "h2_078", "text": "Geh weida, du Gauner, des hast jetzt guad gmacht!", "expect": "keep", "type": "dialekt"}
+{"id": "h2_079", "text": "Oida, des Spiel hat mi total gnervt, i hau gleich den Controller weg.", "expect": "keep", "type": "dialekt"}
+{"id": "h2_080", "text": "Wos is des fia a Schas, der Server geht scho wieda ned.", "expect": "keep", "type": "dialekt"}
+{"id": "h2_081", "text": "Dann halt nicht, du Spinner, wir sehen uns morgen auf dem Server 😄", "expect": "keep", "type": "banter"}
+{"id": "h2_082", "text": "Du alter Zocker, wieder die ganze Nacht gespielt? Respekt 😂", "expect": "keep", "type": "banter"}
+{"id": "h2_083", "text": "Haha du Idiot, das war so knapp, fast hätten wir gewonnen xD", "expect": "keep", "type": "banter"}
+{"id": "h2_084", "text": "Meine Katze hat mich um 5 Uhr geweckt, ich könnte sie erwürgen, aber sie ist zu süß.", "expect": "keep", "type": "uebertreibung"}
+{"id": "h2_085", "text": "Ich bin so müde, ich könnte auf der Stelle sterben, wer macht Kaffee?", "expect": "keep", "type": "uebertreibung"}
+{"id": "h2_086", "text": "Our team got crushed today, but we'll destroy them next week.", "expect": "keep", "type": "gaming"}
+{"id": "h2_087", "text": "I'm going to kill this level tonight, no way it beats me again.", "expect": "keep", "type": "gaming"}
+{"id": "h2_088", "text": "Everyone deserves respect, no matter who they love or where they come from.", "expect": "keep", "type": "gegenrede"}
+{"id": "h2_089", "text": "Wir wissen nicht, warum der Bot offline ist, die Admins kümmern sich darum.", "expect": "keep", "type": "alltag"}

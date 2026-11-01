@@ -1,8 +1,8 @@
 """Live, stateless risk assessment.
 
 Replaces the removed cross-server trust score. Risk is computed on the fly from data Discord
-already exposes (account age) plus *this guild's own* moderation history, and an opt-in,
-human-gated network safety flag. Nothing here is stored as a per-user profile — the result is
+already exposes (account age, time in this server) plus *this guild's own* moderation history,
+and an opt-in, human-gated network safety flag. Nothing here is stored as a per-user profile — the result is
 used for the on-join alert / adaptive strictness and then discarded.
 """
 from __future__ import annotations
@@ -17,11 +17,15 @@ from assets.message.warnings import get_warnings
 NEW_ACCOUNT_DAYS = 7
 # This-guild warning count at/above which the user is treated as risky locally.
 RISKY_WARN_COUNT = 2
+# A member is only "trusted" after this many days in THIS server (and with no active warning).
+# Account age says nothing about behaviour, so it is only used to spot brand-new accounts.
+TRUST_MEMBER_DAYS = 30
 
 
 @dataclass
 class RiskSignals:
     account_age_days: int | None = None
+    member_days:      int | None = None     # days since the user joined THIS guild (None = unknown)
     warnings:         int = 0
     guild_flagged:    bool = False          # flagged in THIS guild's local users table
     safety_category:  str | None = None     # coarse category from opt-in network safety list
@@ -42,7 +46,9 @@ class RiskSignals:
 
     @property
     def is_trusted(self) -> bool:
-        return not self.is_risky and (self.account_age_days is None or self.account_age_days >= 90) and self.warnings == 0
+        """Long-standing member of this server without an active warning. Unknown membership is not trusted."""
+        return (not self.is_risky and self.warnings == 0
+                and self.member_days is not None and self.member_days >= TRUST_MEMBER_DAYS)
 
     @property
     def strictness(self) -> float:
@@ -55,9 +61,9 @@ class RiskSignals:
 
 
 def assess(user_id: int, guild_id: int, account_age_days: int | None = None,
-           consume_safety_list: bool = True) -> RiskSignals:
+           consume_safety_list: bool = True, member_days: int | None = None) -> RiskSignals:
     """Compute live risk signals for a user in a guild. No storage, no profile."""
-    sig = RiskSignals(account_age_days=account_age_days)
+    sig = RiskSignals(account_age_days=account_age_days, member_days=member_days)
 
     # This guild's own warning history (per-guild, not aggregated across servers).
     try:

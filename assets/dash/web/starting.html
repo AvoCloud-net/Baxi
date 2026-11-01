@@ -34,12 +34,10 @@
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            font-size: var(--avo-ui-label);
+            font-weight: 500;
             padding: 0.3rem 0.85rem;
-            border-radius: var(--avo-radius);
+            border-radius: var(--avo-radius-pill);
             border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
             opacity: 0.7;
         }
@@ -56,7 +54,7 @@
             line-height: 1.65;
         }
         /* Loading gesture: the shared tick-ring spinner (main.css .avo-spinner),
-           sized up for this splash page (BRANDING §9 — one loader, not two). */
+           sized up for this splash page (one loader, not two). */
         .spinner {
             width: 2.5rem;
             height: 2.5rem;
@@ -93,7 +91,8 @@
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
 
-        <div class="starting-hero">
+        <div class="starting-hero px-host px-free">
+            <canvas class="px-canvas" data-dither data-shape="wave" aria-hidden="true"></canvas>
             <span class="hero-badge">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                 Baxi Dashboard
@@ -120,6 +119,7 @@
         // Auto-refresh every 5 seconds until the bot is ready
         setTimeout(() => location.reload(), 10000);
     </script>
+    <script src="{{ url_for('static', filename='scripts/dither.js') }}?v={{ static_versions.get('scripts/dither.js', '') }}"></script>
     <script src="{{ url_for('static', filename='scripts/main.js') }}?v={{ static_versions.get('scripts/main.js', '') }}"></script>
 </body>
 

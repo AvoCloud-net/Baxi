@@ -6,12 +6,15 @@ no cross-server behavioral data is recorded (removed for Discord Developer Polic
 """
 from __future__ import annotations
 
+import datetime
+
 import discord
 from discord.ext import commands
 from reds_simple_logger import Logger
 
 import assets.data as datasys
 import config.config as config
+from assets.moderation import cases
 from assets.share import admin_log
 from .verdict import Verdict
 
@@ -63,9 +66,22 @@ async def _apply_member_action(message: discord.Message, action: str, lang: dict
     member = message.guild.get_member(message.author.id)
     if member is None:
         return
+    case_no = None
+    acted = False
+    gid = message.guild.id
+    why = lang["moderation"]["auto"]["antispam"]
     try:
+        if action in ("mute", "kick", "ban"):
+            blocked = cases.can_act(message.guild, member, action, lang)
+            if blocked:
+                logger.error(f"AntiSpam: cannot {action} {member.name} in {message.guild.name}: {blocked}")
+                return
         if action == "mute":
-            await member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=5))
+            case_no = cases.record(gid, "mute", member, bot.user, why, duration_s=300)
+            await member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=5),
+                                 reason=f"{why} (case #{case_no})" if case_no else why)
+            acted = True
+            await cases.notify(message.guild, member, case_no, "mute", why, seconds=300)
             embed = discord.Embed(
                 title=lang["systems"]["antispam"]["title"],
                 description=str(lang["systems"]["antispam"]["muted"]).format(user=message.author.mention),
@@ -76,13 +92,23 @@ async def _apply_member_action(message: discord.Message, action: str, lang: dict
             from assets.message.warnings import add_warning
             await add_warning(
                 guild_id=message.guild.id, user=member, moderator=bot.user,
-                reason="Anti-Spam", bot=bot, channel=message.channel,
+                reason=why, bot=bot, channel=message.channel,
             )
         elif action == "kick":
-            await member.kick(reason="Anti-Spam")
+            case_no = cases.record(gid, "kick", member, bot.user, why)
+            await cases.notify(message.guild, member, case_no, "kick", why)
+            await member.kick(reason=f"{why} (case #{case_no})" if case_no else why)
+            acted = True
         elif action == "ban":
-            await member.ban(reason="Anti-Spam")
+            case_no = cases.record(gid, "ban", member, bot.user, why)
+            await cases.notify(message.guild, member, case_no, "ban", why, permanent=True)
+            await member.ban(reason=f"{why} (case #{case_no})" if case_no else why)
+            acted = True
     except discord.Forbidden:
+        if not acted:
+            cases.discard(gid, case_no)
         logger.error(f"AntiSpam: Missing permissions to {action} {member.name} in {message.guild.name}")
     except Exception as e:
+        if not acted:
+            cases.discard(gid, case_no)
         logger.error(f"AntiSpam action error: {e}")

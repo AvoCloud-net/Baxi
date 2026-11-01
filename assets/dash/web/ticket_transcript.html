@@ -10,7 +10,7 @@
     <meta property="og:description" content="Transcript for support ticket #{{data.id}} -  {{data.title}}">
     <meta property="og:url" content="https://baxi.avocloud.net/">
     <meta property="og:type" content="website">
-    <meta name="theme-color" content="#141518" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#111215" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#F4F6F7" media="(prefers-color-scheme: light)">
 
     <script src="{{ cdn.tailwind_js }}"></script>
@@ -27,10 +27,9 @@
             --avatar-size: 48px;
         }
 
-        /* The log is one panel: it carries the box radius and the glass, and the
-           messages inside it are hairline rows, not rounded panels of their own
-           (BRANDING §9: round the container, not the contents). The corner marks
-           come from main.css. */
+        /* The log is one panel: it carries the radius, and the messages inside it
+           are rows, not rounded panels of their own (round the container, not the
+           contents). */
         .chat-log {
             position: relative;
             display: flex;
@@ -38,15 +37,12 @@
             gap: var(--chat-spacing);
             margin: 2rem 0 0;
             padding: 1.5rem;
-            background: linear-gradient(var(--avo-glass-tint), var(--avo-glass-tint-2));
+            background: var(--avo-surface);
             border: 1px solid var(--avo-line);
             border-radius: var(--avo-radius-lg);
-            backdrop-filter: blur(var(--avo-glass-blur));
-            -webkit-backdrop-filter: blur(var(--avo-glass-blur));
-            box-shadow: inset 0 1px 0 var(--avo-glass-edge);
         }
 
-        /* No entrance animation on data (§9 motion budget): a transcript is read,
+        /* No entrance animation on data (no entrance animation on data): a transcript is read,
            not watched arriving. */
         .chat-message {
             display: flex;
@@ -66,7 +62,7 @@
         .chat-bubble {
             background-color: var(--avo-surface-raised);
             padding: 0.75rem 1rem;
-            border-radius: 0;
+            border-radius: var(--avo-radius);
             max-width: min(100%, 800px);
             width: fit-content;
             border: 1px solid var(--avo-line);
@@ -104,20 +100,16 @@
             line-height: 1.5;
         }
 
-        /* Status is the semantic colour on a hairline and a mono label, never a
-           filled ground (§9). */
+        /* Status is the semantic colour on a hairline pill, never a filled ground. */
         .ticket-status {
             display: inline-flex;
             align-items: center;
             height: var(--avo-ui-control-h-compact);
             padding: 0 0.75rem;
-            border-radius: var(--avo-radius);
+            border-radius: var(--avo-radius-pill);
             border: 1px solid var(--avo-line-strong);
-            font-family: var(--avo-font-mono);
             font-size: var(--avo-ui-label);
             font-weight: 500;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
         }
 
         .status-open {
@@ -255,7 +247,7 @@
 
             <!-- Initial Request -->
             <section class="pb-8" id="initial-request">
-                <div class="section-label">INITIAL REQUEST</div>
+                <div class="section-label">Initial request</div>
                 <div class="card">
                     <header>
                         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -324,7 +316,7 @@
                                 {% for attachment in entry.attachments %}
                                 <a href="{{ attachment_url }}{{ attachment }}" target="_blank" rel="noopener noreferrer">
                                     <img src="{{ attachment_url }}{{ attachment }}" alt="Attachment"
-                                        style="border: 1px solid var(--avo-line); max-width: 600px;">
+                                        style="border: 1px solid var(--avo-line); max-width: 600px;border-radius:var(--avo-radius-lg);">
                                 </a>
                                 {% endfor %}
                             </div>

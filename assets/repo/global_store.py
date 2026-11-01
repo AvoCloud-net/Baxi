@@ -63,14 +63,15 @@ def add_global_report(entry: dict) -> None:
     """Append one network-wide user report. Human-submitted, not inferred data."""
     db.execute(
         "INSERT INTO global_reports "
-        "(reported_id,reported_name,reporter_id,reporter_name,guild_id,guild_name,reason,message_link,timestamp) "
-        "VALUES (?,?,?,?,?,?,?,?,?)",
+        "(reported_id,reported_name,reporter_id,reporter_name,guild_id,guild_name,reason,message_link,timestamp,category,message_text) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (
             str(entry.get("reported_id", "")), str(entry.get("reported_name", "")),
             str(entry.get("reporter_id", "")), str(entry.get("reporter_name", "")),
             str(entry.get("guild_id", "")), str(entry.get("guild_name", "")),
             str(entry.get("reason", "")), str(entry.get("message_link", "")),
             str(entry.get("timestamp", "")),
+            str(entry.get("category", "")), str(entry.get("message_text", "")),
         ),
     )
 
@@ -90,6 +91,8 @@ def load_global_reports(limit: int = 500) -> list:
             "reason": str(r["reason"] or ""),
             "message_link": str(r["message_link"] or ""),
             "timestamp": str(r["timestamp"] or ""),
+            "category": str(r["category"] or ""),
+            "message_text": str(r["message_text"] or ""),
         }
         for r in rows
     ]

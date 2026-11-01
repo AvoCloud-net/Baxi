@@ -5,6 +5,7 @@ import os
 
 import assets.data as datasys
 import discord
+from assets.moderation import cases
 from assets.views import (
     Verify_Captcha_Modal,
     Verify_Password_Modal,
@@ -19,7 +20,34 @@ from zoneinfo import ZoneInfo
 _VIENNA = ZoneInfo("Europe/Vienna")
 
 
-class BanConfirmView(ui.View):
+def _with_case(audit_reason: str, case_no) -> str:
+    """Discord audit-log reason with the case number (max 512 chars)."""
+    return (f"{audit_reason} (case #{case_no})" if case_no else audit_reason)[:500]
+
+
+def _case_fields(embed: discord.Embed, lang: dict, case_no, dm_ok: bool, user, guild_id: int) -> None:
+    """Case number on the moderator's confirmation, plus a hint when the DM did not arrive."""
+    if case_no:
+        embed.add_field(name=lang["moderation"]["dm"]["f_case"], value=f"#{case_no}", inline=False)
+    if not dm_ok:
+        embed.add_field(name="\u200b", value=cases.dm_failed_note(lang, user, guild_id), inline=False)
+
+
+class _ModeratorOnly(ui.View):
+    """Confirmation views are posted in the open channel: only the moderator who started the
+    action may confirm or cancel it. Subclasses set self.moderator."""
+    moderator: discord.abc.User
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user.id == self.moderator.id:
+            return True
+        guild_id = interaction.guild.id if interaction.guild else 1001
+        await interaction.response.send_message(
+            datasys.load_lang_file(guild_id)["moderation"]["not_yours_confirm"], ephemeral=True)
+        return False
+
+
+class BanConfirmView(_ModeratorOnly):
     def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str, duration: Optional[datetime.timedelta] = None):
         super().__init__(timeout=None)
         self.user = user
@@ -40,46 +68,30 @@ class BanConfirmView(ui.View):
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
+        case_no = None
+        acted = False
         try:
             duration_str = datasys.format_duration(self.duration) if self.duration else lang["commands"]["admin"]["duration_permanent"]
             expires_at = datetime.datetime.utcnow() + self.duration if self.duration else None
+            seconds = int(self.duration.total_seconds()) if self.duration else None
 
-            # DM user before ban
-            try:
-                dm_embed = discord.Embed(
-                    title=str(lang["commands"]["admin"]["ban"]["dm_title"]).format(guild=interaction.guild.name),
-                    color=config.Discord.danger_color,
-                )
-                dm_embed.add_field(name=lang["commands"]["admin"]["field_reason"], value=self.reason, inline=False)
-                dm_embed.add_field(name=lang["commands"]["admin"]["field_duration"], value=duration_str, inline=False)
-                dm_embed.add_field(name=lang["commands"]["admin"]["field_mod"], value=str(interaction.user), inline=False)
-                if expires_at:
-                    dm_embed.add_field(name=lang["commands"]["admin"]["field_expires"], value=f"<t:{int(expires_at.timestamp())}:F>", inline=False)
-                dm_embed.set_footer(text="Baxi · avocloud.net")
-                await self.user.send(embed=dm_embed)
-            except (discord.Forbidden, discord.HTTPException):
-                pass
+            # Can it happen at all? Checked before anything is recorded or sent.
+            blocked = cases.can_act(interaction.guild, self.user, "ban", lang)
+            if blocked:
+                return await interaction.response.send_message(blocked, ephemeral=True)
+            # The case number comes first: the DM and the audit-log reason carry it.
+            case_no = cases.record(interaction.guild.id, "ban", self.user, interaction.user, self.reason,
+                                   duration_s=seconds)
+            # DM before the ban (a banned user shares no server with Baxi any more), max 5 s
+            dm_ok = await cases.notify(interaction.guild, self.user, case_no, "ban", self.reason,
+                                       seconds=seconds, permanent=not self.duration)
 
             await self.user.ban(
-                reason=str(lang["commands"]["admin"]["ban"]["audit_reason"]).format(
-                    moderator=self.user.name, reason=self.reason
-                )
+                reason=_with_case(str(lang["commands"]["admin"]["ban"]["audit_reason"]).format(
+                    moderator=interaction.user.name, reason=self.reason
+                ), case_no)
             )
-
-            # Log mod event for BaxiInsights
-            try:
-                assert interaction.guild is not None
-                datasys.append_mod_event(interaction.guild.id, {
-                    "type": "ban",
-                    "user_id": str(self.user.id),
-                    "user_name": self.user.name,
-                    "mod_id": str(interaction.user.id),
-                    "mod_name": interaction.user.name,
-                    "reason": self.reason,
-                    "timestamp": datetime.datetime.utcnow().isoformat(),
-                })
-            except Exception:
-                pass
+            acted = True
 
             # (Safety-list contribution is handled centrally in the on_member_ban event,
             #  so it covers Baxi, Discord-native and other-bot bans alike.)
@@ -118,6 +130,7 @@ class BanConfirmView(ui.View):
                 inline=False,
             )
             embed.add_field(name=lang["commands"]["admin"]["field_duration"], value=duration_str, inline=False)
+            _case_fields(embed, lang, case_no, dm_ok, self.user, interaction.guild.id)
 
             for item in self.children:
                 button = cast(discord.ui.Button, item)
@@ -126,11 +139,15 @@ class BanConfirmView(ui.View):
             await interaction.response.edit_message(embed=embed, view=self)
 
         except discord.Forbidden:
+            if not acted:
+                cases.discard(interaction.guild.id, case_no)
             await interaction.response.send_message(
                 lang["commands"]["admin"]["ban"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
+            if not acted:
+                cases.discard(interaction.guild.id, case_no)
             await interaction.response.send_message(
                 str(lang["commands"]["admin"]["ban"]["error"]).format(error=str(e)),
                 ephemeral=True,
@@ -160,7 +177,7 @@ class BanConfirmView(ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-class KickConfirmView(ui.View):
+class KickConfirmView(_ModeratorOnly):
     def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str):
         super().__init__(timeout=None)
         self.user = user
@@ -180,40 +197,22 @@ class KickConfirmView(ui.View):
                 )
             )
         lang = datasys.load_lang_file(interaction.guild.id)
+        case_no = None
+        acted = False
         try:
-            # DM user before kick
-            try:
-                dm_embed = discord.Embed(
-                    title=str(lang["commands"]["admin"]["kick"]["dm_title"]).format(guild=interaction.guild.name),
-                    color=config.Discord.warn_color,
-                )
-                dm_embed.add_field(name=lang["commands"]["admin"]["field_reason"], value=self.reason, inline=False)
-                dm_embed.add_field(name=lang["commands"]["admin"]["field_mod"], value=str(interaction.user), inline=False)
-                dm_embed.set_footer(text="Baxi · avocloud.net")
-                await self.user.send(embed=dm_embed)
-            except (discord.Forbidden, discord.HTTPException):
-                pass
+            blocked = cases.can_act(interaction.guild, self.user, "kick", lang)
+            if blocked:
+                return await interaction.response.send_message(blocked, ephemeral=True)
+            case_no = cases.record(interaction.guild.id, "kick", self.user, interaction.user, self.reason)
+            # DM before the kick, while the user still shares a server with Baxi (max 5 s)
+            dm_ok = await cases.notify(interaction.guild, self.user, case_no, "kick", self.reason)
 
             await self.user.kick(
-                reason=str(lang["commands"]["admin"]["kick"]["audit_reason"]).format(
-                    moderator=self.user.name, reason=self.reason
-                )
+                reason=_with_case(str(lang["commands"]["admin"]["kick"]["audit_reason"]).format(
+                    moderator=interaction.user.name, reason=self.reason
+                ), case_no)
             )
-
-            # Log mod event for BaxiInsights
-            try:
-                assert interaction.guild is not None
-                datasys.append_mod_event(interaction.guild.id, {
-                    "type": "kick",
-                    "user_id": str(self.user.id),
-                    "user_name": self.user.name,
-                    "mod_id": str(interaction.user.id),
-                    "mod_name": interaction.user.name,
-                    "reason": self.reason,
-                    "timestamp": datetime.datetime.utcnow().isoformat(),
-                })
-            except Exception:
-                pass
+            acted = True
 
             # (Kick is a local action only -  no cross-server record. The safety denylist is
             #  reserved for bans / explicit reports.)
@@ -238,6 +237,7 @@ class KickConfirmView(ui.View):
                 value=self.reason,
                 inline=False,
             )
+            _case_fields(embed, lang, case_no, dm_ok, self.user, interaction.guild.id)
 
             for item in self.children:
                 button = cast(discord.ui.Button, item)
@@ -246,11 +246,15 @@ class KickConfirmView(ui.View):
             await interaction.response.edit_message(embed=embed, view=self)
 
         except discord.Forbidden:
+            if not acted:
+                cases.discard(interaction.guild.id, case_no)
             await interaction.response.send_message(
                 lang["commands"]["admin"]["kick"]["bot_missing_perms"],
                 ephemeral=True,
             )
         except Exception as e:
+            if not acted:
+                cases.discard(interaction.guild.id, case_no)
             await interaction.response.send_message(
                 str(lang["commands"]["admin"]["kick"]["error"]).format(error=str(e)),
                 ephemeral=True,
@@ -282,7 +286,7 @@ class KickConfirmView(ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-class UbanConfirmView(ui.View):
+class UbanConfirmView(_ModeratorOnly):
     def __init__(
         self,
         user: Union[discord.Member, discord.User],
@@ -308,15 +312,22 @@ class UbanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
-            await interaction.guild.unban(
-                self.user,
-                reason=str(lang["commands"]["admin"]["unban"]["audit_reason"]).format(
-                    moderator=interaction.user.name  # vermutlich Moderator, nicht User!
-                ),
-            )
+            case_no = cases.record(interaction.guild.id, "unban", self.user, interaction.user, self.reason or "")
+            try:
+                await interaction.guild.unban(
+                    self.user,
+                    reason=_with_case(str(lang["commands"]["admin"]["unban"]["audit_reason"]).format(
+                        moderator=interaction.user.name, reason=self.reason or ""
+                    ), case_no),
+                )
+            except Exception:
+                cases.discard(interaction.guild.id, case_no)
+                raise
+            # best effort: an unbanned user often shares no server with Baxi yet
+            await cases.notify(interaction.guild, self.user, case_no, "unban", self.reason or "")
 
             embed = discord.Embed(
-                title=f'{lang["commands"]["admin"]["unban"]["title"]} // {self.user_id}',
+                title=f'{lang["commands"]["admin"]["unban"]["title"]} // {self.user.id}',
                 description=lang["commands"]["admin"]["unban"]["success"],
                 color=config.Discord.success_color,
             )
@@ -335,6 +346,8 @@ class UbanConfirmView(ui.View):
                 value=self.reason,
                 inline=False,
             )
+            if case_no:
+                embed.add_field(name=lang["moderation"]["dm"]["f_case"], value=f"#{case_no}", inline=False)
 
             for item in self.children:
                 button = cast(discord.ui.Button, item)
@@ -367,7 +380,7 @@ class UbanConfirmView(ui.View):
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
-            title=str(lang["commands"]["admin"]["unban"]["abort_title"]).format(user=self.user_id),
+            title=str(lang["commands"]["admin"]["unban"]["abort_title"]).format(user=self.user.id),
             description=lang["commands"]["admin"]["unban"]["abort"],
             color=config.Discord.warn_color,
         )
@@ -379,7 +392,7 @@ class UbanConfirmView(ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
-class ClearConfirmView(ui.View):
+class ClearConfirmView(_ModeratorOnly):
     def __init__(
         self,
         amount: int,

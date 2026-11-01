@@ -19,7 +19,26 @@ import assets.trust as safety
 logger = Logger()
 
 
+async def _record_case(guild: discord.Guild, user: discord.abc.User, bot: commands.AutoShardedBot) -> None:
+    """A ban nobody told Baxi about (Discord's own ban button, another bot, the dashboard)
+    still gets a case, so the case file is complete. A ban Baxi's own command just made
+    already has one a moment ago - then nothing happens. No DM: the user has no way
+    to share a server with Baxi any more, and nothing here can reach them."""
+    from assets.moderation import cases
+    from assets.repo import cases as store
+    if store.recent_case(guild.id, user.id, ("ban",), 120):
+        return
+    entry = await _ban_entry(guild, user)
+    from types import SimpleNamespace
+    mod = entry.user if entry is not None and entry.user else SimpleNamespace(id=-1, name="unknown")
+    cases.record(guild.id, "ban", user, mod, (entry.reason if entry else "") or "", external="1")
+
+
 async def handle_ban(guild: discord.Guild, user: discord.abc.User, bot: commands.AutoShardedBot) -> None:
+    try:
+        await _record_case(guild, user, bot)
+    except Exception as e:
+        logger.error(f"[Cases] ban_hook case failed: {e}")
     # Respect guild participation.
     try:
         if datasys.load_data(guild.id, "prism_enabled") is False:
@@ -40,18 +59,25 @@ async def handle_ban(guild: discord.Guild, user: discord.abc.User, bot: commands
         logger.error(f"[Safety] ban_hook flag failed: {e}")
 
 
-async def _lookup_ban_actor(guild: discord.Guild, user: discord.abc.User) -> tuple[str, str]:
-    """Best-effort: find who issued the ban and why, from the audit log."""
+async def _ban_entry(guild: discord.Guild, user: discord.abc.User):
+    """The audit-log entry of this ban, or None."""
     me = guild.me
     if me is None or not me.guild_permissions.view_audit_log:
-        return "", ""
+        return None
     try:
         async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.ban):
             if entry.target is not None and entry.target.id == user.id:
-                actor = entry.user.name if entry.user else ""
-                return actor, (entry.reason or "")
+                return entry
     except discord.Forbidden:
-        return "", ""
+        return None
     except Exception as e:
         logger.error(f"[Safety] ban audit lookup error: {e}")
-    return "", ""
+    return None
+
+
+async def _lookup_ban_actor(guild: discord.Guild, user: discord.abc.User) -> tuple[str, str]:
+    """Best-effort: find who issued the ban and why, from the audit log."""
+    entry = await _ban_entry(guild, user)
+    if entry is None:
+        return "", ""
+    return (entry.user.name if entry.user else ""), (entry.reason or "")

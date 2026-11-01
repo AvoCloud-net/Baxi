@@ -93,40 +93,18 @@ def remove_warning(gid: int, uid: str, warn_id: str) -> None:
 
 # ── Mod events ────────────────────────────────────────────────────────────────
 
-def append_mod_event(gid: int, event: dict) -> None:
-    """Insert one mod event and prune entries older than 90 days."""
-    db.ensure_guild(gid)
-    _PROMOTED = ["type", "user_id", "user_name", "mod_id", "mod_name", "reason", "timestamp"]
-    with db.transaction() as cx:
-        row = cx.execute(
-            "SELECT COALESCE(MAX(pos)+1,0) as next_pos FROM mod_events WHERE guild_id=?", (gid,)
-        ).fetchone()
-        next_pos = row["next_pos"] if row else 0
-        extra = {k: v for k, v in event.items() if k not in _PROMOTED}
-        cx.execute(
-            "INSERT INTO mod_events "
-            "(guild_id,pos,type,user_id,user_name,mod_id,mod_name,reason,timestamp,extra_json) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (
-                gid, next_pos,
-                event.get("type", ""),
-                str(event.get("user_id", "")),
-                str(event.get("user_name", "")),
-                str(event.get("mod_id", "")),
-                str(event.get("mod_name", "")),
-                str(event.get("reason", "")),
-                str(event.get("timestamp", "")),
-                json.dumps(extra),
-            ),
-        )
-        cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=_INSIGHTS_MAX_DAYS)).isoformat()
-        cx.execute(
-            "DELETE FROM mod_events WHERE guild_id=? AND timestamp < ?", (gid, cutoff)
-        )
+def append_mod_event(gid: int, event: dict) -> int:
+    """Insert one mod event (= one moderation case) and return its case number.
+    Numbering and retention live in assets/repo/cases.py."""
+    from assets.repo import cases
+    return cases.insert_event(gid, event)
 
 
 def load_mod_events(gid: int) -> list:
-    rows = db.query("SELECT * FROM mod_events WHERE guild_id=? ORDER BY pos", (gid,))
+    """The BaxiInsights view of mod_events: only warn/mute/kick/ban (the other case types -
+    unban, unmute, removed messages - are for the case file and would skew the numbers)."""
+    rows = db.query(
+        "SELECT * FROM mod_events WHERE guild_id=? AND type IN ('warn','mute','kick','ban') ORDER BY pos", (gid,))
     result = []
     for r in rows:
         ev: dict = {
@@ -149,7 +127,7 @@ def save_mod_events(gid: int, data: list) -> None:
     _PROMOTED = ["type", "user_id", "user_name", "mod_id", "mod_name", "reason", "timestamp"]
     with db.transaction() as cx:
         cx.execute("DELETE FROM mod_events WHERE guild_id=?", (gid,))
-        for pos, ev in enumerate(data):
+        for pos, ev in enumerate(data, 1):   # case numbers start at 1
             extra = {k: v for k, v in ev.items() if k not in _PROMOTED}
             cx.execute(
                 "INSERT INTO mod_events "
@@ -265,3 +243,136 @@ def resolve_review_item(gid: int, pos: int, status: str, resolved_by: str = "") 
     )
     rows = db.query("SELECT * FROM mod_review_queue WHERE guild_id=? AND pos=?", (gid, pos))
     return _review_row_to_dict(rows[0]) if rows else None
+
+
+def add_review_item_for_message(gid: int, user_id: int, user_name: str, kind: str,
+                                context: dict, message_id: int) -> int | None:
+    """Like add_review_item, but at most one item per (kind, message) - whatever its
+    status, so an edited message or a second run does not ask staff twice.
+    Returns the new pos, or None if the message is already in the queue."""
+    db.ensure_guild(gid)
+    now = datetime.datetime.utcnow().isoformat()
+    ctx = {**(context or {}), "message_id": str(message_id)}
+    with db.transaction() as cx:
+        if cx.execute(
+            "SELECT 1 FROM mod_review_queue WHERE guild_id=? AND kind=? "
+            "AND json_extract(context_json,'$.message_id')=? LIMIT 1",
+            (gid, str(kind), str(message_id)),
+        ).fetchone():
+            return None
+        row = cx.execute(
+            "SELECT COALESCE(MAX(pos)+1,0) as next_pos FROM mod_review_queue WHERE guild_id=?", (gid,)
+        ).fetchone()
+        next_pos = row["next_pos"] if row else 0
+        cx.execute(
+            "INSERT INTO mod_review_queue "
+            "(guild_id,pos,user_id,user_name,kind,status,context_json,created_at) "
+            "VALUES (?,?,?,?,?,'pending',?,?)",
+            (gid, next_pos, str(user_id), str(user_name), str(kind), json.dumps(ctx), now),
+        )
+    return next_pos
+
+
+def update_pending_for_message(gid: int, kind: str, message_id: int, changes: dict) -> bool:
+    """Merge *changes* into the context of the pending item for this message (an
+    edited message re-checked). False if there is no pending item."""
+    with db.transaction() as cx:
+        row = cx.execute(
+            "SELECT pos, context_json FROM mod_review_queue WHERE guild_id=? AND kind=? AND status='pending' "
+            "AND json_extract(context_json,'$.message_id')=? LIMIT 1",
+            (gid, str(kind), str(message_id)),
+        ).fetchone()
+        if not row:
+            return False
+        ctx = {**json.loads(row["context_json"] or "{}"), **changes}
+        cx.execute("UPDATE mod_review_queue SET context_json=? WHERE guild_id=? AND pos=?",
+                   (json.dumps(ctx), gid, row["pos"]))
+    return True
+
+
+def close_pending_for_message(gid: int, kind: str, message_id: int) -> bool:
+    """Close the pending item for this message as 'expired' (no action, no label) and
+    drop its excerpt - e.g. the author edited it into something harmless."""
+    now = datetime.datetime.utcnow().isoformat()
+    cur = db.execute(
+        "UPDATE mod_review_queue SET status='expired',resolved_by='',resolved_at=?, "
+        "context_json=json_set(context_json,'$.excerpt','') "
+        "WHERE guild_id=? AND kind=? AND status='pending' AND json_extract(context_json,'$.message_id')=?",
+        (now, gid, str(kind), str(message_id)),
+    )
+    return cur.rowcount > 0
+
+
+def claim_review_item(gid: int, pos: int, status: str, resolved_by: str = "") -> bool:
+    """Atomically move a *pending* item to *status*. False if someone else (or the
+    expiry) got there first - the caller must not act then."""
+    now = datetime.datetime.utcnow().isoformat()
+    cur = db.execute(
+        "UPDATE mod_review_queue SET status=?,resolved_by=?,resolved_at=? "
+        "WHERE guild_id=? AND pos=? AND status='pending'",
+        (str(status), str(resolved_by), now, gid, pos),
+    )
+    return cur.rowcount == 1
+
+
+def release_review_item(gid: int, pos: int) -> None:
+    """Undo claim_review_item when the action failed: the item is pending again."""
+    db.execute(
+        "UPDATE mod_review_queue SET status='pending',resolved_by='',resolved_at='' WHERE guild_id=? AND pos=?",
+        (gid, pos),
+    )
+
+
+def blank_review_excerpt(gid: int, pos: int) -> None:
+    """Drop the message text of a closed item (it is only needed while staff decide)."""
+    db.execute(
+        "UPDATE mod_review_queue SET context_json=json_set(context_json,'$.excerpt','') "
+        "WHERE guild_id=? AND pos=? AND json_extract(context_json,'$.excerpt') IS NOT NULL",
+        (gid, pos),
+    )
+
+
+def pending_review_summary(gid: int, kinds: tuple[str, ...]) -> tuple[dict[str, int], dict | None]:
+    """({kind: pending count}, newest pending item) over *kinds* - for the staff notice."""
+    marks = ",".join("?" * len(kinds))
+    rows = db.query(
+        f"SELECT kind, COUNT(*) AS n, MAX(pos) AS newest FROM mod_review_queue "
+        f"WHERE guild_id=? AND status='pending' AND kind IN ({marks}) GROUP BY kind",
+        (gid, *kinds),
+    )
+    counts = {str(r["kind"]): int(r["n"]) for r in rows}
+    if not counts:
+        return {}, None
+    newest = max(int(r["newest"]) for r in rows)
+    item = db.query("SELECT * FROM mod_review_queue WHERE guild_id=? AND pos=?", (gid, newest))
+    return counts, (_review_row_to_dict(item[0]) if item else None)
+
+
+def prune_closed_reviews(older_than: str) -> int:
+    """Delete items closed (decided or expired) before *older_than* (ISO, UTC)."""
+    cur = db.execute(
+        "DELETE FROM mod_review_queue WHERE status!='pending' AND resolved_at!='' AND resolved_at < ?",
+        (older_than,),
+    )
+    return cur.rowcount
+
+
+def expire_review_items(kind: str, older_than: str) -> dict[int, int]:
+    """Close pending items of *kind* created before *older_than* (ISO, UTC) as
+    'expired'. Returns {guild_id: number expired}; empty (one indexed query) when
+    nothing is due."""
+    due = db.query(
+        "SELECT guild_id, COUNT(*) AS n FROM mod_review_queue "
+        "WHERE status='pending' AND kind=? AND created_at < ? GROUP BY guild_id",
+        (str(kind), older_than),
+    )
+    if not due:
+        return {}
+    now = datetime.datetime.utcnow().isoformat()
+    db.execute(
+        "UPDATE mod_review_queue SET status='expired',resolved_by='',resolved_at=?, "
+        "context_json=json_set(context_json,'$.excerpt','') "
+        "WHERE status='pending' AND kind=? AND created_at < ?",
+        (now, str(kind), older_than),
+    )
+    return {int(r["guild_id"]): int(r["n"]) for r in due}

@@ -1,0 +1,61 @@
+{
+  "datum": "2026-10-16T21:35:11",
+  "basis": "textdetox/xlmr-large-toxicity-classifier",
+  "seed": 42,
+  "args": {
+    "base": "textdetox/xlmr-large-toxicity-classifier",
+    "out": "/home/murauer/Documents/bwki-baxi/work/v2/models/A2_textdetox_aug",
+    "mix": "/home/murauer/Documents/bwki-baxi/work/v2/mix2",
+    "epochs": 3,
+    "batch": 16,
+    "lr": 2e-05,
+    "maxlen": 128
+  },
+  "train_n": 25471,
+  "val_n": 2259,
+  "epochen": [
+    {
+      "epoche": 1,
+      "train_loss": 0.3923747688793674,
+      "val_macro_f1": 0.8429694793882403,
+      "val_acc_je_quelle": {
+        "mhs+mt-de": 0.8636363636363636,
+        "jigsaw": 0.8864468864468864,
+        "ge18": 0.8023952095808383,
+        "mhs": 0.8834355828220859,
+        "template": 0.9879032258064516,
+        "jigsaw+mt-de": 0.8537735849056604
+      },
+      "sekunden": 265
+    },
+    {
+      "epoche": 2,
+      "train_loss": 0.23707795777871804,
+      "val_macro_f1": 0.8542900873398063,
+      "val_acc_je_quelle": {
+        "mhs+mt-de": 0.8295454545454546,
+        "jigsaw": 0.9047619047619048,
+        "ge18": 0.8083832335329342,
+        "mhs": 0.8773006134969326,
+        "template": 1.0,
+        "jigsaw+mt-de": 0.8537735849056604
+      },
+      "sekunden": 265
+    },
+    {
+      "epoche": 3,
+      "train_loss": 0.17193186228163138,
+      "val_macro_f1": 0.8667800610486494,
+      "val_acc_je_quelle": {
+        "mhs+mt-de": 0.875,
+        "jigsaw": 0.9157509157509157,
+        "ge18": 0.8263473053892215,
+        "mhs": 0.901840490797546,
+        "template": 1.0,
+        "jigsaw+mt-de": 0.8490566037735849
+      },
+      "sekunden": 265
+    }
+  ],
+  "beste_epoche": 3
+}

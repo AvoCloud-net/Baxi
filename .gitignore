@@ -17,3 +17,6 @@ data/safetext/model/
 # Local trainer config (credentials) and work dir
 tools/safetext_trainer/config.toml
 tools/safetext_trainer/work/
+
+# Server-specific settings and secrets (see .env.example)
+.env
