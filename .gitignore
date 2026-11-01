@@ -20,3 +20,6 @@ tools/safetext_trainer/work/
 
 # Server-specific settings and secrets (see .env.example)
 .env
+
+# Advancement icons (third-party pack, not redistributable) - copy to the server by hand
+assets/mc_advancements/*/

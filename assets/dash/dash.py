@@ -30,6 +30,7 @@ import uuid
 import secrets
 import urllib.parse
 import assets.share as share
+import assets.mc_advancements as mc_advancements
 import assets.db as db
 import assets.games.onewordstory as onewordstory_game
 import assets.pulse as pulse_sys
@@ -4917,7 +4918,18 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 channel = guild.get_channel(int(chat_channel_id))
                 if not channel:
                     continue
-                await channel.send(content=safe_text, allowed_mentions=discord.AllowedMentions.none())
+                icon_path = mc_advancements.find_icon(safe_text) if ev_type == "advancement" else None
+                if icon_path:
+                    icon_name = "advancement.png"
+                    embed = discord.Embed(description=safe_text, color=config.Discord.color)
+                    embed.set_image(url=f"attachment://{icon_name}")
+                    await channel.send(
+                        embed=embed,
+                        file=discord.File(mc_advancements.render_icon(icon_path), filename=icon_name),
+                        allowed_mentions=discord.AllowedMentions.none(),
+                    )
+                else:
+                    await channel.send(content=safe_text, allowed_mentions=discord.AllowedMentions.none())
                 delivered += 1
             except Exception as e:
                 print(f"[dg event] send failed for guild {guild_id_int}: {e}")
