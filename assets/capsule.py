@@ -231,7 +231,7 @@ class CapsuleTask:
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 def capsule_commands(bot: commands.AutoShardedBot):
-    group = app_commands.Group(name="capsule", description="Time capsules - a message to the future", guild_only=True)
+    group = app_commands.Group(name="capsule", description="Messages to the future", guild_only=True)
 
     async def _say(interaction: discord.Interaction, text: str, *, ok: bool = False):
         await interaction.followup.send(
@@ -242,7 +242,7 @@ def capsule_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @group.command(name="send", description="Seal a message and have Baxi deliver it in the future")
+    @group.command(name="send", description="Seal a message, delivered later")
     @app_commands.describe(
         message="What do you want to tell the future?",
         delay="Deliver after this long",
@@ -295,7 +295,7 @@ def capsule_commands(bot: commands.AutoShardedBot):
             ok=True,
         )
 
-    @group.command(name="list", description="Your sealed capsules (the text stays secret)")
+    @group.command(name="list", description="Your sealed capsules")
     async def capsule_list(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         t = datasys.load_lang_file(interaction.guild.id)["capsule"]
@@ -311,7 +311,7 @@ def capsule_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @group.command(name="cancel", description="Cancel one of your sealed capsules")
+    @group.command(name="cancel", description="Cancel a sealed capsule")
     async def capsule_cancel(interaction: discord.Interaction, number: app_commands.Range[int, 1, 2_000_000_000]):
         await interaction.response.defer(ephemeral=True)
         t = datasys.load_lang_file(interaction.guild.id)["capsule"]

@@ -260,17 +260,17 @@ def stats(guild_id: int, bot_id: int | None, days: int = 30) -> dict:
 # ── registration ─────────────────────────────────────────────────────────────
 
 def register(bot: commands.AutoShardedBot) -> None:
-    @bot.tree.command(name="case", description="Show everything the team knows about a user (staff only).")
+    @bot.tree.command(name="case", description="Full case file of a member (staff)")
     @app_commands.guild_only()
     @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(user="The user whose case file you want to see.")
     async def case_cmd(interaction: discord.Interaction, user: discord.User):
         await show_case_file(interaction, user)
 
-    note_group = app_commands.Group(name="note", description="Notes about users that only moderators can see.",
+    note_group = app_commands.Group(name="note", description="Private staff notes about members",
                                     guild_only=True, default_permissions=discord.Permissions(moderate_members=True))
 
-    @note_group.command(name="add", description="Add a note about a user.")
+    @note_group.command(name="add", description="Add a note")
     @app_commands.describe(user="The user the note is about.", text="The note (only moderators can see it).")
     async def note_add(interaction: discord.Interaction, user: discord.User, text: app_commands.Range[str, 1, NOTE_MAX]):
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -282,7 +282,7 @@ def register(bot: commands.AutoShardedBot) -> None:
                                       interaction.user.id, interaction.user.name, text.strip())
         await interaction.response.send_message(str(lang["moderation"]["note"]["added"]).format(id=nid), ephemeral=True)
 
-    @note_group.command(name="remove", description="Remove a note (your own, or any with Manage Server).")
+    @note_group.command(name="remove", description="Remove a note")
     @app_commands.describe(number="The note number, e.g. 3 for N3.")
     async def note_remove(interaction: discord.Interaction, number: int):
         lang = datasys.load_lang_file(interaction.guild.id)

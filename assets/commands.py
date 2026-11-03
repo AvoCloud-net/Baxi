@@ -31,7 +31,7 @@ logger = reds_simple_logger.Logger()
 def base_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Base commands loaded.")
 
-    @bot.tree.command(name="help", description="Shows the help panel")
+    @bot.tree.command(name="help", description="How Baxi works and where to start")
     async def help_cmd(interaction: Interaction):
         await interaction.response.defer()
         guild_id: int = interaction.guild.id if interaction.guild is not None else 0
@@ -59,7 +59,7 @@ def base_commands(bot: commands.AutoShardedBot):
         )
         await interaction.edit_original_response(embed=embed)
 
-    @bot.tree.command(name="dashboard", description="Get the link to the Baxi dashboard")
+    @bot.tree.command(name="dashboard", description="Link to the Baxi dashboard")
     async def dashboard_cmd(interaction: Interaction):
         await interaction.response.send_message(
             "## Baxi Dashboard\nConfigure Baxi for your server at: https://baxi.avocloud.net",
@@ -101,7 +101,7 @@ def base_commands(bot: commands.AutoShardedBot):
 
     @bot.tree.command(
         name="my_data",
-        description="Shows what Baxi stores about you and how to opt out or request deletion.",
+        description="What Baxi stores about you, opt out or delete",
     )
     async def my_data_cmd(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -177,7 +177,7 @@ def base_commands(bot: commands.AutoShardedBot):
 
     @bot.tree.command(
         name="safety_optout",
-        description="Opt out of (or back into) the Baxi network safety list.",
+        description="Opt out of (or back into) the network safety list",
     )
     async def prism_optout_cmd(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -219,7 +219,7 @@ def base_commands(bot: commands.AutoShardedBot):
 
     @bot.tree.command(
     name="scan_users",
-    description="Scans this server for users flagged globally on Baxi for malicious or suspicious behavior.",
+    description="Check members against the network safety list",
     )
     async def scan_user(interaction: discord.Interaction):
         
@@ -480,7 +480,7 @@ def base_commands(bot: commands.AutoShardedBot):
             reason = str(self.reason).strip() or REPORT_CATEGORIES.get(category, "Other")
             await _submit_report(interaction, self._reported, reason, self._message, category)
 
-    @bot.tree.command(name="report", description="Report a user to the server team.")
+    @bot.tree.command(name="report", description="Report a member to the server team")
     @app_commands.describe(user="The user you want to report.", reason="What's wrong (optional).",
                            category="What kind of problem it is.")
     @app_commands.choices(category=[app_commands.Choice(name=v, value=k) for k, v in REPORT_CATEGORIES.items()])
@@ -510,7 +510,7 @@ def base_commands(bot: commands.AutoShardedBot):
 def utility_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Utility commands loaded.")
 
-    @bot.tree.command(name="ban", description="Ban a user from the server.")
+    @bot.tree.command(name="ban", description="Ban a member")
     @app_commands.checks.has_permissions(ban_members=True)
     @app_commands.describe(user="The user you want to ban.", reason="The reason for the ban.", duration="Optional duration, e.g. 7d, 2h, 30m. Leave empty for permanent.")
     async def ban_cmd(
@@ -570,7 +570,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         await interaction.response.send_message(embed=embed, view=view)
 
-    @bot.tree.command(name="kick", description="Kick a user from the server.")
+    @bot.tree.command(name="kick", description="Kick a member")
     @app_commands.checks.has_permissions(kick_members=True)
     @app_commands.describe(user="The user you want to kick.")
     @app_commands.describe(reason="The reason for the kick.")
@@ -621,7 +621,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         await interaction.response.send_message(embed=embed, view=view)
 
-    @bot.tree.command(name="unban", description="Unban a user from the server.")
+    @bot.tree.command(name="unban", description="Unban a user")
     @app_commands.checks.has_permissions(ban_members=True)
     @app_commands.describe(user="The user id of the user you want to unban.")
     async def unban_cmd(interaction: Interaction, user: int):
@@ -657,7 +657,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         view = UbanConfirmView(user_member, interaction.user)
         await interaction.response.send_message(embed=embed, view=view)
 
-    @bot.tree.command(name="clear", description="Clear messages from a channel.")
+    @bot.tree.command(name="clear", description="Delete messages in this channel")
     @app_commands.checks.has_permissions(manage_messages=True)
     @app_commands.describe(amount="The amount of messages to clear.")
     async def clear_cmd(interaction: Interaction, amount: int):
@@ -697,7 +697,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             return
         await interaction.response.send_message(embed=embed, view=view)
 
-    @bot.tree.command(name="mute", description="Timeout (mute) a user.")
+    @bot.tree.command(name="mute", description="Mute a member (timeout)")
     @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(user="The user to mute.", duration="Duration, e.g. 10m, 1h, 7d (max 28 days).", reason="Reason for the mute.")
     async def mute_cmd(interaction: Interaction, user: discord.Member, duration: str = "10m", reason: str = "N/A"):
@@ -776,7 +776,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text="Baxi · avocloud.net")
         await interaction.edit_original_response(embed=embed)
 
-    @bot.tree.command(name="unmute", description="Remove the timeout from a user.")
+    @bot.tree.command(name="unmute", description="Unmute a member")
     @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(user="The user to unmute.", reason="Reason for unmuting.")
     async def unmute_cmd(interaction: Interaction, user: discord.Member, reason: str = "N/A"):
@@ -813,7 +813,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
     # --- Warning System ---
 
-    @bot.tree.command(name="warn", description="Warn a user.")
+    @bot.tree.command(name="warn", description="Warn a member")
     @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(user="The user to warn.", reason="Reason for the warning.")
     async def warn_cmd(interaction: Interaction, user: discord.Member, reason: str = "N/A"):
@@ -843,7 +843,7 @@ def utility_commands(bot: commands.AutoShardedBot):
                 )
             )
 
-    @bot.tree.command(name="unwarn", description="Remove a warning from a user.")
+    @bot.tree.command(name="unwarn", description="Remove a warning")
     @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(user="The user to remove the warning from.", warn_id="The warning ID to remove.")
     async def unwarn_cmd(interaction: Interaction, user: discord.Member, warn_id: str):
@@ -868,7 +868,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             )
         await interaction.response.send_message(embed=embed)
 
-    @bot.tree.command(name="warnings", description="View all warnings for a user.")
+    @bot.tree.command(name="warnings", description="List a member's warnings")
     @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(user="The user to check warnings for.")
     async def warnings_cmd(interaction: Interaction, user: discord.Member):
@@ -902,12 +902,7 @@ def utility_commands(bot: commands.AutoShardedBot):
 
     # --- BaxiInsights ---
 
-    insights_group = app_commands.Group(
-        name="insights",
-        description="BaxiInsights -  server moderation statistics",
-    )
-
-    @insights_group.command(name="stats", description="Show a quick overview of moderation stats (last 30 days).")
+    @bot.tree.command(name="insights", description="Moderation stats (30 days)")
     async def insights_stats(interaction: discord.Interaction):
         if interaction.guild is None:
             return await interaction.response.send_message(
@@ -966,7 +961,6 @@ def utility_commands(bot: commands.AutoShardedBot):
                 embed=discord.Embed(title="ERROR", description="Could not load insights.", color=config.Discord.danger_color)
             )
 
-    bot.tree.add_command(insights_group)
 
 
 def leveling_commands(bot: commands.AutoShardedBot):
@@ -980,7 +974,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
     def _check_enabled(leveling_cfg: dict) -> bool:
         return bool(leveling_cfg.get("enabled", False))
 
-    @bot.tree.command(name="leaderboard", description="Show the top users for a given system on this server")
+    @bot.tree.command(name="leaderboard", description="Top members by XP, quiz and more")
     @app_commands.describe(sys="Which leaderboard to show")
     @app_commands.choices(sys=[
         app_commands.Choice(name="Level", value="level"),
@@ -1037,7 +1031,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             embed=leveling_sys.leaderboard_embed(interaction.guild, t, source),
         )
 
-    @bot.tree.command(name="rank", description="Show your level card on this server, or another member's")
+    @bot.tree.command(name="rank", description="Level card of you or another member")
     @app_commands.describe(user="The user to look up (defaults to yourself)")
     async def rank_cmd(interaction: discord.Interaction, user: Optional[discord.Member] = None):
         await interaction.response.defer()
@@ -1058,7 +1052,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
         # Card with avatar, level, progress and the text / voice split; text-only if it fails.
         await interaction.followup.send(**await leveling_sys.rank_payload(target, interaction.guild, t))
 
-    ows_group = app_commands.Group(name="onewordstory", description="One Word Story commands")
+    ows_group = app_commands.Group(name="onewordstory", description="One word story game")
 
     def _ows_context(interaction: discord.Interaction):
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -1088,7 +1082,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             return None
         return t, data
 
-    @ows_group.command(name="show", description="Show the current One Word Story so far")
+    @ows_group.command(name="show", description="Show the story so far")
     async def ows_show(interaction: discord.Interaction):
         await interaction.response.defer()
         ctx = await _ows_guard(interaction, staff_only=False)
@@ -1121,7 +1115,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text=t["footer"])
         await interaction.followup.send(embed=embed)
 
-    @ows_group.command(name="end", description="Finish the story, post it in the game channel and start a new one")
+    @ows_group.command(name="end", description="Finish the story and start a new one")
     async def ows_end(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         ctx = await _ows_guard(interaction, staff_only=True)
@@ -1142,7 +1136,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             color=config.Discord.success_color,
         ), ephemeral=True)
 
-    @ows_group.command(name="undo", description="Remove the last word from the story")
+    @ows_group.command(name="undo", description="Remove the last word")
     async def ows_undo(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         ctx = await _ows_guard(interaction, staff_only=True)
@@ -1169,8 +1163,8 @@ def leveling_commands(bot: commands.AutoShardedBot):
 def mc_link_commands(bot: commands.AutoShardedBot):
     logger.debug.info("MC link commands loaded.")
 
-    mc_group = app_commands.Group(name="mc", description="Minecraft account linking")
-    mc_admin_group = app_commands.Group(name="admin", description="MC Link admin commands", parent=mc_group)
+    mc_group = app_commands.Group(name="mc", description="Link Minecraft and Discord accounts")
+    mc_admin_group = app_commands.Group(name="admin", description="Manage links (staff)", parent=mc_group)
 
     def _get_conf(guild_id: int):
         return datasys.load_data(guild_id, "mc_link")
@@ -1214,7 +1208,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         except Exception:
             pass
 
-    @mc_group.command(name="link", description="Link your Minecraft account to Discord.")
+    @mc_group.command(name="link", description="Link your Minecraft account")
     @app_commands.describe(code="The 8-character code shown in the Minecraft kick message.")
     async def mc_link_cmd(interaction: Interaction, code: str):
         try:
@@ -1340,7 +1334,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 except Exception:
                     logger.exception("[mc_link_cmd] plain followup also failed")
 
-    @mc_group.command(name="unlink", description="Unlink your Minecraft account.")
+    @mc_group.command(name="unlink", description="Unlink your Minecraft account")
     async def mc_unlink_cmd(interaction: Interaction):
         await interaction.response.defer(ephemeral=True)
 
@@ -1413,7 +1407,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @mc_group.command(name="list", description="Show players currently online on the Minecraft server.")
+    @mc_group.command(name="list", description="Who is online on the Minecraft server")
     async def mc_list_cmd(interaction: Interaction):
         try:
             await interaction.response.defer()
@@ -1492,7 +1486,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 except Exception:
                     logger.exception("[mc_list_cmd] plain followup also failed")
 
-    @mc_group.command(name="info", description="Show Minecraft server status: players, uptime, TPS, version.")
+    @mc_group.command(name="info", description="Minecraft server status (players, TPS, version)")
     async def mc_info_cmd(interaction: Interaction):
         await interaction.response.defer()
 
@@ -1518,48 +1512,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         stats = await fetch_server_stats(guild_conf["api_url"].strip(), guild_conf["api_secret"].strip())
         await interaction.followup.send(embed=render_status_embed(stats, t))
 
-    @mc_group.command(name="status", description="Show your linked Minecraft account.")
-    async def mc_status_cmd(interaction: Interaction):
-        await interaction.response.defer(ephemeral=True)
-
-        if interaction.guild is None:
-            lang = datasys.load_lang_file(1001)
-            t = lang["systems"]["mc_link"]
-            return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
-                ephemeral=True,
-            )
-
-        guild_id = interaction.guild.id
-        lang = datasys.load_lang_file(guild_id)
-        t = lang["systems"]["mc_link"]
-
-        from assets.mc_link import is_linked, get_link
-
-        if not is_linked(guild_id, interaction.user.id):
-            return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
-                ephemeral=True,
-            )
-
-        link = get_link(guild_id, interaction.user.id)
-        mc_name = link.get("name", "Unknown")
-        import datetime
-        linked_at = link.get("linked_at", 0)
-        linked_dt = f"<t:{linked_at}:R>" if linked_at else "—"
-
-        embed = discord.Embed(
-            title=f"{config.Icons.check} {t['status_title']}",
-            description=t["status_desc"].format(mc_name=mc_name, mention=interaction.user.mention, linked_at=linked_dt),
-            color=config.Discord.info_color,
-        )
-        bedrock_name = link.get("bedrock_name")
-        if bedrock_name:
-            embed.add_field(name="Bedrock account", value=bedrock_name, inline=True)
-        embed.set_footer(text=t["footer"])
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @mc_group.command(name="whois", description="Look up who owns a Minecraft account, or which account a member has.")
+    @mc_group.command(name="whois", description="Linked Minecraft account of a member, or who owns a name")
     @app_commands.describe(
         user="Show this member's linked Minecraft account.",
         mc_name="Show which member owns this Minecraft name.",
@@ -1637,7 +1590,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         embed.set_footer(text=t["footer"])
         await interaction.followup.send(embed=embed)
 
-    @mc_admin_group.command(name="unlink", description="Force-unlink a Discord user's Minecraft account.")
+    @mc_admin_group.command(name="unlink", description="Force-unlink a member")
     @app_commands.describe(user="The Discord user to unlink.")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def mc_admin_unlink_cmd(interaction: Interaction, user: discord.Member):
@@ -1692,7 +1645,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @mc_admin_group.command(name="link", description="Manually link a Minecraft account to a Discord user.")
+    @mc_admin_group.command(name="link", description="Link a Minecraft account to a member")
     @app_commands.describe(mc_name="Minecraft username.", user="Discord user to link to.")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def mc_admin_link_cmd(interaction: Interaction, mc_name: str, user: discord.Member):
@@ -1759,7 +1712,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @mc_admin_group.command(name="lookup", description="Look up a link by Discord user or by Minecraft name.")
+    @mc_admin_group.command(name="lookup", description="Find a link by member or Minecraft name")
     @app_commands.describe(
         user="The Discord user to look up.",
         mc_name="The Minecraft name to look up (to find which Discord user it belongs to).",
@@ -1828,12 +1781,12 @@ def mc_link_commands(bot: commands.AutoShardedBot):
 def tempvoice_commands(bot: commands.AutoShardedBot):
     """/tempvoice — temporary voice channel utilities."""
     tv_group = app_commands.Group(
-        name="tempvoice", description="Temporary voice channel commands"
+        name="tempvoice", description="Temporary voice channels"
     )
 
     @tv_group.command(
         name="panel",
-        description="Re-post your temp voice control panel in this channel.",
+        description="Re-post your voice channel panel here",
     )
     async def tempvoice_panel(interaction: Interaction):
         try:

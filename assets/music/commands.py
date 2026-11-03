@@ -65,7 +65,7 @@ def _bot_busy_in_other_channel(guild: discord.Guild, target_channel: discord.Voi
 def register_music_commands(bot: commands.AutoShardedBot):
     logger.debug.info("Music commands loaded.")
 
-    music_group = app_commands.Group(name="music", description="Play songs and live radio in voice channels")
+    music_group = app_commands.Group(name="music", description="Music and radio")
 
     async def _check_common(interaction: Interaction) -> Optional[tuple[dict, dict, MusicPlayer, discord.VoiceChannel]]:
         if interaction.guild is None:
@@ -99,7 +99,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
         player = _get_or_create_player(bot, gid, interaction.channel.id if interaction.channel else 0)
         return conf, t, player, channel
 
-    @music_group.command(name="play", description="Play a song from YouTube or SoundCloud (URL or search term)")
+    @music_group.command(name="play", description="Play a song (URL or search)")
     @app_commands.describe(query="YouTube/SoundCloud URL or search query")
     async def play_cmd(interaction: Interaction, query: str):
         await interaction.response.defer()
@@ -180,7 +180,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
 
     radio_choices = [app_commands.Choice(name=label, value=key) for key, (label, _u) in RADIO_PRESETS.items()]
 
-    @music_group.command(name="radio", description="Play a live radio station (Hitradio Ö3, KroneHit, FM4) or custom URL")
+    @music_group.command(name="radio", description="Play a radio station")
     @app_commands.describe(station="Preset radio station", custom_url="Custom radio stream URL (must be in radio_whitelist)")
     @app_commands.choices(station=radio_choices)
     async def radio_cmd(interaction: Interaction, station: Optional[app_commands.Choice[str]] = None, custom_url: Optional[str] = None):
@@ -241,7 +241,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
         embed.add_field(name=t.get("requester_field", "Requested by"), value=interaction.user.mention, inline=True)
         await interaction.followup.send(embed=embed)
 
-    @music_group.command(name="skip", description="Skip the current track")
+    @music_group.command(name="skip", description="Skip the track")
     async def skip_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -253,7 +253,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
         player.skip()
         await interaction.followup.send(embed=_ok_embed(f"{config.Icons.check} {t.get('skipped', 'Skipped.')}"))
 
-    @music_group.command(name="stop", description="Stop playback, clear queue, leave the voice channel")
+    @music_group.command(name="stop", description="Stop and leave")
     async def stop_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -266,7 +266,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
         share.music_players.pop(interaction.guild.id, None)
         await interaction.followup.send(embed=_ok_embed(f"{config.Icons.check} {t.get('stopped', 'Stopped and left voice.')}"))
 
-    @music_group.command(name="pause", description="Pause playback")
+    @music_group.command(name="pause", description="Pause")
     async def pause_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -277,7 +277,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
             return await interaction.followup.send(embed=_err_embed(t.get("nothing_playing", "Nothing playing.")), ephemeral=True)
         await interaction.followup.send(embed=_ok_embed(f"{config.Icons.check} {t.get('paused', 'Paused.')}"))
 
-    @music_group.command(name="resume", description="Resume paused playback")
+    @music_group.command(name="resume", description="Resume")
     async def resume_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -288,7 +288,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
             return await interaction.followup.send(embed=_err_embed(t.get("not_paused", "Nothing is paused.")), ephemeral=True)
         await interaction.followup.send(embed=_ok_embed(f"{config.Icons.check} {t.get('resumed', 'Resumed.')}"))
 
-    @music_group.command(name="queue", description="Show the current music queue")
+    @music_group.command(name="queue", description="Show the queue")
     async def queue_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -313,7 +313,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
             embed.add_field(name=t.get("queue_upcoming", "Up next"), value="\n".join(lines), inline=False)
         await interaction.followup.send(embed=embed)
 
-    @music_group.command(name="nowplaying", description="Show the currently playing track")
+    @music_group.command(name="nowplaying", description="Show the current track")
     async def now_cmd(interaction: Interaction):
         await interaction.response.defer()
         if interaction.guild is None:
@@ -333,7 +333,7 @@ def register_music_commands(bot: commands.AutoShardedBot):
             embed.add_field(name=t.get("duration_field", "Duration"), value=f"{mins}:{secs:02d}", inline=True)
         await interaction.followup.send(embed=embed)
 
-    @music_group.command(name="volume", description="Set playback volume (0-200)")
+    @music_group.command(name="volume", description="Set volume (0-200)")
     @app_commands.describe(level="Volume percentage 0-200")
     async def volume_cmd(interaction: Interaction, level: int):
         await interaction.response.defer()

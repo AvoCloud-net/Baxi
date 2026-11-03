@@ -144,7 +144,7 @@ def _present(guild: discord.Guild, ids: list[str]) -> int:
 
 
 def invite_commands(bot: commands.AutoShardedBot):
-    group = app_commands.Group(name="invites", description="Invite statistics", guild_only=True)
+    group = app_commands.Group(name="invites", description="Invite leaderboard", guild_only=True)
 
     async def _gate(interaction: discord.Interaction, t: dict) -> bool:
         """Enabled check; starts the invite cache on first use after enabling."""
@@ -155,7 +155,7 @@ def invite_commands(bot: commands.AutoShardedBot):
             await prime(interaction.guild)
         return True
 
-    @group.command(name="top", description="Who invited the most members")
+    @group.command(name="top", description="Top inviters")
     async def top(interaction: discord.Interaction):
         await interaction.response.defer()
         guild = interaction.guild

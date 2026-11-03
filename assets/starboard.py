@@ -355,7 +355,7 @@ class StarboardTask:
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 def starboard_commands(bot: commands.AutoShardedBot):
-    group = app_commands.Group(name="starboard", description="Starboard of this server", guild_only=True)
+    group = app_commands.Group(name="starboard", description="Starboard", guild_only=True)
 
     async def _say(interaction: discord.Interaction, text: str, *, ok: bool = False):
         await interaction.followup.send(
@@ -366,7 +366,7 @@ def starboard_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @group.command(name="random", description="Show a random message from the starboard")
+    @group.command(name="random", description="Random starboard message")
     async def starboard_random(interaction: discord.Interaction):
         await interaction.response.defer()
         t = datasys.load_lang_file(interaction.guild.id)["starboard"]
@@ -392,7 +392,7 @@ def starboard_commands(bot: commands.AutoShardedBot):
                 )
         await _say(interaction, t["none"])
 
-    @group.command(name="throwback", description="Post a throwback to an old favourite now")
+    @group.command(name="throwback", description="Post an old favourite now")
     async def starboard_throwback(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         t = datasys.load_lang_file(interaction.guild.id)["starboard"]

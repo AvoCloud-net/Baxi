@@ -450,7 +450,7 @@ class _BirthdayModal(discord.ui.Modal):
 
 
 def birthday_commands(bot: commands.AutoShardedBot):
-    group = app_commands.Group(name="birthday", description="Birthdays - Baxi congratulates you on your day",
+    group = app_commands.Group(name="birthday", description="Birthdays",
                                guild_only=True)
 
     def _t(guild_id: int) -> dict:
@@ -466,12 +466,12 @@ def birthday_commands(bot: commands.AutoShardedBot):
             ephemeral=True,
         )
 
-    @group.command(name="set", description="Save your birthday (day and month, no year)")
+    @group.command(name="set", description="Save your birthday")
     async def birthday_set(interaction: discord.Interaction):
         # A modal has to be the first response, so no defer here.
         await interaction.response.send_modal(_BirthdayModal(_t(interaction.guild.id), get_birthday(interaction.user.id)))
 
-    @group.command(name="remove", description="Delete your birthday from Baxi (all servers)")
+    @group.command(name="remove", description="Delete your birthday")
     async def birthday_remove(interaction: discord.Interaction):
         t = _t(interaction.guild.id)
         if remove_birthday(interaction.user.id):
@@ -479,7 +479,7 @@ def birthday_commands(bot: commands.AutoShardedBot):
         else:
             await _say(interaction, t["none_saved"])
 
-    @group.command(name="hide", description="Hide your birthday on this server")
+    @group.command(name="hide", description="Hide your birthday here")
     async def birthday_hide(interaction: discord.Interaction):
         t = _t(interaction.guild.id)
         if get_birthday(interaction.user.id) is None:
@@ -487,7 +487,7 @@ def birthday_commands(bot: commands.AutoShardedBot):
         set_hidden(interaction.guild.id, interaction.user.id, True)
         await _say(interaction, f"{config.Icons.check} {t['hidden']}", ok=True)
 
-    @group.command(name="show", description="Show your birthday on this server again")
+    @group.command(name="show", description="Show your birthday here again")
     async def birthday_show(interaction: discord.Interaction):
         t = _t(interaction.guild.id)
         set_hidden(interaction.guild.id, interaction.user.id, False)
@@ -495,7 +495,7 @@ def birthday_commands(bot: commands.AutoShardedBot):
             return await _say(interaction, t["none_saved"])
         await _say(interaction, f"{config.Icons.check} {t['shown']}", ok=True)
 
-    @group.command(name="upcoming", description="The next birthdays on this server")
+    @group.command(name="upcoming", description="Upcoming birthdays")
     async def birthday_upcoming(interaction: discord.Interaction):
         t = _t(interaction.guild.id)
         cfg = load_cfg(interaction.guild.id)

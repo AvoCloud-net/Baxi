@@ -534,9 +534,9 @@ def quote_commands(bot: commands.AutoShardedBot):
             source_channel_id=message.channel.id, source_message_id=message.id,
         )
 
-    group = app_commands.Group(name="quote", description="Quote book of this server", guild_only=True)
+    group = app_commands.Group(name="quote", description="Quote book", guild_only=True)
 
-    @group.command(name="add", description="Save a quote by typing it in")
+    @group.command(name="add", description="Save a quote")
     @app_commands.describe(text="What was said", member="Who said it (if they are on this server)",
                            name="Who said it (if they are not a member)")
     async def quote_add(interaction: discord.Interaction, text: app_commands.Range[str, 1, MAX_LEN],
@@ -559,33 +559,29 @@ def quote_commands(bot: commands.AutoShardedBot):
             content=text.strip(), source_channel_id=None, source_message_id=None,
         )
 
-    @group.command(name="random", description="Show a random quote")
-    @app_commands.describe(member="Only quotes by this member")
-    async def quote_random(interaction: discord.Interaction, member: discord.Member | None = None):
+    @group.command(name="show", description="Show a quote (by number or random)")
+    @app_commands.describe(number="Quote number (leave empty for a random quote)",
+                           member="Random quote by this member")
+    async def quote_show(interaction: discord.Interaction,
+                         number: app_commands.Range[int, 1, 10_000_000] | None = None,
+                         member: discord.Member | None = None):
         await interaction.response.defer()
         t = _t(interaction.guild.id)
         if not load_cfg(interaction.guild.id)["enabled"]:
             return await _say(interaction, f"{config.Icons.cross} {t['disabled']}")
-        row = random_quote(interaction.guild.id, member.id if member else None)
-        if row is None:
-            text = t["none_user"].format(user=member.display_name) if member else t["none"]
-            return await _say(interaction, text)
+        if number is not None:
+            row = get_quote(interaction.guild.id, number)
+            if row is None:
+                return await _say(interaction, t["not_found"].format(id=number))
+        else:
+            row = random_quote(interaction.guild.id, member.id if member else None)
+            if row is None:
+                text = t["none_user"].format(user=member.display_name) if member else t["none"]
+                return await _say(interaction, text)
         await interaction.followup.send(embed=build_embed(interaction.guild, row, t),
                                         allowed_mentions=discord.AllowedMentions.none())
 
-    @group.command(name="show", description="Show a quote by its number")
-    async def quote_show(interaction: discord.Interaction, number: app_commands.Range[int, 1, 10_000_000]):
-        await interaction.response.defer()
-        t = _t(interaction.guild.id)
-        if not load_cfg(interaction.guild.id)["enabled"]:
-            return await _say(interaction, f"{config.Icons.cross} {t['disabled']}")
-        row = get_quote(interaction.guild.id, number)
-        if row is None:
-            return await _say(interaction, t["not_found"].format(id=number))
-        await interaction.followup.send(embed=build_embed(interaction.guild, row, t),
-                                        allowed_mentions=discord.AllowedMentions.none())
-
-    @group.command(name="list", description="List the newest quotes")
+    @group.command(name="list", description="Newest quotes")
     @app_commands.describe(member="Only quotes by this member")
     async def quote_list(interaction: discord.Interaction, member: discord.Member | None = None):
         await interaction.response.defer(ephemeral=True)
@@ -610,7 +606,7 @@ def quote_commands(bot: commands.AutoShardedBot):
             embed.set_footer(text=t["list_more"].format(n=len(rows), total=total))
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @group.command(name="remove", description="Remove a quote (your own, one you saved, or any with Manage Messages)")
+    @group.command(name="remove", description="Remove a quote")
     async def quote_remove(interaction: discord.Interaction, number: app_commands.Range[int, 1, 10_000_000]):
         await interaction.response.defer(ephemeral=True)
         t = _t(interaction.guild.id)

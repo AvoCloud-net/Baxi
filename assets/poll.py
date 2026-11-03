@@ -316,7 +316,7 @@ class PollTask:
 
 def poll_commands(bot: commands.AutoShardedBot) -> None:
 
-    @bot.tree.command(name="poll", description="Create a poll with up to 10 answer options")
+    @bot.tree.command(name="poll", description="Create a poll (up to 10 options)")
     @app_commands.describe(
         question="The poll question",
         answer1="First answer (required)",
@@ -408,7 +408,7 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
         await interaction.edit_original_response(content=f"Poll created in {channel.mention}!")
 
 
-    @bot.tree.command(name="pollstatus", description="Show the current state of the polls on this server (admin)")
+    @bot.tree.command(name="pollstatus", description="State of running polls (staff)")
     @app_commands.describe(
         include_closed="Also list closed polls (latest 5)",
         poll="Show who voted for what in one poll (detail view)",

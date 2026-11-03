@@ -34,7 +34,7 @@ def pulse_commands(bot: commands.AutoShardedBot):
             embed=discord.Embed(description=text, color=config.Discord.danger_color), ephemeral=True,
         )
 
-    @group.command(name="server", description="Activity heatmap, best time to post and top channels of this server")
+    @group.command(name="server", description="Server activity and best time to post")
     @app_commands.describe(days="Time window (default: 28 days)")
     @app_commands.choices(days=_DAY_CHOICES)
     @app_commands.checks.cooldown(1, 15.0, key=lambda i: i.guild_id)
@@ -54,7 +54,7 @@ def pulse_commands(bot: commands.AutoShardedBot):
             logger.error(f"[pulse server] {e}")
             await _fail(interaction, f"{config.Icons.cross} Could not build the Pulse report. Please try again later.")
 
-    @group.command(name="me", description="Your own activity on this server: streak, rank and weekday profile")
+    @group.command(name="me", description="Your activity, streak and rank")
     @app_commands.describe(days="Time window (default: 30 days)")
     @app_commands.choices(days=_DAY_CHOICES)
     @app_commands.checks.cooldown(1, 10.0, key=lambda i: (i.guild_id, i.user.id))
@@ -71,7 +71,7 @@ def pulse_commands(bot: commands.AutoShardedBot):
             logger.error(f"[pulse me] {e}")
             await _fail(interaction, f"{config.Icons.cross} Could not build your Pulse report. Please try again later.")
 
-    @group.command(name="recap", description="Post the weekly recap now (uses the channel set in the dashboard)")
+    @group.command(name="recap", description="Post the weekly recap now")
     @app_commands.checks.cooldown(1, 60.0, key=lambda i: i.guild_id)
     async def pulse_recap(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)

@@ -33,7 +33,7 @@ Everything is open source under the **MIT license** -  self-host it, audit it, c
 - 🎮 **Minigames** - Counting Game & Flag Quiz to keep your community engaged
 - 💓 **Pulse** - weekday × hour activity heatmap in your timezone, "best time to post" tip, week-over-week trend and an automatic weekly recap; `/pulse server` and `/pulse me` on demand *(built on BaxiInsights counters - no message content)*
 - ⭐ **Starboard + Throwbacks** - messages with enough ⭐ reactions land in a hall-of-fame channel; once a week Baxi resurfaces an old favourite (ideally from a year ago). Only IDs are stored
-- 💬 **Quote Book** - right-click a message → *Save as quote*, `/quote random`, `/quote add`; saved quotes are posted in a channel of your choice, removable by the quoted person
+- 💬 **Quote Book** - right-click a message → *Save as quote*, `/quote show`, `/quote add`; saved quotes are posted in a channel of your choice, removable by the quoted person
 - 📮 **Time Capsules** - `/capsule send` seals a message that Baxi delivers on a future date, to your DMs or the server; the text is deleted after delivery
 
 ---

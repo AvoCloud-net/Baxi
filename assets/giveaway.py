@@ -257,7 +257,7 @@ class GiveawayTask:
 
 def giveaway_commands(bot: commands.AutoShardedBot) -> None:
 
-    @bot.tree.command(name="giveaway", description="Start a giveaway in this channel")
+    @bot.tree.command(name="giveaway", description="Start a giveaway")
     @app_commands.describe(
         reward="What are you giving away?",
         duration="Duration (e.g. 1h, 30m, 2d, 1h30m)",
