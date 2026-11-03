@@ -64,10 +64,12 @@ def dashboard_url(guild_id: int, section: str = "mod_review") -> str:
 
 
 def staff_channel(guild: discord.Guild) -> discord.TextChannel | None:
-    """The guild's staff channel; falls back to the Mod-Gate log channel, then the
-    suggestions log channel. None if none of them is set or still exists."""
+    """The guild's staff channel = the notification channel from Settings → General; falls back to
+    the Mod-Gate log channel, then the suggestions log channel. None if none of them is set or
+    still exists."""
     lookups = (
-        lambda: dict(datasys.load_data(guild.id, "staff") or {}).get("channel"),
+        lambda: datasys.load_data(guild.id, "notification_channel"),
+        lambda: dict(datasys.load_data(guild.id, "staff") or {}).get("channel"),   # older setting
         lambda: dict(datasys.load_data(guild.id, "mod_gate") or {}).get("log_channel"),
         lambda: dict(datasys.load_data(guild.id, "suggestions") or {}).get("log_channel"),
     )

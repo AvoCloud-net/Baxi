@@ -1319,6 +1319,12 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "'notification_channel' must be a channel ID or empty."}), 400
             save_data(sid=int(guild_id), sys="notification_channel", data=notif_ch)
 
+            # The notification channel is also the staff channel: move the open-items notice there.
+            from assets import staff as _staff
+            _g = bot.get_guild(int(guild_id))
+            if _g is not None:
+                _staff.schedule_refresh(bot, _g)
+
             user = await discord_auth.fetch_user()
             audit_log_new: dict = {
                 "type": "save",
@@ -3223,38 +3229,6 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 "type": "save", "user": user.name, "success": True,
                 "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
                 "sys": "mod_gate",
-            }
-            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
-            audit_log.append(audit_log_new)
-            save_data(int(guild_id), "audit_log", audit_log)
-
-        elif system == "staff":
-            data: dict = await quart.request.get_json()
-            st = data.get("staff")
-            if not isinstance(st, dict):
-                return quart.jsonify({"success": False, "message": "Invalid data format: 'staff' must be an object."}), 400
-            channel_raw = str(st.get("channel", "") or "").strip()
-            if channel_raw in ("0",):
-                channel_raw = ""
-            if channel_raw and not re.fullmatch(r"\d{17,20}", channel_raw):
-                return quart.jsonify({"success": False, "message": "Invalid channel."}), 400
-            if channel_raw:
-                _cached = bot.get_guild(int(guild_id))
-                _ch = _cached.get_channel(int(channel_raw)) if _cached else None
-                if not isinstance(_ch, discord.TextChannel):
-                    return quart.jsonify({"success": False, "message": "Pick a text channel of this server."}), 400
-
-            save_data(int(guild_id), "staff", {"channel": channel_raw})
-
-            # Move the open-cases notice to the new channel right away.
-            from assets import staff as _staff
-            _staff.schedule_refresh(bot, bot.get_guild(int(guild_id)))
-
-            user = await discord_auth.fetch_user()
-            audit_log_new: dict = {
-                "type": "save", "user": user.name, "success": True,
-                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
-                "sys": "staff",
             }
             audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
             audit_log.append(audit_log_new)

@@ -623,8 +623,8 @@
                                 <div class="grid gap-2">
                                     <label for="notification-channel">Notification Channel:</label>
                                     <p class="text-muted text-sm">
-                                        Channel where Baxi posts notifications -  including bot updates, announcements and Prism alerts
-                                        (critical events, auto-flagged users). Leave on <em>Auto-detect</em> and Baxi will search for a channel
+                                        Channel where Baxi posts notifications for your team: bot updates, announcements, Prism alerts
+                                        (critical events, auto-flagged users) and the open items of the review queue. Leave on <em>Auto-detect</em> and Baxi will search for a channel
                                         named <code>baxi-updates</code>, <code>staff</code>, <code>mod</code>, <code>admin</code>, etc.
                                     </p>
                                     <select id="notification-channel" name="notification-channel" class="select w-full">
@@ -1920,48 +1920,6 @@
                             <h3 class="text-base font-semibold tracking-tight">All clear</h3>
                             <p class="text-muted text-sm">Nothing is waiting for a decision right now.</p>
                         </div>
-                    </section>
-                </div>
-
-                <!-- Staff channel (assets/staff.py): one channel for everything staff must know -->
-                <div class="card mt-6">
-                    <header>
-                        <h2 class="text-xl font-semibold flex items-center gap-2">
-                            <svg class="lucide" viewBox="0 0 24 24">
-                                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
-                                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
-                            </svg>
-                            Staff channel
-                        </h2>
-                        <p class="text-muted">Baxi keeps one message here that shows how many cases are open, with a button to this queue.</p>
-                    </header>
-                    <section>
-                        <form id="staff-form" class="form grid gap-6 settings-form">
-                            <div class="grid gap-2">
-                                <label for="staff-channel">Channel:</label>
-                                <select id="staff-channel" class="select w-full">
-                                    <option value="">- Not set -</option>
-                                    {% for id, name in channels.items() %}
-                                    <option value="{{ id }}">#{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <p class="text-muted text-xs">Left empty, Baxi uses the Mod-Gate log channel, then the suggestions log channel.</p>
-                            </div>
-
-                            <div class="card-actions">
-                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
-                                    <span class="btn-text">
-                                        <svg class="lucide" viewBox="0 0 24 24">
-                                            <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                                            <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>
-                                            <path d="M7 3v4a1 1 0 0 0 1 1h7"/>
-                                        </svg>
-                                        Save
-                                    </span>
-                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
-                                </button>
-                            </div>
-                        </form>
                     </section>
                 </div>
             </section>
@@ -5214,10 +5172,6 @@
                 document.getElementById('mod_gate-action').value = 'quarantine';
             }
 
-            // Staff channel
-            document.getElementById('staff-channel').value =
-                (data.staff && data.staff.channel && String(data.staff.channel) !== '0') ? String(data.staff.channel) : '';
-
             // Counting Game
             if (data.counting) {
                 document.getElementById('counting-enabled').checked = data.counting.enabled === true;
@@ -7620,26 +7574,6 @@
             xhr.open('POST', '/api/dash/save/?system=mod_gate&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    try {
-                        const resp = JSON.parse(xhr.responseText);
-                        showSaveToast(resp.success, resp.message);
-                    } catch (e) {
-                        showSaveToast(false, 'An unexpected error occurred.');
-                    }
-                }
-            };
-        };
-
-        // ── Staff channel ──────────────────────────────────────────────────────
-        document.getElementById('staff-form').onsubmit = function (event) {
-            event.preventDefault();
-            const channel = document.getElementById('staff-channel').value || '';
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/dash/save/?system=staff&dash_login={{ data.dash_login }}');
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.send(JSON.stringify({ staff: { channel } }));
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     try {
