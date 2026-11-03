@@ -1057,6 +1057,7 @@
       "rank_footer": "XP gibt es fürs Schreiben (höchstens einmal pro Minute) und im Voice: 5 XP pro Minute, wenn du nicht taub geschaltet bist und noch jemand zuhört."
     },
     "invites": {
+      "disabled": "Das Einladungs-Tracking ist auf diesem Server nicht aktiviert. Ein Admin kann es im Dashboard einschalten.",
       "title": "Einladungs-Rangliste – {guild}",
       "empty": "Noch keine Einladungen erfasst. Ab jetzt zähle ich mit (Baxi braucht dafür „Server verwalten“).",
       "line": "**{total}** Einladungen ({active} noch hier)",
@@ -2122,6 +2123,7 @@
       "rank_footer": "You earn XP for chatting (at most once a minute) and in voice: 5 XP per minute while you're not deafened and someone else is listening."
     },
     "invites": {
+      "disabled": "Invite tracking is not enabled on this server. An admin can turn it on in the dashboard.",
       "title": "Invite leaderboard – {guild}",
       "empty": "No invites recorded yet. I'm counting from now on (Baxi needs Manage Server).",
       "line": "**{total}** invites ({active} still here)",

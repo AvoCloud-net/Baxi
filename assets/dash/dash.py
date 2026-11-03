@@ -3723,6 +3723,31 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Quote Book settings saved!"})
 
+        elif system == "invites":
+            data: dict = await quart.request.get_json()
+            pl = data.get("invites")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'invites' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            save_data(int(guild_id), "invites", {"enabled": pl["enabled"]})
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "invites",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Invite tracking settings saved!"})
+
         elif system == "capsule":
             data: dict = await quart.request.get_json()
             pl = data.get("capsule")

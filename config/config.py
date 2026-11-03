@@ -454,6 +454,9 @@ class datasys:
         "channel": "",
         "staff_only_save": False,
     },
+    "invites": {
+        "enabled": False,   # invite tracking + /invites leaderboard
+    },
     "pulse": {
         "enabled": False,
         "channel": "",

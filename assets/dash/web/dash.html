@@ -440,6 +440,10 @@
                 <svg viewBox="0 0 24 24"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
                 Quote Book
             </a>
+            <a href="#invites" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                Invites
+            </a>
             <a href="#capsule" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 Time Capsule
@@ -4396,6 +4400,39 @@
                 </div>
             </section>
 
+            <!-- Invite tracking -->
+            <section class="pb-16 dash-section" id="invites">
+                <div class="section-label">Invite tracking</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                            Invite tracking
+                        </h2>
+                        <p class="text-muted">Counts which member joined through whose invite. <code>/invites top</code> shows the leaderboard, <code>/invites user</code> the numbers of one member. Baxi needs the <strong>Manage Server</strong> permission. Only joins after enabling are counted; vanity URL joins stay unassigned.</p>
+                    </header>
+                    <section>
+                        <form id="invites-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="invites-enabled" role="switch">
+                                    <span class="font-medium">Enable invite tracking</span>
+                                </label>
+                            </div>
+                            <div class="card-actions">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Quote Book -->
             <section class="pb-16 dash-section" id="quotes">
                 <div class="section-label">Quote book</div>
@@ -4744,7 +4781,7 @@
                 'config-general',
                 'auditlog',
                 'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'mod_cases',
-                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'capsule', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
+                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'invites', 'capsule', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
@@ -5195,6 +5232,9 @@
                 document.getElementById('quotes-enabled').checked = data.quotes.enabled === true;
                 document.getElementById('quotes-channel').value = (data.quotes.channel && String(data.quotes.channel) !== '0') ? String(data.quotes.channel) : '';
                 document.getElementById('quotes-staff-only').checked = data.quotes.staff_only_save === true;
+            }
+            if (data.invites) {
+                document.getElementById('invites-enabled').checked = data.invites.enabled === true;
             }
             if (data.capsule) {
                 document.getElementById('capsule-enabled').checked = data.capsule.enabled === true;
@@ -8221,6 +8261,22 @@
             } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=quotes&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
+        // ── Invite tracking ────────────────────────────────────────────────────
+        document.getElementById('invites-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = { invites: { enabled: document.getElementById('invites-enabled').checked } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=invites&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(payload));
             xhr.onreadystatechange = function () {

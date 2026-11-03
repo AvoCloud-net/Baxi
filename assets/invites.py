@@ -38,6 +38,10 @@ async def _fetch(guild: discord.Guild) -> dict[str, tuple[int, int]] | None:
     return {i.code: (i.uses or 0, i.inviter.id if i.inviter else 0) for i in invites}
 
 
+def enabled(guild_id: int) -> bool:
+    return bool(dict(datasys.load_data(guild_id, "invites") or {}).get("enabled", False))
+
+
 async def prime(guild: discord.Guild) -> None:
     snap = await _fetch(guild)
     if snap is not None:
@@ -46,7 +50,8 @@ async def prime(guild: discord.Guild) -> None:
 
 async def prime_all(bot: commands.AutoShardedBot) -> None:
     for guild in bot.guilds:
-        await prime(guild)
+        if enabled(guild.id):
+            await prime(guild)
 
 
 # ── Storage ──────────────────────────────────────────────────────────────────
@@ -80,7 +85,7 @@ def _t(guild_id: int) -> dict:
 # ── Events ───────────────────────────────────────────────────────────────────
 
 async def on_member_join(member: discord.Member) -> None:
-    if member.bot:
+    if member.bot or not enabled(member.guild.id):
         return
     guild = member.guild
     before = _cache.get(guild.id)
@@ -107,13 +112,14 @@ def register(bot: commands.AutoShardedBot) -> None:
         await prime_all(bot)
 
     async def _guild_join(guild: discord.Guild):
-        await prime(guild)
+        if enabled(guild.id):
+            await prime(guild)
 
     async def _guild_remove(guild: discord.Guild):
         _cache.pop(guild.id, None)
 
     async def _invite_create(invite: discord.Invite):
-        if invite.guild is None:
+        if invite.guild is None or invite.guild.id not in _cache:
             return
         snap = _cache.setdefault(invite.guild.id, {})
         snap[invite.code] = (invite.uses or 0, invite.inviter.id if invite.inviter else 0)
@@ -140,11 +146,22 @@ def _present(guild: discord.Guild, ids: list[str]) -> int:
 def invite_commands(bot: commands.AutoShardedBot):
     group = app_commands.Group(name="invites", description="Invite statistics", guild_only=True)
 
+    async def _gate(interaction: discord.Interaction, t: dict) -> bool:
+        """Enabled check; starts the invite cache on first use after enabling."""
+        if not enabled(interaction.guild.id):
+            await interaction.followup.send(t["disabled"], ephemeral=True)
+            return False
+        if interaction.guild.id not in _cache:
+            await prime(interaction.guild)
+        return True
+
     @group.command(name="top", description="Who invited the most members")
     async def top(interaction: discord.Interaction):
         await interaction.response.defer()
         guild = interaction.guild
         t = _t(guild.id)
+        if not await _gate(interaction, t):
+            return
         rows = leaderboard(guild.id)
         embed = discord.Embed(title=t["title"].format(guild=guild.name), color=config.Discord.color)
         if not rows:
@@ -167,6 +184,8 @@ def invite_commands(bot: commands.AutoShardedBot):
         await interaction.response.defer(ephemeral=True)
         guild = interaction.guild
         t = _t(guild.id)
+        if not await _gate(interaction, t):
+            return
         target = member or interaction.user
         ids = invited_ids(guild.id, target.id)
         embed = discord.Embed(
