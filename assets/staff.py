@@ -29,6 +29,7 @@ resolves or expires an item of a NOTICE_KINDS kind.
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 
 import discord
@@ -82,6 +83,25 @@ def staff_channel(guild: discord.Guild) -> discord.TextChannel | None:
         if isinstance(ch, discord.TextChannel):
             return ch
     return None
+
+
+def role_ids(guild_id: int) -> list[int]:
+    """The server's staff roles - set once (Settings -> General), used by tickets, suggestions, ...
+    Servers that never saved the new setting keep working: the roles of the older per-feature
+    fields (ticket.role, suggestions.staff_role) count as the staff team until then."""
+    def _split(raw) -> list[int]:
+        return [int(x) for x in re.split(r"[,\s]+", str(raw or "")) if x.isdigit()]
+
+    ids = _split(dict(datasys.load_data(guild_id, "staff") or {}).get("roles"))
+    if not ids:
+        ids = _split(dict(datasys.load_data(guild_id, "ticket") or {}).get("role"))
+        ids += _split(dict(datasys.load_data(guild_id, "suggestions") or {}).get("staff_role"))
+    return list(dict.fromkeys(ids))
+
+
+def is_staff(member: discord.Member) -> bool:
+    wanted = set(role_ids(member.guild.id))
+    return any(r.id in wanted for r in member.roles)
 
 
 # ── permissions ──────────────────────────────────────────────────────────────

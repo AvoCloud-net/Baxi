@@ -596,13 +596,14 @@ def _slugify_label(label: str, fallback: str = "ticket") -> str:
 TICKET_PANEL_STYLES = ("buttons", "dropdown")
 
 
-def ticket_staff_role_ids(settings: dict) -> list[int]:
-    """Staff roles of the ticket system. `role` holds one id or several, comma separated."""
-    return [int(x) for x in re.split(r"[,\s]+", str(settings.get("role", "") or "")) if x.isdigit()]
+def ticket_staff_role_ids(guild_id: int) -> list[int]:
+    """Staff roles of the server (one shared setting, see assets/staff.py)."""
+    from assets import staff
+    return staff.role_ids(guild_id)
 
 
-def _is_ticket_staff(member: discord.Member, settings: dict) -> bool:
-    ids = set(ticket_staff_role_ids(settings))
+def _is_ticket_staff(member: discord.Member, settings: dict | None = None) -> bool:
+    ids = set(ticket_staff_role_ids(member.guild.id))
     return any(r.id in ids for r in member.roles)
 TICKET_SELECT_PLACEHOLDER = "Choose why you need help"
 
@@ -812,7 +813,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             return
 
         # Staff role
-        role_ids = ticket_staff_role_ids(guild_data)
+        role_ids = ticket_staff_role_ids(guild.id)
         if not role_ids:
             await interaction.response.send_message(
                 lang["systems"]["ticket"]["role_not_configured"], ephemeral=True

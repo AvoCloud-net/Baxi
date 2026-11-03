@@ -657,6 +657,26 @@
                                 </div>
                             </form>
 
+                            <!-- Staff roles: the one shared team (tickets, suggestions, ...) -->
+                            <form id="staff-roles-form" class="form grid gap-4 settings-form mt-6">
+                                <div class="grid gap-2">
+                                    <label class="font-medium text-sm">Staff roles <span class="text-muted font-normal" id="staff-roles-count">(0)</span></label>
+                                    <p class="text-muted text-xs">Your team. Set once, used everywhere: these roles see and handle tickets and can accept or decline suggestions. Moderators with Manage Server always can.</p>
+                                    <div id="staff-roles-list" class="flex flex-wrap gap-2"></div>
+                                    <p id="staff-roles-empty" class="text-muted text-xs">No staff role yet. Pick one below to add it.</p>
+                                    <div class="flex gap-2 add-area mt-3">
+                                        <select id="staff-roles-select" class="select flex-1">
+                                            <option value="">-- Select a role --</option>
+                                            {% for id, name in roles.items() %}
+                                            <option value="{{ id }}">{{ name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button" class="btn" data-variant="primary" data-size="default" onclick="staffAddRole()">Add</button>
+                                    </div>
+                                    <p class="text-muted text-xs">Baxi's own role must be above these roles in Server Settings → Roles.</p>
+                                </div>
+                            </form>
+
                             <!-- Bot Permissions sub-card -->
 
                             <div class="card mt-6">
@@ -983,20 +1003,8 @@
                                 </label>
                             </div>
 
-                            <div class="grid gap-2">
-                                <label class="font-medium text-sm">Staff roles (can accept / decline) <span class="text-muted font-normal" id="suggestions-roles-count">(0)</span></label>
-                                <div id="suggestions-roles-list" class="flex flex-wrap gap-2"></div>
-                                <p id="suggestions-roles-empty" class="text-muted text-xs">No staff role: anyone with Manage Server can decide.</p>
-                                <div class="flex gap-2 add-area mt-3">
-                                    <select id="suggestions-staff-role" class="select flex-1">
-                                        <option value="">-  Select a role - </option>
-                                        {% for id, name in roles.items() %}
-                                        <option value="{{ id }}">{{ name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="suggestionsAddRole()">Add</button>
-                                </div>
-                                <p class="text-muted text-xs">Members with any of these roles can click Accept / Decline. Manage Server always works.</p>
+                            <div class="grid gap-1">
+                                <p class="text-muted text-xs">Who can accept / decline: the staff roles under <a href="#config-general" class="underline" onclick="dashShowSection('config-general');return false;">General → Staff roles</a> (and everyone with Manage Server).</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -1258,21 +1266,8 @@
                                 <div class="channel-perm-feedback hidden" id="feedback-ticket-channel"></div>
                             </div>
 
-                            <div class="grid gap-2">
-                                <label class="font-medium text-sm">Staff roles <span class="text-muted font-normal" id="ticket-roles-count">(0)</span></label>
-                                <div id="ticket-roles-list" class="flex flex-wrap gap-2"></div>
-                                <p id="ticket-roles-empty" class="text-muted text-xs">No staff role yet. At least one is required.</p>
-                                <div class="flex gap-2 add-area mt-3">
-                                    <select name="ticket-role" id="ticket-role" class="select flex-1">
-                                        <option value="">-- Select a role --</option>
-                                        {% for id, name in roles.items() %}
-                                        <option value="{{ id }}">{{ name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="ticketAddRole()">Add</button>
-                                </div>
-                                <div class="channel-perm-feedback hidden" id="feedback-ticket-role"></div>
-                                <p class="text-muted text-xs">Members with any of these roles can see and handle tickets.</p>
+                            <div class="grid gap-1">
+                                <p class="text-muted text-xs">Staff roles (who handles tickets) are set once under <a href="#config-general" class="underline" onclick="dashShowSection('config-general');return false;">General → Staff roles</a>.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -4967,8 +4962,6 @@
             if (notifChEl) notifChEl.value = data.notification_channel || '';
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
-            _ticketRoles = String(data.ticket.role || '').split(/[,\s]+/).filter(x => /^\d{17,19}$/.test(x));
-            renderTicketRoles();
             document.getElementById("ticket-channel").value = data.ticket.channel || '';
             document.getElementById("ticket-transcript-channel").value = data.ticket.transcript || '';
             document.getElementById("ticket-cat").value = data.ticket.catid || '';
@@ -4979,6 +4972,14 @@
             document.getElementById("ticket-color").value = data.ticket.color || '#FF6B4A';
             if (/^#[0-9a-fA-F]{6}$/.test(data.ticket.color || '')) document.getElementById("ticket-color-picker").value = data.ticket.color;
             document.getElementById("ticket-channel-name-template").value = data.ticket.channel_name_template || '{button}-{user}';
+            // Staff roles: the shared setting, or what tickets / suggestions had before it existed
+            {
+                const _split = v => String(v || '').split(/[,\s]+/).filter(x => /^\d{17,19}$/.test(x));
+                let ids = _split(data.staff && data.staff.roles);
+                if (!ids.length) ids = _split(data.ticket && data.ticket.role).concat(_split(data.suggestions && data.suggestions.staff_role));
+                _staffRoles = Array.from(new Set(ids));
+                renderStaffRoles();
+            }
             _ticketButtons = Array.isArray(data.ticket.buttons) ? data.ticket.buttons.map(b => ({
                 label: String(b.label || ''),
                 emoji: String(b.emoji || ''),
@@ -5343,8 +5344,6 @@
             // Suggestions
             if (data.suggestions) {
                 document.getElementById('suggestions-enabled').checked = data.suggestions.enabled === true;
-                _suggestionRoles = String(data.suggestions.staff_role || '').split(/[,\s]+/).filter(x => /^\d{17,19}$/.test(x));
-                renderSuggestionRoles();
                 document.getElementById('suggestions-log-channel').value = data.suggestions.log_channel || '';
                 // Support old string-array format and new object-array format
                 _suggestionChannels = Array.isArray(data.suggestions.channels)
@@ -6977,7 +6976,6 @@
             const enabled = document.getElementById('ticket-enabled').checked;
             const channel = document.getElementById('ticket-channel').value;
             const channel_transcript = document.getElementById('ticket-transcript-channel').value;
-            const role = _ticketRoles.join(',');
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
@@ -6985,15 +6983,15 @@
             const panel_style = document.getElementById('ticket-panel-style').value;
             const channel_name_template = document.getElementById('ticket-channel-name-template').value;
             ticketButtonAdd(true); // entry typed but "Add" not clicked: take it over instead of losing it
-            if (enabled && _ticketRoles.length === 0) {
-                showSaveToast(false, 'Please add at least one staff role.');
+            if (enabled && _staffRoles.length === 0) {
+                showSaveToast(false, 'Please add at least one staff role (General → Staff roles).');
                 return;
             }
             if (enabled && _ticketButtons.length === 0) {
                 showSaveToast(false, 'Please add at least one ticket button.');
                 return;
             }
-            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, title, panel_style, channel_name_template, buttons: _ticketButtons } };
+            const payload = { ticket: { enabled, channel, channel_transcript, category, color, message, title, panel_style, channel_name_template, buttons: _ticketButtons } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -8873,13 +8871,12 @@
             btn.querySelector('.btn-text')?.classList.add('hidden');
             btn.querySelector('.spinner')?.classList.remove('hidden');
             const enabled = document.getElementById('suggestions-enabled').checked;
-            const staff_role = _suggestionRoles.join(',');
             const log_channel = document.getElementById('suggestions-log-channel').value;
             const channels = _suggestionChannels.map(ch => ({ id: ch.id, votes_enabled: ch.votes_enabled !== false }));
             const auto_forward_enabled = document.getElementById('suggestions-auto-forward-enabled').checked;
             const auto_forward_channel = document.getElementById('suggestions-auto-forward-channel').value;
             const auto_forward_threshold = parseInt(document.getElementById('suggestions-auto-forward-threshold').value) || 10;
-            const payload = { suggestions: { enabled, staff_role, log_channel, channels, auto_forward_enabled, auto_forward_channel, auto_forward_threshold } };
+            const payload = { suggestions: { enabled, log_channel, channels, auto_forward_enabled, auto_forward_channel, auto_forward_threshold } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=suggestions&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -9764,36 +9761,40 @@
             };
         }
 
-        // Staff roles of the suggestion system (several allowed).
-        let _suggestionRoles = [];
-        function renderSuggestionRoles() { _renderTagList(_suggestionRoles, 'suggestions-roles-list', 'suggestions-roles-empty', 'suggestions-roles-count', 'suggestions-staff-role', 'suggestionsRemoveRole', '@'); }
-        function suggestionsAddRole() {
-            const sel = document.getElementById('suggestions-staff-role');
-            if (sel.value && !_suggestionRoles.includes(sel.value)) { _suggestionRoles.push(sel.value); renderSuggestionRoles(); }
-            sel.value = '';
-        }
-        function suggestionsRemoveRole(id) { _suggestionRoles = _suggestionRoles.filter(r => r !== id); renderSuggestionRoles(); }
-
-        // Staff roles of the ticket system (several allowed).
-        let _ticketRoles = [];
-        function renderTicketRoles() {
-            _renderTagList(_ticketRoles, 'ticket-roles-list', 'ticket-roles-empty', 'ticket-roles-count', 'ticket-role', 'ticketRemoveRole', '@');
+        // The one staff team (General → Staff roles), shared by tickets, suggestions, ...
+        let _staffRoles = [];
+        function renderStaffRoles() {
+            _renderTagList(_staffRoles, 'staff-roles-list', 'staff-roles-empty', 'staff-roles-count', 'staff-roles-select', 'staffRemoveRole', '@');
             checkTicketStaffRoleHierarchy();
         }
-        function ticketAddRole() {
-            const sel = document.getElementById('ticket-role');
+        function staffAddRole() {
+            const sel = document.getElementById('staff-roles-select');
             const val = sel.value;
-            if (val && !_ticketRoles.includes(val)) { _ticketRoles.push(val); renderTicketRoles(); }
+            if (val && !_staffRoles.includes(val)) { _staffRoles.push(val); renderStaffRoles(); }
             sel.value = '';
         }
-        function ticketRemoveRole(id) { _ticketRoles = _ticketRoles.filter(r => r !== id); renderTicketRoles(); }
+        function staffRemoveRole(id) { _staffRoles = _staffRoles.filter(r => r !== id); renderStaffRoles(); }
+
+        document.getElementById('staff-roles-form').onsubmit = function (event) {
+            event.preventDefault();
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=staff_roles&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({ staff_roles: { roles: _staffRoles.join(',') } }));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
 
         function checkTicketStaffRoleHierarchy() {
             const banner = document.getElementById('ticket-role-warning');
             const warningText = document.getElementById('ticket-role-warning-text');
-            const bad = typeof rolePositions === 'undefined' ? [] : _ticketRoles.filter(id => rolePositions[id] !== undefined && rolePositions[id] >= botTopRolePos);
+            const bad = typeof rolePositions === 'undefined' ? [] : _staffRoles.filter(id => rolePositions[id] !== undefined && rolePositions[id] >= botTopRolePos);
             if (bad.length) {
-                const names = bad.map(id => document.querySelector(`#ticket-role option[value="${id}"]`)?.textContent?.trim() || id).join(', ');
+                const names = bad.map(id => document.querySelector(`#staff-roles-select option[value="${id}"]`)?.textContent?.trim() || id).join(', ');
                 if (warningText) warningText.textContent = `Baxi's top role must be above the staff role(s): ${names}. Move the Baxi role higher in Server Settings → Roles.`;
                 banner?.classList.remove('hidden');
                 updateRoleGatedFeatures(true);

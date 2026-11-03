@@ -1156,7 +1156,7 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
 
             user = await message.guild.fetch_member(message.author.id)
             is_staff: bool = bool(
-                set(ticket_staff_role_ids(guild_ticket_config)) & {role.id for role in user.roles}
+                set(ticket_staff_role_ids(message.guild.id)) & {role.id for role in user.roles}
             )
 
             clean_msg = message.clean_content

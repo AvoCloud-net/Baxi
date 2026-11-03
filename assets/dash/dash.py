@@ -1438,10 +1438,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 # Validate required fields
                 if not isinstance(ticket.get("channel"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel"]):
                     return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
-                role_ids = [x for x in re.split(r"[,\s]+", str(ticket.get("role", "") or "")) if x]
-                role_ids = list(dict.fromkeys(role_ids))
-                if not role_ids or len(role_ids) > 10 or not all(re.fullmatch(r"\d{17,19}", x) for x in role_ids):
-                    return quart.jsonify({"success": False, "message": "Pick 1-10 valid staff roles."}), 400
+                from assets import staff as _staff_roles
+                role_ids = [str(x) for x in _staff_roles.role_ids(guild.id)]
+                if not role_ids:
+                    return quart.jsonify({"success": False, "message": "Set your staff roles first (Settings → General → Staff roles)."}), 400
                 if not isinstance(ticket.get("category"), str) or not re.fullmatch(r"\d{17,19}", ticket["category"]):
                     return quart.jsonify({"success": False, "message": "Category ID does not match the Discord ID format."}), 400
                 if not isinstance(ticket.get("channel_transcript"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel_transcript"]):
@@ -3750,6 +3750,38 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             return quart.jsonify({"success": True, "message": f"Created #{ch.name} and enabled the honeypot.",
                                   "channel_id": str(ch.id), "channel_name": ch.name})
 
+        elif system == "staff_roles":
+            data: dict = await quart.request.get_json()
+            pl = data.get("staff_roles")
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'staff_roles' must be an object."}), 400
+            role_ids = list(dict.fromkeys(x for x in re.split(r"[,\s]+", str(pl.get("roles", "") or "")) if x))
+            if len(role_ids) > 10 or not all(re.fullmatch(r"\d{17,19}", x) for x in role_ids):
+                return quart.jsonify({"success": False, "message": "Pick up to 10 valid staff roles."}), 400
+            _g = bot.get_guild(int(guild_id))
+            if _g is not None and role_ids:
+                bot_top_role = _g.me.top_role
+                for rid in role_ids:
+                    r = _g.get_role(int(rid))
+                    if r is None:
+                        return quart.jsonify({"success": False, "message": "Staff role not found."}), 400
+                    if bot_top_role.position <= r.position:
+                        return quart.jsonify({
+                            "success": False,
+                            "message": f"Baxi's top role \"{bot_top_role.name}\" must be above the staff role \"{r.name}\" in the role hierarchy."
+                        }), 403
+            staff_cfg = dict(load_data(int(guild_id), "staff") or {})
+            staff_cfg["roles"] = ",".join(role_ids)
+            save_data(int(guild_id), "staff", staff_cfg)
+            user = await discord_auth.fetch_user()
+            audit_log = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append({
+                "type": "save", "user": user.name, "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "staff_roles",
+            })
+            save_data(int(guild_id), "audit_log", audit_log)
+            return quart.jsonify({"success": True, "message": "Staff roles saved."})
+
         elif system == "honeypot":
             data: dict = await quart.request.get_json()
             pl = data.get("honeypot")
@@ -4268,10 +4300,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "votes_enabled": bool(ch.get("votes_enabled", True)),
                     })
 
-            staff_role_ids = list(dict.fromkeys(x for x in re.split(r"[,\s]+", str(sugg.get("staff_role", "") or "")) if x))
-            if len(staff_role_ids) > 10 or not all(re.fullmatch(r"\d{17,19}", x) for x in staff_role_ids):
-                return quart.jsonify({"success": False, "message": "Invalid staff role ID."}), 400
-            staff_role_raw = ",".join(staff_role_ids)
+            # staff roles are one shared setting now (Settings -> General); keep the stored value as is
+            staff_role_raw = str(dict(load_data(int(guild_id), "suggestions") or {}).get("staff_role", "") or "")
 
             log_ch_raw = str(sugg.get("log_channel", "") or "").strip()
             if log_ch_raw and not re.fullmatch(r"\d{17,19}", log_ch_raw):

@@ -188,13 +188,12 @@ def _is_decided(embed: discord.Embed, status_field_name: str) -> bool:
 
 
 def _check_permission(interaction: discord.Interaction, data: dict) -> bool:
-    # staff_role holds one role id or several, comma separated
-    staff_role_ids = {x for x in re.split(r"[,\s]+", str(data.get("staff_role", "") or "")) if x.isdigit()}
+    # the server's one shared staff team (assets/staff.py)
+    from assets import staff
     if isinstance(interaction.user, discord.Member):
         if interaction.user.guild_permissions.manage_guild:
             return True
-        if staff_role_ids:
-            return any(str(r.id) in staff_role_ids for r in interaction.user.roles)
+        return staff.is_staff(interaction.user)
     return False
 
 

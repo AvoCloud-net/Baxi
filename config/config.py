@@ -281,6 +281,7 @@ class datasys:
     # preview). Empty = fall back to mod_gate.log_channel, then suggestions.log_channel.
     "staff": {
         "channel": "",
+        "roles": "",   # comma separated role ids: the ONE staff team (tickets, suggestions, ...)
     },
     # Internal: the one mod-queue summary message in the staff channel (assets/staff.py).
     "staff_queue_notice": {
