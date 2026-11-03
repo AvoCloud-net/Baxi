@@ -1,3 +1,4 @@
+import re
 import discord
 from pathlib import Path
 from discord.ext import commands
@@ -187,12 +188,13 @@ def _is_decided(embed: discord.Embed, status_field_name: str) -> bool:
 
 
 def _check_permission(interaction: discord.Interaction, data: dict) -> bool:
-    staff_role_id = str(data.get("staff_role", "") or "")
+    # staff_role holds one role id or several, comma separated
+    staff_role_ids = {x for x in re.split(r"[,\s]+", str(data.get("staff_role", "") or "")) if x.isdigit()}
     if isinstance(interaction.user, discord.Member):
         if interaction.user.guild_permissions.manage_guild:
             return True
-        if staff_role_id:
-            return any(str(r.id) == staff_role_id for r in interaction.user.roles)
+        if staff_role_ids:
+            return any(str(r.id) in staff_role_ids for r in interaction.user.roles)
     return False
 
 

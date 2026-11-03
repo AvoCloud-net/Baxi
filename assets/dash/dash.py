@@ -4188,9 +4188,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         "votes_enabled": bool(ch.get("votes_enabled", True)),
                     })
 
-            staff_role_raw = str(sugg.get("staff_role", "") or "").strip()
-            if staff_role_raw and not re.fullmatch(r"\d{17,19}", staff_role_raw):
+            staff_role_ids = list(dict.fromkeys(x for x in re.split(r"[,\s]+", str(sugg.get("staff_role", "") or "")) if x))
+            if len(staff_role_ids) > 10 or not all(re.fullmatch(r"\d{17,19}", x) for x in staff_role_ids):
                 return quart.jsonify({"success": False, "message": "Invalid staff role ID."}), 400
+            staff_role_raw = ",".join(staff_role_ids)
 
             log_ch_raw = str(sugg.get("log_channel", "") or "").strip()
             if log_ch_raw and not re.fullmatch(r"\d{17,19}", log_ch_raw):
