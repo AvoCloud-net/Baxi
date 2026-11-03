@@ -834,7 +834,13 @@
 
                                 <div class="grid gap-2">
                                     <label class="block text-sm font-medium">Sensitivity:</label>
-                                    <fieldset class="grid gap-3">
+                                    <input type="range" id="chatfilter-sens-slider" min="0" max="2" step="1" value="1" class="w-full dash-range"
+                                        oninput="cfSensFromSlider()" aria-label="Sensitivity">
+                                    <div class="flex justify-between text-sm font-medium" id="chatfilter-sens-labels">
+                                        <span>Relaxed</span><span>Balanced <span class="text-muted font-normal">(recommended)</span></span><span>Strict</span>
+                                    </div>
+                                    <p class="text-xs text-muted" id="chatfilter-sens-desc"></p>
+                                    <fieldset class="hidden" aria-hidden="true">
                                         <label class="radio-label">
                                             <input type="radio" name="chatfilter-sensitivity" value="low" class="mt-1 h-4 w-4">
                                             <div>
@@ -5020,6 +5026,7 @@
                 renderCfBypass();
                 const sensRadio = document.querySelector(`input[name="chatfilter-sensitivity"][value="${data.chatfilter.sensitivity || 'medium'}"]`);
                 if (sensRadio) sensRadio.checked = true;
+                cfSensFromRadio();
             }
             document.getElementById("general-lang").value = data.lang || 'en';
             document.getElementById("general-nick").value = nick || '';
@@ -8729,6 +8736,29 @@
             custom:   'Custom — thresholds were fine-tuned by hand in Advanced settings.',
         };
         // Update a .dash-range slider's fill so the coloured track matches the thumb.
+        // Chat filter sensitivity: the slider drives the (hidden) radios the save handler reads.
+        const _CF_SENS = ['low', 'medium', 'high'];
+        function _cfSensShow(i) {
+            const radio = document.querySelector(`input[name="chatfilter-sensitivity"][value="${_CF_SENS[i]}"]`);
+            const d = radio && radio.closest('label').querySelector('span.text-muted');
+            document.getElementById('chatfilter-sens-desc').textContent = d ? d.textContent : '';
+            const sl = document.getElementById('chatfilter-sens-slider');
+            if (window.dashRangeFill) dashRangeFill(sl);
+        }
+        function cfSensFromSlider() {
+            const i = parseInt(document.getElementById('chatfilter-sens-slider').value, 10);
+            const radio = document.querySelector(`input[name="chatfilter-sensitivity"][value="${_CF_SENS[i]}"]`);
+            if (radio) radio.checked = true;
+            _cfSensShow(i);
+        }
+        function cfSensFromRadio() {
+            const v = document.querySelector('input[name="chatfilter-sensitivity"]:checked')?.value || 'medium';
+            const i = Math.max(0, _CF_SENS.indexOf(v));
+            document.getElementById('chatfilter-sens-slider').value = i;
+            _cfSensShow(i);
+        }
+        document.addEventListener('DOMContentLoaded', cfSensFromRadio);
+
         function dashRangeFill(el) {
             if (!el) return;
             const min = parseFloat(el.min) || 0;
