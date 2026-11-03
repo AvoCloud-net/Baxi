@@ -628,6 +628,7 @@ def build_ticket_panel_view(buttons: list, style: str = "buttons") -> ui.View:
             label = (b.get("label") or "").strip() or btn_id
             options.append(discord.SelectOption(
                 label=label[:100], value=btn_id, emoji=_ticket_emoji((b.get("emoji") or "").strip()),
+                description=((b.get("description") or "").strip()[:100] or None),
             ))
         if options:
             view.add_item(ui.Select(

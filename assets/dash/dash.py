@@ -1457,6 +1457,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         continue
                     label = str(b.get("label", "")).strip()[:50]
                     emoji = str(b.get("emoji", "")).strip()[:50]
+                    description = str(b.get("description", "")).strip()[:100]
                     style = str(b.get("style", "primary")).strip().lower()
                     if style not in allowed_styles:
                         style = "primary"
@@ -1470,7 +1471,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         btn_id = f"{base_id}-{n}"
                         n += 1
                     used_ids.add(btn_id)
-                    cleaned_buttons.append({"id": btn_id, "label": label, "emoji": emoji, "style": style})
+                    cleaned_buttons.append({"id": btn_id, "label": label, "emoji": emoji, "style": style, "description": description})
 
                 bot_member_check = await guild.fetch_member(bot.user.id)  # type: ignore
                 bot_top_role = bot_member_check.top_role
