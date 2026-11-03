@@ -9868,6 +9868,14 @@
                buttons, reward tiers) are covered without re-binding. */
             document.addEventListener('input', mark, true);
             document.addEventListener('change', mark, true);
+            /* Add / Remove buttons change a list in JS and fire no input event,
+               so the bar never appeared. A click on a non-submit button inside a
+               settings form counts as an edit (opt out: data-no-dirty on the button). */
+            document.addEventListener('click', function (ev) {
+                var b = ev.target.closest && ev.target.closest('button[type="button"]');
+                if (!b || b.hasAttribute('data-no-dirty') || b.closest('.avo-save-bar')) return;
+                mark({ target: b });
+            }, true);
 
             function mark(ev) {
                 var form = ev.target.closest && ev.target.closest('.settings-form');
