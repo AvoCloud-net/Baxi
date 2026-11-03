@@ -618,12 +618,14 @@
                                         <option value="en" selected>English</option>
                                         <option value="de">Deutsch</option>
                                     </select>
+                                    <p class="text-muted text-xs">Language of Baxi's messages and commands on this server.</p>
                                 </div>
 
                                 <div class="grid gap-2">
                                     <label for="general-nick">Bot Name:</label>
                                     <input type="text" id="general-nick" placeholder="Baxi"
                                         minlength="2" maxlength="15" class="w-full">
+                                    <p class="text-muted text-xs">Name Baxi shows on this server (its nickname). Leave empty for "Baxi".</p>
                                 </div>
 
                                 <div class="grid gap-2">
@@ -861,12 +863,14 @@
                                 <div class="grid gap-2">
                                     <label for="c_goodwords_input">Custom good-words:</label>
                                     <input type="text" id="c_goodwords_input" placeholder="Type a word and press Enter">
+                                    <p class="text-muted text-xs">Words that must never be flagged, e.g. names or game terms the filter mistakes for insults.</p>
                                     <div id="c_goodwords_container" class="tag-input-container"></div>
                                 </div>
 
                                 <div class="grid gap-2">
                                     <label for="c_badwords_input">Custom bad-words:</label>
                                     <input type="text" id="c_badwords_input" placeholder="Type a word and press Enter">
+                                    <p class="text-muted text-xs">Extra words the filter should block on this server, on top of the built-in lists.</p>
                                     <div id="c_badwords_container" class="tag-input-container"></div>
                                 </div>
 
@@ -1046,6 +1050,7 @@
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
+                                        <p class="text-muted text-xs">Members post their idea here; Baxi turns it into an embed with Accept / Decline buttons.</p>
                                     </div>
                                     <div class="grid gap-1" style="align-items:center;">
                                         <label class="text-xs text-muted">Votes</label>
@@ -1079,6 +1084,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Popular suggestions are copied here once, e.g. a staff-only channel.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-suggestions-forward"></div>
                             </div>
 
@@ -1145,11 +1151,13 @@
                                         <option value="{{ id }}">#{{ name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <p class="text-muted text-xs">The channel where the message stays at the bottom.</p>
                                     <div class="channel-perm-feedback hidden" id="feedback-sticky-add-channel"></div>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="sticky-add-message">Message:</label>
                                     <textarea id="sticky-add-message" class="w-full min-h-[80px]" maxlength="2000" placeholder="Enter the sticky message text…"></textarea>
+                                    <p class="text-muted text-xs">Text Baxi keeps re-posting below newer messages, e.g. the channel rules.</p>
                                 </div>
                                 <button type="button" class="btn flex items-center gap-2" data-variant="primary" data-size="default" style="align-self:start;" onclick="stickyAdd()">
                                     <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1203,6 +1211,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Messages written here are shared with the global chat channels of other servers.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-globalchat-channel"></div>
                             </div>
 
@@ -1263,6 +1272,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Where the ticket panel (buttons or dropdown) is posted. Members open tickets from here.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-ticket-channel"></div>
                             </div>
 
@@ -1278,6 +1288,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">New ticket channels are created inside this category.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-category-channel"></div>
                             </div>
 
@@ -1289,12 +1300,14 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">When a ticket is closed, its transcript is posted here for the team.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-ticket-transcript-channel"></div>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="ticket-title">Panel title:</label>
                                 <input type="text" id="ticket-title" placeholder="Leave empty for the default title" maxlength="256" class="w-full">
+                                <p class="text-muted text-xs">Headline of the ticket panel embed. Empty = default title.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -1313,12 +1326,14 @@
                                     <input type="text" id="ticket-color" placeholder="#rrggbb" value="#FF6B4A"
                                         pattern="#[0-9a-fA-F]{6}" maxlength="7" class="w-28 font-mono" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('ticket-color-picker').value=this.value">
                                 </div>
+                                <p class="text-muted text-xs">Colour of the panel embed's side bar.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="ticket-message">Embed message:</label>
                                 <textarea id="ticket-message" placeholder="Your custom message." maxlength="4096"
                                     class="w-full min-h-[100px]"></textarea>
+                                <p class="text-muted text-xs">Text shown on the panel above the buttons, e.g. when to open a ticket.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -1347,10 +1362,12 @@
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Emoji</label>
                                         <input type="text" id="ticket-btn-add-emoji" data-emoji-picker placeholder="🛠️" maxlength="50" class="w-full">
+                                        <p class="text-muted text-xs">Shown in front of the label, optional.</p>
                                     </div>
                                     <div class="grid gap-1">
                                         <label class="text-xs text-muted">Label</label>
                                         <input type="text" id="ticket-btn-add-label" placeholder="e.g. Support" maxlength="50" class="w-full">
+                                        <p class="text-muted text-xs">Text on the button / dropdown entry. It also names the ticket channel.</p>
                                     </div>
                                     <div class="grid gap-1" id="ticket-btn-style-wrap">
                                         <label class="text-xs text-muted">Color</label>
@@ -1446,6 +1463,7 @@
                                     <option value="kick">Kick</option>
                                     <option value="ban">Ban</option>
                                 </select>
+                                <p class="text-muted text-xs">What happens to a member who trips the spam limits.</p>
                             </div>
 
                             <hr class="my-2">
@@ -1563,6 +1581,7 @@
                                     <option value="quarantine">Quarantine (assign role)</option>
                                     <option value="none">Do nothing (alert only)</option>
                                 </select>
+                                <p class="text-muted text-xs">What Baxi does with accounts that join while a raid is detected.</p>
                             </div>
 
                             <!-- Crowd control: tier-1 soft slowmode for a single busy channel (no lockdown). -->
@@ -1579,6 +1598,7 @@
                                         <option value="auto">Automatic — when a channel gets busier than normal</option>
                                         <option value="manual">Manual — at a fixed message count</option>
                                     </select>
+                                    <p class="text-muted text-xs">Automatic reacts when a channel gets unusually busy; manual uses the fixed message count below.</p>
                                     <div id="antiraid-cc-threshold-manual" class="grid gap-2 hidden">
                                         <label for="antiraid-cc-threshold">Message threshold (per message window):</label>
                                         <input type="number" id="antiraid-cc-threshold" min="2" max="100" value="12" class="w-full">
@@ -1589,6 +1609,7 @@
                                 <div class="grid gap-2">
                                     <label for="antiraid-cc-slowmode-delay">Slowmode delay (seconds):</label>
                                     <input type="number" id="antiraid-cc-slowmode-delay" min="1" max="21600" value="5" class="w-full">
+                                    <p class="text-muted text-xs">Slowmode applied to the channels while the lockdown lasts.</p>
                                 </div>
 
                                 <div class="grid gap-2">
@@ -1597,6 +1618,7 @@
                                         <option value="auto">Automatic — until the channel calms down again</option>
                                         <option value="manual">Manual — for a fixed time</option>
                                     </select>
+                                    <p class="text-muted text-xs">Automatic lifts the lockdown once the channel calms down; manual after a fixed time.</p>
                                     <div id="antiraid-cc-duration-manual" class="grid gap-2 hidden">
                                         <label for="antiraid-cc-duration">Slowmode duration (seconds):</label>
                                         <input type="number" id="antiraid-cc-duration" min="10" max="3600" value="120" class="w-full">
@@ -1630,6 +1652,7 @@
                                     <div class="grid gap-2">
                                         <label for="antiraid-join-window">Join window (seconds):</label>
                                         <input type="number" id="antiraid-join-window" min="2" max="120" value="10" class="w-full">
+                                        <p class="text-muted text-xs">Time span in which the join limit counts, e.g. 10 joins within 15 seconds.</p>
                                     </div>
 
                                     <div class="grid gap-2">
@@ -1641,6 +1664,7 @@
                                     <div class="grid gap-2">
                                         <label for="antiraid-msg-window">Message window (seconds):</label>
                                         <input type="number" id="antiraid-msg-window" min="2" max="120" value="10" class="w-full">
+                                        <p class="text-muted text-xs">Time span in which the message limit counts.</p>
                                     </div>
 
                                     <div class="grid gap-2">
@@ -1674,11 +1698,13 @@
                                     <div class="grid gap-2">
                                         <label for="antiraid-slowmode-delay">Slowmode delay (seconds):</label>
                                         <input type="number" id="antiraid-slowmode-delay" min="1" max="21600" value="10" class="w-full">
+                                        <p class="text-muted text-xs">Slowmode set on all channels when a raid is detected.</p>
                                     </div>
 
                                     <div class="grid gap-2">
                                         <label for="antiraid-timeout-minutes">Timeout duration (minutes):</label>
                                         <input type="number" id="antiraid-timeout-minutes" min="1" max="1440" value="10" class="w-full">
+                                        <p class="text-muted text-xs">How long raiders are muted (timeout) when that action is on.</p>
                                     </div>
 
                                     <div class="grid gap-2">
@@ -1957,6 +1983,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Role members receive after they verify, usually the one that unlocks your channels.</p>
                                 <div id="verify-role-warning" class="channel-perm-feedback error hidden">Baxi cannot assign this role -  it is equal to or higher than the bot's own role in the hierarchy. Move the Baxi role above it in Server Settings → Roles.</div>
                             </div>
 
@@ -1967,6 +1994,7 @@
                                     <option value="1">CAPTCHA (random 5-char code)</option>
                                     <option value="2">Custom password</option>
                                 </select>
+                                <p class="text-muted text-xs">Button click, a random captcha code, or a password you set.</p>
                             </div>
 
                             <div id="verify-password-section" class="hidden grid gap-2 pl-4 border-l-2 border-muted">
@@ -1983,18 +2011,21 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Where the verification panel with its button is posted.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-verify-channel"></div>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="verify-title">Panel title:</label>
                                 <input type="text" id="verify-title" placeholder="Verification" maxlength="100" class="w-full">
+                                <p class="text-muted text-xs">Headline of the verification panel.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="verify-description">Panel description:</label>
                                 <textarea id="verify-description" placeholder="Click the button below to verify yourself." maxlength="500"
                                     class="w-full min-h-[80px]"></textarea>
+                                <p class="text-muted text-xs">Text on the panel: tell new members what to do and why.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -2003,6 +2034,7 @@
                                     <input type="color" id="verify-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('verify-color-hex').value=this.value">
                                     <input type="text" id="verify-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('verify-color').value=this.value">
                                 </div>
+                                <p class="text-muted text-xs">Colour of the panel embed's side bar.</p>
                             </div>
 
                             <div class="card-actions">
@@ -2078,15 +2110,18 @@
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
+                                        <p class="text-muted text-xs">Where the role panel is posted; members pick their roles there.</p>
                                         <div class="channel-perm-feedback hidden" id="feedback-rr-channel"></div>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-title">Panel title:</label>
                                         <input type="text" id="rr-title" placeholder="Button Roles" maxlength="100" class="w-full">
+                                        <p class="text-muted text-xs">Headline of the role panel.</p>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-description">Panel description:</label>
                                         <textarea id="rr-description" placeholder="Click a button below to toggle a role." maxlength="500" class="w-full min-h-[60px]"></textarea>
+                                        <p class="text-muted text-xs">Text on the panel, e.g. what each role is for.</p>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-color">Embed color:</label>
@@ -2094,6 +2129,7 @@
                                             <input type="color" id="rr-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('rr-color-hex').value=this.value">
                                             <input type="text" id="rr-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('rr-color').value=this.value">
                                         </div>
+                                        <p class="text-muted text-xs">Colour of the panel embed's side bar.</p>
                                     </div>
                                     <div class="grid gap-2">
                                         <label for="rr-max-roles">Max roles per member from this panel:</label>
@@ -2254,6 +2290,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where the welcome message for new members is posted.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-welcomer-channel"></div>
                             </div>
 
@@ -2276,6 +2313,7 @@
                                     <input type="color" id="welcomer-color" value="#FF6B4A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-color-hex').value=this.value">
                                     <input type="text" id="welcomer-color-hex" value="#FF6B4A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-color').value=this.value">
                                 </div>
+                                <p class="text-muted text-xs">Colour of the welcome embed's side bar.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -2284,6 +2322,7 @@
                                     <option value="none">No image</option>
                                     <option value="generate">Auto-generate welcome card</option>
                                 </select>
+                                <p class="text-muted text-xs">Picture shown in the welcome message: generated card, a fixed image, or none.</p>
                             </div>
 
                             <div id="welcomer-image-upload-section" class="hidden grid gap-4 pl-4 border-l-2 border-muted">
@@ -2299,10 +2338,12 @@
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-title">Card title:</label>
                                     <input type="text" id="welcomer-card-title" data-vars="user=Display name,username,displayname,server,membercount" placeholder="Welcome, {displayname}!" maxlength="100" class="w-full">
+                                    <p class="text-muted text-xs">Large text on the welcome card. Placeholders like {user} are filled in.</p>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-subtitle">Card subtitle:</label>
                                     <input type="text" id="welcomer-card-subtitle" data-vars="user=Display name,username,displayname,server,membercount" placeholder="{server}" maxlength="100" class="w-full">
+                                    <p class="text-muted text-xs">Smaller line under the title on the card.</p>
                                 </div>
                                 <div class="grid gap-2">
                                     <label for="welcomer-card-footer">Card footer:</label>
@@ -2315,6 +2356,7 @@
                                         <input type="color" id="welcomer-card-color" value="#0A0A0A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-card-color-hex').value=this.value">
                                         <input type="text" id="welcomer-card-color-hex" value="#0A0A0A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-card-color').value=this.value">
                                     </div>
+                                    <p class="text-muted text-xs">Colour laid over the card background.</p>
                                 </div>
                             </div>
 
@@ -2335,6 +2377,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where the goodbye message is posted when someone leaves.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-welcomer-leave-channel"></div>
                             </div>
 
@@ -2351,6 +2394,7 @@
                                     <input type="color" id="welcomer-leave-color" value="#E0A33A" class="h-10 w-14 rounded cursor-pointer" oninput="document.getElementById('welcomer-leave-color-hex').value=this.value">
                                     <input type="text" id="welcomer-leave-color-hex" value="#E0A33A" maxlength="7" class="w-28 font-mono" pattern="#[0-9a-fA-F]{6}" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('welcomer-leave-color').value=this.value">
                                 </div>
+                                <p class="text-muted text-xs">Colour of the goodbye embed's side bar.</p>
                             </div>
 
                             <div class="card-actions">
@@ -2415,6 +2459,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where Baxi logs joins, leaves, edits, deletes and moderation actions. Keep it staff-only.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-serverlog-channel"></div>
                             </div>
 
@@ -2720,6 +2765,7 @@
                                             <option value="{{ id }}">#{{ name }}</option>
                                             {% endfor %}
                                         </select>
+                                        <p class="text-muted text-xs">Baxi answers questions in this channel with the AI assistant.</p>
                                     </div>
                                     <button type="button" class="btn" data-variant="primary" data-size="default" onclick="assistantAddChannel()" style="flex-shrink:0;align-self:end;">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -3138,6 +3184,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where new videos of this YouTube channel are announced.</p>
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="yvid-add-login" placeholder="@handle or UCxxx channel ID" class="input flex-1" maxlength="64">
@@ -3234,6 +3281,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where new TikTok posts of this account are announced.</p>
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="tt-add-login" placeholder="TikTok username (e.g. charlidamelio)" class="input flex-1" maxlength="64">
@@ -3329,6 +3377,7 @@
                                     <option value="{{ id }}">#{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where new posts of this account are announced.</p>
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="tw-add-login" placeholder="X username (e.g. nasa)" class="input flex-1" maxlength="15">
@@ -3400,6 +3449,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Role that is pinged with every new post. Empty = no ping.</p>
                             </div>
 
                             <div class="card-actions">
@@ -3482,6 +3532,7 @@
                                     <div class="grid gap-1">
                                         <label for="sc-members-template" class="text-sm text-muted">Template (use <code>{count}</code>):</label>
                                         <input type="text" id="sc-members-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Members: {count}">
+                                        <p class="text-muted text-xs">Name of the channel that shows the member count; {count} becomes the number.</p>
                                     </div>
                                 </div>
 
@@ -3493,6 +3544,7 @@
                                     <div class="grid gap-1">
                                         <label for="sc-humans-template" class="text-sm text-muted">Template:</label>
                                         <input type="text" id="sc-humans-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Humans: {count}">
+                                        <p class="text-muted text-xs">Name of the channel that shows the human members; {count} becomes the number.</p>
                                     </div>
                                 </div>
 
@@ -3504,6 +3556,7 @@
                                     <div class="grid gap-1">
                                         <label for="sc-bots-template" class="text-sm text-muted">Template:</label>
                                         <input type="text" id="sc-bots-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Bots: {count}">
+                                        <p class="text-muted text-xs">Name of the channel that shows the bots; {count} becomes the number.</p>
                                     </div>
                                 </div>
 
@@ -3515,6 +3568,7 @@
                                     <div class="grid gap-1">
                                         <label for="sc-channels-template" class="text-sm text-muted">Template:</label>
                                         <input type="text" id="sc-channels-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Channels: {count}">
+                                        <p class="text-muted text-xs">Name of the channel that shows the channel count; {count} becomes the number.</p>
                                     </div>
                                 </div>
 
@@ -3526,6 +3580,7 @@
                                     <div class="grid gap-1">
                                         <label for="sc-roles-template" class="text-sm text-muted">Template:</label>
                                         <input type="text" id="sc-roles-template" data-vars="count=Current number" class="input w-full" maxlength="64" placeholder="Roles: {count}">
+                                        <p class="text-muted text-xs">Name of the channel that shows the role member count; {count} becomes the number.</p>
                                     </div>
                                 </div>
                             </div>
@@ -3799,21 +3854,25 @@
                             <div class="grid gap-2">
                                 <label for="music-queue-limit">Queue limit (1–500):</label>
                                 <input type="number" id="music-queue-limit" class="input w-full" min="1" max="500" value="50">
+                                <p class="text-muted text-xs">Most songs allowed in the queue at once.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="music-default-volume">Default volume (0–200):</label>
                                 <input type="number" id="music-default-volume" class="input w-full" min="0" max="200" value="100">
+                                <p class="text-muted text-xs">Volume when Baxi joins; members can change it with /music volume.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="music-max-song-duration">Max track duration in seconds (0 = unlimited):</label>
                                 <input type="number" id="music-max-song-duration" class="input w-full" min="0" max="36000" value="600">
+                                <p class="text-muted text-xs">Longer tracks are rejected. 0 = no limit.</p>
                             </div>
 
                             <div class="grid gap-2">
                                 <label for="music-disconnect-timeout">Auto-disconnect after idle seconds (30–7200):</label>
                                 <input type="number" id="music-disconnect-timeout" class="input w-full" min="30" max="7200" value="300">
+                                <p class="text-muted text-xs">Baxi leaves the voice channel after this many idle seconds.</p>
                             </div>
 
                             <div class="form-group">
@@ -3871,6 +3930,7 @@
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <p class="text-muted text-xs">Voice channel where Baxi stays and plays the station around the clock.</p>
                                 </div>
 
                                 <div class="grid gap-2">
@@ -3881,6 +3941,7 @@
                                         <option value="{{ id }}">{{ name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <p class="text-muted text-xs">Channel where Baxi posts status messages like "now playing".</p>
                                 </div>
 
                                 <div class="grid gap-2">
@@ -3891,11 +3952,13 @@
                                         <option value="fm4">FM4</option>
                                         <option value="custom">Custom URL…</option>
                                     </select>
+                                    <p class="text-muted text-xs">Radio station name or a stream URL to play non-stop.</p>
                                 </div>
 
                                 <div class="grid gap-2" id="music-247-custom-url-group" style="display:none">
                                     <label for="music-247-custom-url">Custom stream URL:</label>
                                     <input type="url" id="music-247-custom-url" class="input w-full" placeholder="https://example.com/stream.mp3">
+                                    <p class="text-muted text-xs">Stream URL used instead of the station above. Leave empty to use the station.</p>
                                 </div>
                             </div>
 
@@ -4165,6 +4228,7 @@
                                     <option value="channel">Specific channel</option>
                                     <option value="off">Off</option>
                                 </select>
+                                <p class="text-muted text-xs">Where the level-up message is sent when a member reaches a new level.</p>
                             </div>
 
                             <!-- Announcement channel (shown only when mode = channel) -->
@@ -4176,6 +4240,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where level-up messages are posted.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-leveling-channel"></div>
                             </div>
 
@@ -4232,6 +4297,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Channel where the weekly activity recap is posted.</p>
                                 <div class="channel-perm-feedback hidden" id="feedback-pulse-channel"></div>
                             </div>
 
@@ -4247,6 +4313,7 @@
                                     <option value="5">Saturday</option>
                                     <option value="6">Sunday</option>
                                     </select>
+                                    <p class="text-muted text-xs">Day of the week the recap is posted.</p>
                                     <select id="pulse-hour" class="select flex-1">
                                     <option value="0">00:00</option>
                                     <option value="1">01:00</option>
@@ -4296,6 +4363,7 @@
                                     <option value="Australia/Sydney">Australia/Sydney</option>
                                     <option value="UTC">UTC</option>
                                 </select>
+                                <p class="text-muted text-xs">Decides which hour counts as "evening" in the stats and when the recap is posted.</p>
                                 <p class="text-muted text-xs">Used for the post time and for the heatmap hours.</p>
                             </div>
 
@@ -4358,6 +4426,7 @@
                             <div class="grid gap-2">
                                 <label for="starboard-threshold">Stars needed:</label>
                                 <input type="number" id="starboard-threshold" class="input w-full" min="1" max="25" value="3">
+                                <p class="text-muted text-xs">How many star reactions a message needs to appear on the starboard.</p>
                             </div>
                             <div class="form-group">
                                 <label for="starboard-self">
@@ -4626,6 +4695,7 @@
                                     <option value="{{ id }}">{{ name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p class="text-muted text-xs">Role given to the member for their birthday and removed after 24 hours. Optional.</p>
                                 <div id="birthdays-role-warning" class="channel-perm-feedback hidden"></div>
                             </div>
                             <div class="grid gap-2">
@@ -4648,6 +4718,7 @@
                                     <option value="Australia/Sydney">Australia/Sydney</option>
                                     <option value="UTC">UTC</option>
                                 </select>
+                                <p class="text-muted text-xs">Decides when "today" starts for birthday messages on this server.</p>
                             </div>
                             <div class="card-actions">
                                 <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
