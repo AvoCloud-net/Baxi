@@ -1368,10 +1368,11 @@
                                         <label class="text-xs text-muted">Description <span class="font-normal">(max 100 characters)</span></label>
                                         <input type="text" id="ticket-btn-add-desc" placeholder="e.g. Questions about the game or the server" maxlength="100" class="w-full">
                                     </div>
-                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="ticketButtonAdd()">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="ticketButtonAdd()" id="ticket-btn-add-btn">
                                         <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        Add
+                                        <span id="ticket-btn-add-label-text">Add</span>
                                     </button>
+                                    <button type="button" class="btn hidden" data-variant="outline" data-size="default" id="ticket-btn-cancel-btn" onclick="ticketButtonEditCancel()">Cancel</button>
                                 </div>
                             </div>
 
@@ -6867,12 +6868,17 @@
                             <button type="button" class="btn btn-move-down" data-variant="outline" data-size="default" title="Move down" style="padding:4px 8px;${isLast ? 'opacity:0.35;cursor:not-allowed;' : ''}">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
+                            <button type="button" class="btn btn-edit" data-variant="outline" data-size="default">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                <span class="btn-label">Edit</span>
+                            </button>
                             <button type="button" class="btn btn-remove" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);">
                                 <svg class="lucide" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 <span class="btn-label">Remove</span>
                             </button>
                         </div>
                     </header>`;
+                card.querySelector('.btn-edit').onclick = () => ticketButtonEdit(idx);
                 card.querySelector('.btn-move-up').onclick = () => {
                     if (idx === 0) return;
                     [_ticketButtons[idx - 1], _ticketButtons[idx]] = [_ticketButtons[idx], _ticketButtons[idx - 1]];
@@ -6883,7 +6889,13 @@
                     [_ticketButtons[idx], _ticketButtons[idx + 1]] = [_ticketButtons[idx + 1], _ticketButtons[idx]];
                     renderTicketButtons();
                 };
-                card.querySelector('.btn-remove').onclick = () => { _ticketButtons.splice(idx, 1); renderTicketButtons(); };
+                card.querySelector('.btn-remove').onclick = () => {
+                    _ticketButtons.splice(idx, 1);
+                    if (_ticketEditIdx === idx) ticketButtonEditCancel();
+                    else if (_ticketEditIdx > idx) _ticketEditIdx--;
+                    renderTicketButtons();
+                };
+                if (idx === _ticketEditIdx) card.style.outline = '2px solid var(--avo-primary)';
                 list.appendChild(card);
             });
         }
@@ -6898,20 +6910,64 @@
         }
         document.getElementById('ticket-panel-style').addEventListener('change', applyTicketPanelStyle);
 
-        function ticketButtonAdd() {
+        let _ticketEditIdx = -1;
+
+        function _ticketFormClear() {
+            document.getElementById('ticket-btn-add-emoji').value = '';
+            document.getElementById('ticket-btn-add-label').value = '';
+            document.getElementById('ticket-btn-add-desc').value = '';
+            document.getElementById('ticket-btn-add-style').value = 'primary';
+        }
+
+        function _ticketFormMode() {
+            const editing = _ticketEditIdx >= 0;
+            document.getElementById('ticket-btn-add-label-text').textContent = editing ? 'Update' : 'Add';
+            document.getElementById('ticket-btn-cancel-btn').classList.toggle('hidden', !editing);
+        }
+
+        function ticketButtonEdit(idx) {
+            const b = _ticketButtons[idx];
+            if (!b) return;
+            _ticketEditIdx = idx;
+            document.getElementById('ticket-btn-add-emoji').value = b.emoji || '';
+            document.getElementById('ticket-btn-add-label').value = b.label || '';
+            document.getElementById('ticket-btn-add-desc').value = b.description || '';
+            document.getElementById('ticket-btn-add-style').value = b.style || 'primary';
+            _ticketFormMode();
+            renderTicketButtons();
+            document.getElementById('ticket-btn-add-area').scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+
+        function ticketButtonEditCancel() {
+            _ticketEditIdx = -1;
+            _ticketFormClear();
+            _ticketFormMode();
+            renderTicketButtons();
+        }
+
+        // Returns true when the form was empty or its content was taken over.
+        function ticketButtonAdd(silent) {
             const emoji = document.getElementById('ticket-btn-add-emoji').value.trim();
             const label = document.getElementById('ticket-btn-add-label').value.trim();
             const style = document.getElementById('ticket-btn-add-style').value || 'primary';
             const dd = document.getElementById('ticket-panel-style').value === 'dropdown';
             const description = dd ? document.getElementById('ticket-btn-add-desc').value.trim() : '';
-            if (!label && !emoji) { showSaveToast(false, 'Please provide at least a label or emoji.'); return; }
-            if (_ticketButtons.length >= 25) { showSaveToast(false, 'Maximum 25 ticket buttons.'); return; }
-            _ticketButtons.push({ label, emoji, style, description });
-            document.getElementById('ticket-btn-add-emoji').value = '';
-            document.getElementById('ticket-btn-add-label').value = '';
-            document.getElementById('ticket-btn-add-desc').value = '';
-            document.getElementById('ticket-btn-add-style').value = 'primary';
+            if (!label && !emoji) {
+                if (!silent) showSaveToast(false, 'Please provide at least a label or emoji.');
+                return !!silent;
+            }
+            const entry = { label, emoji, style, description };
+            if (_ticketEditIdx >= 0) {
+                _ticketButtons[_ticketEditIdx] = entry;
+            } else {
+                if (_ticketButtons.length >= 25) { showSaveToast(false, 'Maximum 25 ticket buttons.'); return false; }
+                _ticketButtons.push(entry);
+            }
+            _ticketEditIdx = -1;
+            _ticketFormClear();
+            _ticketFormMode();
             renderTicketButtons();
+            return true;
         }
 
         document.getElementById('ticket-form').onsubmit = function (event) {
@@ -6926,6 +6982,7 @@
             const title = document.getElementById('ticket-title').value;
             const panel_style = document.getElementById('ticket-panel-style').value;
             const channel_name_template = document.getElementById('ticket-channel-name-template').value;
+            ticketButtonAdd(true); // entry typed but "Add" not clicked: take it over instead of losing it
             if (enabled && _ticketRoles.length === 0) {
                 showSaveToast(false, 'Please add at least one staff role.');
                 return;
@@ -9868,6 +9925,18 @@
                buttons, reward tiers) are covered without re-binding. */
             document.addEventListener('input', mark, true);
             document.addEventListener('change', mark, true);
+            /* An add-area that is just "pick one + Add" adds on pick: forgetting the
+               Add click was the most common mistake while setting Baxi up. Areas with
+               further fields (text, checkbox) keep the explicit button. */
+            document.addEventListener('change', function (ev) {
+                var sel = ev.target;
+                if (!sel || sel.tagName !== 'SELECT' || !sel.value) return;
+                var area = sel.closest('.add-area');
+                if (!area || area.querySelectorAll('select').length !== 1 ||
+                    area.querySelector('input, textarea')) return;
+                var addBtn = area.querySelector('button[data-variant="primary"]');
+                if (addBtn) addBtn.click();
+            });
             /* Add / Remove buttons change a list in JS and fire no input event,
                so the bar never appeared. A click on a non-submit button inside a
                settings form counts as an edit (opt out: data-no-dirty on the button). */
