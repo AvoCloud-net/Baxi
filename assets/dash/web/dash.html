@@ -1282,6 +1282,20 @@
                             </div>
 
                             <div class="grid gap-2">
+                                <label for="ticket-title">Panel title:</label>
+                                <input type="text" id="ticket-title" placeholder="Leave empty for the default title" maxlength="256" class="w-full">
+                            </div>
+
+                            <div class="grid gap-2">
+                                <label for="ticket-panel-style">Panel style:</label>
+                                <select id="ticket-panel-style" class="select w-full">
+                                    <option value="buttons">Buttons (one per reason)</option>
+                                    <option value="dropdown">Dropdown menu</option>
+                                </select>
+                                <p class="text-muted text-xs">How members pick a ticket reason. Both use the same list below.</p>
+                            </div>
+
+                            <div class="grid gap-2">
                                 <label for="ticket-color">Embed color:</label>
                                 <input type="text" id="ticket-color" placeholder="#rrggbb"
                                     pattern="#[0-9a-fA-F]{6}" maxlength="7" class="w-full">
@@ -4913,6 +4927,8 @@
             document.getElementById("ticket-cat").value = data.ticket.catid || '';
             document.getElementById('ticket-enabled').checked = data.ticket.enabled === true;
             document.getElementById("ticket-message").value = data.ticket.message || '';
+            document.getElementById("ticket-title").value = data.ticket.title || '';
+            document.getElementById("ticket-panel-style").value = data.ticket.panel_style === 'dropdown' ? 'dropdown' : 'buttons';
             document.getElementById("ticket-color").value = data.ticket.color || '';
             document.getElementById("ticket-channel-name-template").value = data.ticket.channel_name_template || '{button}-{user}';
             _ticketButtons = Array.isArray(data.ticket.buttons) ? data.ticket.buttons.map(b => ({
@@ -6842,12 +6858,14 @@
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
+            const title = document.getElementById('ticket-title').value;
+            const panel_style = document.getElementById('ticket-panel-style').value;
             const channel_name_template = document.getElementById('ticket-channel-name-template').value;
             if (enabled && _ticketButtons.length === 0) {
                 showSaveToast(false, 'Please add at least one ticket button.');
                 return;
             }
-            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, channel_name_template, buttons: _ticketButtons } };
+            const payload = { ticket: { enabled, channel, channel_transcript, role, category, color, message, title, panel_style, channel_name_template, buttons: _ticketButtons } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=ticket&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

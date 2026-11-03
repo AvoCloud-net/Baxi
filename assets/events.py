@@ -17,7 +17,7 @@ import assets.idle as idle
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
-from assets.buttons import build_ticket_panel_view
+from assets.buttons import build_ticket_panel_view, ticket_panel_embed
 import assets.message.customcmd as customcmd
 import assets.message.assistant as assistant
 from assets.moderation import ModerationEngine
@@ -587,14 +587,10 @@ def events(bot: commands.AutoShardedBot, web):
             try:
                 channel = message.guild.get_channel(int(ticket_config["channel"]))
                 if isinstance(channel, discord.TextChannel):
-                    embed = discord.Embed(
-                        title=f"{config.Icons.questionmark} SYS // {message.guild.name} SUPPORT",
-                        description=ticket_config.get("message", ""),
-                        color=discord.Color.from_str(ticket_config.get("color", "#5865F2")),
-                    )
+                    embed = ticket_panel_embed(message.guild, ticket_config)
                     panel_msg = await channel.send(
                         embed=embed,
-                        view=build_ticket_panel_view(ticket_config.get("buttons", [])),
+                        view=build_ticket_panel_view(ticket_config.get("buttons", []), ticket_config.get("panel_style", "buttons")),
                     )
                     ticket_config["panel_message_id"] = str(panel_msg.id)
                     datasys.save_data(message.guild.id, "ticket", ticket_config)

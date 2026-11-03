@@ -21,7 +21,7 @@ import random
 import re
 from typing import cast
 import config.config as config
-from assets.buttons import build_ticket_panel_view
+from assets.buttons import build_ticket_panel_view, ticket_panel_embed, TICKET_PANEL_STYLES
 import time
 import json
 import os
@@ -1419,6 +1419,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             settings.setdefault("catid", "")
             settings.setdefault("color", "#FF6B4A")
             settings.setdefault("message", "")
+            settings.setdefault("title", "")
+            settings.setdefault("panel_style", "buttons")
             settings.setdefault("buttons", [])
             settings.setdefault("channel_name_template", "{button}-{user}")
             settings.setdefault("panel_message_id", "")
@@ -1499,14 +1501,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 raw_template = str(ticket.get("channel_name_template", "") or "").strip()[:80]
                 settings["channel_name_template"] = raw_template if raw_template else "{button}-{user}"
                 settings["buttons"] = cleaned_buttons
+                settings["title"] = str(ticket.get("title", "") or "").strip()[:256]
+                panel_style = str(ticket.get("panel_style", "buttons")).strip().lower()
+                settings["panel_style"] = panel_style if panel_style in TICKET_PANEL_STYLES else "buttons"
 
-                embed = discord.Embed(
-                    title=f"{config.Icons.questionmark} SYS // {guild.name} SUPPORT",
-                    description=settings["message"],
-                    color=discord.Color.from_str(color_raw),
-                )
+                embed = ticket_panel_embed(guild, settings)
 
-                panel_view = build_ticket_panel_view(cleaned_buttons)
+                panel_view = build_ticket_panel_view(cleaned_buttons, settings["panel_style"])
                 existing_msg_id = str(settings.get("panel_message_id", "")).strip()
                 panel_msg = None
                 if existing_msg_id:

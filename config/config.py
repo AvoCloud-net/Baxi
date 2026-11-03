@@ -227,6 +227,8 @@ class datasys:
         "catid": "",
         "role": "",
         "color": "#FF6B4A",
+        "title": "",                 # empty = "SYS // <server> SUPPORT"
+        "panel_style": "buttons",    # "buttons" | "dropdown"
         "message": "Click a button below to open a ticket.",
         "channel_name_template": "{button}-{user}",
         "panel_message_id": "",

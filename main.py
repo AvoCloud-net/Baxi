@@ -70,7 +70,7 @@ class PersistentViewBot(commands.AutoShardedBot):
         )
 
     async def setup_hook(self) -> None:
-        from assets.buttons import TicketButton, TicketAdminButtons, VerifyView
+        from assets.buttons import TicketButton, TicketSelect, TicketAdminButtons, VerifyView
         from assets.message.reactionroles import RoleButton
         from assets.suggestions import SuggestionView
         from assets.giveaway import GiveawayView
@@ -81,7 +81,7 @@ class PersistentViewBot(commands.AutoShardedBot):
         self.add_view(GiveawayView())
         self.add_view(TempVoiceControlView(self))
         from assets.moderation.appeals import AppealButton
-        self.add_dynamic_items(RoleButton, TicketButton, PollButton, PollCloseButton, QuoteReactionButton, WrappedButton, AppealButton)
+        self.add_dynamic_items(RoleButton, TicketButton, TicketSelect, PollButton, PollCloseButton, QuoteReactionButton, WrappedButton, AppealButton)
         _tv_load_state()
 
 

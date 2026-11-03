@@ -593,9 +593,48 @@ def _slugify_label(label: str, fallback: str = "ticket") -> str:
     return s or fallback
 
 
-def build_ticket_panel_view(buttons: list) -> ui.View:
-    """Build a persistent panel view with one button per button definition."""
+TICKET_PANEL_STYLES = ("buttons", "dropdown")
+TICKET_SELECT_PLACEHOLDER = "Choose why you need help"
+
+
+def ticket_panel_embed(guild: discord.Guild, settings: dict) -> discord.Embed:
+    """The panel embed; a custom title replaces the default one."""
+    title = str(settings.get("title", "") or "").strip()[:256] or f"{config.Icons.questionmark} SYS // {guild.name} SUPPORT"
+    try:
+        color = discord.Color.from_str(str(settings.get("color") or "#FF6B4A"))
+    except ValueError:
+        color = discord.Color.from_str("#FF6B4A")
+    return discord.Embed(title=title, description=settings.get("message", ""), color=color)
+
+
+def _ticket_emoji(emoji_str: str) -> discord.PartialEmoji | None:
+    if not emoji_str:
+        return None
+    try:
+        return discord.PartialEmoji.from_str(emoji_str)
+    except Exception:
+        return None
+
+
+def build_ticket_panel_view(buttons: list, style: str = "buttons") -> ui.View:
+    """Build a persistent panel view: one button per definition, or a single dropdown."""
     view = ui.View(timeout=None)
+    if style == "dropdown":
+        options = []
+        for b in (buttons or [])[:25]:
+            btn_id = str(b.get("id", "")).strip()
+            if not btn_id:
+                continue
+            label = (b.get("label") or "").strip() or btn_id
+            options.append(discord.SelectOption(
+                label=label[:100], value=btn_id, emoji=_ticket_emoji((b.get("emoji") or "").strip()),
+            ))
+        if options:
+            view.add_item(ui.Select(
+                custom_id="ticket_select", placeholder=TICKET_SELECT_PLACEHOLDER,
+                min_values=1, max_values=1, options=options,
+            ))
+        return view
     for b in buttons or []:
         btn_id = str(b.get("id", "")).strip()
         if not btn_id:
@@ -623,6 +662,36 @@ def build_ticket_panel_view(buttons: list) -> ui.View:
             custom_id=f"ticket_btn:{btn_id}",
         ))
     return view
+
+
+class TicketSelect(ui.DynamicItem[ui.Select], template=r"ticket_select"):
+    """Persistent dropdown of the ticket panel; the chosen value is the ticket button id."""
+
+    def __init__(self) -> None:
+        super().__init__(ui.Select(
+            custom_id="ticket_select", placeholder=TICKET_SELECT_PLACEHOLDER,
+            options=[discord.SelectOption(label="-", value="-")],
+        ))
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Select, match: re.Match[str]) -> "TicketSelect":
+        return cls()
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        values = (interaction.data or {}).get("values") or []
+        if not values:
+            return await interaction.response.defer()
+        btn_id = str(values[0])
+        message = interaction.message
+        await _open_ticket_from_button(interaction, btn_id)
+        # Rebuild the panel so the same option can be picked again (Discord keeps the selection shown).
+        try:
+            if message is not None and interaction.guild is not None:
+                cfg = dict(datasys.load_data(interaction.guild.id, sys="ticket"))
+                if cfg.get("panel_style") == "dropdown":
+                    await message.edit(view=build_ticket_panel_view(cfg.get("buttons", []), "dropdown"))
+        except discord.HTTPException:
+            pass
 
 
 class TicketButton(ui.DynamicItem[ui.Button], template=r"ticket_btn:(?P<btn_id>[A-Za-z0-9_\-]+)"):
