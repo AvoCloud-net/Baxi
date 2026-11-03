@@ -278,7 +278,8 @@ def load_ticket(gid: int) -> dict:
         "SELECT * FROM cfg_ticket_button WHERE guild_id=? ORDER BY pos", (gid,)
     )
     buttons = [
-        {"id": b["btn_id"], "label": b["label"], "emoji": b["emoji"], "style": b["style"]}
+        {"id": b["btn_id"], "label": b["label"], "emoji": b["emoji"], "style": b["style"],
+         "description": b["description"] or ""}
         for b in btn_rows
     ]
     if not buttons:
@@ -291,6 +292,8 @@ def load_ticket(gid: int) -> dict:
         "role":                 str(r["role"]),
         "color":                str(r["color"]),
         "message":              str(r["message"]),
+        "title":                str(r["title"] or ""),
+        "panel_style":          str(r["panel_style"] or "buttons"),
         "channel_name_template": str(r["channel_name_template"]),
         "panel_message_id":     str(r["panel_message_id"]),
         "buttons":              buttons,
@@ -303,12 +306,13 @@ def save_ticket(gid: int, data: dict) -> None:
         cx.execute(
             "INSERT INTO cfg_ticket "
             "(guild_id,enabled,channel,transcript,catid,role,color,message,"
-            "channel_name_template,panel_message_id) VALUES (?,?,?,?,?,?,?,?,?,?) "
+            "channel_name_template,panel_message_id,title,panel_style) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(guild_id) DO UPDATE SET "
             "enabled=excluded.enabled,channel=excluded.channel,transcript=excluded.transcript,"
             "catid=excluded.catid,role=excluded.role,color=excluded.color,"
             "message=excluded.message,channel_name_template=excluded.channel_name_template,"
-            "panel_message_id=excluded.panel_message_id",
+            "panel_message_id=excluded.panel_message_id,title=excluded.title,"
+            "panel_style=excluded.panel_style",
             (
                 gid,
                 _int(data.get("enabled", False)),
@@ -320,15 +324,17 @@ def save_ticket(gid: int, data: dict) -> None:
                 str(data.get("message", _TKT_DEF["message"])),
                 str(data.get("channel_name_template", "{button}-{user}")),
                 str(data.get("panel_message_id", "")),
+                str(data.get("title", "")),
+                str(data.get("panel_style", "buttons")),
             ),
         )
         cx.execute("DELETE FROM cfg_ticket_button WHERE guild_id=?", (gid,))
         for pos, btn in enumerate(data.get("buttons", [])):
             cx.execute(
-                "INSERT INTO cfg_ticket_button (guild_id,pos,btn_id,label,emoji,style) "
-                "VALUES (?,?,?,?,?,?)",
+                "INSERT INTO cfg_ticket_button (guild_id,pos,btn_id,label,emoji,style,description) "
+                "VALUES (?,?,?,?,?,?,?)",
                 (gid, pos, btn.get("id", ""), btn.get("label", ""), btn.get("emoji", ""),
-                 btn.get("style", "primary")),
+                 btn.get("style", "primary"), btn.get("description", "")),
             )
 
 

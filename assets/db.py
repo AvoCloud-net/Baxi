@@ -79,6 +79,11 @@ def init(db_path: str | None = None) -> None:
 # never alters an existing table, so we add any missing columns here (idempotent).
 _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
     "cfg_mod_gate": [("use_safety_list", "INTEGER DEFAULT 1")],
+    "cfg_ticket": [
+        ("title", "TEXT DEFAULT ''"),
+        ("panel_style", "TEXT DEFAULT 'buttons'"),
+    ],
+    "cfg_ticket_button": [("description", "TEXT DEFAULT ''")],
     "cfg_chatfilter": [
         ("sensitivity", "TEXT DEFAULT 'medium'"),
         ("exempt_staff", "INTEGER DEFAULT 1"),

@@ -1248,15 +1248,20 @@
                             </div>
 
                             <div class="grid gap-2">
-                                <label for="ticket-role">Staff role:</label>
-                                <select name="ticket-role" id="ticket-role" class="select w-full" required
-                                    onchange="checkTicketStaffRoleHierarchy(this.value)">
-                                    <option value="">-- Please select --</option>
-                                    {% for id, name in roles.items() %}
-                                    <option value="{{ id }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label class="font-medium text-sm">Staff roles <span class="text-muted font-normal" id="ticket-roles-count">(0)</span></label>
+                                <div id="ticket-roles-list" class="flex flex-wrap gap-2"></div>
+                                <p id="ticket-roles-empty" class="text-muted text-xs">No staff role yet. At least one is required.</p>
+                                <div class="flex gap-2 add-area mt-3">
+                                    <select name="ticket-role" id="ticket-role" class="select flex-1">
+                                        <option value="">-- Select a role --</option>
+                                        {% for id, name in roles.items() %}
+                                        <option value="{{ id }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="ticketAddRole()">Add</button>
+                                </div>
                                 <div class="channel-perm-feedback hidden" id="feedback-ticket-role"></div>
+                                <p class="text-muted text-xs">Members with any of these roles can see and handle tickets.</p>
                             </div>
 
                             <div class="grid gap-2">
@@ -4928,7 +4933,8 @@
             if (notifChEl) notifChEl.value = data.notification_channel || '';
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
-            document.getElementById("ticket-role").value = data.ticket.role || '';
+            _ticketRoles = String(data.ticket.role || '').split(/[,\s]+/).filter(x => /^\d{17,19}$/.test(x));
+            renderTicketRoles();
             document.getElementById("ticket-channel").value = data.ticket.channel || '';
             document.getElementById("ticket-transcript-channel").value = data.ticket.transcript || '';
             document.getElementById("ticket-cat").value = data.ticket.catid || '';
@@ -6865,13 +6871,17 @@
             const enabled = document.getElementById('ticket-enabled').checked;
             const channel = document.getElementById('ticket-channel').value;
             const channel_transcript = document.getElementById('ticket-transcript-channel').value;
-            const role = document.getElementById('ticket-role').value;
+            const role = _ticketRoles.join(',');
             const category = document.getElementById('ticket-cat').value;
             const color = document.getElementById('ticket-color').value;
             const message = document.getElementById('ticket-message').value;
             const title = document.getElementById('ticket-title').value;
             const panel_style = document.getElementById('ticket-panel-style').value;
             const channel_name_template = document.getElementById('ticket-channel-name-template').value;
+            if (enabled && _ticketRoles.length === 0) {
+                showSaveToast(false, 'Please add at least one staff role.');
+                return;
+            }
             if (enabled && _ticketButtons.length === 0) {
                 showSaveToast(false, 'Please add at least one ticket button.');
                 return;
@@ -9514,7 +9524,7 @@
             checkChannelPermissions('ticket',            v('ticket-channel'),                 'feedback-ticket-channel',              'ticket-form',           'panel_ch');
             checkChannelPermissions('ticket_transcript', v('ticket-transcript-channel'),      'feedback-ticket-transcript-channel',   'ticket-form',           'transcript_ch');
             checkChannelPermissions('category',          v('ticket-cat'),                     'feedback-category-channel',            'ticket-form',           'category');
-            checkTicketStaffRoleHierarchy(                v('ticket-role'));
+            checkTicketStaffRoleHierarchy();
             // Welcomer
             checkChannelPermissions('welcomer',          v('welcomer-channel'),               'feedback-welcomer-channel',            'welcomer-form',         'ch');
             checkChannelPermissions('welcomer',          v('welcomer-leave-channel'),         'feedback-welcomer-leave-channel',      'welcomer-form',         'leave_ch');
@@ -9563,7 +9573,6 @@
             on('ticket-channel',                 'ticket',               'feedback-ticket-channel',             'ticket-form',          'panel_ch');
             on('ticket-transcript-channel',      'ticket_transcript',    'feedback-ticket-transcript-channel',  'ticket-form',          'transcript_ch');
             on('ticket-cat',                     'category',             'feedback-category-channel',           'ticket-form',          'category');
-            onRole('ticket-role',                                        'feedback-ticket-role',                'ticket-form',          'role');
             on('welcomer-channel',               'welcomer',             'feedback-welcomer-channel',           'welcomer-form',        'ch');
             on('welcomer-leave-channel',         'welcomer',             'feedback-welcomer-leave-channel',     'welcomer-form',        'leave_ch');
             onRole('verify-role',                                        'verify-role-warning',                 'verify-form',          'verify-role');
@@ -9613,18 +9622,27 @@
             };
         }
 
-        function checkTicketStaffRoleHierarchy(roleId) {
-            // Delegate feedback-div + save-button blocking to the shared helper
-            checkRoleHierarchyFeedback(roleId, 'feedback-ticket-role', 'ticket-form', 'role');
-            // Additionally show/hide the full-form warning banner
+        // Staff roles of the ticket system (several allowed).
+        let _ticketRoles = [];
+        function renderTicketRoles() {
+            _renderTagList(_ticketRoles, 'ticket-roles-list', 'ticket-roles-empty', 'ticket-roles-count', 'ticket-role', 'ticketRemoveRole', '@');
+            checkTicketStaffRoleHierarchy();
+        }
+        function ticketAddRole() {
+            const sel = document.getElementById('ticket-role');
+            const val = sel.value;
+            if (val && !_ticketRoles.includes(val)) { _ticketRoles.push(val); renderTicketRoles(); }
+            sel.value = '';
+        }
+        function ticketRemoveRole(id) { _ticketRoles = _ticketRoles.filter(r => r !== id); renderTicketRoles(); }
+
+        function checkTicketStaffRoleHierarchy() {
             const banner = document.getElementById('ticket-role-warning');
             const warningText = document.getElementById('ticket-role-warning-text');
-            if (!roleId) { banner?.classList.add('hidden'); updateRoleGatedFeatures(false); return; }
-            const rpos = typeof rolePositions !== 'undefined' ? rolePositions[roleId] : undefined;
-            if (rpos === undefined) { banner?.classList.add('hidden'); updateRoleGatedFeatures(false); return; }
-            const roleName = document.querySelector(`#ticket-role option[value="${roleId}"]`)?.textContent?.trim() || roleId;
-            if (rpos >= botTopRolePos) {
-                if (warningText) warningText.textContent = `Baxi's top role must be above the staff role "${roleName}". Move the Baxi role higher in Server Settings → Roles.`;
+            const bad = typeof rolePositions === 'undefined' ? [] : _ticketRoles.filter(id => rolePositions[id] !== undefined && rolePositions[id] >= botTopRolePos);
+            if (bad.length) {
+                const names = bad.map(id => document.querySelector(`#ticket-role option[value="${id}"]`)?.textContent?.trim() || id).join(', ');
+                if (warningText) warningText.textContent = `Baxi's top role must be above the staff role(s): ${names}. Move the Baxi role higher in Server Settings → Roles.`;
                 banner?.classList.remove('hidden');
                 updateRoleGatedFeatures(true);
             } else {

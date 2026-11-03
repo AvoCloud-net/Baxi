@@ -1432,8 +1432,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 # Validate required fields
                 if not isinstance(ticket.get("channel"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel"]):
                     return quart.jsonify({"success": False, "message": "Channel ID does not match the Discord ID format."}), 400
-                if not isinstance(ticket.get("role"), str) or not re.fullmatch(r"\d{17,19}", ticket["role"]):
-                    return quart.jsonify({"success": False, "message": "Role ID does not match the Discord ID format."}), 400
+                role_ids = [x for x in re.split(r"[,\s]+", str(ticket.get("role", "") or "")) if x]
+                role_ids = list(dict.fromkeys(role_ids))
+                if not role_ids or len(role_ids) > 10 or not all(re.fullmatch(r"\d{17,19}", x) for x in role_ids):
+                    return quart.jsonify({"success": False, "message": "Pick 1-10 valid staff roles."}), 400
                 if not isinstance(ticket.get("category"), str) or not re.fullmatch(r"\d{17,19}", ticket["category"]):
                     return quart.jsonify({"success": False, "message": "Category ID does not match the Discord ID format."}), 400
                 if not isinstance(ticket.get("channel_transcript"), str) or not re.fullmatch(r"\d{17,19}", ticket["channel_transcript"]):
@@ -1475,14 +1477,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 bot_member_check = await guild.fetch_member(bot.user.id)  # type: ignore
                 bot_top_role = bot_member_check.top_role
-                staff_role = guild.get_role(int(ticket["role"]))
-                if staff_role is None:
-                    return quart.jsonify({"success": False, "message": "Staff role not found."}), 400
-                if bot_top_role.position <= staff_role.position:
-                    return quart.jsonify({
-                        "success": False,
-                        "message": f"Baxi's top role \"{bot_top_role.name}\" must be above the staff role \"{staff_role.name}\" in the role hierarchy."
-                    }), 403
+                for rid in role_ids:
+                    staff_role = guild.get_role(int(rid))
+                    if staff_role is None:
+                        return quart.jsonify({"success": False, "message": "Staff role not found."}), 400
+                    if bot_top_role.position <= staff_role.position:
+                        return quart.jsonify({
+                            "success": False,
+                            "message": f"Baxi's top role \"{bot_top_role.name}\" must be above the staff role \"{staff_role.name}\" in the role hierarchy."
+                        }), 403
 
                 channel = await guild.fetch_channel(int(ticket["channel"]))
                 if not isinstance(channel, discord.TextChannel):
@@ -1495,7 +1498,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 settings["enabled"] = True
                 settings["channel"] = ticket["channel"]
                 settings["transcript"] = ticket["channel_transcript"]
-                settings["role"] = ticket["role"]
+                settings["role"] = ",".join(role_ids)
                 settings["catid"] = ticket["category"]
                 settings["color"] = color_raw
                 settings["message"] = str(ticket.get("message", ""))[:4000]

@@ -594,6 +594,16 @@ def _slugify_label(label: str, fallback: str = "ticket") -> str:
 
 
 TICKET_PANEL_STYLES = ("buttons", "dropdown")
+
+
+def ticket_staff_role_ids(settings: dict) -> list[int]:
+    """Staff roles of the ticket system. `role` holds one id or several, comma separated."""
+    return [int(x) for x in re.split(r"[,\s]+", str(settings.get("role", "") or "")) if x.isdigit()]
+
+
+def _is_ticket_staff(member: discord.Member, settings: dict) -> bool:
+    ids = set(ticket_staff_role_ids(settings))
+    return any(r.id in ids for r in member.roles)
 TICKET_SELECT_PLACEHOLDER = "Choose why you need help"
 
 
@@ -802,15 +812,19 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             return
 
         # Staff role
-        role_id = guild_data.get("role")
-        if not role_id:
+        role_ids = ticket_staff_role_ids(guild_data)
+        if not role_ids:
             await interaction.response.send_message(
                 lang["systems"]["ticket"]["role_not_configured"], ephemeral=True
             )
             return
-        try:
-            role = await guild.fetch_role(int(role_id))
-        except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+        staff_roles: list[discord.Role] = []
+        for rid in role_ids:
+            try:
+                staff_roles.append(await guild.fetch_role(rid))
+            except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):
+                continue
+        if not staff_roles:
             await interaction.response.send_message(
                 lang["systems"]["ticket"]["role_not_found"], ephemeral=True
             )
@@ -827,14 +841,15 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
                 manage_channels=True,
                 manage_permissions=True,
             ),
-            role: discord.PermissionOverwrite(
+        }
+        for staff_role in staff_roles:
+            perms_overwrites[staff_role] = discord.PermissionOverwrite(
                 view_channel=True,
                 send_messages=True,
                 read_message_history=True,
                 attach_files=True,
                 manage_messages=True,
-            ),
-        }
+            )
 
         slug = _slugify_label(button_def.get("label") or "", fallback=btn_id)
         template = str(guild_data.get("channel_name_template") or "{button}-{user}")
@@ -874,7 +889,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             color=config.Discord.color,
         )
         await channel.send(
-            content=f"{user.mention} {role.mention}",
+            content=f"{user.mention} " + " ".join(r.mention for r in staff_roles),
             embed=ticket_embed,
             view=TicketAdminButtons(),
         )
@@ -885,6 +900,156 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             await interaction.response.send_message(
                 fallback_lang["systems"]["ticket"]["error_creating"], ephemeral=True
             )
+        except Exception:
+            pass
+
+
+async def _ticket_delete_now(
+    interaction: discord.Interaction, ticket_data: dict, guild_settings: dict, tickets: dict,
+    transcripts: dict, transcript_id: str, lang: dict, channel_id: str,
+) -> None:
+    """Delete the ticket channel, post the transcript link and drop the open-ticket entry."""
+    await interaction.channel.delete(
+        reason=f"Ticket closed by {interaction.user.name}"
+    )
+
+    transcript_data: dict = {
+        "guild": str(interaction.guild.id),
+        "id": str(transcript_id),
+        "title": ticket_data["title"],
+        "msg": ticket_data["message"],
+        "closed_by": str(interaction.user.name),
+        "closed_on": str(datetime.datetime.now(_VIENNA)),
+        "transcript": ticket_data["transcript"],
+    }
+
+    transcript_channel = await interaction.guild.fetch_channel(
+        int(guild_settings.get("transcript", 0))
+    )
+    link = f"https://{config.Web.url}/?ticket_transcript={transcript_id}"
+
+    embed = discord.Embed(
+        title=lang["systems"]["ticket"]["title"],
+        description=f"{str(lang['systems']['ticket']['link']).format(guild=interaction.guild.name)} {link}",
+    )
+
+    if transcript_channel is not None and isinstance(
+        transcript_channel, discord.TextChannel
+    ):
+        await transcript_channel.send(embed=embed)
+
+    try:
+        member = interaction.guild.get_member(
+            int(tickets[channel_id]["user"])
+        )
+        if member is None:
+            return
+        if member.dm_channel is None:
+            dm_channel = await member.create_dm()
+        else:
+            dm_channel = member.dm_channel
+
+        await dm_channel.send(embed=embed)
+        if transcript_channel is not None and isinstance(
+            transcript_channel, discord.TextChannel
+        ):
+            await transcript_channel.send(
+                str(lang["systems"]["ticket"]["transcript_sent_dm"]).format(user=member.mention)
+            )
+    except discord.Forbidden:
+        if transcript_channel is not None and isinstance(
+            transcript_channel, discord.TextChannel
+        ):
+            await transcript_channel.send(
+                lang["systems"]["ticket"]["transcript_dm_failed"]
+            )
+
+    transcripts[str(transcript_id)] = transcript_data
+    datasys.save_data(1001, "transcripts", transcripts)
+    tickets.pop(str(channel_id))
+    datasys.save_data(
+        interaction.guild.id, "open_tickets", tickets
+    )
+
+
+class TicketDeleteConfirmView(ui.View):
+    """Confirm / Cancel buttons under the delete prompt; only the staff member who clicked
+    delete may answer. No answer within 30 s counts as cancelled."""
+
+    def __init__(self, moderator: discord.abc.User, t: dict) -> None:
+        super().__init__(timeout=30)
+        self.moderator = moderator
+        self.t = t
+        self.message: discord.Message | None = None
+        self.confirm.label = t.get("btn_confirm", "Confirm")
+        self.cancel.label = t.get("btn_cancel", "Cancel")
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id == self.moderator.id:
+            return True
+        guild_id = interaction.guild.id if interaction.guild else 1001
+        await interaction.response.send_message(
+            datasys.load_lang_file(guild_id)["moderation"]["not_yours_confirm"], ephemeral=True)
+        return False
+
+    def _lock(self) -> None:
+        self.stop()
+        for child in self.children:
+            if isinstance(child, ui.Button):
+                child.disabled = True
+
+    async def _note_cancel(self, channel: discord.abc.Messageable, guild: discord.Guild, user_name: str) -> None:
+        lang = datasys.load_lang_file(guild.id)
+        text = str(lang["systems"]["ticket"]["close_cancel"]).format(user=user_name)
+        await channel.send(text)
+        tickets: dict = dict(datasys.load_data(guild.id, "open_tickets"))
+        channel_id = str(getattr(channel, "id", ""))
+        if channel_id in tickets:
+            tickets[channel_id]["transcript"].append({
+                "type": "sys_msg",
+                "msg": text,
+                "avatar": "https://avocloud.net/img/icons/gear.svg",
+                "timestamp": str(datetime.datetime.now(_VIENNA)),
+                "is_staff": True,
+            })
+            datasys.save_data(guild.id, "open_tickets", tickets)
+
+    @ui.button(style=discord.ButtonStyle.danger, custom_id="ticket_delete_confirm")
+    async def confirm(self, interaction: discord.Interaction, button: ui.Button):
+        try:
+            self._lock()
+            await interaction.response.edit_message(view=self)
+            guild = interaction.guild
+            tickets: dict = dict(datasys.load_data(guild.id, "open_tickets"))
+            channel_id = str(interaction.channel.id)
+            ticket_data = tickets.get(channel_id)
+            if ticket_data is None:
+                return
+            await _ticket_delete_now(
+                interaction, ticket_data,
+                dict(datasys.load_data(guild.id, sys="ticket")), tickets,
+                dict(datasys.load_data(1001, "transcripts")), os.urandom(8).hex(),
+                datasys.load_lang_file(guild.id), channel_id,
+            )
+        except Exception as e:
+            print(f"error in ticket delete confirm: {e}")
+
+    @ui.button(style=discord.ButtonStyle.secondary, custom_id="ticket_delete_cancel")
+    async def cancel(self, interaction: discord.Interaction, button: ui.Button):
+        try:
+            self._lock()
+            await interaction.response.edit_message(view=self)
+            await self._note_cancel(interaction.channel, interaction.guild, interaction.user.name)
+        except Exception as e:
+            print(f"error in ticket delete cancel: {e}")
+
+    async def on_timeout(self) -> None:
+        self._lock()
+        if self.message is None:
+            return
+        try:
+            await self.message.edit(view=self)
+            await self._note_cancel(self.message.channel, self.message.guild, self.moderator.name)
         except Exception:
             pass
 
@@ -942,126 +1107,16 @@ class TicketAdminButtons(ui.View):
                     )
                     return
 
-                required_role_id: int = int(guild_settings.get("role", 0))
-                role = await interaction.guild.fetch_role(required_role_id)
-                if role in member.roles:
+                if _is_ticket_staff(member, guild_settings):
                     await interaction.response.send_message(
                         embed=discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
-                            description=lang["systems"]["ticket"][
-                                "wait_delete_confirm"
-                            ],
+                            description=lang["systems"]["ticket"]["wait_delete_confirm"],
                             color=config.Discord.danger_color,
-                        )
+                        ),
+                        view=(confirm_view := TicketDeleteConfirmView(interaction.user, lang["systems"]["ticket"])),
                     )
-
-                    if interaction.channel.id is None:
-                        return
-
-                    def check(m):
-                        return (
-                            m.channel.id
-                            == interaction.channel.id  # pyright: ignore[reportOptionalMemberAccess]
-                            and m.author.id == interaction.user.id
-                        )
-
-                    try:
-                        response = await interaction.client.wait_for(
-                            "message", check=check, timeout=30.0
-                        )
-
-                        if response.content.lower() == "confirm":
-                            await interaction.channel.delete(
-                                reason=f"Ticket closed by {interaction.user.name}"
-                            )
-
-                            transcript_data: dict = {
-                                "guild": str(interaction.guild.id),
-                                "id": str(transcript_id),
-                                "title": ticket_data["title"],
-                                "msg": ticket_data["message"],
-                                "closed_by": str(interaction.user.name),
-                                "closed_on": str(datetime.datetime.now(_VIENNA)),
-                                "transcript": ticket_data["transcript"],
-                            }
-
-                            transcript_channel = await interaction.guild.fetch_channel(
-                                int(guild_settings.get("transcript", 0))
-                            )
-                            link = f"https://{config.Web.url}/?ticket_transcript={transcript_id}"
-
-                            embed = discord.Embed(
-                                title=lang["systems"]["ticket"]["title"],
-                                description=f"{str(lang['systems']['ticket']['link']).format(guild=interaction.guild.name)} {link}",
-                            )
-
-                            if transcript_channel is not None and isinstance(
-                                transcript_channel, discord.TextChannel
-                            ):
-                                await transcript_channel.send(embed=embed)
-
-                            try:
-                                member = interaction.guild.get_member(
-                                    int(tickets[channel_id]["user"])
-                                )
-                                if member is None:
-                                    return
-                                if member.dm_channel is None:
-                                    dm_channel = await member.create_dm()
-                                else:
-                                    dm_channel = member.dm_channel
-
-                                await dm_channel.send(embed=embed)
-                                if transcript_channel is not None and isinstance(
-                                    transcript_channel, discord.TextChannel
-                                ):
-                                    await transcript_channel.send(
-                                        str(lang["systems"]["ticket"]["transcript_sent_dm"]).format(user=member.mention)
-                                    )
-                            except discord.Forbidden:
-                                if transcript_channel is not None and isinstance(
-                                    transcript_channel, discord.TextChannel
-                                ):
-                                    await transcript_channel.send(
-                                        lang["systems"]["ticket"]["transcript_dm_failed"]
-                                    )
-
-                            transcripts[str(transcript_id)] = transcript_data
-                            datasys.save_data(1001, "transcripts", transcripts)
-                            tickets.pop(str(channel_id))
-                            datasys.save_data(
-                                interaction.guild.id, "open_tickets", tickets
-                            )
-                        else:
-                            await interaction.channel.send(str(lang["systems"]["ticket"]["close_cancel"]).format(user=interaction.user.name))
-                            tickets[channel_id]["transcript"].append(
-                                {
-                                    "type": "sys_msg",
-                                    "msg": str(
-                                        lang["systems"]["ticket"]["close_cancel"]
-                                    ).format(user=interaction.user.name),
-                                    "avatar": "https://avocloud.net/img/icons/gear.svg",
-                                    "timestamp": str(datetime.datetime.now(_VIENNA)),
-                                    "is_staff": True,
-                                }
-                            )
-                            datasys.save_data(interaction.guild.id, "open_tickets", tickets)
-
-                    except asyncio.TimeoutError:
-                        await interaction.channel.send(str(lang["systems"]["ticket"]["close_cancel"]).format(user=interaction.user.name))
-                        tickets[channel_id]["transcript"].append(
-                            {
-                                "type": "sys_msg",
-                                "msg": str(
-                                    lang["systems"]["ticket"]["close_cancel"]
-                                ).format(user=interaction.user.name),
-                                "avatar": "https://avocloud.net/img/icons/gear.svg",
-                                "timestamp": str(datetime.datetime.now(_VIENNA)),
-                                "is_staff": True,
-                            }
-                        )
-                        datasys.save_data(interaction.guild.id, "open_tickets", tickets)
-
+                    confirm_view.message = await interaction.original_response()
 
                 else:
                     await interaction.response.send_message(
@@ -1132,9 +1187,7 @@ class TicketAdminButtons(ui.View):
                     )
                     return
 
-                required_role_id: int = int(guild_settings.get("role", 0))
-                role = await interaction.guild.fetch_role(required_role_id)
-                if role in member.roles:
+                if _is_ticket_staff(member, guild_settings):
                     tickets[channel_id]["supporterid"] = interaction.user.id
                     tickets[channel_id]["transcript"].append(
                         {

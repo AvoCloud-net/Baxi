@@ -17,7 +17,7 @@ import assets.idle as idle
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
 import assets.message.welcomer as welcomer
-from assets.buttons import build_ticket_panel_view, ticket_panel_embed
+from assets.buttons import build_ticket_panel_view, ticket_panel_embed, ticket_staff_role_ids
 import assets.message.customcmd as customcmd
 import assets.message.assistant as assistant
 from assets.moderation import ModerationEngine
@@ -1147,9 +1147,9 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
                     )
 
             user = await message.guild.fetch_member(message.author.id)
-            is_staff: bool = int(guild_ticket_config.get("role", 0)) in [
-                role.id for role in user.roles
-            ]
+            is_staff: bool = bool(
+                set(ticket_staff_role_ids(guild_ticket_config)) & {role.id for role in user.roles}
+            )
 
             clean_msg = message.clean_content
 
