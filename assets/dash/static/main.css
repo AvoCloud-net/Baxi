@@ -415,6 +415,17 @@ svg[stroke="currentColor"] * { vector-effect: non-scaling-stroke; }
   overflow-wrap: anywhere;
 }
 
+.hub-tile-desc {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--avo-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Status is a dot; the word stays in the accessibility tree via .sr-only. */
 .hub-tile-status {
   position: absolute;
