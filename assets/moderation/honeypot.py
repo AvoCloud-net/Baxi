@@ -44,10 +44,35 @@ def _is_staff(member: discord.Member) -> bool:
 
 def notice_embed(guild: discord.Guild, cfg: dict) -> discord.Embed:
     t = datasys.load_lang_file(guild.id)["honeypot"]
-    return discord.Embed(
-        title=t["title"],
-        description=str(t["description"]).format(action=t["action_" + cfg["action"]]),
+    embed = discord.Embed(
+        title=f"{config.Icons.alert} {t['title']}",
+        description=t["description"],
         color=config.Discord.danger_color,
+    )
+    embed.add_field(name=t["f_what_t"], value=str(t["f_what_v"]).format(action=t["action_" + cfg["action"]]), inline=False)
+    embed.add_field(name=t["f_here_t"], value=t["f_here_v"], inline=False)
+    embed.add_field(name=t["f_appeal_t"], value=t["f_appeal_v"], inline=False)
+    embed.set_footer(text=t["footer"])
+    return embed
+
+
+async def auto_setup(guild: discord.Guild) -> discord.TextChannel:
+    """Create the trap channel: visible and writable for everyone (it has to catch bots), at the
+    top of the channel list where bots look first. Raises discord.Forbidden without Manage Channels."""
+    me = guild.me
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(
+            view_channel=True, send_messages=True, read_message_history=True,
+            attach_files=False, add_reactions=False, create_public_threads=False,
+        ),
+        me: discord.PermissionOverwrite(
+            view_channel=True, send_messages=True, embed_links=True, manage_messages=True, read_message_history=True,
+        ),
+    }
+    return await guild.create_text_channel(
+        name="honeypot", overwrites=overwrites, position=0,
+        topic="Do not write here. Spam trap: anyone who posts in this channel is removed automatically.",
+        reason="Baxi honeypot auto setup",
     )
 
 

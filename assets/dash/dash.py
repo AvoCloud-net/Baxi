@@ -3702,6 +3702,54 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Quote Book settings saved!"})
 
+        elif system == "honeypot_setup":
+            # Auto setup: create the trap channel, enable the honeypot with the chosen action, post the notice.
+            data: dict = await quart.request.get_json()
+            pl = data.get("honeypot")
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'honeypot' must be an object."}), 400
+            action_raw = str(pl.get("action", "ban"))
+            if action_raw not in ("ban", "kick", "mute"):
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+            try:
+                delete_hours = max(0, min(168, int(pl.get("delete_hours", 1))))
+            except (ValueError, TypeError):
+                delete_hours = 1
+
+            from assets.moderation import honeypot as _hp
+            _g = bot.get_guild(int(guild_id))
+            if _g is None:
+                return quart.jsonify({"success": False, "message": "Server not found."}), 404
+            try:
+                ch = await _hp.auto_setup(_g)
+            except discord.Forbidden:
+                return quart.jsonify({"success": False, "message": "Baxi needs the Manage Channels permission to create the channel."}), 400
+            except discord.HTTPException as e:
+                return quart.jsonify({"success": False, "message": f"Could not create the channel: {e}"}), 400
+
+            settings = {"enabled": True, "channel": str(ch.id), "action": action_raw,
+                        "delete_hours": delete_hours, "panel_message_id": ""}
+            try:
+                settings["panel_message_id"] = await _hp.post_notice(_g, settings)
+            except discord.HTTPException:
+                pass
+            save_data(int(guild_id), "honeypot", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "honeypot",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": f"Created #{ch.name} and enabled the honeypot.",
+                                  "channel_id": str(ch.id), "channel_name": ch.name})
+
         elif system == "honeypot":
             data: dict = await quart.request.get_json()
             pl = data.get("honeypot")

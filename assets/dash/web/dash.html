@@ -4421,6 +4421,13 @@
                                     {% endfor %}
                                 </select>
                                 <p class="text-muted text-xs">Use a channel nobody needs, visible to everyone. Baxi posts a warning message there when you save. Place it where bots find it, for example near the top of the list.</p>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <button type="button" class="btn" id="honeypot-auto" data-variant="outline" data-size="default" onclick="honeypotAutoSetup(this)">
+                                        <span class="btn-text">Auto setup: create channel</span>
+                                        <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                    </button>
+                                    <span class="text-muted text-xs">Creates <code>#honeypot</code> at the top of the channel list, posts the warning and turns the honeypot on with the action below. Needs the Manage Channels permission.</span>
+                                </div>
                             </div>
                             <div class="grid gap-2">
                                 <label for="honeypot-action">Action:</label>
@@ -8336,6 +8343,36 @@
             document.getElementById('honeypot-hours-wrap').classList.toggle('hidden', document.getElementById('honeypot-action').value !== 'ban');
         }
         document.getElementById('honeypot-action').addEventListener('change', applyHoneypotAction);
+        function honeypotAutoSetup(btn) {
+            btn.disabled = true;
+            btn.querySelector('.spinner')?.classList.remove('hidden');
+            btn.querySelector('.btn-text')?.classList.add('hidden');
+            const payload = { honeypot: {
+                action: document.getElementById('honeypot-action').value,
+                delete_hours: parseInt(document.getElementById('honeypot-hours').value || '0', 10),
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=honeypot_setup&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== XMLHttpRequest.DONE) return;
+                btn.disabled = false;
+                btn.querySelector('.spinner')?.classList.add('hidden');
+                btn.querySelector('.btn-text')?.classList.remove('hidden');
+                try {
+                    const r = JSON.parse(xhr.responseText);
+                    if (r.success && r.channel_id) {
+                        const sel = document.getElementById('honeypot-channel');
+                        const opt = document.createElement('option');
+                        opt.value = r.channel_id; opt.textContent = '#' + r.channel_name;
+                        sel.appendChild(opt); sel.value = r.channel_id;
+                        document.getElementById('honeypot-enabled').checked = true;
+                    }
+                    showSaveToast(r.success, r.message);
+                } catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+            };
+        }
         document.getElementById('honeypot-form').onsubmit = function (event) {
             event.preventDefault();
             const payload = { honeypot: {

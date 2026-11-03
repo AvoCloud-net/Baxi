@@ -1061,7 +1061,14 @@
     },
     "honeypot": {
       "title": "Honeypot – hier nichts schreiben!",
-      "description": "Dieser Channel ist eine Falle für Spam-Bots. **Schreib hier nichts.** Wer hier eine Nachricht schreibt, wird automatisch {action}.",
+      "description": "Dieser Channel ist eine **Falle für Spam-Bots**. Für echte Mitglieder gibt es hier nichts zu tun, bitte lass ihn in Ruhe.",
+      "f_what_t": "Was passiert, wenn ich hier schreibe?",
+      "f_what_v": "Deine Nachricht wird sofort gelöscht und du wirst automatisch {action}.",
+      "f_here_t": "Ich bin nur zufällig hier",
+      "f_here_v": "Kein Problem: Schreib nichts und geh einfach zurück in einen anderen Channel.",
+      "f_appeal_t": "Zu Unrecht erwischt?",
+      "f_appeal_v": "Du bekommst eine Nachricht mit der Case-Nummer und kannst dort Einspruch einlegen.",
+      "footer": "Baxi · Spam-Schutz",
       "action_ban": "gebannt",
       "action_kick": "gekickt",
       "action_mute": "für 24 Stunden stummgeschaltet"
@@ -2137,7 +2144,14 @@
     },
     "honeypot": {
       "title": "Honeypot – do not write here!",
-      "description": "This channel is a trap for spam bots. **Do not write anything here.** Anyone who posts a message here is automatically {action}.",
+      "description": "This channel is a **trap for spam bots**. There is nothing here for real members, please leave it alone.",
+      "f_what_t": "What happens if I write here?",
+      "f_what_v": "Your message is deleted immediately and you are automatically {action}.",
+      "f_here_t": "I am here by accident",
+      "f_here_v": "No problem: write nothing and simply go back to another channel.",
+      "f_appeal_t": "Caught by mistake?",
+      "f_appeal_v": "You get a message with the case number and can appeal from there.",
+      "footer": "Baxi · Spam protection",
       "action_ban": "banned",
       "action_kick": "kicked",
       "action_mute": "muted for 24 hours"
