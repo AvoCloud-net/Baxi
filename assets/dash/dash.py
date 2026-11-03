@@ -3702,6 +3702,64 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Quote Book settings saved!"})
 
+        elif system == "honeypot":
+            data: dict = await quart.request.get_json()
+            pl = data.get("honeypot")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'honeypot' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+
+            channel_raw = str(pl.get("channel", "") or "").strip()
+            if pl["enabled"] and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Pick the honeypot channel."}), 400
+            if channel_raw and not re.fullmatch(r"\d{17,19}", channel_raw):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+            action_raw = str(pl.get("action", "ban"))
+            if action_raw not in ("ban", "kick", "mute"):
+                return quart.jsonify({"success": False, "message": "Invalid action."}), 400
+            try:
+                delete_hours = max(0, min(168, int(pl.get("delete_hours", 1))))
+            except (ValueError, TypeError):
+                return quart.jsonify({"success": False, "message": "'delete_hours' must be a number."}), 400
+
+            old = dict(load_data(int(guild_id), "honeypot") or {})
+            settings = {
+                "enabled": pl["enabled"],
+                "channel": channel_raw,
+                "action": action_raw,
+                "delete_hours": delete_hours,
+                "panel_message_id": str(old.get("panel_message_id", "")) if str(old.get("channel", "")) == channel_raw else "",
+            }
+
+            if settings["enabled"]:
+                from assets.moderation import honeypot as _hp
+                _g = bot.get_guild(int(guild_id))
+                ch = _g.get_channel(int(channel_raw)) if _g else None
+                if not isinstance(ch, discord.TextChannel):
+                    return quart.jsonify({"success": False, "message": "The honeypot channel must be a text channel of this server."}), 400
+                try:
+                    settings["panel_message_id"] = await _hp.post_notice(_g, settings)
+                except discord.Forbidden:
+                    return quart.jsonify({"success": False, "message": "Baxi cannot write in that channel (needs View Channel, Send Messages, Embed Links)."}), 400
+
+            save_data(int(guild_id), "honeypot", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "honeypot",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Honeypot settings saved!"})
+
         elif system == "invites":
             data: dict = await quart.request.get_json()
             pl = data.get("invites")

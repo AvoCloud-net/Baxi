@@ -456,6 +456,13 @@ class datasys:
         "channel": "",
         "staff_only_save": False,
     },
+    "honeypot": {
+        "enabled": False,
+        "channel": "",
+        "action": "ban",            # "ban" | "kick" | "mute" (24 h)
+        "delete_hours": 1,          # ban only: delete the member's messages of the last N hours
+        "panel_message_id": "",
+    },
     "invites": {
         "enabled": False,   # invite tracking + /invites leaderboard
     },

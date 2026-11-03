@@ -516,6 +516,14 @@ def events(bot: commands.AutoShardedBot, web):
                             pass
                         return
 
+            # Honeypot: whoever writes in the trap channel is removed (assets/moderation/honeypot.py)
+            try:
+                from assets.moderation import honeypot
+                if await honeypot.handle(message, bot):
+                    return
+            except Exception as _hp_err:
+                logger.error(f"[Honeypot] on_message error: {_hp_err}")
+
             # Delete user messages in the ticket panel channel
             ticket_config = dict(datasys.load_data(message.guild.id, "ticket"))
             if ticket_config.get("enabled", False):

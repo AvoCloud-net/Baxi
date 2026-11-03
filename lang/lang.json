@@ -865,6 +865,7 @@
       "auto": {
         "chatfilter": "Chatfilter",
         "chatfilter_why": "Chatfilter: {reason}",
+        "honeypot": "Honeypot-Channel (Spam-Bot)",
         "antispam": "Anti-Spam",
         "escalation_ban": "Automatischer Bann nach {count} Verwarnungen",
         "escalation_kick": "Automatischer Kick nach {count} Verwarnungen",
@@ -1057,6 +1058,13 @@
       "rank_split": "Text: **{text} XP** · Voice: **{voice} XP** · {messages} Nachrichten",
       "rank_position": "Platz **#{rank}** auf diesem Server",
       "rank_footer": "XP gibt es fürs Schreiben (höchstens einmal pro Minute) und im Voice: 5 XP pro Minute, wenn du nicht taub geschaltet bist und noch jemand zuhört."
+    },
+    "honeypot": {
+      "title": "Honeypot – hier nichts schreiben!",
+      "description": "Dieser Channel ist eine Falle für Spam-Bots. **Schreib hier nichts.** Wer hier eine Nachricht schreibt, wird automatisch {action}.",
+      "action_ban": "gebannt",
+      "action_kick": "gekickt",
+      "action_mute": "für 24 Stunden stummgeschaltet"
     },
     "invites": {
       "disabled": "Das Einladungs-Tracking ist auf diesem Server nicht aktiviert. Ein Admin kann es im Dashboard einschalten.",
@@ -1933,6 +1941,7 @@
       "auto": {
         "chatfilter": "Chat filter",
         "chatfilter_why": "Chat filter: {reason}",
+        "honeypot": "Honeypot channel (spam bot)",
         "antispam": "Anti-spam",
         "escalation_ban": "Automatic ban after {count} warnings",
         "escalation_kick": "Automatic kick after {count} warnings",
@@ -2125,6 +2134,13 @@
       "rank_split": "Text: **{text} XP** · Voice: **{voice} XP** · {messages} messages",
       "rank_position": "Rank **#{rank}** on this server",
       "rank_footer": "You earn XP for chatting (at most once a minute) and in voice: 5 XP per minute while you're not deafened and someone else is listening."
+    },
+    "honeypot": {
+      "title": "Honeypot – do not write here!",
+      "description": "This channel is a trap for spam bots. **Do not write anything here.** Anyone who posts a message here is automatically {action}.",
+      "action_ban": "banned",
+      "action_kick": "kicked",
+      "action_mute": "muted for 24 hours"
     },
     "invites": {
       "disabled": "Invite tracking is not enabled on this server. An admin can turn it on in the dashboard.",
