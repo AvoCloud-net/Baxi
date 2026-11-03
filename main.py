@@ -27,6 +27,7 @@ from assets.pulse_commands import pulse_commands
 from assets.quotes import quote_commands, QuoteReactionButton
 from assets.capsule import capsule_commands
 from assets.birthdays import birthday_commands
+from assets import invites
 from assets.wrapped import wrapped_commands, WrappedButton
 import assets.starboard as starboard
 from assets.moderation import casefile
@@ -134,6 +135,8 @@ pulse_commands(bot=bot)
 quote_commands(bot=bot)
 capsule_commands(bot=bot)
 birthday_commands(bot=bot)
+invites.invite_commands(bot=bot)
+invites.register(bot)
 wrapped_commands(bot=bot)
 starboard.starboard_commands(bot=bot)
 casefile.register(bot)

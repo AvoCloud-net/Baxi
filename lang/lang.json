@@ -1055,6 +1055,13 @@
       "rank_split": "Text: **{text} XP** · Voice: **{voice} XP** · {messages} Nachrichten",
       "rank_position": "Platz **#{rank}** auf diesem Server",
       "rank_footer": "XP gibt es fürs Schreiben (höchstens einmal pro Minute) und im Voice: 5 XP pro Minute, wenn du nicht taub geschaltet bist und noch jemand zuhört."
+    },
+    "invites": {
+      "title": "Einladungs-Rangliste – {guild}",
+      "empty": "Noch keine Einladungen erfasst. Ab jetzt zähle ich mit (Baxi braucht dafür „Server verwalten“).",
+      "line": "**{total}** Einladungen ({active} noch hier)",
+      "user": "{user} hat **{total}** Mitglieder eingeladen ({active} noch auf dem Server).",
+      "footer": "Gezählt wird ab dem Zeitpunkt, an dem Baxi die Einladungen sehen konnte."
     }
   },
   "en": {
@@ -2113,6 +2120,13 @@
       "rank_split": "Text: **{text} XP** · Voice: **{voice} XP** · {messages} messages",
       "rank_position": "Rank **#{rank}** on this server",
       "rank_footer": "You earn XP for chatting (at most once a minute) and in voice: 5 XP per minute while you're not deafened and someone else is listening."
+    },
+    "invites": {
+      "title": "Invite leaderboard – {guild}",
+      "empty": "No invites recorded yet. I'm counting from now on (Baxi needs Manage Server).",
+      "line": "**{total}** invites ({active} still here)",
+      "user": "{user} invited **{total}** members ({active} still on the server).",
+      "footer": "Counted from the moment Baxi could see the server's invites."
     }
   }
 }

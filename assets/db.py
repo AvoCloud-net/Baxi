@@ -929,6 +929,18 @@ CREATE TABLE IF NOT EXISTS starboard_entries (
 
 CREATE INDEX IF NOT EXISTS ix_starboard_board ON starboard_entries(guild_id, board_message_id);
 
+-- Invite leaderboard (assets/invites.py): which invite brought a member in. Pairs only.
+CREATE TABLE IF NOT EXISTS invite_joins (
+    guild_id   INTEGER REFERENCES guilds(guild_id) ON DELETE CASCADE,
+    user_id    TEXT,
+    inviter_id TEXT,
+    code       TEXT DEFAULT '',
+    joined_at  INTEGER,
+    PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_invite_joins_inviter ON invite_joins(guild_id, inviter_id);
+
 -- Birthdays: the date belongs to the user (day + month, no year), one row for all servers.
 CREATE TABLE IF NOT EXISTS user_birthdays (
     user_id TEXT PRIMARY KEY,
