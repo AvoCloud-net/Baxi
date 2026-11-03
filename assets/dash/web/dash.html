@@ -644,6 +644,13 @@
                                     <div class="channel-perm-feedback hidden" id="feedback-notification-channel"></div>
                                 </div>
 
+                                <div class="grid gap-2">
+                                    <label for="general-dither">
+                                        <input type="checkbox" id="general-dither">
+                                        <span class="text-sm"><strong>Dither graphics</strong> <span class="text-muted">-  the small pixel picture on Baxi's embeds (tickets, suggestions, welcome ...). Slash commands, moderation and errors always keep theirs.</span></span>
+                                    </label>
+                                </div>
+
                                 <div class="card-actions">
                                     <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
                                         <span class="btn-text">
@@ -5038,6 +5045,8 @@
             if (prismRadio) prismRadio.checked = true;
             const notifChEl = document.getElementById('notification-channel');
             if (notifChEl) notifChEl.value = data.notification_channel || '';
+            const ditherEl = document.getElementById('general-dither');
+            if (ditherEl) ditherEl.checked = data.dither !== false;
             document.getElementById("globalchat-channel").value = data.globalchat.channel || '';
             document.getElementById('globalchat-enabled').checked = data.globalchat.enabled === true;
             document.getElementById("ticket-channel").value = data.ticket.channel || '';
@@ -6865,7 +6874,8 @@
             const nick = document.getElementById('general-nick').value;
             const terms = document.querySelector('input[name="general-guidelines"]:checked')?.value || null;
             const notifCh = document.getElementById('notification-channel')?.value || '';
-            const payload = { general: { lang, nick, terms: terms === 'true', notification_channel: notifCh } };
+            const dither = document.getElementById('general-dither')?.checked !== false;
+            const payload = { general: { lang, nick, terms: terms === 'true', notification_channel: notifCh, dither } };
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/dash/save/?system=general&dash_login={{ data.dash_login }}');
             xhr.setRequestHeader("Content-Type", "application/json");

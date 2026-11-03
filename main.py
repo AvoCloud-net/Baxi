@@ -123,6 +123,8 @@ async def not_found(e):
 
 
 events(bot=bot, web=web)
+from assets import dither_art
+dither_art.install(bot, web)
 base_commands(bot=bot)
 utility_commands(bot=bot)
 leveling_commands(bot=bot)

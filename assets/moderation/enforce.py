@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 from reds_simple_logger import Logger
 
@@ -40,7 +41,7 @@ async def enforce_antispam(message: discord.Message, verdict: Verdict, bot: comm
 
     # 2. Notify channel (rate vs duplicate copy).
     try:
-        embed = discord.Embed(
+        embed = dither_art.Sticky(
             title=lang["systems"]["antispam"]["title"],
             description=str(lang["systems"]["antispam"][kind]).format(user=message.author.mention),
             color=config.Discord.warn_color,
@@ -82,7 +83,7 @@ async def _apply_member_action(message: discord.Message, action: str, lang: dict
                                  reason=f"{why} (case #{case_no})" if case_no else why)
             acted = True
             await cases.notify(message.guild, member, case_no, "mute", why, seconds=300)
-            embed = discord.Embed(
+            embed = dither_art.Sticky(
                 title=lang["systems"]["antispam"]["title"],
                 description=str(lang["systems"]["antispam"]["muted"]).format(user=message.author.mention),
                 color=config.Discord.danger_color,

@@ -2,6 +2,7 @@ import datetime
 from typing import Optional, Union
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 from reds_simple_logger import Logger
 
@@ -72,7 +73,7 @@ async def add_warning(
 
     # Send warning embed
     if channel is not None:
-        embed = discord.Embed(
+        embed = dither_art.Sticky(
             title=f"{config.Icons.alert} {lang['commands']['admin']['warn']['title']}",
             description=str(lang["commands"]["admin"]["warn"]["success"]).format(
                 user=user.mention, reason=reason, count=warn_count
@@ -256,7 +257,7 @@ async def _check_escalation(
             )
             color = config.Discord.warn_color
 
-        embed = discord.Embed(title=title, description=desc, color=color)
+        embed = dither_art.Sticky(title=title, description=desc, color=color)
         embed.set_footer(text=_case_footer(lang, case_no))
         if channel:
             await channel.send(embed=embed)

@@ -21,6 +21,7 @@ import datetime
 import time
 
 import discord
+from assets import dither_art
 from reds_simple_logger import Logger
 
 import assets.data as datasys
@@ -139,7 +140,7 @@ def build_dm(guild: discord.Guild, case_no: int | None, type: str, reason: str,
         "filter": config.Discord.warn_color, "delete": config.Discord.warn_color,
         "unban": config.Discord.success_color, "unmute": config.Discord.success_color,
     }.get(type, config.Discord.color)
-    embed = discord.Embed(title=str(m["dm"]["title"][type]).format(guild=guild.name),
+    embed = dither_art.Sticky(title=str(m["dm"]["title"][type]).format(guild=guild.name),
                           description=m["dm"]["line"][type], color=colour)
     if type in ("warn", "mute", "kick", "ban", "filter", "delete"):
         embed.add_field(name=m["dm"]["f_reason"], value=display_reason(reason, lang)[:1000], inline=False)

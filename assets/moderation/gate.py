@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 from reds_simple_logger import Logger
 
@@ -112,7 +113,7 @@ async def _alert(member: discord.Member, bot: commands.AutoShardedBot, cfg: dict
     outcome = "flagged for review (no action taken)" if action == "notify" else f"**{action}d**"
     reasons = context.get("reasons", []) or ["–"]
     try:
-        embed = discord.Embed(
+        embed = dither_art.Sticky(
             title=config.Icons.messageexclamation + " Mod-Gate · Risky join",
             description=(
                 f"{member.mention} (`{member.id}`) joined and was {outcome}.\n\n"

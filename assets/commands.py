@@ -1863,6 +1863,36 @@ def tempvoice_commands(bot: commands.AutoShardedBot):
 
 
 def bot_admin_commands(bot: commands.AutoShardedBot):
-    """Bot admin commands have been moved to the Admin Dashboard at /admin/"""
+    """Bot admin actions live in the Admin Dashboard at /admin/. Only /owner stays here."""
+
+    @bot.tree.command(name="owner", description="Bot owner only: verify yourself as the owner of Baxi")
+    async def owner_cmd(interaction: Interaction):
+        if not await bot.is_owner(interaction.user):
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description=f"{config.Icons.cross} This command is only for the owner of Baxi.",
+                    color=config.Discord.danger_color,
+                ),
+                ephemeral=True,
+            )
+            return
+        user = interaction.user
+        embed = discord.Embed(
+            title="Verified bot owner",
+            description=(
+                f"{config.Icons.check} {user.mention} is the **verified owner** of "
+                f"{bot.user.mention if bot.user else 'Baxi'}.\n\n"
+                "Only the real owner can run this command, so this message confirms "
+                "that they are the one behind Baxi."
+            ),
+            color=config.Discord.success_color,
+            timestamp=datetime.datetime.now(timezone.utc),
+        )
+        embed.add_field(name="Servers", value=f"{len(bot.guilds):,}")
+        embed.add_field(name="Shards", value=str(bot.shard_count or 1))
+        embed.add_field(name="Latency", value=f"{round(bot.latency * 1000)} ms")
+        embed.set_footer(text=f"Baxi v{config.Discord.version}")
+        await interaction.response.send_message(embed=embed)
+
     logger.debug.info("Bot admin commands: all admin actions are now handled via the web dashboard at /admin/.")
 

@@ -18,6 +18,7 @@ import datetime
 import statistics
 
 import discord
+from assets import dither_art
 from discord import app_commands
 from discord.ext import commands
 from reds_simple_logger import Logger
@@ -158,7 +159,7 @@ class CaseFileView(discord.ui.View):
         c = self.lang["moderation"]["casefile"]
         e = self.data["entries"][self.page * PAGE_SIZE:(self.page + 1) * PAGE_SIZE]
         body = "\n\n".join(render_entry(x, self.lang, self.bot_id) for x in e) or c["nothing"]
-        embed = discord.Embed(
+        embed = dither_art.Sticky(
             title=str(c["title"]).format(user=self.data["user_name"] or self.data["user_id"]),
             description=f"{self.header}\n\n{body}"[:4000], color=config.Discord.color)
         if self.pages > 1:

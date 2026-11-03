@@ -20,6 +20,7 @@ import datetime
 import re
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 from reds_simple_logger import Logger
 
@@ -317,11 +318,11 @@ async def _tell_user(bot: commands.AutoShardedBot, guild: discord.Guild, user_id
     lang = datasys.load_lang_file(guild.id)
     r = lang["moderation"]["appeal"]["result"]
     if action == "lift":
-        embed = discord.Embed(title=str(r["lift_title"]).format(guild=guild.name),
+        embed = dither_art.Sticky(title=str(r["lift_title"]).format(guild=guild.name),
                               description=str(r["lift_body"]).format(no=case_no, what=r["what"].get(what_key, "")).strip(),
                               color=config.Discord.success_color)
     else:
-        embed = discord.Embed(title=str(r["keep_title"]).format(guild=guild.name),
+        embed = dither_art.Sticky(title=str(r["keep_title"]).format(guild=guild.name),
                               description=str(r["keep_body"]).format(no=case_no),
                               color=config.Discord.warn_color)
     if reason:

@@ -31,6 +31,7 @@ from collections import deque
 from dataclasses import dataclass, field
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 from reds_simple_logger import Logger
 
@@ -480,7 +481,7 @@ class AntiRaid:
         else:
             lift_note = "It lifts automatically once the channel calms down."
         try:
-            embed = discord.Embed(
+            embed = dither_art.Sticky(
                 title="⏱ Slowmode activated",
                 description=(f"A burst of activity was detected, so a **{delay}s** slowmode was "
                             f"applied to this channel. {lift_note}"),
@@ -567,7 +568,7 @@ class AntiRaid:
         strings = (lang.get("systems", {}) or {}).get("antiraid", {})
         try:
             if engaged:
-                embed = discord.Embed(
+                embed = dither_art.Sticky(
                     title=strings.get("lockdown_title", "🛡 Anti-Raid · Lockdown"),
                     description=str(strings.get("lockdown_desc",
                         "A raid was detected and the server has been locked down.")
@@ -577,7 +578,7 @@ class AntiRaid:
                 embed.add_field(name=strings.get("reason_field", "Trigger"),
                                 value=s.raid_reason or "–", inline=False)
             else:
-                embed = discord.Embed(
+                embed = dither_art.Sticky(
                     title=strings.get("lifted_title", "✅ Anti-Raid · Lockdown lifted"),
                     description=str(strings.get("lifted_desc",
                         "The lockdown has expired. Settings were restored.")),

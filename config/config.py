@@ -204,6 +204,7 @@ class datasys:
     "owner_id": 0,
     "owner_name": "",
     "terms": False,
+    "dither": True,   # dither graphics on system embeds (tickets, suggestions ...); commands/moderation/errors always keep them
     "chatfilter": {
         "enabled": False,
         "system": "AI",

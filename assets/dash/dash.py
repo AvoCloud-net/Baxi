@@ -1319,6 +1319,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "'notification_channel' must be a channel ID or empty."}), 400
             save_data(sid=int(guild_id), sys="notification_channel", data=notif_ch)
 
+            dither_on = general.get("dither", True)
+            if not isinstance(dither_on, bool):
+                return quart.jsonify({"success": False, "message": "'dither' must be a boolean (true/false)."}), 400
+            save_data(sid=int(guild_id), sys="dither", data=dither_on)
+            from assets import dither_art as _dither_art
+            _dither_art.invalidate(int(guild_id))
+
             # The notification channel is also the staff channel: move the open-items notice there.
             from assets import staff as _staff
             _g = bot.get_guild(int(guild_id))

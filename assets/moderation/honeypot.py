@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime
 
 import discord
+from assets import dither_art
 from discord.ext import commands
 
 import assets.data as datasys
@@ -44,7 +45,7 @@ def _is_staff(member: discord.Member) -> bool:
 
 def notice_embed(guild: discord.Guild, cfg: dict) -> discord.Embed:
     t = datasys.load_lang_file(guild.id)["honeypot"]
-    embed = discord.Embed(
+    embed = dither_art.Sticky(
         title=f"{config.Icons.alert} {t['title']}",
         description=t["description"],
         color=config.Discord.danger_color,
