@@ -7,7 +7,7 @@ Each feature can be enabled/disabled and configured per-server via the dashboard
 
 ## Moderation
 
-**Commands:** `/ban`, `/kick`, `/unban`, `/mute`, `/clear`, `/warn`, `/unwarn`, `/warnings`
+**Commands:** `/ban`, `/kick`, `/unban`, `/mute`, `/unmute`, `/clear`, `/warn`, `/unwarn`, `/warnings`, `/case`, `/note`
 
 Ban, kick, mute and warn members with optional temporary durations, auto-escalation and DM notifications. All actions are logged and confirmed via button prompts before execution.
 
@@ -17,6 +17,10 @@ Ban, kick, mute and warn members with optional temporary durations, auto-escalat
 - **Clear** – Bulk-delete messages from a text channel with confirmation
 - **Warn System** – Issue formal warnings that auto-escalate to mute → kick → ban at configurable thresholds (default: 3 warns = mute, 5 = kick, 7 = ban)
 - **Warnings Log** – View and remove individual warnings by ID
+- **Cases** – Every action against a person is a numbered case (#123, per server, never reused). The user gets exactly one DM with what happened, why, how long, the case number and an **Appeal** button
+- **Case file** – `/case <member>` shows a member's full history (staff only); `/note add|remove` keeps private staff notes
+- **Appeals** – Users appeal a case from the DM button or the web page `/appeal/` (own cases only, one per case, within 14 days). Appeals land in the review queue for the team
+- **Retention** – Cases and notes are kept one year, closed review items 30 days
 
 ### Customization
 - Warn escalation thresholds (`mute_at`, `kick_at`, `ban_at`) configurable per guild
@@ -28,12 +32,13 @@ Ban, kick, mute and warn members with optional temporary durations, auto-escalat
 
 ## Chat Filter
 
-Three-layer message filtering that inspects every message sent on the server.
+Local, multi-stage message filtering that inspects every message sent on the server (no external API).
 
 ### What it does
-1. **SafeText** – Keyword and regex-based pattern matching against known bad words/phrases
-2. **AI Content Moderation** – Sends flagged messages to an external AI API (OwUI/Qwen) for classification into 5 categories: NSFW, Insults, Hate Speech, Doxxing, Self-Harm
-3. **Phishing URL Detection** – Real-time check against a continuously updated blocklist of scam/phishing domains (sourced from Discord-AntiScam)
+1. **SafeText lexicons** – Text normalisation (obfuscated spellings, l33t, spacing) plus German/English word lists for slurs, threats, self-harm phrases and personal data
+2. **Local toxicity model** – `textdetox/xlmr-large-toxicity-classifier` runs in its own process, started on the first message that needs a score and stopped after it was unused for a while
+3. **Phishing URL Detection** – Real-time check against a continuously updated blocklist of scam/phishing domains
+4. **Sensitivity** – 3-step slider (with a live description) per server; borderline messages go to the review queue instead of being removed
 
 Messages that violate any layer are automatically deleted. Users receive a DM-style embed explaining the deletion reason with a link to appeal.
 
@@ -42,6 +47,25 @@ Messages that violate any layer are automatically deleted. Users receive a DM-st
 - AI categories can be toggled individually (1–5 correspond to the five offense types above)
 - Fully localized error messages and explanations
 - Integrates with Prism trust scoring – violations lower the user's trust score
+
+---
+
+## Language Gate
+
+Keeps a server (or parts of it) to German and/or English. Messages in any other language are removed, like the chat filter does.
+
+### What it does
+- Runs right after the Chat Filter, also on edited messages; a removed message earns no level XP and triggers no custom command
+- Detects the language locally, without an external service: non-Latin scripts (Cyrillic, Arabic, Korean, Japanese/Chinese) by their characters, Latin-script languages (German, English, French, Spanish, Italian, Portuguese, Dutch, Turkish, Polish) by typical function words
+- Cautious on purpose: texts under 12 letters or 4 words, dialect, slang, abbreviations and mixed-language chat are left alone; a message is only removed when a foreign language clearly outweighs the allowed ones
+- Deletes the message and posts a short notice that disappears after 10 seconds (at most once per 20 seconds per member); no warning, no case, no DM
+- Never applies to bots, DMs, ticket channels, the global chat or attachment-only messages
+
+### Customization
+- Allowed languages: German, English or both
+- Exempt members who can manage messages (on by default)
+- Free channels where any language is fine
+- Requires the `manage_messages` permission in the channel
 
 ---
 
@@ -414,28 +438,68 @@ Monitors configured YouTube channels and posts embeds when new videos are upload
 
 ## Leveling System
 
-Members earn XP for every message they send, scaling with message length, and level up automatically.
+Members earn XP from chatting and from time in voice channels; one level is derived from both.
 
 ### What it does
-- XP awarded per message based on content length:
-  - < 20 chars: 8 XP
-  - < 100 chars: 20 XP
-  - < 300 chars: 35 XP
-  - ≥ 300 chars: 50 XP
-- Level formula: `level * (level + 1) * 50` cumulative XP (e.g. level 1 = 100 XP, level 2 = 300 XP)
+- **Text XP** – Once per 60 seconds per member, only for messages that passed anti-spam and the chat filter
+- **Voice XP** – 5 XP per full minute, only while not deafened, with another non-deafened human present, not in the AFK channel
 - Level-up announcements with configurable destination
 - Role rewards: automatically assign roles when milestones are reached
-- Per-server, per-user tracking stored in `data/<guild_id>/leveling_users.json`
+- `/rank [member]` shows a rank card, `/leaderboard` the top members
 
 ### Customization
 - Enable/disable per guild
 - Announcement mode: `"same_channel"`, dedicated `"channel"`, or `"off"`
-- `announcement_channel` for dedicated mode
 - `role_rewards`: list of `{level, role_id}` pairs for automatic role assignment
-- Localized level-up embed text
 
 ---
 
+## Honeypot
+
+A trap channel that catches spam bots.
+
+### What it does
+- Admins pick one channel; a notice in it tells people not to write there. Setup can create the channel automatically
+- Whoever writes there is removed through the normal case flow (case number, one DM, audit-log reason) and the message is deleted
+- Action is `ban`, `kick` or `mute` (24 h). A ban also deletes the member's messages of the last N hours in all channels
+- Staff (Manage Messages / Manage Server / Administrator) and bots are ignored
+
+---
+
+## Pulse, Insights & Wrapped
+
+- **Pulse** (`/pulse server|me|recap`) – When and how the community is active, best time to post, personal streak and rank, plus a weekly recap post
+- **Insights** (`/insights`) – Server statistics derived from the activity data, including voice time
+- **Wrapped** – A yearly personal summary card with a button
+
+---
+
+## Community Extras
+
+- **Starboard** – Messages with enough star reactions are copied to a board channel; `/starboard random`, weekly throwbacks
+- **Quote Book** (`/quote add|show|list|remove`) – Save and look up memorable messages, quote reactions
+- **Time Capsule** (`/capsule send|list|cancel`) – Seal a message that is delivered later
+- **Polls** (`/poll`, `/pollstatus`) – Up to 10 options, staff overview of running polls
+- **Birthdays** (`/birthday set|remove|hide|show|upcoming`)
+- **Invite tracking** (`/invites top|user`) – Optional, off by default
+- **One Word Story** – Minigame next to counting and the flag quiz
+
+---
+
+## Embed Art (Dither)
+
+- Every embed with a title or fields gets a small animated, transparent dither picture as thumbnail (avocloud brand: Bayer 4x4, rust tones)
+- The shape follows the slash command (shield for bans, bars for music and stats, spiral for help, ...); red embeds show a "!", green ones a check mark
+- Slash command replies, errors and moderation embeds (including the honeypot) always have it; for everything else (tickets, suggestions, welcome ...) it can be switched off per server under **General → Dither graphics**
+- The images are rendered by the bot and served from `/dither/<shape>.gif` of the web server
+
+---
+
+## Staff Roles
+
+One shared **staff roles** setting (General) used by tickets and suggestions; the notification channel doubles as the staff channel for open items.
+
+---
 
 ## Admin & Utility
 
@@ -443,6 +507,9 @@ Members earn XP for every message they send, scaling with message length, and le
 - Scans all members of the current server against the global flagged-user database
 - Displays Prism trust scores, flag sources (auto vs manual), event counts and entry dates
 - Recommendations for moderators based on scan results
+
+### Bot owner (`/owner`)
+- Owner-only command (checked with `bot.is_owner`, team aware) that posts a "verified bot owner" embed with server count, shards and latency; everyone else gets a private refusal
 
 ### Dashboard (`/dashboard`)
 - Returns the link to the Baxi web dashboard for server configuration
@@ -463,7 +530,11 @@ Baxi runs several automated background tasks to maintain system health:
 
 | Task | Interval | Purpose |
 |------|----------|---------|
-| **GCDH Sync** | 15s | Syncs global chat message data to disk |
+| **GCDH Sync** | 15s | Syncs global chat message data (only when something changed) |
+| **Backup** | 12h | SQLite snapshot, gzip, upload to the backup server |
+| **Rest mode** | idle | After 10 min without activity: stops the chat filter model, frees memory, idle presence |
+| **Voice activity** | 5min | Books voice time and voice XP |
+| **Starboard / Time Capsule** | 30min / 5min | Throwbacks, delivery of sealed capsules |
 | **Update Stats** | 10min | Counts guilds and unique users, posts to TopGG |
 | **Livestream (Twitch)** | 60s | Polls Twitch for streamer go-live/offline events |
 | **Livestream (YT/TikTok)** | 5min | Polls YouTube and TikTok for live status |
@@ -485,7 +556,7 @@ Baxi runs several automated background tasks to maintain system health:
 
 ### Sharding
 - Auto-sharded bot supporting large-scale deployments
-- Default: 4 shards, configurable via `config.py`
+- Shard count via `SHARD_COUNT` in `.env`
 
 ### Web Dashboard (Quart)
 - CORS-enabled Quart web server running alongside the bot
@@ -494,9 +565,9 @@ Baxi runs several automated background tasks to maintain system health:
 - OAuth2 integration for guild management
 
 ### Data Storage
-- Per-guild JSON files in `data/<guild_id>/`
-- Separate files for: config, tickets, transcripts, users, stats, activity, mod events, filter events, temp actions, leveling, Prism trust, global chat
-- Automatic directory creation on guild join
+- SQLite database (`baxi_data.db`); per-guild config, tickets, transcripts, users, stats, activity, cases, leveling, Prism trust and global chat live in tables
+- Settings without their own table fall back to a generic `guild_misc` store
+- Automatic backups every 12 h
 
 ### Logging
 - `reds_simple_logger` for structured logging with levels (info, debug, success, warning, error)
@@ -509,7 +580,7 @@ Baxi runs several automated background tasks to maintain system health:
 
 All features are configured via:
 1. **Web Dashboard** at https://baxi.avocloud.net (recommended)
-2. **JSON config files** in `data/<guild_id>/conf.json`
+2. **The SQLite database** (per-guild config)
 3. **Hardcoded defaults** in `config/config.py` → `datasys.default_data`
 
 Global settings (shard count, API URLs, colors, version) are in `config/config.py` and `config/auth.py`.
