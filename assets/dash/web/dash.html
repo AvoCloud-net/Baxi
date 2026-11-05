@@ -406,6 +406,10 @@
                 <svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 15h.01"/><path d="M12 7v4"/></svg>
                 Chatfilter
             </a>
+            <a href="#language-gate" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+                Language Gate
+            </a>
             <a href="#antispam" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
                 Anti-Spam
@@ -4401,6 +4405,72 @@
                 </div>
             </section>
 
+            <!-- Language Gate -->
+            <section class="pb-16 dash-section" id="language-gate">
+                <div class="section-label">Language Gate</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+                            Language Gate
+                        </h2>
+                        <p class="text-muted">Only the languages you pick are allowed. Messages in any other language are removed and the author gets a short notice that disappears by itself. Short messages and mixed-language chat are left alone.</p>
+                    </header>
+                    <section>
+                        <form id="langgate-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="langgate-enabled" role="switch">
+                                    <span class="font-medium">Enable Language Gate</span>
+                                </label>
+                            </div>
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Allowed languages</label>
+                                <div class="flex flex-wrap gap-4" id="langgate-languages">
+                                    {% for code, name in language_gate_languages.items() %}
+                                    <label><input type="checkbox" value="{{ code }}"> {{ name }}</label>
+                                    {% endfor %}
+                                </div>
+                                <p class="text-muted text-xs">Everything else is removed. Pick both to allow German and English.</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="langgate-exempt-staff">
+                                    <input type="checkbox" id="langgate-exempt-staff">
+                                    Exempt members who can manage messages
+                                </label>
+                            </div>
+                            <div class="grid gap-2">
+                                <label class="font-medium text-sm">Free channels <span class="text-muted font-normal" id="langgate-ch-count">(0)</span></label>
+                                <div id="langgate-ch-list" class="flex flex-wrap gap-2"></div>
+                                <p id="langgate-ch-empty" class="text-muted text-xs">No free channels. The gate applies everywhere.</p>
+                                <div class="flex gap-2 add-area mt-3">
+                                    <select id="langgate-ch-add" class="select flex-1">
+                                        <option value="">-  Select a channel - </option>
+                                        {% for id, name in channels.items() %}
+                                        <option value="{{ id }}">#{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" onclick="langGateChAdd()" style="flex-shrink:0;">
+                                        <svg class="lucide" viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <p class="text-muted text-xs">Any language is fine in these channels (for example an international lounge). Ticket channels and the global chat are never checked.</p>
+                            </div>
+                            <div class="card-actions">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
             <!-- Starboard -->
             <section class="pb-16 dash-section" id="starboard">
                 <div class="section-label">Starboard</div>
@@ -4919,7 +4989,7 @@
                 'home',
                 'config-general',
                 'auditlog',
-                'antispam', 'config-chatfilter', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'mod_cases',
+                'antispam', 'config-chatfilter', 'language-gate', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'mod_cases',
                 'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'honeypot', 'invites', 'capsule', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
@@ -5366,6 +5436,17 @@
             }
 
             // Level System
+            // Language Gate
+            {
+                const lg = data.language_gate || {};
+                document.getElementById('langgate-enabled').checked = lg.enabled === true;
+                document.getElementById('langgate-exempt-staff').checked = lg.exempt_staff !== false;
+                const picked = Array.isArray(lg.languages) && lg.languages.length ? lg.languages : ['de'];
+                document.querySelectorAll('#langgate-languages input').forEach(function (cb) { cb.checked = picked.includes(cb.value); });
+                _langGateChannels = Array.isArray(lg.channels) ? lg.channels.map(String) : [];
+                renderLangGateCh();
+            }
+
             // Starboard / Quote Book / Time Capsule
             if (data.starboard) {
                 const sb = data.starboard;
@@ -8463,6 +8544,55 @@
             };
         };
 
+        // ── Language Gate ──────────────────────────────────────────────────────
+        let _langGateChannels = [];
+        function renderLangGateCh() {
+            const list = document.getElementById('langgate-ch-list');
+            const sel = document.getElementById('langgate-ch-add');
+            list.innerHTML = '';
+            document.getElementById('langgate-ch-count').textContent = `(${_langGateChannels.length})`;
+            document.getElementById('langgate-ch-empty').classList.toggle('hidden', _langGateChannels.length > 0);
+            const names = {};
+            for (const opt of sel.options) { if (opt.value) names[opt.value] = opt.text; }
+            _langGateChannels.forEach(function (cid) {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--avo-surface-raised);border:1px solid var(--avo-line);font-size:13px;';
+                const label = document.createElement('span');
+                label.textContent = names[cid] || ('#' + cid);
+                const rm = document.createElement('button');
+                rm.type = 'button'; rm.title = 'Remove';
+                rm.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--avo-text-muted);padding:0;line-height:1;';
+                rm.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                rm.onclick = function () { _langGateChannels = _langGateChannels.filter(function (c) { return c !== cid; }); renderLangGateCh(); };
+                tag.appendChild(label); tag.appendChild(rm);
+                list.appendChild(tag);
+            });
+        }
+        function langGateChAdd() {
+            const sel = document.getElementById('langgate-ch-add');
+            if (sel.value && !_langGateChannels.includes(sel.value)) { _langGateChannels.push(sel.value); renderLangGateCh(); }
+            sel.value = '';
+        }
+        document.getElementById('langgate-form').onsubmit = function (event) {
+            event.preventDefault();
+            const payload = { language_gate: {
+                enabled: document.getElementById('langgate-enabled').checked,
+                languages: Array.from(document.querySelectorAll('#langgate-languages input:checked')).map(function (cb) { return cb.value; }),
+                exempt_staff: document.getElementById('langgate-exempt-staff').checked,
+                channels: _langGateChannels,
+            } };
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=language_gate&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { const r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
         // ── Quote Book ─────────────────────────────────────────────────────────
         document.getElementById('quotes-form').onsubmit = function (event) {
             event.preventDefault();
@@ -10196,7 +10326,7 @@
             const HUB_DESC = {
                 'auditlog': 'Who changed which setting', 'welcomer': 'Greet new members, goodbye messages',
                 'serverlog': 'Log joins, edits, deletes, bans', 'auto-roles': 'Give roles on join',
-                'ticket': 'Support tickets via buttons or dropdown', 'config-chatfilter': 'Block insults, spam links, scams',
+                'ticket': 'Support tickets via buttons or dropdown', 'config-chatfilter': 'Block insults, spam links, scams', 'language-gate': 'Allow only the languages you choose',
                 'antispam': 'Stop flooding and mass mentions', 'warn-config': 'Warn limits and automatic punishments',
                 'prism': 'Network-wide trust score', 'verify': 'Verification gate for new members',
                 'antiraid': 'Protect against join raids', 'honeypot': 'Trap channel: whoever writes there is banned',

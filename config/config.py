@@ -221,6 +221,12 @@ class datasys:
             "5": True,
         }
     },
+    "language_gate": {
+        "enabled": False,
+        "languages": ["de"],
+        "exempt_staff": True,
+        "channels": [],
+    },
     "ticket": {
         "enabled": False,
         "channel": "",

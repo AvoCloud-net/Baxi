@@ -16,6 +16,7 @@ import assets.data as datasys
 import assets.idle as idle
 import assets.message.globalchat as globalchat
 import assets.message.chatfilter as chatfilter
+import assets.message.languagegate as languagegate
 import assets.message.welcomer as welcomer
 from assets.buttons import build_ticket_panel_view, ticket_panel_embed, ticket_staff_role_ids
 import assets.message.customcmd as customcmd
@@ -646,6 +647,13 @@ def events(bot: commands.AutoShardedBot, web):
             await run_chatfilter(after, bot)
         except Exception as _cf_err:
             logger.error(f"[Chatfilter] edit check failed: {_cf_err}")
+        try:
+            await languagegate.check(
+                after, bot,
+                is_globalchat=_is_globalchat_channel(after, dict(datasys.load_data(1001, "globalchat"))),
+            )
+        except Exception as _lg_err:
+            logger.error(f"[LanguageGate] edit check failed: {_lg_err}")
         await serverlog.send_log(
             bot, after.guild.id, "message_edit",
             serverlog.build_message_edit(before, after),
@@ -1104,6 +1112,10 @@ async def process_message(message: discord.Message, bot: commands.AutoShardedBot
             message, bot, risk_ctx=risk_ctx, guild_terms=guild_terms, is_globalchat=is_globalchat,
             verdict=cf_verdict,
         ):
+            return
+
+        # Language gate: only the allowed language(s) (after the filter, before everything that rewards or acts on the message)
+        if await languagegate.check(message, bot, is_globalchat=is_globalchat):
             return
 
         # Custom commands check

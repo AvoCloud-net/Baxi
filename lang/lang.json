@@ -172,6 +172,9 @@
       }
     },
     "systems": {
+      "language_gate": {
+        "notice": "{user}, hier bitte nur {languages} schreiben. Deine Nachricht wurde entfernt."
+      },
       "chatfilter": {
         "title": "SYS // CHATFILTER",
         "description": "Diese Nachricht wurde gelöscht da sie potenziell schädlich sein könnte.\nSolltest du diese jedoch trotzen lesen wollen, kannst du sie mithilfe des unteren links einsehen.\n\n**Benutzer:** {user}\n**ID:** {id}\n**Grund:** {reason}\n**Info:** {link}\n\n-# Sollte dies ein Fehler sein, kontaktiere bitte den Support via Discord oder per Email.",
@@ -1255,6 +1258,9 @@
       }
     },
     "systems": {
+      "language_gate": {
+        "notice": "{user}, please write in {languages} only. Your message was removed."
+      },
       "chatfilter": {
         "title": "SYS // CHATFILTER",
         "description": "This message has been deleted as it may be potentially harmful.\nIf you still wish to read it, you can view it using the link below.\n\n**User :** {user}\n**ID:** {id}\n**Reason:** {reason}\n**Info:** {link}\n\n-# If this is an error, please contact support via Discord or email.",

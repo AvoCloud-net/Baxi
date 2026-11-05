@@ -1250,7 +1250,14 @@
                     <div id="gc-details" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:.75rem; margin-bottom:1.5rem;"></div>
                     <!-- Raw JSON toggle -->
                     <details style="margin-top:.5rem;">
-                        <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON</summary>
+                        <summary style="font-size:.75rem; opacity:.5; cursor:pointer; user-select:none;">Raw JSON / Edit</summary>
+                        <div style="display:flex; gap:.5rem; margin-top:.5rem;">
+                            <button id="gc-btn-edit" onclick="gcSetEditing(true)" class="btn" data-variant="secondary" data-size="default">Edit</button>
+                            <button id="gc-btn-save" onclick="saveGuildConfig()" class="btn" data-variant="primary" data-size="default" style="display:none;">Save changes</button>
+                            <button id="gc-btn-cancel" onclick="gcCancelEdit()" class="btn" data-variant="secondary" data-size="default" style="display:none;">Cancel</button>
+                        </div>
+                        <div id="gc-edit-msg" class="action-result" style="display:none; margin-top:.5rem;"></div>
+                        <textarea id="gc-edit-area" spellcheck="false" style="display:none; margin-top:.5rem; width:100%; min-height:420px; font-family:monospace; font-size:.72rem; line-height:1.5; background:var(--adm-surface); padding:.75rem 1rem;"></textarea>
                         <pre id="gc-raw" style="margin-top:.5rem; font-size:.72rem; line-height:1.5; background:var(--adm-surface); padding:.75rem 1rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
                     </details>
                 </div>
@@ -2960,12 +2967,24 @@ const GC_FEATURE_NAMES = {
     counting: 'Counting', flag_quiz: 'Flag Quiz',
     suggestions: 'Suggestions', temp_voice: 'Temp Voice', verify: 'Verification',
     _sticky_messages: 'Sticky Messages',
+    language_gate: 'Language Gate', honeypot: 'Honeypot', leveling: 'Leveling',
+    music: 'Music', polls: 'Polls', giveaways: 'Giveaways', assistant: 'Assistant',
+    mc_link: 'DiscordGate', auto_release: 'Auto-Release', antiraid: 'Anti-Raid',
+    mod_gate: 'Mod Gate', audit_log: 'Audit Log', serverlog: 'Server Log',
+    tiktok: 'TikTok', twitter: 'Twitter', instagram: 'Instagram', birthdays: 'Birthdays',
+    capsule: 'Time Capsule', invites: 'Invite Tracking', one_word_story: 'One Word Story',
+    pulse: 'Pulse', quotes: 'Quote Book', staff: 'Staff Roles', starboard: 'Starboard',
+    warn_config: 'Warn Config', prism_enabled: 'Prism',
 };
+// Keys shown as feature chips beyond the named ones: any object config with an "enabled" flag
+const GC_SKIP_CHIP = new Set(['guild_id','guild_name','owner_id','owner_name','lang','terms','notification_channel']);
 
 function gcIsEnabled(key, val) {
     if (key === 'custom_commands') return val && Object.keys(val).length > 0;
     if (key === 'reaction_roles') return val && val.panels && val.panels.length > 0;
     if (key === '_sticky_messages') return val && Object.keys(val).length > 0;
+    if (typeof val === 'boolean') return val;
+    if (key === 'warn_config') return val && val.enabled !== false;
     if (typeof val === 'object' && val !== null) return val.enabled === true;
     return false;
 }
@@ -3010,6 +3029,10 @@ function renderGuildConfig(r) {
 
     // Feature chips
     const chipKeys = Object.keys(GC_FEATURE_NAMES);
+    Object.keys(c).forEach(k => {
+        const v = c[k];
+        if (!chipKeys.includes(k) && !GC_SKIP_CHIP.has(k) && v && typeof v === 'object' && !Array.isArray(v) && 'enabled' in v) chipKeys.push(k);
+    });
     document.getElementById('gc-features').innerHTML = chipKeys.map(k => gcFeatureChip(k, c[k])).join('');
 
     // Detail cards
@@ -3196,8 +3219,50 @@ function renderGuildConfig(r) {
     }
 
     document.getElementById('gc-details').innerHTML = cards.join('');
+    gcCurrent = r;
     document.getElementById('gc-raw').textContent = JSON.stringify(r.config, null, 2);
+    document.getElementById('gc-edit-area').value = JSON.stringify(r.config, null, 2);
+    gcSetEditing(false);
     document.getElementById('gc-inspect-wrap').style.display = '';
+}
+
+let gcCurrent = null;
+function gcSetEditing(on) {
+    document.getElementById('gc-raw').style.display = on ? 'none' : '';
+    document.getElementById('gc-edit-area').style.display = on ? '' : 'none';
+    document.getElementById('gc-btn-edit').style.display = on ? 'none' : '';
+    document.getElementById('gc-btn-save').style.display = on ? '' : 'none';
+    document.getElementById('gc-btn-cancel').style.display = on ? '' : 'none';
+    if (!on) { const m = document.getElementById('gc-edit-msg'); m.style.display = 'none'; }
+}
+function gcCancelEdit() {
+    document.getElementById('gc-edit-area').value = JSON.stringify(gcCurrent.config, null, 2);
+    gcSetEditing(false);
+}
+async function saveGuildConfig() {
+    const msg = document.getElementById('gc-edit-msg');
+    const show = (t, ok) => { msg.textContent = t; msg.className = 'action-result ' + (ok ? 'ok' : 'err'); msg.style.display = ''; };
+    let parsed;
+    try { parsed = JSON.parse(document.getElementById('gc-edit-area').value); }
+    catch (e) { return show('Invalid JSON: ' + e.message, false); }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return show('Config must be a JSON object.', false);
+    const changed = Object.keys(parsed).filter(k => JSON.stringify(parsed[k]) !== JSON.stringify(gcCurrent.config[k]));
+    if (!changed.length) return show('No changes.', true);
+    if (!confirm(`Save changes to guild ${gcCurrent.guild_id}?\n\nKeys: ${changed.join(', ')}`)) return;
+    try {
+        const r = await fetch('/api/admin/guild_config', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({guild_id: gcCurrent.guild_id, config: parsed}),
+        });
+        const d = await r.json();
+        if (d.error) return show(d.error, false);
+        const errs = Object.entries(d.errors || {}).map(([k, v]) => `${k}: ${v}`).join('; ');
+        if (errs) show(`Saved: ${(d.saved||[]).join(', ') || 'none'}. Errors: ${errs}`, false);
+        else show(`Saved: ${d.saved.join(', ')}`, true);
+        const rr = await fetch(`/api/admin/guild_config?guild_id=${encodeURIComponent(gcCurrent.guild_id)}`);
+        const fresh = await rr.json();
+        if (rr.ok && !fresh.error) { const text = msg.textContent, cls = msg.className; renderGuildConfig(fresh); show(text, cls.includes(' ok')); gcSetEditing(false); msg.style.display = ''; }
+    } catch (e) { show('Request failed: ' + e, false); }
 }
 
 async function loadGuildConfig() {

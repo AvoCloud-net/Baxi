@@ -3,6 +3,7 @@ from quart import redirect, url_for, Markup, session
 from assets.data import load_data, save_data
 import assets.data as datasys
 from quart import render_template, send_from_directory, abort
+from assets.message.languagegate import LANGUAGES as LANGUAGES_LANGUAGE_GATE
 from discord.ext import commands
 import discord
 import aiohttp
@@ -870,6 +871,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 feature_adoption=get_feature_adoption(),
                 bot_id=bot.user.id,
                 user_on_avocloud=user_on_avocloud,
+                language_gate_languages=LANGUAGES_LANGUAGE_GATE,
             )
 
         except discord.NotFound:
@@ -3675,6 +3677,45 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Starboard settings saved!"})
 
+        elif system == "language_gate":
+            data: dict = await quart.request.get_json()
+            pl = data.get("language_gate")
+
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'language_gate' must be an object."}), 400
+            if not isinstance(pl.get("enabled"), bool):
+                return quart.jsonify({"success": False, "message": "'enabled' must be a boolean."}), 400
+            from assets.message.languagegate import LANGUAGES as _LG_LANGS
+            langs = pl.get("languages")
+            if not isinstance(langs, list) or not all(isinstance(c, str) and c in _LG_LANGS for c in langs):
+                return quart.jsonify({"success": False, "message": "Invalid language selection."}), 400
+            if pl["enabled"] and not langs:
+                return quart.jsonify({"success": False, "message": "Select at least one allowed language."}), 400
+            chans = pl.get("channels", [])
+            if not isinstance(chans, list) or not all(isinstance(c, str) and re.fullmatch(r"\d{17,20}", c) for c in chans):
+                return quart.jsonify({"success": False, "message": "Invalid channel ID."}), 400
+
+            save_data(int(guild_id), "language_gate", {
+                "enabled": pl["enabled"],
+                "languages": list(dict.fromkeys(langs)),
+                "exempt_staff": bool(pl.get("exempt_staff", True)),
+                "channels": list(dict.fromkeys(chans)),
+            })
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "language_gate",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Language Gate settings saved!"})
+
         elif system == "quotes":
             data: dict = await quart.request.get_json()
             pl = data.get("quotes")
@@ -5817,6 +5858,76 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             "total": total_ever,
         })
 
+    # Config systems that live outside default_data; runtime stores / per-user data are left out.
+    _ADMIN_EXTRA_CONF = (
+        "honeypot", "language_gate", "leveling", "music", "polls", "giveaways", "assistant",
+        "mc_link", "auto_release", "antiraid", "mod_gate", "audit_log", "serverlog", "tiktok",
+        "twitter", "instagram", "birthdays", "capsule", "invites", "one_word_story", "pulse",
+        "quotes", "staff", "starboard",
+    )
+    # Never writable through the admin editor (identity / read-only / runtime data)
+    _ADMIN_READONLY_CONF = {"guild_id", "guild_name", "owner_id", "owner_name", "_sticky_messages"}
+
+    def _admin_extra_conf_keys(gid_int):
+        keys = list(_ADMIN_EXTRA_CONF)
+        try:
+            for row in db.query("SELECT key FROM guild_misc WHERE guild_id=?", (gid_int,)):
+                if row["key"] not in keys:
+                    keys.append(row["key"])
+        except Exception:
+            pass
+        return keys
+
+    @app.route("/api/admin/guild_config", methods=["POST"])
+    @requires_authorization
+    async def admin_guild_config_save():
+        """Saves edited top-level keys of a guild config.
+
+        Body JSON: {"guild_id": str, "config": {key: value, ...}}. Only keys whose value
+        differs from the stored one are written, each through the normal save path."""
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"error": "Access denied"}), 403
+
+        body = await quart.request.get_json(silent=True) or {}
+        gid_str = str(body.get("guild_id", "")).strip()
+        new_conf = body.get("config")
+        if not gid_str.isdigit() or not isinstance(new_conf, dict):
+            return quart.jsonify({"error": "Invalid payload"}), 400
+        gid_int = int(gid_str)
+
+        try:
+            from assets.repo import load_full_conf
+            current = load_full_conf(gid_int)
+        except Exception as e:
+            return quart.jsonify({"error": f"Failed to read config: {e}"}), 500
+        if not current:
+            return quart.jsonify({"error": "No config found for this guild."}), 404
+        for key in _admin_extra_conf_keys(gid_int):
+            if key not in current:
+                try:
+                    current[key] = load_data(gid_int, key)
+                except Exception:
+                    pass
+
+        saved, errors = [], {}
+        for key, value in new_conf.items():
+            if key in _ADMIN_READONLY_CONF or key not in current:
+                if key not in _ADMIN_READONLY_CONF:
+                    errors[key] = "Unknown key"
+                continue
+            if json.dumps(value, sort_keys=True) == json.dumps(current[key], sort_keys=True):
+                continue
+            try:
+                save_data(gid_int, key, value)
+                saved.append(key)
+            except Exception as e:
+                errors[key] = str(e)
+
+        if saved:
+            share.admin_log("warning", f"Guild config edited for {gid_str} by {user.name}: {', '.join(saved)}", source="AdminDash")
+        return quart.jsonify({"success": not errors, "saved": saved, "errors": errors}), (200 if not errors else 207)
+
     @app.route("/api/admin/guild_config")
     @requires_authorization
     async def admin_guild_config():
@@ -5838,6 +5949,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
         if not conf:
             return quart.jsonify({"error": "No config found for this guild."}), 404
+
+        # Feature stores load_full_conf does not cover (not in default_data) + guild_misc
+        for key in _admin_extra_conf_keys(gid_int):
+            if key in conf:
+                continue
+            try:
+                conf[key] = load_data(gid_int, key)
+            except Exception:
+                pass
 
         # Add sticky messages from the DB (previously a separate file)
         try:

@@ -16,6 +16,7 @@ Everything is open source under the **MIT license** -  self-host it, audit it, c
 - 🛡️ **Moderation** - ban, kick, mute, warn, temp actions with auto-expiry, auto-escalation on warning thresholds, DM notifications
 - 🚫 **Anti-Spam** - detects message spam, mention floods & repeated content in real time
 - 🤖 **AI Chat Filter** - multi-tier filtering: SafeText (bad-word detection) + Llama Guard AI (context-aware hate speech, NSFW & self-harm detection) + phishing link scanner
+- 🌐 **Language Gate** - allow only German and/or English; messages in other languages are removed automatically
 - 🌐 **Global Chat** - cross-server chatroom connecting all Baxi servers, always AI-filtered *(official hosted bot only)*
 - 🔮 **PRISM** - network-wide behavior analysis & automatic trust scoring; auto-flags users below threshold, auto-recovers on good behavior *(official hosted bot only)*
 - 🚩 **Global User Flagging** - shared flagged-user database across the Baxi network; use `/scan_users` proactively *(official hosted bot only)*
