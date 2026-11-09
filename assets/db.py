@@ -112,6 +112,13 @@ _COLUMN_MIGRATIONS: dict[str, list[tuple[str, str]]] = {
         ("card_subtitle", "TEXT DEFAULT '{server}'"),
         ("card_footer", "TEXT DEFAULT 'Member #{membercount}'"),
     ],
+    "exit_feedback": [
+        ("reply_text", "TEXT DEFAULT ''"),
+        ("replied_at", "TEXT"),
+        ("replied_by", "TEXT DEFAULT ''"),
+        ("staff_channel_id", "TEXT DEFAULT ''"),
+        ("staff_message_id", "TEXT DEFAULT ''"),
+    ],
     "leveling_users": [
         ("text_xp", "INTEGER DEFAULT 0"),
         ("voice_xp", "INTEGER DEFAULT 0"),
@@ -1131,6 +1138,27 @@ CREATE TABLE IF NOT EXISTS ai_feedback (
     admin   TEXT,
     log_id  TEXT
 );
+
+-- Exit feedback: one row per DM asking why someone left (status pending, sent, answered).
+-- questions_json is the snapshot the user was asked, so old answers stay readable after
+-- the questions are edited. No foreign key: the row must outlive the guild.
+CREATE TABLE IF NOT EXISTS exit_feedback (
+    prompt_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id       TEXT,
+    guild_name     TEXT DEFAULT '',
+    user_id        TEXT,
+    user_name      TEXT DEFAULT '',
+    source         TEXT DEFAULT 'auto',
+    status         TEXT DEFAULT 'pending',
+    sent_at        TEXT,
+    answered_at    TEXT,
+    questions_json TEXT DEFAULT '[]',
+    answers_json   TEXT DEFAULT '[]'
+);
+
+CREATE INDEX IF NOT EXISTS ix_exit_feedback_user ON exit_feedback(guild_id, user_id);
+
+CREATE INDEX IF NOT EXISTS ix_exit_feedback_uid ON exit_feedback(user_id);
 
 CREATE TABLE IF NOT EXISTS guild_misc (
     guild_id  INTEGER,

@@ -570,6 +570,50 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         await interaction.response.send_message(embed=embed, view=view)
 
+    ticket_group = app_commands.Group(name="ticket", description="Ticket tools (staff)", guild_only=True)
+
+    @ticket_group.command(name="add", description="Add a member to this ticket")
+    @app_commands.describe(user="The member to add to this ticket.")
+    async def ticket_add_cmd(interaction: Interaction, user: discord.Member):
+        import assets.staff as staff_sys
+        lang = datasys.load_lang_file(interaction.guild.id)
+        t = lang["systems"]["ticket"]
+        if not isinstance(interaction.user, discord.Member) or not staff_sys.is_staff(interaction.user):
+            return await interaction.response.send_message(t["add_no_permission"], ephemeral=True)
+        tickets: dict = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
+        ticket = tickets.get(str(interaction.channel_id))
+        if ticket is None:
+            return await interaction.response.send_message(t["add_not_a_ticket"], ephemeral=True)
+        if user.bot:
+            return await interaction.response.send_message(t["add_is_bot"], ephemeral=True)
+        channel = interaction.channel
+        if channel.permissions_for(user).view_channel:
+            return await interaction.response.send_message(
+                str(t["add_already_in"]).format(user=user.mention), ephemeral=True
+            )
+        await interaction.response.defer()
+        try:
+            await channel.set_permissions(
+                user, view_channel=True, send_messages=True, read_message_history=True,
+                attach_files=True, reason=f"Added to ticket by {interaction.user.name}",
+            )
+        except discord.Forbidden:
+            return await interaction.followup.send(t["add_failed"], ephemeral=True)
+        text = str(t["add_done"]).format(user=user.mention, staff=interaction.user.mention)
+        await interaction.followup.send(text, allowed_mentions=discord.AllowedMentions(users=[user]))
+        tickets = dict(datasys.load_data(interaction.guild.id, "open_tickets"))
+        if str(interaction.channel_id) in tickets:
+            tickets[str(interaction.channel_id)].setdefault("transcript", []).append({
+                "type": "sys_msg",
+                "msg": str(t["add_done"]).format(user=user.name, staff=interaction.user.name),
+                "avatar": "https://avocloud.net/img/icons/gear.svg",
+                "timestamp": str(datetime.datetime.now(__import__("zoneinfo").ZoneInfo("Europe/Vienna"))),
+                "is_staff": True,
+            })
+            datasys.save_data(interaction.guild.id, "open_tickets", tickets)
+
+    bot.tree.add_command(ticket_group)
+
     @bot.tree.command(name="kick", description="Kick a member")
     @app_commands.checks.has_permissions(kick_members=True)
     @app_commands.describe(user="The user you want to kick.")

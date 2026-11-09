@@ -452,6 +452,10 @@ class datasys:
         "enabled": False,
         "channel": "",
     },
+    "exit_feedback": {
+        "enabled": False,       # per server, opt-in (the bot admin has a global master switch)
+        "questions": None,      # None = the global default questions (bot admin dashboard)
+    },
     "birthdays": {
         "enabled": False,
         "channel": "",              # empty = the server's system channel

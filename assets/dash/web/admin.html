@@ -447,6 +447,10 @@
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Guild Activity
     </a>
+    <a href="#section-exit-feedback" data-view="section-exit-feedback">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Exit Feedback
+    </a>
     <a href="#section-guild-config" data-view="section-guild-config">
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Guild Config
@@ -1301,6 +1305,80 @@
                     <div id="user-search-sections" style="display:flex; flex-direction:column; gap:.75rem;"></div>
                 </div>
             </section>
+        </div>
+    </section>
+
+    <!-- ── EXIT FEEDBACK ──────────────────────────────────────── -->
+    <section id="section-exit-feedback" class="admin-view" data-view="section-exit-feedback">
+        <div class="section-label">Exit feedback</div>
+
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header class="flex items-center justify-between">
+                <div>
+                    <h2>Settings</h2>
+                    <p class="text-muted" style="font-size:.78rem;">Master switch. A server also has to switch it on in its own dashboard (opt-in). When someone leaves, Baxi sends a DM asking why. Not sent to bots, banned or kicked members, or to the same person for the same server within 30 days.</p>
+                </div>
+                <label style="display:flex; align-items:center; gap:.5rem;"><input type="checkbox" role="switch" id="ef-enabled"> Enabled</label>
+            </header>
+            <section style="display:flex; flex-direction:column; gap:.75rem;">
+                <p class="text-muted" style="font-size:.78rem;">Leave a text empty to use the default (in the server's language). Placeholders: <code>{server}</code>, <code>{bot}</code>.</p>
+                <input id="ef-title" type="text" maxlength="256" placeholder="Embed title">
+                <textarea id="ef-description" rows="3" maxlength="2000" placeholder="Embed text"></textarea>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <input id="ef-button" type="text" maxlength="80" placeholder="Button label" style="flex:1; min-width:180px;">
+                    <input id="ef-footer" type="text" maxlength="200" placeholder="Footer" style="flex:2; min-width:240px;">
+                </div>
+                <div>
+                    <label class="text-muted" style="font-size:.78rem;">Skip these servers (IDs, one per line or comma separated)</label>
+                    <textarea id="ef-disabled" rows="2" placeholder="123456789012345678"></textarea>
+                </div>
+            </section>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header class="flex items-center justify-between" style="flex-wrap:wrap; gap:.5rem;">
+                <div>
+                    <h2>Default questions</h2>
+                    <p class="text-muted" style="font-size:.78rem;">Used by every server that has not written its own questions in its dashboard. Discord allows up to <span id="ef-max">5</span> questions.</p>
+                </div>
+                <div style="display:flex; gap:.5rem;">
+                    <button onclick="efLoadDefaults()" class="btn" data-variant="outline" data-size="sm">Load default questions</button>
+                    <button onclick="efAddQuestion()" class="btn" data-variant="outline" data-size="sm">Add question</button>
+                </div>
+            </header>
+            <section>
+                <div id="ef-questions" style="display:flex; flex-direction:column; gap:.75rem;"></div>
+                <div style="display:flex; align-items:center; gap:.75rem; margin-top:1rem;">
+                    <button onclick="efSave()" class="btn" data-variant="primary" data-size="default">Save</button>
+                    <span id="ef-save-status" class="text-muted" style="font-size:.8rem;"></span>
+                </div>
+            </section>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem;">
+            <header>
+                <h2>Send afterwards</h2>
+                <p class="text-muted" style="font-size:.78rem;">Sends the feedback DM for a server and user right now, regardless of the switch and the 30-day limit. Baxi must be on that server, and the user must be reachable by DM.</p>
+            </header>
+            <section>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <input id="ef-send-guild" type="text" inputmode="numeric" placeholder="Server ID" style="flex:1; min-width:180px;">
+                    <input id="ef-send-user" type="text" inputmode="numeric" placeholder="User ID" style="flex:1; min-width:180px;">
+                    <button onclick="efSend()" class="btn" data-variant="primary" data-size="default">Send DM</button>
+                </div>
+                <div id="ef-send-status" class="text-muted" style="font-size:.8rem; margin-top:.5rem;"></div>
+            </section>
+        </div>
+
+        <div class="card">
+            <header class="flex items-center justify-between">
+                <div>
+                    <h2>Responses</h2>
+                    <p class="text-muted" style="font-size:.78rem;"><span id="ef-stat-answered" class="num">–</span> answered of <span id="ef-stat-sent" class="num">–</span> sent · latest 100</p>
+                </div>
+                <button onclick="efLoad()" class="btn" data-variant="outline" data-size="sm">Refresh</button>
+            </header>
+            <section id="ef-responses" style="display:flex; flex-direction:column; gap:.6rem;"></section>
         </div>
     </section>
 
@@ -3314,6 +3392,101 @@ async function reloadTemplates() {
     }
 }
 
+
+// ── Exit feedback ─────────────────────────────────────────────
+let efQuestions = [];
+let efDefaults = {de: [], en: []};
+let efMax = 5;
+const EF_TYPES = {short:'Short text', paragraph:'Long text', select:'Dropdown', multiselect:'Dropdown (multiple choice)'};
+
+function efRenderQuestions() {
+    const box = document.getElementById('ef-questions');
+    box.innerHTML = efQuestions.map((q, i) => `
+        <div class="card"><header class="flex items-center justify-between">
+            <h3 class="text-base font-semibold">Question ${i + 1}</h3>
+            <div style="display:flex; gap:.4rem;">
+                <button class="btn" data-variant="outline" data-size="sm" onclick="efMove(${i},-1)" ${i === 0 ? 'disabled' : ''}>Up</button>
+                <button class="btn" data-variant="outline" data-size="sm" onclick="efMove(${i},1)" ${i === efQuestions.length - 1 ? 'disabled' : ''}>Down</button>
+                <button class="btn" data-variant="outline" data-size="sm" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="efRemove(${i})">Remove</button>
+            </div></header>
+            <section style="display:flex; flex-direction:column; gap:.5rem;">
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <select onchange="efField(${i},'type',this.value); efRenderQuestions()" style="min-width:200px;">
+                        ${Object.entries(EF_TYPES).map(([k, v]) => `<option value="${k}" ${q.type === k ? 'selected' : ''}>${v}</option>`).join('')}
+                    </select>
+                    <input type="text" maxlength="45" placeholder="Question (max. 45 characters)" value="${escHtml(q.label)}" oninput="efField(${i},'label',this.value)" style="flex:1; min-width:220px;">
+                </div>
+                <input type="text" maxlength="100" placeholder="Hint (optional, max. 100 characters)" value="${escHtml(q.help || '')}" oninput="efField(${i},'help',this.value)">
+                ${q.type === 'select' || q.type === 'multiselect' ? `
+                    <textarea rows="4" placeholder="One option per line (2-25)" oninput="efOptions(${i},this.value)">${escHtml((q.options || []).join('\n'))}</textarea>` : ''}
+                <label style="display:flex; align-items:center; gap:.5rem;"><input type="checkbox" ${q.required ? 'checked' : ''} onchange="efField(${i},'required',this.checked)"> Required</label>
+            </section></div>`).join('');
+}
+function efField(i, k, v) { efQuestions[i][k] = v; }
+function efOptions(i, v) { efQuestions[i].options = v.split('\n'); }
+function efMove(i, d) { const j = i + d; [efQuestions[i], efQuestions[j]] = [efQuestions[j], efQuestions[i]]; efRenderQuestions(); }
+function efRemove(i) { efQuestions.splice(i, 1); efRenderQuestions(); }
+function efAddQuestion() {
+    if (efQuestions.length >= efMax) { alert('Discord allows at most ' + efMax + ' questions.'); return; }
+    efQuestions.push({type:'paragraph', label:'', help:'', required:false, options:[]});
+    efRenderQuestions();
+}
+function efLoadDefaults() {
+    if (efQuestions.length && !confirm('Replace the current questions with the defaults?')) return;
+    efQuestions = JSON.parse(JSON.stringify(efDefaults.de));
+    efRenderQuestions();
+}
+async function efLoad() {
+    const res = await fetch('/api/admin/exit_feedback');
+    const d = await res.json();
+    if (!d.success) return;
+    const c = d.config;
+    efDefaults = d.default_questions; efMax = d.max_questions;
+    document.getElementById('ef-max').textContent = efMax;
+    document.getElementById('ef-enabled').checked = !!c.enabled;
+    for (const k of ['title', 'description', 'button', 'footer']) document.getElementById('ef-' + k).value = c[k] || '';
+    document.getElementById('ef-disabled').value = (c.disabled_guilds || []).join('\n');
+    efQuestions = JSON.parse(JSON.stringify(c.questions || efDefaults.de));
+    efRenderQuestions();
+    document.getElementById('ef-stat-sent').textContent = d.stats.sent;
+    document.getElementById('ef-stat-answered').textContent = d.stats.answered;
+    const box = document.getElementById('ef-responses');
+    box.innerHTML = d.responses.length ? d.responses.map(r => `
+        <div class="card"><header class="flex items-center justify-between">
+            <div><h3 class="text-base font-semibold">${escHtml(r.user_name || r.user_id)} <span class="text-muted num" style="font-size:.75rem;">${escHtml(r.user_id)}</span></h3>
+            <p class="text-muted text-xs">${escHtml(r.guild_name || r.guild_id)} · <span class="num">${escHtml(r.guild_id)}</span> · ${r.source === 'manual' ? 'sent manually' : 'automatic'} · ${escHtml((r.answered_at || r.sent_at || '').replace('T', ' '))}</p></div>
+            <span class="badge ${r.status === 'answered' ? 'badge-ok' : ''}">${r.status === 'answered' ? 'Answered' : 'Waiting'}</span></header>
+            ${r.answers.length ? `<section style="display:flex; flex-direction:column; gap:.4rem;">${r.answers.map(a => `
+                <div><div class="text-muted" style="font-size:.75rem;">${escHtml(a.label)}</div>
+                <div style="white-space:pre-wrap;">${escHtml(Array.isArray(a.answer) ? a.answer.join(', ') : a.answer)}</div></div>`).join('')}</section>` : ''}
+        </div>`).join('') : '<div class="text-muted" style="font-size:.85rem;">No DMs sent yet.</div>';
+}
+async function efSave() {
+    const st = document.getElementById('ef-save-status');
+    const body = {
+        enabled: document.getElementById('ef-enabled').checked,
+        title: document.getElementById('ef-title').value,
+        description: document.getElementById('ef-description').value,
+        button: document.getElementById('ef-button').value,
+        footer: document.getElementById('ef-footer').value,
+        disabled_guilds: document.getElementById('ef-disabled').value,
+        questions: efQuestions,
+    };
+    const res = await fetch('/api/admin/exit_feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const d = await res.json();
+    st.style.color = d.success ? 'var(--avo-success)' : 'var(--avo-error)';
+    st.textContent = d.message;
+}
+async function efSend() {
+    const st = document.getElementById('ef-send-status');
+    const body = {guild_id: document.getElementById('ef-send-guild').value.trim(), user_id: document.getElementById('ef-send-user').value.trim()};
+    const res = await fetch('/api/admin/exit_feedback/send', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const d = await res.json();
+    st.style.color = d.success ? 'var(--avo-success)' : 'var(--avo-error)';
+    st.textContent = d.message;
+    if (d.success) efLoad();
+}
+
 // ── View switching (single-section navigation, kills the long scroll) ──────
 const DEFAULT_VIEW = 'section-status';
 const viewNavLinks = document.querySelectorAll('.admin-sidebar a[data-view]');
@@ -3330,6 +3503,7 @@ function showView(viewKey, push) {
     });
 
     if (viewKey === 'section-globalchat' && typeof gcLoad === 'function') gcLoad();
+    if (viewKey === 'section-exit-feedback') efLoad();
 
     if (push !== false && location.hash !== '#' + viewKey) {
         history.replaceState(null, '', '#' + viewKey);

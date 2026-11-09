@@ -81,7 +81,8 @@ class PersistentViewBot(commands.AutoShardedBot):
         self.add_view(GiveawayView())
         self.add_view(TempVoiceControlView(self))
         from assets.moderation.appeals import AppealButton
-        self.add_dynamic_items(RoleButton, TicketButton, TicketSelect, PollButton, PollCloseButton, QuoteReactionButton, WrappedButton, AppealButton)
+        from assets.exit_feedback import FeedbackButton, StaffReplyButton
+        self.add_dynamic_items(RoleButton, TicketButton, TicketSelect, PollButton, PollCloseButton, QuoteReactionButton, WrappedButton, AppealButton, FeedbackButton, StaffReplyButton)
         _tv_load_state()
 
 

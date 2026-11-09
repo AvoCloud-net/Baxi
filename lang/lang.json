@@ -216,6 +216,12 @@
         "link": "Hier findest du ein Transkript deines kürzlich geschlossenen Tickets auf {guild}:",
         "wait_delete_confirm": "Soll das Ticket wirklich gelöscht werden? Bestätige mit dem Button (30 Sekunden Zeit).",
         "close_cancel": "Der Ticket-Schließvorgang wurde von {user} abgebrochen.",
+        "add_no_permission": "Nur das Team kann Mitglieder zu Tickets hinzufügen.",
+        "add_not_a_ticket": "Dieser Befehl funktioniert nur in einem Ticket-Kanal.",
+        "add_is_bot": "Bots können nicht zu Tickets hinzugefügt werden.",
+        "add_already_in": "{user} kann dieses Ticket bereits sehen.",
+        "add_failed": "Ich darf die Rechte in diesem Kanal nicht ändern.",
+        "add_done": "{user} wurde von {staff} zu diesem Ticket hinzugefügt.",
         "btn_confirm": "Bestätigen",
         "btn_cancel": "Abbrechen",
         "server_only": "Nur auf Servern verfügbar.",
@@ -994,6 +1000,64 @@
       "react_gone": "Dieses Zitat gibt es nicht mehr.",
       "react_failed": "Ich konnte das Zitat gerade nicht aktualisieren. Versuch es gleich nochmal."
     },
+    "exit_feedback": {
+      "title": "Schade, dass du gehst",
+      "description": "{bot} ist aufgefallen, dass du **{server}** verlassen hast. Magst du uns kurz sagen, warum? Das dauert nur eine Minute.",
+      "button": "Feedback geben",
+      "footer": "Freiwillig · Deine Antworten sehen das Team von {server} und von {bot}",
+      "reply_title": "Antwort von {server}",
+      "reply_footer": "Diese Nachricht kommt vom Team von {server}. Du kannst hier nicht darauf antworten.",
+      "staff_title": "Feedback von {user}",
+      "staff_desc": "{user} hat den Server verlassen und Feedback gegeben. Mit dem Button schickst du eine Antwort per DM, im Namen des Teams.",
+      "staff_footer": "Nutzer-ID {id}",
+      "staff_button": "Antworten",
+      "staff_reply_field": "Antwort von {staff}",
+      "staff_modal_title": "Antwort an {user}",
+      "staff_modal_label": "Deine Antwort",
+      "staff_modal_placeholder": "Wird per DM an die Person geschickt.",
+      "staff_sent": "Antwort gesendet.",
+      "staff_no_permission": "Nur das Team dieses Servers kann antworten.",
+      "staff_already": "Dieses Feedback wurde schon beantwortet.",
+      "modal_title": "Warum hast du {server} verlassen?",
+      "thanks": "Danke für dein Feedback!",
+      "already": "Du hast schon geantwortet. Danke!",
+      "unavailable": "Diese Anfrage ist nicht mehr verfügbar.",
+      "failed": "Etwas ist schiefgelaufen. Versuch es später noch einmal.",
+      "default_questions": [
+        {
+          "type": "select",
+          "label": "Was war der Hauptgrund?",
+          "help": "",
+          "required": true,
+          "options": [
+            "Zu wenig Aktivität",
+            "Die Themen interessieren mich nicht",
+            "Stimmung oder Team haben mir nicht gefallen",
+            "Zu viele Nachrichten oder Pings",
+            "Ich wollte nur kurz reinschauen",
+            "Sonstiges"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "label": "Was hätten wir besser machen können?",
+          "help": "Ein paar Sätze reichen.",
+          "required": false,
+          "options": []
+        },
+        {
+          "type": "select",
+          "label": "Würdest du zurückkommen?",
+          "help": "",
+          "required": false,
+          "options": [
+            "Ja",
+            "Vielleicht",
+            "Nein"
+          ]
+        }
+      ]
+    },
     "capsule": {
       "disabled": "Zeitkapseln sind auf diesem Server nicht aktiviert. Ein Admin kann sie im Dashboard einschalten.",
       "no_channel": "Dieser Server hat keinen Kapsel-Channel, deshalb können Kapseln nicht an den Server gehen. Schick sie stattdessen an dich selbst.",
@@ -1302,6 +1366,12 @@
         "link": "Here you can find a transcript of your recently closed ticket on {guild}:",
         "wait_delete_confirm": "Do you really want to delete this ticket? Confirm with the button (30 seconds).",
         "close_cancel": "The ticket close process has been cancelled by {user}.",
+        "add_no_permission": "Only staff can add members to tickets.",
+        "add_not_a_ticket": "This command only works inside a ticket channel.",
+        "add_is_bot": "Bots can't be added to tickets.",
+        "add_already_in": "{user} can already see this ticket.",
+        "add_failed": "I'm not allowed to change permissions in this channel.",
+        "add_done": "{user} was added to this ticket by {staff}.",
         "btn_confirm": "Confirm",
         "btn_cancel": "Cancel",
         "server_only": "Server only.",
@@ -2079,6 +2149,64 @@
       "react_invalid": "I can't react with that. Paste an emoji or pick one from this server.",
       "react_gone": "This quote doesn't exist any more.",
       "react_failed": "I couldn't update the quote just now. Try again in a moment."
+    },
+    "exit_feedback": {
+      "title": "Sorry to see you go",
+      "description": "{bot} noticed that you left **{server}**. Would you tell us why? It only takes a minute.",
+      "button": "Give feedback",
+      "footer": "Optional · Your answers are seen by the team of {server} and by {bot}",
+      "reply_title": "Reply from {server}",
+      "reply_footer": "This message is from the team of {server}. You cannot reply to it here.",
+      "staff_title": "Feedback from {user}",
+      "staff_desc": "{user} left the server and gave feedback. The button sends a reply by DM, in the name of the team.",
+      "staff_footer": "User ID {id}",
+      "staff_button": "Reply",
+      "staff_reply_field": "Reply from {staff}",
+      "staff_modal_title": "Reply to {user}",
+      "staff_modal_label": "Your reply",
+      "staff_modal_placeholder": "Sent to the person by DM.",
+      "staff_sent": "Reply sent.",
+      "staff_no_permission": "Only this server's team can reply.",
+      "staff_already": "This feedback has already been answered.",
+      "modal_title": "Why did you leave {server}?",
+      "thanks": "Thanks for your feedback!",
+      "already": "You already answered. Thank you!",
+      "unavailable": "This request is no longer available.",
+      "failed": "Something went wrong. Please try again later.",
+      "default_questions": [
+        {
+          "type": "select",
+          "label": "What was the main reason?",
+          "help": "",
+          "required": true,
+          "options": [
+            "Not enough activity",
+            "The topics don't interest me",
+            "I didn't like the atmosphere or team",
+            "Too many messages or pings",
+            "I just wanted to take a look",
+            "Other"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "label": "What could we have done better?",
+          "help": "A few sentences are plenty.",
+          "required": false,
+          "options": []
+        },
+        {
+          "type": "select",
+          "label": "Would you come back?",
+          "help": "",
+          "required": false,
+          "options": [
+            "Yes",
+            "Maybe",
+            "No"
+          ]
+        }
+      ]
     },
     "capsule": {
       "disabled": "Time capsules are not enabled on this server. An admin can turn them on in the dashboard.",

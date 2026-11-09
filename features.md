@@ -20,6 +20,7 @@ Ban, kick, mute and warn members with optional temporary durations, auto-escalat
 - **Cases** – Every action against a person is a numbered case (#123, per server, never reused). The user gets exactly one DM with what happened, why, how long, the case number and an **Appeal** button
 - **Case file** – `/case <member>` shows a member's full history (staff only); `/note add|remove` keeps private staff notes
 - **Appeals** – Users appeal a case from the DM button or the web page `/appeal/` (own cases only, one per case, within 14 days). Appeals land in the review queue for the team
+- **Exit feedback** – When someone leaves a server, Baxi DMs them a short embed with a button that opens a form (short/long text, dropdowns) asking why. Questions, texts and a per-server opt-out are set by the bot admin in the admin dashboard, which also lists the answers and can send the DM afterwards for any server ID + user ID. Off by default; not sent to bots, banned/kicked members, or twice within 30 days
 - **Retention** – Cases and notes are kept one year, closed review items 30 days
 
 ### Customization

@@ -474,6 +474,10 @@
                 <svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 Time Capsule
             </a>
+            <a href="#exit-feedback" class="dash-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Exit Feedback
+            </a>
             <a href="#birthdays" class="dash-nav-item">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
                 Birthdays
@@ -4734,6 +4738,63 @@
                 </div>
             </section>
 
+            <!-- Exit feedback -->
+            <section class="pb-16 dash-section" id="exit-feedback">
+                <div class="section-label">Exit feedback</div>
+                <div class="card">
+                    <header>
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <svg class="lucide" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Exit Feedback
+                        </h2>
+                        <p class="text-muted">When someone leaves this server, Baxi sends them a DM asking why, with a button that opens a short form. Not sent to bots, banned or kicked members, or to the same person twice within 30 days. The answers appear below, where you can reply; your reply is sent to the member by DM. The Baxi team can see them too.</p>
+                    </header>
+                    <section>
+                        <form id="exit-feedback-form" class="form grid gap-6 settings-form">
+                            <div class="form-group">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="exit-feedback-enabled" role="switch">
+                                    <span class="font-medium">Ask members why they left</span>
+                                </label>
+                                <p class="text-muted text-xs hidden" id="exit-feedback-global-off">Exit feedback is currently switched off for all servers by the Baxi team, so nothing is sent yet.</p>
+                            </div>
+                            <div class="grid gap-3">
+                                <label class="flex items-center gap-3" style="cursor:pointer">
+                                    <input type="checkbox" id="exit-feedback-default">
+                                    <span class="font-medium">Use the default questions</span>
+                                </label>
+                                <p class="text-muted text-xs">Untick to write your own questions for this server. The defaults are shown below and are the same for every server.</p>
+                                <div id="exit-feedback-questions" class="grid gap-3"></div>
+                                <div class="add-area mt-3" id="exit-feedback-add-area">
+                                    <button type="button" class="btn" data-variant="primary" data-size="default" id="exit-feedback-add">Add question</button>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button type="submit" class="btn submit-btn" data-variant="primary" data-size="default">
+                                    <span class="btn-text">
+                                        <svg class="lucide" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                                        Save
+                                    </span>
+                                    <span class="spinner avo-spinner sm hidden" role="status" aria-label="Working"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+                <div class="card mt-4">
+                    <header class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-semibold">Feedback from members who left</h3>
+                            <p class="text-muted text-xs">Latest 100. Each piece of feedback can be answered once; the reply is sent to the member by DM, in the name of the server team.</p>
+                        </div>
+                        <button type="button" class="btn" data-variant="outline" data-size="sm" onclick="efLoadResponses()">Refresh</button>
+                    </header>
+                    <section>
+                        <div id="exit-feedback-responses" class="grid gap-3"></div>
+                    </section>
+                </div>
+            </section>
+
             <!-- Birthdays -->
             <section class="pb-16 dash-section" id="birthdays">
                 <div class="section-label">Birthdays</div>
@@ -4990,7 +5051,7 @@
                 'config-general',
                 'auditlog',
                 'antispam', 'config-chatfilter', 'language-gate', 'warn-config', 'prism', 'verify', 'antiraid', 'mod_gate', 'mod_review', 'mod_cases',
-                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'honeypot', 'invites', 'capsule', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
+                'minigames', 'leveling', 'pulse', 'starboard', 'quotes', 'honeypot', 'invites', 'capsule', 'exit-feedback', 'birthdays', 'suggestions', 'sticky-messages', 'globalchat', 'temp-voice', 'music', 'reaction-roles', 'ticket', 'mc-link',
                 'welcomer', 'serverlog', 'auto-roles', 'livestream', 'youtube-videos', 'tiktok', 'twitter', 'instagram', 'stats-channels', 'customcmds', 'auto-release', 'assistant'
             ];
             // Collect and detach all sections (non-destructive -  we re-insert them)
@@ -5477,6 +5538,7 @@
                 document.getElementById('capsule-enabled').checked = data.capsule.enabled === true;
                 document.getElementById('capsule-channel').value = (data.capsule.channel && String(data.capsule.channel) !== '0') ? String(data.capsule.channel) : '';
             }
+            if (typeof exitFeedbackInit === 'function') exitFeedbackInit(data);
             if (data.birthdays) {
                 const bd = data.birthdays;
                 document.getElementById('birthdays-enabled').checked = bd.enabled === true;
@@ -8703,6 +8765,104 @@
             };
         };
 
+        // ── Exit feedback ──────────────────────────────────────────────────────
+        // may already be filled by exitFeedbackInit (run earlier in this script), so never reset them here
+        var efQuestions = efQuestions || [], efDefaults = efDefaults || [], efMax = efMax || 5;
+        var EF_TYPES = { short: 'Text field', paragraph: 'Large text field', select: 'Dropdown', multiselect: 'Dropdown (multiple choice)' };
+        function efEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function efUsesDefault() { return document.getElementById('exit-feedback-default').checked; }
+        function efRender() {
+            var useDef = efUsesDefault(), list = useDef ? efDefaults : efQuestions;
+            document.getElementById('exit-feedback-add-area').classList.toggle('hidden', useDef);
+            document.getElementById('exit-feedback-questions').innerHTML = list.map(function (q, i) {
+                var dis = useDef ? ' disabled' : '', opts = q.type === 'select' || q.type === 'multiselect';
+                return '<div class="card"><header class="flex items-center justify-between">' +
+                    '<h3 class="text-base font-semibold">Question ' + (i + 1) + '</h3>' +
+                    (useDef ? '' : '<div class="flex gap-2">' +
+                        '<button type="button" class="btn" data-variant="outline" data-size="sm" onclick="efMove(' + i + ',-1)"' + (i === 0 ? ' disabled' : '') + '>Up</button>' +
+                        '<button type="button" class="btn" data-variant="outline" data-size="sm" onclick="efMove(' + i + ',1)"' + (i === list.length - 1 ? ' disabled' : '') + '>Down</button>' +
+                        '<button type="button" class="btn" data-variant="outline" data-size="default" style="color:var(--avo-error);border-color:var(--avo-error);" onclick="efRemove(' + i + ')"><span class="btn-label">Remove</span></button></div>') +
+                    '</header><section class="grid gap-2">' +
+                    '<select class="select w-full"' + dis + ' onchange="efSet(' + i + ',\'type\',this.value);efRender()">' +
+                        Object.keys(EF_TYPES).map(function (k) { return '<option value="' + k + '"' + (q.type === k ? ' selected' : '') + '>' + EF_TYPES[k] + '</option>'; }).join('') + '</select>' +
+                    '<input type="text" maxlength="45" placeholder="Question (max. 45 characters)" value="' + efEsc(q.label) + '"' + dis + ' oninput="efSet(' + i + ',\'label\',this.value)">' +
+                    '<input type="text" maxlength="100" placeholder="Hint (optional, max. 100 characters)" value="' + efEsc(q.help) + '"' + dis + ' oninput="efSet(' + i + ',\'help\',this.value)">' +
+                    (opts ? '<textarea rows="4" placeholder="One option per line (2-25)"' + dis + ' oninput="efSet(' + i + ',\'options\',this.value.split(\'\\n\'))">' + efEsc((q.options || []).join('\n')) + '</textarea>' : '') +
+                    '<label class="flex items-center gap-3"><input type="checkbox"' + (q.required ? ' checked' : '') + dis + ' onchange="efSet(' + i + ',\'required\',this.checked)"><span>Required</span></label>' +
+                    '</section></div>';
+            }).join('');
+        }
+        function efSet(i, k, v) { efQuestions[i][k] = v; }
+        function efMove(i, d) { var j = i + d, t = efQuestions[i]; efQuestions[i] = efQuestions[j]; efQuestions[j] = t; efRender(); }
+        function efRemove(i) { efQuestions.splice(i, 1); efRender(); }
+        function exitFeedbackInit(data) {
+            var c = data.exit_feedback || {};
+            efDefaults = data.exit_feedback_defaults || [];
+            efMax = data.exit_feedback_max || 5;
+            document.getElementById('exit-feedback-enabled').checked = c.enabled === true;
+            document.getElementById('exit-feedback-global-off').classList.toggle('hidden', data.exit_feedback_global_on === true);
+            efQuestions = JSON.parse(JSON.stringify(c.questions || efDefaults));
+            document.getElementById('exit-feedback-default').checked = !c.questions;
+            efRender();
+            efLoadResponses();
+        }
+        function efLoadResponses() {
+            fetch('/api/dash/exit_feedback/?dash_login={{ data.dash_login }}').then(function (r) { return r.json(); }).then(function (d) {
+                var box = document.getElementById('exit-feedback-responses');
+                if (!d.success) { box.innerHTML = '<p class="text-muted text-sm">' + efEsc(d.message || 'Could not load.') + '</p>'; return; }
+                box.innerHTML = d.items.length ? d.items.map(function (r) {
+                    return '<div class="card"><header class="flex items-center justify-between"><div>' +
+                        '<h3 class="text-base font-semibold">' + efEsc(r.user_name || r.user_id) + '</h3>' +
+                        '<p class="text-muted text-xs"><span class="num">' + efEsc((r.answered_at || '').replace('T', ' ')) + '</span></p></div></header><section class="grid gap-2">' +
+                        r.answers.map(function (a) {
+                            return '<div><div class="text-muted text-xs">' + efEsc(a.label) + '</div><div style="white-space:pre-wrap;">' + efEsc(Array.isArray(a.answer) ? a.answer.join(', ') : a.answer) + '</div></div>';
+                        }).join('') +
+                        (r.reply
+                            ? '<div class="text-muted text-xs mt-2">Your reply</div><div style="white-space:pre-wrap;">' + efEsc(r.reply) + '</div>'
+                            : '<textarea id="ef-reply-' + r.id + '" rows="3" maxlength="1000" placeholder="Reply to this member (sent by DM, max. 1000 characters)"></textarea>' +
+                              '<div><button type="button" class="btn" data-variant="primary" data-size="default" onclick="efReply(' + r.id + ')">Send reply</button></div>') +
+                        '</section></div>';
+                }).join('') : '<p class="text-muted text-sm">No feedback yet.</p>';
+            });
+        }
+        function efReply(id) {
+            var ta = document.getElementById('ef-reply-' + id);
+            if (!ta || !ta.value.trim()) return;
+            fetch('/api/dash/exit_feedback/reply/?dash_login={{ data.dash_login }}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, text: ta.value })
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                showSaveToast(d.success, d.message);
+                if (d.success) efLoadResponses();
+            }).catch(function () { showSaveToast(false, 'An unexpected error occurred.'); });
+        }
+        document.getElementById('exit-feedback-default').onchange = function () {
+            if (!this.checked && !efQuestions.length) efQuestions = JSON.parse(JSON.stringify(efDefaults));
+            efRender();
+        };
+        document.getElementById('exit-feedback-add').onclick = function () {
+            if (efQuestions.length >= efMax) { showSaveToast(false, 'Discord allows at most ' + efMax + ' questions.'); return; }
+            efQuestions.push({ type: 'paragraph', label: '', help: '', required: false, options: [] });
+            efRender();
+        };
+        document.getElementById('exit-feedback-form').onsubmit = function (event) {
+            event.preventDefault();
+            var payload = { exit_feedback: {
+                enabled: document.getElementById('exit-feedback-enabled').checked,
+                questions: efUsesDefault() ? null : efQuestions,
+            } };
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/dash/save/?system=exit_feedback&dash_login={{ data.dash_login }}');
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(payload));
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try { var r = JSON.parse(xhr.responseText); showSaveToast(r.success, r.message); }
+                    catch (e) { showSaveToast(false, 'An unexpected error occurred.'); }
+                }
+            };
+        };
+
         // ── Birthdays ──────────────────────────────────────────────────────────
         document.getElementById('birthdays-form').onsubmit = function (event) {
             event.preventDefault();
@@ -10334,7 +10494,7 @@
                 'mod_cases': 'All actions and notes per member', 'minigames': 'Counting, flag quiz, one word story',
                 'leveling': 'XP, levels and rewards', 'pulse': 'Activity stats and weekly recap',
                 'starboard': 'Pin the best messages', 'quotes': 'Quote book of the server',
-                'capsule': 'Messages to the future', 'birthdays': 'Birthday messages and role',
+                'capsule': 'Messages to the future', 'exit-feedback': 'Ask members why they left', 'birthdays': 'Birthday messages and role',
                 'invites': 'Invite leaderboard', 'suggestions': 'Suggestions with accept / decline',
                 'sticky-messages': 'Message that stays at the bottom', 'globalchat': 'Chat with other servers',
                 'temp-voice': 'Voice channels created on demand', 'music': 'Songs and radio in voice',

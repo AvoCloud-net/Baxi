@@ -168,9 +168,15 @@ def register(bot: commands.AutoShardedBot) -> None:
         if not member.bot:
             touch()
 
+    async def _on_member_join(member: discord.Member):
+        # A join is real activity (welcome card, auto-roles, gate): wake up for it.
+        if not member.bot:
+            touch()
+
     async def _on_guild_join(_guild: discord.Guild):
         invalidate()
 
+    bot.add_listener(_on_member_join, "on_member_join")
     bot.add_listener(_on_message, "on_message")
     bot.add_listener(_on_interaction, "on_interaction")
     bot.add_listener(_on_voice, "on_voice_state_update")

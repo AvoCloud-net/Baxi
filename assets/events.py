@@ -829,6 +829,12 @@ def events(bot: commands.AutoShardedBot, web):
         await welcomer.on_member_remove(member, bot)
 
         try:
+            import assets.exit_feedback as exit_feedback
+            exit_feedback.on_member_remove(bot, member)
+        except Exception:
+            pass
+
+        try:
             if serverlog.should_log(member.guild.id, "member_leave"):
                 # A kick surfaces as a plain remove; distinguish it via the audit log
                 # so the embed shows who kicked the member rather than a silent leave.

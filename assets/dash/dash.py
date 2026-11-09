@@ -166,6 +166,33 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     PENDING_VOTE_TTL = share.PENDING_VOTE_TTL
     _cleanup_pending_votes = share.cleanup_pending_votes
 
+    def _stale_login_redirect(e: Exception):
+        """Discord refused the stored token (invalid_grant: expired or revoked): drop the
+        session, remember the page and send the user through the login again."""
+        if "invalid_grant" not in str(e) and "invalid_token" not in str(e):
+            return None
+        try:
+            discord_auth.revoke()
+            if quart.request.method == "GET":
+                target = quart.request.full_path.rstrip("?")
+                if target and target != "/":
+                    session["next_url"] = target
+        except Exception:
+            pass
+        return redirect(url_for("login"))
+
+    try:
+        from oauthlib.oauth2.rfc6749.errors import OAuth2Error as _OAuth2Error
+
+        @app.errorhandler(_OAuth2Error)
+        async def _oauth_error(e):
+            # Any dashboard page: a dead Discord token means "log in again", not an error page.
+            return _stale_login_redirect(e) or await render_template(
+                "error.html", message="An unexpected error occurred. Please try again."
+            )
+    except ImportError:
+        pass
+
     @app.route("/login/")
     async def login():
         return await discord_auth.create_session(
@@ -607,6 +634,9 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 bot_id=bot.user.id,
             )
         except Exception as e:
+            stale = _stale_login_redirect(e)
+            if stale is not None:
+                return stale
             print(f"Error in index route: {e}")
             return await render_template(
                 "error.html", message="An unexpected error occurred. Please try again."
@@ -646,7 +676,13 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     @app.route("/ticket_transcript/")
     @requires_authorization
     async def ticket_transcript():
-        user = await discord_auth.fetch_user()
+        try:
+            user = await discord_auth.fetch_user()
+        except Exception as e:
+            stale = _stale_login_redirect(e)
+            if stale is not None:
+                return stale
+            raise
         ticket_log_id = quart.request.args.get("id_ticket")
         ticket_log: dict = cast(dict, load_data(1001, "transcripts"))
         try:
@@ -738,6 +774,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 else {"enabled": False, "channel": ""}
             )
             guild_conf["guild_id"] = str(guild.id)
+            try:
+                import assets.exit_feedback as exit_fb
+                guild_conf["exit_feedback_defaults"] = exit_fb.global_questions(guild.id)
+                guild_conf["exit_feedback_global_on"] = bool(exit_fb.load_config()["enabled"])
+                guild_conf["exit_feedback_max"] = exit_fb.MAX_QUESTIONS
+            except Exception:
+                guild_conf["exit_feedback_defaults"] = []
+                guild_conf["exit_feedback_global_on"] = False
+                guild_conf["exit_feedback_max"] = 5
             guild_conf["dash_login"] = guild_id
             guild_conf["name"] = guild.name
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
@@ -1085,6 +1130,36 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         except Exception:
             pass
         return None
+
+    @app.route("/api/dash/exit_feedback/", methods=["GET"])
+    async def dash_exit_feedback_list():
+        """Staff (Manage Server): the feedback members of THIS server gave when they left."""
+        guild_id = quart.request.args.get("dash_login", "")
+        if not guild_id.isdigit() or not await _dash_guild_admin(guild_id):
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        import assets.exit_feedback as exit_fb
+        items = await asyncio.to_thread(exit_fb.list_for_guild, int(guild_id), 100)
+        return quart.jsonify({"success": True, "items": items})
+
+    @app.route("/api/dash/exit_feedback/reply/", methods=["POST"])
+    async def dash_exit_feedback_reply():
+        guild_id = quart.request.args.get("dash_login", "")
+        auth = await _dash_guild_admin(guild_id) if guild_id.isdigit() else None
+        if not auth:
+            return quart.jsonify({"success": False, "message": "Not authorized."}), 403
+        staff_user, _g = auth
+        import assets.exit_feedback as exit_fb
+        data = await quart.request.get_json() or {}
+        pid = str(data.get("id", ""))
+        if not pid.isdigit():
+            return quart.jsonify({"success": False, "message": "Invalid feedback."}), 400
+        guild = bot.get_guild(int(guild_id))
+        if guild is None:
+            return quart.jsonify({"success": False, "message": "Baxi is not on this server."}), 404
+        ok, msg = await exit_fb.reply(bot, guild, int(pid), staff_user.name, str(data.get("text", "")))
+        if ok:
+            share.admin_log("info", f"Exit feedback #{pid} answered by {staff_user.name} @ {guild_id}", source="Dash")
+        return quart.jsonify({"success": ok, "message": msg}), (200 if ok else 400)
 
     @app.route("/api/dash/warnings/", methods=["GET"])
     async def dash_warnings_list():
@@ -3946,6 +4021,32 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
             return quart.jsonify({"success": True, "message": "Time Capsule settings saved!"})
 
+        elif system == "exit_feedback":
+            import assets.exit_feedback as exit_fb
+            data: dict = await quart.request.get_json()
+            pl = data.get("exit_feedback")
+            if not isinstance(pl, dict):
+                return quart.jsonify({"success": False, "message": "Invalid data format: 'exit_feedback' must be an object."}), 400
+            try:
+                settings = exit_fb.sanitize_guild_config(pl)
+            except ValueError as e:
+                return quart.jsonify({"success": False, "message": str(e)}), 400
+            save_data(int(guild_id), "exit_feedback", settings)
+
+            user = await discord_auth.fetch_user()
+            audit_log_new: dict = {
+                "type": "save",
+                "user": user.name,
+                "success": True,
+                "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")),
+                "sys": "exit_feedback",
+            }
+            audit_log: list = cast(list, load_data(sid=int(guild_id), sys="audit_log", bot=bot))
+            audit_log.append(audit_log_new)
+            save_data(int(guild_id), "audit_log", audit_log)
+
+            return quart.jsonify({"success": True, "message": "Exit feedback settings saved!"})
+
         elif system == "birthdays":
             data: dict = await quart.request.get_json()
             pl = data.get("birthdays")
@@ -6084,6 +6185,56 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         share.admin_log("info", f"Template cache cleared by {user.name}", source="AdminDash")
         return quart.jsonify({"success": True, "message": "Template cache cleared."})
 
+    # ── Exit feedback (config, answers, manual send) ─────────────────────────
+
+    @app.route("/api/admin/exit_feedback")
+    @requires_authorization
+    async def admin_exit_feedback():
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+        import assets.exit_feedback as exit_fb
+        cfg = exit_fb.load_config()
+        return quart.jsonify({
+            "success": True,
+            "config": cfg,
+            "default_questions": {"de": exit_fb.default_questions("de"), "en": exit_fb.default_questions("en")},
+            "stats": await asyncio.to_thread(exit_fb.stats),
+            "responses": await asyncio.to_thread(exit_fb.list_responses, 100),
+            "max_questions": exit_fb.MAX_QUESTIONS,
+        })
+
+    @app.route("/api/admin/exit_feedback", methods=["POST"])
+    @requires_authorization
+    async def admin_exit_feedback_save():
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+        import assets.exit_feedback as exit_fb
+        data = await quart.request.get_json() or {}
+        try:
+            await asyncio.to_thread(exit_fb.save_config, data)
+        except ValueError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        share.admin_log("info", f"Exit feedback settings saved by {user.name}", source="AdminDash")
+        return quart.jsonify({"success": True, "message": "Saved."})
+
+    @app.route("/api/admin/exit_feedback/send", methods=["POST"])
+    @requires_authorization
+    async def admin_exit_feedback_send():
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+        import assets.exit_feedback as exit_fb
+        data = await quart.request.get_json() or {}
+        gid, uid = str(data.get("guild_id", "")).strip(), str(data.get("user_id", "")).strip()
+        if not gid.isdigit() or not uid.isdigit():
+            return quart.jsonify({"success": False, "message": "Enter a numeric server ID and user ID."}), 400
+        ok, msg = await exit_fb.send_manual(bot, int(gid), int(uid))
+        share.admin_log("info" if ok else "warning",
+                        f"Exit feedback DM for user {uid} / server {gid} by {user.name}: {msg}", source="AdminDash")
+        return quart.jsonify({"success": ok, "message": msg}), (200 if ok else 400)
+
     @app.route("/api/admin/action", methods=["POST"])
     @requires_authorization
     async def admin_action():
@@ -6899,6 +7050,15 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                     pass
             if ta_guilds:
                 deleted_items.append(f"temp actions in {ta_guilds} guild(s)")
+
+            # 5b. Exit feedback answers
+            try:
+                import assets.exit_feedback as _exit_fb
+                _n_fb = await asyncio.to_thread(_exit_fb.delete_user, user_id_str)
+                if _n_fb:
+                    deleted_items.append(f"{_n_fb} exit feedback entr{'y' if _n_fb == 1 else 'ies'}")
+            except Exception:
+                pass
 
             # 6. Send DM to user
             dm_sent = False
