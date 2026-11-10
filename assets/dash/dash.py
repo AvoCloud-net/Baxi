@@ -5629,14 +5629,75 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
         if not channel_raw.isdigit():
             return quart.jsonify({"success": False, "message": "Pick a channel."}), 400
         try:
-            urls = await ee.send(guild, member, int(channel_raw), data)
+            sent = await ee.send(guild, member, int(channel_raw), data)
         except ee.EmbedError as e:
             return quart.jsonify({"success": False, "message": str(e)}), 400
+        if data.get("saved_id"):
+            ee.remember_post(guild.id, user.id, str(data["saved_id"]), data.get("messages"), sent)
+        _embed_audit(guild, user)
+        return quart.jsonify({"success": True, "message": f"Sent {len(sent)} message(s).", "urls": [m.jump_url for m in sent]})
+
+    def _embed_audit(guild, user) -> None:
         audit_log: list = cast(list, load_data(sid=guild.id, sys="audit_log", bot=bot))
         audit_log.append({"type": "embed", "user": user.name, "success": True,
                           "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "embed"})
         save_data(guild.id, "audit_log", audit_log)
-        return quart.jsonify({"success": True, "message": f"Sent {len(urls)} message(s).", "urls": urls})
+
+    @app.route("/api/embed/<token>/update", methods=["POST"])
+    @requires_authorization
+    async def embed_editor_update(token: str):
+        """Edit the messages of a saved entry in place (instead of posting them again)."""
+        import assets.embed_editor as ee
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return quart.jsonify({"success": False, "message": "Link expired. Run /embed again."}), 403
+        sess, guild, member, user = ctx
+        if time.time() - sess["last"] < 3:
+            return quart.jsonify({"success": False, "message": "Slow down a moment."}), 429
+        sess["last"] = time.time()
+        data = await quart.request.get_json(silent=True) or {}
+        saved_id = str(data.get("saved_id", ""))
+        try:
+            done = await ee.update_posted(guild, member, saved_id, data)
+        except ee.EmbedError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        ee.remember_post(guild.id, user.id, saved_id, data.get("messages"), done)
+        _embed_audit(guild, user)
+        return quart.jsonify({"success": True, "message": f"Updated {len(done)} message(s)."})
+
+    @app.route("/api/embed/<token>/saved", methods=["GET", "POST"])
+    @requires_authorization
+    async def embed_editor_saved(token: str):
+        import assets.embed_editor as ee
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return quart.jsonify({"success": False, "message": "Link expired. Run /embed again."}), 403
+        _s, guild, member, user = ctx
+        if quart.request.method == "GET":
+            return quart.jsonify({"success": True, "items": ee.list_saved(guild)})
+        data = await quart.request.get_json(silent=True) or {}
+        sid = data.get("id")
+        try:
+            sid = ee.save_saved(guild.id, user.id, str(sid) if sid else None, data.get("name"), data.get("messages"))
+        except ee.EmbedError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        return quart.jsonify({"success": True, "id": sid})
+
+    @app.route("/api/embed/<token>/saved/<saved_id>", methods=["GET", "DELETE"])
+    @requires_authorization
+    async def embed_editor_saved_one(token: str, saved_id: str):
+        import assets.embed_editor as ee
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return quart.jsonify({"success": False, "message": "Link expired. Run /embed again."}), 403
+        guild = ctx[1]
+        if quart.request.method == "DELETE":
+            ok = ee.delete_saved(guild.id, saved_id)
+            return quart.jsonify({"success": ok, "message": "" if ok else "Not found."}), (200 if ok else 404)
+        item = ee.get_saved(guild.id, saved_id)
+        if item is None:
+            return quart.jsonify({"success": False, "message": "Not found."}), 404
+        return quart.jsonify({"success": True, **item})
 
     @app.route("/api/embed/<token>/upload", methods=["POST"])
     @requires_authorization

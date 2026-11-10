@@ -90,10 +90,24 @@
 
 <main class="ee-wrap">
     <h1 class="text-3xl font-semibold" style="margin-bottom:.35rem;">Message editor</h1>
-    <p class="text-muted" style="margin-bottom:1.25rem;">{{ guild_name }} · messages are sent by Baxi. Your draft stays in this browser.</p>
+    <p class="text-muted" style="margin-bottom:1.25rem;">{{ guild_name }} · messages are sent by Baxi. Your draft stays in this browser; save a message to keep it for the whole server.</p>
 
     <div class="ee-grid">
         <div class="ee-col" id="editor">
+            <div class="card" style="padding:1rem 1.25rem; display:grid; gap:.6rem;">
+                <h2 class="text-base font-semibold">Saved messages</h2>
+                <div class="ee-bar" style="flex-wrap:nowrap;">
+                    <select id="saved" class="select" style="flex:1; min-width:0;" aria-label="Saved messages"></select>
+                    <button type="button" class="btn" data-variant="outline" data-size="default" onclick="loadOne()"><span class="btn-label">Load</span></button>
+                    <button type="button" class="btn" data-variant="outline" data-size="default" onclick="deleteOne()" style="color:var(--avo-error);border-color:var(--avo-error);"><span class="btn-label">Delete</span></button>
+                </div>
+                <div class="ee-bar" style="flex-wrap:nowrap;">
+                    <input id="save-name" type="text" maxlength="60" placeholder="Name, e.g. Rules" aria-label="Name" style="flex:1; min-width:0;">
+                    <button type="button" class="btn" data-variant="outline" data-size="default" onclick="saveMsg(false)"><span class="btn-label" id="save-label">Save</span></button>
+                    <button type="button" id="save-new" class="btn" data-variant="outline" data-size="default" onclick="saveMsg(true)" style="display:none;"><span class="btn-label">Save as new</span></button>
+                </div>
+                <p id="saved-info" class="ee-stats"></p>
+            </div>
             <div class="card" style="padding:1rem 1.25rem;">
                 <label class="ee-lbl" for="channel">Channel</label>
                 <select id="channel" class="select">
@@ -113,6 +127,7 @@
             </details>
             <div class="ee-bar">
                 <button type="button" id="send" class="btn" data-variant="primary" data-size="default" onclick="sendAll()"><span class="btn-label">Send</span></button>
+                <button type="button" id="update" class="btn" data-variant="outline" data-size="default" onclick="updatePosted()" style="display:none;" title="Edit the messages Baxi posted last time instead of sending new ones"><span class="btn-label">Update posted message</span></button>
                 <span id="status" class="ee-status" role="status"></span>
             </div>
         </div>
@@ -392,7 +407,7 @@ function setMode(i, mode) {
 }
 function addMessage() { if (state.messages.length >= 5) return; state.messages.push(blankMsg()); redraw(); }
 function rmMessage(i) { state.messages.splice(i, 1); redraw(); }
-function clearAll() { if (!confirm('Discard everything in the editor?')) return; state = {messages:[blankMsg()]}; redraw(); }
+function clearAll() { if (!confirm('Discard everything in the editor?')) return; state = {messages:[blankMsg()]}; setCur(null); $('save-name').value = ''; redraw(); renderSaved(); }
 function importJson() {
     try {
         const s = JSON.parse($('json').value);
@@ -407,11 +422,80 @@ async function sendAll() {
     if (!$('channel').value) { setStatus('Pick a channel.', false); return; }
     const btn = $('send'); btn.disabled = true; setStatus('Sending…', true);
     try {
-        const r = await fetch('/api/embed/' + encodeURIComponent(TOKEN) + '/send', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({channel: $('channel').value, messages: state.messages})});
+        const r = await fetch('/api/embed/' + encodeURIComponent(TOKEN) + '/send', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({channel: $('channel').value, messages: state.messages, saved_id: cur})});
         const d = await r.json(); setStatus(d.message || 'Done.', !!d.success);
+        if (d.success && cur) loadSaved();
     } catch (e) { setStatus('Could not reach Baxi.', false); }
     btn.disabled = false;
 }
+
+/* ---------- saved messages (per server) ---------- */
+let saved = [], cur = null;   // cur: id of the saved message the editor is linked to
+try { cur = localStorage.getItem(KEY + '-cur') || null; } catch (e) {}
+function setCur(id) { cur = id; try { id ? localStorage.setItem(KEY + '-cur', id) : localStorage.removeItem(KEY + '-cur'); } catch (e) {} }
+const api = (path, opt) => fetch('/api/embed/' + encodeURIComponent(TOKEN) + path, opt).then(r => r.json());
+const JSON_POST = body => ({method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+async function loadSaved() {
+    try { saved = (await api('/saved')).items || []; } catch (e) { saved = []; }
+    if (cur && !saved.some(s => s.id === cur)) setCur(null);
+    renderSaved();
+}
+function renderSaved() {
+    $('saved').innerHTML = `<option value="">${saved.length ? 'Choose a saved message…' : 'No saved messages yet'}</option>`
+        + saved.map(s => `<option value="${esc(s.id)}" ${s.id === cur ? 'selected' : ''}>${esc(s.name)} · ${s.count} message${s.count === 1 ? '' : 's'} · ${new Date(s.updated * 1000).toLocaleDateString()}</option>`).join('');
+    const c = saved.find(s => s.id === cur);
+    $('save-new').style.display = c ? '' : 'none';
+    $('save-label').textContent = c ? 'Save changes' : 'Save';
+    $('update').style.display = c && c.posted ? '' : 'none';
+    $('saved-info').innerHTML = c
+        ? `Linked to “${esc(c.name)}”. ` + (c.posted ? `Last sent to #${esc(c.posted.channel_name)} (${c.posted.count} message${c.posted.count === 1 ? '' : 's'}, <a href="${esc(c.posted.url)}" target="_blank" rel="noopener noreferrer">open</a>). “Update posted message” edits it in place.` : 'Not sent yet.')
+        : 'Save a message to load it again later, change a sentence and send or update it.';
+}
+const isBlank = () => JSON.stringify(state) === JSON.stringify({messages:[blankMsg()]});
+async function saveMsg(asNew) {
+    const name = $('save-name').value.trim();
+    if (!name) { setStatus('Give it a name first.', false); return; }
+    try {
+        const d = await api('/saved', JSON_POST({id: asNew ? null : cur, name, messages: state.messages}));
+        if (!d.success) { setStatus(d.message || 'Could not save.', false); return; }
+        setCur(d.id); await loadSaved(); setStatus('Saved.', true);
+    } catch (e) { setStatus('Could not reach Baxi.', false); }
+}
+async function loadOne() {
+    const id = $('saved').value; if (!id) { setStatus('Choose a saved message first.', false); return; }
+    if (!isBlank() && !confirm('This replaces what is in the editor. Continue?')) return;
+    try {
+        const d = await api('/saved/' + encodeURIComponent(id));
+        if (!d.success) { setStatus(d.message || 'Could not load.', false); return; }
+        state = {messages: (d.messages || []).slice(0, 5).map(normMsg)};
+        if (!state.messages.length) state = {messages:[blankMsg()]};
+        setCur(id); $('save-name').value = d.name; redraw(); renderSaved(); setStatus('Loaded “' + d.name + '”.', true);
+    } catch (e) { setStatus('Could not reach Baxi.', false); }
+}
+async function deleteOne() {
+    const id = $('saved').value; if (!id) { setStatus('Choose a saved message first.', false); return; }
+    const s = saved.find(x => x.id === id);
+    if (!confirm('Delete “' + (s ? s.name : '') + '”? Messages already posted in Discord stay as they are.')) return;
+    try {
+        const d = await api('/saved/' + encodeURIComponent(id), {method:'DELETE'});
+        if (!d.success) { setStatus(d.message || 'Could not delete.', false); return; }
+        if (cur === id) setCur(null);
+        await loadSaved(); setStatus('Deleted.', true);
+    } catch (e) { setStatus('Could not reach Baxi.', false); }
+}
+async function updatePosted() {
+    if (!cur) return;
+    if (!confirm('Edit the message(s) Baxi posted last time with what is in the editor?')) return;
+    const btn = $('update'); btn.disabled = true; setStatus('Updating…', true);
+    try {
+        const d = await api('/update', JSON_POST({saved_id: cur, messages: state.messages}));
+        setStatus(d.message || 'Done.', !!d.success);
+        if (d.success) loadSaved();
+    } catch (e) { setStatus('Could not reach Baxi.', false); }
+    btn.disabled = false;
+}
+$('saved').addEventListener('change', () => { const s = saved.find(x => x.id === $('saved').value); if (s) $('save-name').value = s.name; });
+loadSaved();
 
 /* ---------- templates ---------- */
 const T = (mode, o) => Object.assign(blankMsg(mode), o);

@@ -11,6 +11,7 @@ containers, text, sections, galleries, separators and link buttons; Discord forb
 """
 from __future__ import annotations
 
+import json
 import re
 import secrets
 import time
@@ -21,9 +22,13 @@ from discord.ext import commands
 
 import assets.data as datasys
 import config.config as config
+import assets.v2 as v2
 from assets.dither_art import Plain
 
 TTL = 30 * 60
+MAX_SAVED = 50           # saved messages per server
+MAX_SAVED_BYTES = 200_000
+SAVED_KEY = "embed_saved"   # guild_misc: {id: {name, messages, updated, by, posted}}
 MAX_MESSAGES = 5
 MAX_EMBEDS = 10
 _sessions: dict[str, dict] = {}
@@ -254,8 +259,13 @@ def sendable_channels(guild: discord.Guild, member: discord.Member) -> list[disc
     return res
 
 
-async def send(guild: discord.Guild, member: discord.Member, channel_id: int, payload) -> list[str]:
-    """Post the messages; returns the jump URLs. Raises EmbedError with a message for the user."""
+def _mentions(member: discord.Member) -> discord.AllowedMentions:
+    return (discord.AllowedMentions(everyone=True, roles=True, users=True)
+            if member.guild_permissions.mention_everyone else discord.AllowedMentions(everyone=False, roles=False, users=True))
+
+
+async def _checked(guild: discord.Guild, member: discord.Member, channel_id: int, payload) -> tuple[discord.TextChannel, list[dict]]:
+    """Permission, channel and chat-filter checks shared by send and update."""
     from assets.message.chatfilter import text_is_clean
     if not member.guild_permissions.manage_messages:
         raise EmbedError("You need the Manage Messages permission.")
@@ -266,19 +276,139 @@ async def send(guild: discord.Guild, member: discord.Member, channel_id: int, pa
     for m in messages:
         if not await text_is_clean(guild.id, channel.id, member.id, m["text"]):
             raise EmbedError("The chat filter of this server blocked the text.")
-    mentions = (discord.AllowedMentions(everyone=True, roles=True, users=True)
-                if member.guild_permissions.mention_everyone else discord.AllowedMentions(everyone=False, roles=False, users=True))
-    urls = []
+    return channel, messages
+
+
+async def send(guild: discord.Guild, member: discord.Member, channel_id: int, payload) -> list[discord.Message]:
+    """Post the messages; returns them. Raises EmbedError with a message for the user."""
+    channel, messages = await _checked(guild, member, channel_id, payload)
+    mentions = _mentions(member)
+    sent = []
     for m in messages:
         try:
             if m["view"] is not None:
-                sent = await channel.send(view=m["view"], allowed_mentions=mentions)
+                sent.append(await channel.send(view=m["view"], allowed_mentions=mentions))
             else:
-                sent = await channel.send(content=m["content"] or None, embeds=m["embeds"], allowed_mentions=mentions)
+                sent.append(await channel.send(content=m["content"] or None, embeds=m["embeds"], allowed_mentions=mentions))
         except discord.HTTPException as e:
             raise EmbedError(f"Discord refused the message: {e.text[:150]}")
-        urls.append(sent.jump_url)
-    return urls
+    return sent
+
+
+async def update_posted(guild: discord.Guild, member: discord.Member, saved_id: str, payload) -> list[discord.Message]:
+    """Edit the messages a saved entry was last sent as, in place (the rules channel case: change a
+    sentence without posting everything again). Same number of messages, and a Components V2
+    message stays V2."""
+    entry = _saved(guild.id).get(saved_id)
+    posted = (entry or {}).get("posted")
+    if not entry or not posted:
+        raise EmbedError("This message has not been sent yet. Use Send first.")
+    channel, messages = await _checked(guild, member, int(posted["channel_id"]), payload)
+    ids = [int(i) for i in posted.get("message_ids", [])]
+    if len(ids) != len(messages):
+        raise EmbedError(f"It was sent as {len(ids)} message(s) and now has {len(messages)}. Send it as new instead.")
+    mentions = _mentions(member)
+    done = []
+    for m, mid in zip(messages, ids):
+        try:
+            msg = await channel.fetch_message(mid)
+        except discord.NotFound:
+            raise EmbedError("A posted message was deleted. Send it as new instead.")
+        except discord.HTTPException:
+            raise EmbedError("Could not load the posted message.")
+        if msg.author.id != guild.me.id:
+            raise EmbedError("That message is not from Baxi.")
+        try:
+            if m["view"] is not None:
+                done.append(await v2.edit(msg, m["view"]))
+            elif msg.flags.components_v2:
+                raise EmbedError("A Components V2 message cannot become a classic embed message. Send it as new instead.")
+            else:
+                done.append(await msg.edit(content=m["content"] or None, embeds=m["embeds"], allowed_mentions=mentions))
+        except discord.HTTPException as e:
+            raise EmbedError(f"Discord refused the edit: {e.text[:150]}")
+    return done
+
+
+# ── saved messages (per server) ──────────────────────────────────────────────
+def _saved(guild_id: int) -> dict:
+    d = datasys.load_data(guild_id, SAVED_KEY)
+    return dict(d) if isinstance(d, dict) else {}
+
+
+def _clean_messages(messages) -> list:
+    if not isinstance(messages, list) or not messages or len(messages) > MAX_MESSAGES \
+            or not all(isinstance(m, dict) for m in messages):
+        raise EmbedError("Nothing to save.")
+    if len(json.dumps(messages)) > MAX_SAVED_BYTES:
+        raise EmbedError("That message is too large to save.")
+    return messages
+
+
+def list_saved(guild: discord.Guild) -> list[dict]:
+    """Name, size and where it was last posted; the content itself comes with ``get_saved``."""
+    out = []
+    for sid, e in _saved(guild.id).items():
+        posted = e.get("posted")
+        info = None
+        if posted and posted.get("message_ids"):
+            ch = guild.get_channel(int(posted["channel_id"]))
+            info = {"channel_name": ch.name if ch else "deleted-channel", "count": len(posted["message_ids"]),
+                    "url": f"https://discord.com/channels/{guild.id}/{posted['channel_id']}/{posted['message_ids'][0]}"}
+        out.append({"id": sid, "name": e.get("name", ""), "count": len(e.get("messages", [])),
+                    "updated": e.get("updated", 0), "posted": info})
+    return sorted(out, key=lambda x: x["updated"], reverse=True)
+
+
+def get_saved(guild_id: int, saved_id: str) -> dict | None:
+    e = _saved(guild_id).get(saved_id)
+    return {"id": saved_id, "name": e.get("name", ""), "messages": e.get("messages", [])} if e else None
+
+
+def save_saved(guild_id: int, user_id: int, saved_id: str | None, name, messages) -> str:
+    """Create a saved message, or overwrite ``saved_id``. Names are unique per server."""
+    name = _s(name, 60)
+    if not name:
+        raise EmbedError("Give it a name.")
+    messages = _clean_messages(messages)
+    data = _saved(guild_id)
+    if any(k != saved_id and e.get("name", "").lower() == name.lower() for k, e in data.items()):
+        raise EmbedError("A saved message with that name already exists.")
+    if saved_id in data:
+        entry = data[saved_id]
+    else:
+        if len(data) >= MAX_SAVED:
+            raise EmbedError(f"At most {MAX_SAVED} saved messages per server. Delete one first.")
+        saved_id = secrets.token_hex(4)
+        entry = data[saved_id] = {}
+    entry.update(name=name, messages=messages, updated=int(time.time()), by=str(user_id))
+    datasys.save_data(guild_id, SAVED_KEY, data)
+    return saved_id
+
+
+def delete_saved(guild_id: int, saved_id: str) -> bool:
+    data = _saved(guild_id)
+    if data.pop(saved_id, None) is None:
+        return False
+    datasys.save_data(guild_id, SAVED_KEY, data)
+    return True
+
+
+def remember_post(guild_id: int, user_id: int, saved_id: str, messages, sent: list[discord.Message]) -> None:
+    """What was just sent/updated is what the saved entry holds from now on, and its place for
+    ``update_posted``. Unknown or stale ids are ignored (the send itself already worked)."""
+    data = _saved(guild_id)
+    entry = data.get(saved_id)
+    if not entry or not sent:
+        return
+    try:
+        entry["messages"] = _clean_messages(messages)
+    except EmbedError:
+        pass
+    entry["posted"] = {"channel_id": str(sent[0].channel.id), "message_ids": [str(m.id) for m in sent]}
+    entry["updated"] = int(time.time())
+    entry["by"] = str(user_id)
+    datasys.save_data(guild_id, SAVED_KEY, data)
 
 
 def embed_commands(bot: commands.AutoShardedBot):
