@@ -54,6 +54,10 @@ _enabled: dict[int, tuple[bool, float]] = {}
 _TTL = 60.0
 
 
+class Plain(discord.Embed):
+    """An embed written by a member (/embed editor): never gets a dither thumbnail."""
+
+
 class Sticky(discord.Embed):
     """An embed that always carries its dither, whatever the server setting says."""
 
@@ -257,7 +261,7 @@ def install(bot, web) -> None:
 
     def to_dict(self):
         d = orig(self)
-        if "thumbnail" in d or "image" in d or not (d.get("title") or d.get("fields")):
+        if isinstance(self, Plain) or "thumbnail" in d or "image" in d or not (d.get("title") or d.get("fields")):
             return d
         shape = _shape_for(self)
         if shape == "alert" or isinstance(self, Sticky) or _in_command.get() or _guild_enabled(_guild.get()):

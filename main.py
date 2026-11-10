@@ -24,6 +24,7 @@ _migrate.run()
 from assets.commands import base_commands, utility_commands, bot_admin_commands, leveling_commands, mc_link_commands, tempvoice_commands
 from assets.giveaway import giveaway_commands
 from assets.pulse_commands import pulse_commands
+from assets.embed_editor import embed_commands
 from assets.quotes import quote_commands, QuoteReactionButton
 from assets.capsule import capsule_commands
 from assets.birthdays import birthday_commands
@@ -135,6 +136,7 @@ poll_commands(bot=bot)
 mc_link_commands(bot=bot)
 tempvoice_commands(bot=bot)
 pulse_commands(bot=bot)
+embed_commands(bot=bot)
 quote_commands(bot=bot)
 capsule_commands(bot=bot)
 birthday_commands(bot=bot)

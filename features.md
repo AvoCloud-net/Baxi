@@ -20,7 +20,7 @@ Ban, kick, mute and warn members with optional temporary durations, auto-escalat
 - **Cases** – Every action against a person is a numbered case (#123, per server, never reused). The user gets exactly one DM with what happened, why, how long, the case number and an **Appeal** button
 - **Case file** – `/case <member>` shows a member's full history (staff only); `/note add|remove` keeps private staff notes
 - **Appeals** – Users appeal a case from the DM button or the web page `/appeal/` (own cases only, one per case, within 14 days). Appeals land in the review queue for the team
-- **Exit feedback** – When someone leaves a server, Baxi DMs them a short embed with a button that opens a form (short/long text, dropdowns) asking why. Questions, texts and a per-server opt-out are set by the bot admin in the admin dashboard, which also lists the answers and can send the DM afterwards for any server ID + user ID. Off by default; not sent to bots, banned/kicked members, or twice within 30 days
+- **Exit feedback** – When someone leaves a server, Baxi DMs them a short embed with a button that opens a form (text field, large text field, dropdown, multi-select dropdown; up to 5 questions) asking why. Opt-in per server in the dashboard (card "Exit Feedback"), where the team also writes its own questions (default: the global questions) and sees the answers of its own server. Each answer shows up as an embed in the staff channel with a **Reply** button (modal); staff can also reply from the dashboard. The reply goes to the member by DM in the name of the server team, once per feedback, and passes the server's chat filter. The bot admin dashboard has the master switch, the global default questions, texts, a skip list, all responses, and "send afterwards" for any server ID + user ID. Texts follow the server language (de/en). Not sent to bots, banned/kicked members, or twice within 30 days. The admin "delete user data" action removes a person's feedback
 - **Retention** – Cases and notes are kept one year, closed review items 30 days
 
 ### Customization
@@ -150,6 +150,18 @@ Polls Twitch, YouTube and TikTok for go-live events and posts Discord embed noti
 - Optional `ping_role` for notifications
 - Localized embed text (German + English)
 - Automatically handles embed deletion and re-sends if the message is removed
+
+---
+
+## Embed Editor (`/embed`)
+
+Custom messages and embeds from a web editor, sent by Baxi.
+
+### What it does
+- `/embed` (Manage Messages) replies with a private link; it works for 30 minutes and only for the member who ran it
+- Two message types per message, switchable: **Components V2** (default: containers with accent colour, text with headings/lists/small text, sections with a picture or link button, picture galleries, separators, link buttons; max 40 components and 4000 characters) and classic **Embeds V1** (text plus up to 10 embeds with author, title, description, fields, images, footer, colour)
+- Templates for both types (server rules, welcome, announcement, patch notes, event with timestamps), live Discord-style preview, JSON import/export, draft kept in the browser
+- Sending re-checks permissions in the chosen channel (member and Baxi) and runs the text through the server's chat filter; `@everyone`/role pings only for members who may mention everyone
 
 ---
 

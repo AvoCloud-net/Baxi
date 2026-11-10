@@ -1519,8 +1519,8 @@
         <!-- Send Notification -->
                     <div class="card" style="grid-column: 1 / -1;">
                         <header>
-                            <h2>Send Notification</h2>
-                            <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Sends a Baxi embed to the notification channel of every server (or a specific one). Leave Guild ID empty to broadcast to all.</p>
+                            <h2>Baxi news</h2>
+                            <p style="font-size:.78rem; opacity:.5; margin-top:.15rem;">Posts a news card (banner + text) to the notification channel of every server, or one server, and optionally to the avocloud.net news channel. A line starting with <code>#</code> becomes a section heading (▼ // Heading).</p>
                         </header>
                         <section>
                             <div class="grid gap-3">
@@ -1528,7 +1528,13 @@
                                     <input id="notif-title" type="text" placeholder="Title" style="flex:1;">
                                     <input id="notif-gid" type="text" placeholder="Guild ID (optional -  all if empty)" style="width:260px;">
                                 </div>
-                                <textarea id="notif-text" placeholder="Message text…" rows="4" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;border-radius:var(--avo-radius-lg);"></textarea>
+                                <div style="display:flex; gap:.5rem;">
+                                    <input id="notif-image" type="text" placeholder="Banner image URL (https://…, optional - dither banner if empty)" style="flex:1;">
+                                    <input id="notif-image-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="notifUpload(this)">
+                                    <button type="button" class="btn" data-variant="outline" data-size="default" onclick="document.getElementById('notif-image-file').click()">Upload</button>
+                                </div>
+                                <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem;"><input type="checkbox" id="notif-avocloud" checked> Also post in the avocloud.net news channel</label>
+                                <textarea id="notif-text" placeholder="# Event time&#10;Oct. 31 – Nov. 14&#10;&#10;# Rewards&#10;Complete missions to earn…" rows="8" style="width:100%; resize:vertical; background:var(--adm-surface); border:1px solid var(--adm-border); padding:.55rem .75rem; font-size:.85rem; color:inherit; font-family:inherit;border-radius:var(--avo-radius-lg);"></textarea>
                                 <button id="notif-send-btn" onclick="adminAction('send_notification')" class="btn" data-variant="primary" data-size="default">Send Notification</button>
 
                                 <!-- Progress UI (hidden until job starts) -->
@@ -2541,6 +2547,19 @@ async function aiPriorityRemove(uid) {
 }
 aiPriorityLoad();
 
+async function notifUpload(inp) {
+    const file = inp.files[0]; if (!file) return;
+    setResult('notif-result', 'Uploading…', true);
+    const fd = new FormData(); fd.append('file', file);
+    try {
+        const res = await fetch('/api/admin/upload', {method: 'POST', body: fd});
+        const d = await res.json();
+        if (d.success) { document.getElementById('notif-image').value = d.url; setResult('notif-result', 'Banner uploaded.', true); }
+        else setResult('notif-result', d.message || 'Upload failed.', false);
+    } catch (e) { setResult('notif-result', 'Upload failed.', false); }
+    inp.value = '';
+}
+
 async function adminAction(action) {
     const payload = { action };
 
@@ -2621,12 +2640,14 @@ async function adminAction(action) {
         payload.title    = document.getElementById('notif-title').value.trim();
         payload.text     = document.getElementById('notif-text').value.trim();
         payload.guild_id = document.getElementById('notif-gid').value.trim();
+        payload.image_url = document.getElementById('notif-image').value.trim();
+        payload.avocloud = document.getElementById('notif-avocloud').checked;
         if (!payload.title || !payload.text) {
             setResult('notif-result', 'Title and text are required.', false);
             return;
         }
-        const scope = payload.guild_id ? `guild ${payload.guild_id}` : 'ALL servers';
-        if (!confirm(`Send notification "${payload.title}" to ${scope}?`)) return;
+        const scope = (payload.guild_id ? `guild ${payload.guild_id}` : 'ALL servers') + (payload.avocloud ? ' + avocloud.net' : '');
+        if (!confirm(`Send news "${payload.title}" to ${scope}?`)) return;
 
         // Reset UI
         const btn = document.getElementById('notif-send-btn');

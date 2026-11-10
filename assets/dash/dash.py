@@ -35,6 +35,7 @@ import assets.mc_advancements as mc_advancements
 import assets.db as db
 import assets.games.onewordstory as onewordstory_game
 import assets.pulse as pulse_sys
+import assets.news as news_sys
 from assets.data import load_temp_actions, save_temp_actions
 import assets.message.welcomer as welcomer_sys
 from reds_simple_logger import Logger
@@ -5556,6 +5557,102 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             for m in found
         ]})
 
+    # ── /embed editor ────────────────────────────────────────────────────────
+
+    async def _embed_ctx(token: str):
+        """(session, guild, member, user) for the logged-in user, or None unless the token is
+        theirs, still valid, and they still hold Manage Messages."""
+        import assets.embed_editor as ee
+        sess = ee.get_session(token)
+        if not sess:
+            return None
+        user = await discord_auth.fetch_user()
+        guild = bot.get_guild(sess["guild_id"])
+        if guild is None or user.id != sess["user_id"]:
+            return None
+        member = guild.get_member(user.id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(user.id)
+            except discord.HTTPException:
+                return None
+        if not member.guild_permissions.manage_messages:
+            return None
+        return sess, guild, member, user
+
+    @app.route("/embed/<token>")
+    @requires_authorization
+    async def embed_editor_page(token: str):
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return await render_template(
+                "error.html", message="This editor link is invalid, expired or not yours. Run /embed again."), 404
+        _, guild, member, _u = ctx
+        import assets.embed_editor as ee
+        channels = [{"id": str(c.id), "name": c.name} for c in ee.sendable_channels(guild, member)]
+        resp = await quart.make_response(await render_template(
+            "embed_editor.html", token=token, guild_name=guild.name, guild_id=str(guild.id), channels=channels))
+        resp.headers["Cache-Control"] = "no-store"
+        resp.headers["Referrer-Policy"] = "no-referrer"
+        return resp
+
+    @app.route("/api/embed/<token>/send", methods=["POST"])
+    @requires_authorization
+    async def embed_editor_send(token: str):
+        import assets.embed_editor as ee
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return quart.jsonify({"success": False, "message": "Link expired. Run /embed again."}), 403
+        sess, guild, member, user = ctx
+        if time.time() - sess["last"] < 3:
+            return quart.jsonify({"success": False, "message": "Slow down a moment."}), 429
+        sess["last"] = time.time()
+        data = await quart.request.get_json(silent=True) or {}
+        channel_raw = str(data.get("channel", ""))
+        if not channel_raw.isdigit():
+            return quart.jsonify({"success": False, "message": "Pick a channel."}), 400
+        try:
+            urls = await ee.send(guild, member, int(channel_raw), data)
+        except ee.EmbedError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        audit_log: list = cast(list, load_data(sid=guild.id, sys="audit_log", bot=bot))
+        audit_log.append({"type": "embed", "user": user.name, "success": True,
+                          "time": str(datetime.now(_VIENNA).strftime("%d.%m.%Y - %H:%M")), "sys": "embed"})
+        save_data(guild.id, "audit_log", audit_log)
+        return quart.jsonify({"success": True, "message": f"Sent {len(urls)} message(s).", "urls": urls})
+
+    @app.route("/api/embed/<token>/upload", methods=["POST"])
+    @requires_authorization
+    async def embed_editor_upload(token: str):
+        import assets.uploads as uploads
+        ctx = await _embed_ctx(token)
+        if ctx is None:
+            return quart.jsonify({"success": False, "message": "Link expired. Run /embed again."}), 403
+        sess = ctx[0]
+        if sess.get("uploads", 0) >= 20:
+            return quart.jsonify({"success": False, "message": "Upload limit of this link reached. Run /embed again."}), 429
+        f = (await quart.request.files).get("file")
+        try:
+            url = uploads.save_image(f.read() if f else b"")
+        except uploads.UploadError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        sess["uploads"] = sess.get("uploads", 0) + 1
+        return quart.jsonify({"success": True, "url": url})
+
+    @app.route("/api/admin/upload", methods=["POST"])
+    @requires_authorization
+    async def admin_upload():
+        import assets.uploads as uploads
+        user, is_admin = await _require_bot_admin(discord_auth)
+        if not is_admin:
+            return quart.jsonify({"success": False, "message": "Access denied"}), 403
+        f = (await quart.request.files).get("file")
+        try:
+            url = uploads.save_image(f.read() if f else b"")
+        except uploads.UploadError as e:
+            return quart.jsonify({"success": False, "message": str(e)}), 400
+        return quart.jsonify({"success": True, "url": url})
+
     @app.route("/attachments/<filename>")
     async def attachments(filename):
         if ".." in filename or filename.startswith("/"):
@@ -6706,6 +6803,10 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                 return quart.jsonify({"success": False, "message": "Title and text are required."}), 400
             if guild_id_str and not guild_id_str.isdigit():
                 return quart.jsonify({"success": False, "message": "Invalid guild_id."}), 400
+            image_url = str(data.get("image_url", "")).strip()
+            if not news_sys.valid_image(image_url):
+                return quart.jsonify({"success": False, "message": "Banner must be an https:// image URL."}), 400
+            also_avocloud = bool(data.get("avocloud", False))
 
             # Channel-name keywords to fall back to, best first, when no channel is configured.
             _NOTIF_KEYWORDS = ("baxi", "staff", "mod-log", "modlog", "mod-mail", "admin",
@@ -6770,18 +6871,22 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         if channel is None:
                             failed_guilds.append({"id": str(g.id), "name": g.name, "reason": "No notification channel configured"})
                         else:
-                            embed = discord.Embed(
-                                title=title,
-                                description=text,
-                                color=config.Discord.color,
-                            )
-                            embed.set_author(name="Avocloud.net")
-                            embed.set_footer(text=f"Baxi · {ts}")
-                            await channel.send(embed=embed)
+                            await channel.send(view=news_sys.build(title, text, image_url))
                             sent += 1
                     except Exception as exc:
                         failed_guilds.append({"id": str(g.id), "name": g.name, "reason": str(exc)[:120]})
                     _notif_jobs[job_id]["sent"] = sent
+                    _notif_jobs[job_id]["failed_guilds"] = failed_guilds
+
+                if also_avocloud:
+                    try:
+                        ch = bot.get_channel(auth.News.avocloud_channel_id) if auth.News.avocloud_channel_id else None
+                        if ch is None:
+                            failed_guilds.append({"id": "-", "name": "avocloud.net", "reason": "NEWS_AVOCLOUD_CHANNEL_ID not set or channel not found"})
+                        else:
+                            await ch.send(view=news_sys.build(title, text, image_url))
+                    except Exception as exc:
+                        failed_guilds.append({"id": "-", "name": "avocloud.net", "reason": str(exc)[:120]})
                     _notif_jobs[job_id]["failed_guilds"] = failed_guilds
 
                 _notif_jobs[job_id]["done"] = True

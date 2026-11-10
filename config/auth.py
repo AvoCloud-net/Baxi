@@ -44,6 +44,10 @@ class TopGG:
     vote_channel_id: int = get_int("TOPGG_VOTE_CHANNEL_ID")           # Channel on avocloud.net Discord to post vote announcements
     avocloud_guild_id: int = get_int("TOPGG_AVOCLOUD_GUILD_ID")         # avocloud.net Discord server ID
 
+class News:
+    # Channel on the avocloud.net Discord (TOPGG_AVOCLOUD_GUILD_ID) that gets every Baxi news post.
+    avocloud_channel_id: int = get_int("NEWS_AVOCLOUD_CHANNEL_ID")
+
 class Meta:
     # Meta (Facebook/Instagram) app credentials.
     # Create app at developers.facebook.com → Add product: Instagram

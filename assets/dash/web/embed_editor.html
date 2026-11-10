@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baxi - Message editor</title>
+    <link rel="shortcut icon" href="{{ cdn.favicon }}" type="image/x-icon">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="{{ cdn.tailwind_js }}"></script>
+    <link rel="preconnect" href="{{ cdn.origin }}" crossorigin>
+    <link rel="stylesheet" href="{{ cdn.fonts_css }}">
+    <link rel="stylesheet" href="{{ cdn.basecoat_css }}">
+    <link rel="stylesheet" href="{{ cdn.ui_base_css }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}?v={{ static_versions.get('main.css', '') }}">
+    <script src="{{ url_for('static', filename='scripts/theme.js') }}?v={{ static_versions.get('scripts/theme.js', '') }}"></script>
+    <style>
+        @media (min-width: 900px) { body { padding-left: 0 !important; } }
+        .ee-wrap { max-width: 1400px; margin: 0 auto; padding: 5rem 16px 4rem; }
+        .ee-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+        @media (max-width: 1000px) { .ee-grid { grid-template-columns: minmax(0, 1fr); } }
+        .ee-col { display: grid; gap: .85rem; }
+        .ee-row { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+        .ee-lbl { font-size: var(--avo-ui-label); color: var(--avo-text-muted); display: block; margin: .15rem 0 .2rem; }
+        .ee-col input[type=text], .ee-col textarea, .ee-col select { width: 100%; }
+        .ee-col textarea { min-height: 5rem; resize: vertical; }
+        .ee-embed { border: 1px solid var(--avo-line); border-radius: var(--avo-radius-lg); padding: .6rem .9rem; }
+        .ee-embed > summary { cursor: pointer; font-weight: 600; }
+        .ee-field { display: grid; gap: .4rem; border: 1px dashed var(--avo-line); border-radius: var(--avo-radius); padding: .6rem; margin-top: .5rem; }
+        .ee-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+        .ee-status { font-size: var(--avo-ui-label); min-height: 1.2em; }
+        .ee-status.good { color: var(--avo-success); } .ee-status.bad { color: var(--avo-error); }
+        /* preview: a Discord-like surface, always dark */
+        .pv { background: #313338; color: #dbdee1; border-radius: var(--avo-radius-lg); padding: 1rem; font-family: "gg sans", "Segoe UI", sans-serif; font-size: 15px; line-height: 1.375; position: sticky; top: 5rem; max-height: calc(100vh - 6rem); overflow: auto; }
+        .pv-msg { margin-bottom: 1rem; word-break: break-word; }
+        .pv-head { display: flex; gap: .5rem; align-items: baseline; margin-bottom: .15rem; }
+        .pv-name { font-weight: 600; color: #fff; } .pv-tag { background: #5865f2; color: #fff; font-size: 10px; border-radius: 4px; padding: 0 4px; }
+        .pv-content { white-space: pre-wrap; }
+        .pv-embed { display: grid; gap: .35rem; max-width: 520px; margin-top: .4rem; background: #2b2d31; border-left: 4px solid #ff6b4a; border-radius: 4px; padding: .5rem .85rem .85rem .75rem; }
+        .pv-embed .t { font-weight: 700; color: #fff; font-size: 1rem; } .pv-embed .t a { color: #00a8fc; }
+        .pv-embed .a { font-weight: 600; font-size: .875rem; color: #fff; display: flex; align-items: center; gap: .4rem; }
+        .pv-embed .a img, .pv-embed .f img { width: 20px; height: 20px; border-radius: 50%; }
+        .pv-embed .d { white-space: pre-wrap; font-size: .875rem; }
+        .pv-fields { display: grid; grid-template-columns: repeat(12, 1fr); gap: .5rem; }
+        .pv-fields > div { grid-column: span 12; } .pv-fields > div.in { grid-column: span 4; }
+        .pv-fields b { display: block; color: #fff; font-size: .875rem; } .pv-fields span { font-size: .875rem; white-space: pre-wrap; }
+        .pv-embed .img { max-width: 100%; border-radius: 4px; } .pv-embed .th { justify-self: end; max-width: 80px; border-radius: 4px; }
+        .pv-embed .f { font-size: .75rem; color: #b5bac1; display: flex; align-items: center; gap: .4rem; }
+
+        .ee-seg { display: inline-flex; border: 1px solid var(--avo-line); border-radius: var(--avo-radius-pill); padding: 3px; gap: 2px; }
+        .ee-seg button { border: 0; background: transparent; color: var(--avo-text-muted); padding: .3rem .8rem; border-radius: var(--avo-radius-pill); cursor: pointer; font: inherit; font-size: var(--avo-ui-label); }
+        .ee-seg button[aria-pressed=true] { background: var(--avo-surface-2, var(--avo-line)); color: var(--avo-text); }
+        .ee-blk { border: 1px solid var(--avo-line); border-radius: var(--avo-radius); padding: .6rem .75rem; display: grid; gap: .5rem; }
+        .ee-blk > header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .ee-blk > header b { font-size: var(--avo-ui-label); font-weight: 600; }
+        .ee-kids { display: grid; gap: .5rem; padding-left: .75rem; border-left: 2px solid var(--avo-line); }
+        .ee-stats { font-size: var(--avo-ui-label); color: var(--avo-text-muted); }
+        .ee-stats.bad { color: var(--avo-error); }
+        dialog.ee-tpl { margin: auto; width: min(1100px, 94vw); max-height: 90vh; padding: 0; border: 1px solid var(--avo-line); border-radius: var(--avo-radius-xl); background: var(--avo-surface); color: var(--avo-text); overflow: hidden; }
+        dialog.ee-tpl::backdrop { background: rgba(0,0,0,.6); }
+        .ee-tpl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--avo-line); flex-wrap: wrap; }
+        .ee-tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1.25rem 1.5rem 1.5rem; overflow: auto; max-height: calc(90vh - 6.5rem); }
+        .ee-tpl-card { text-align: left; border: 1px solid var(--avo-line); border-radius: var(--avo-radius-lg); background: transparent; color: inherit; padding: 0; cursor: pointer; overflow: hidden; font: inherit; }
+        .ee-tpl-card:hover, .ee-tpl-card:focus-visible { border-color: var(--avo-primary); }
+        .ee-tpl-card .pv-box { background: #313338; height: 210px; overflow: hidden; padding: .75rem; pointer-events: none; position: relative; font-size: 13px; }
+        .ee-tpl-card .pv-box::after { content: ""; position: absolute; inset: auto 0 0 0; height: 48px; background: linear-gradient(transparent, #313338); }
+        .ee-tpl-card .pv-box .pv-msg { margin: 0; }
+        .ee-tpl-card .meta { padding: .8rem 1rem 1rem; } .ee-tpl-card .meta b { display: block; font-size: 1rem; } .ee-tpl-card .meta span { color: var(--avo-text-muted); font-size: var(--avo-ui-label); }
+        /* Components V2 preview */
+        .pv-c { display: grid; gap: .55rem; max-width: 520px; margin-top: .4rem; background: #2b2d31; border: 1px solid #3f4147; border-left: 4px solid #ff6b4a; border-radius: 8px; padding: .85rem 1rem; }
+        .pv-top { display: grid; gap: .55rem; max-width: 520px; margin-top: .4rem; }
+        .pv-text { white-space: pre-wrap; font-size: .9rem; } .pv-text .sub { font-size: .75rem; color: #b5bac1; }
+        .pv-text .li { display: block; padding-left: 1.1em; text-indent: -.8em; } .pv-text .li::before { content: "\2022"; margin-right: .5em; color: #b5bac1; }
+        .pv-text .ts { background: #3f4147; border-radius: 4px; padding: 0 .25em; }
+        .pv-sep hr { border: 0; border-top: 1px solid #3f4147; margin: 0; } .pv-sep { padding: .1rem 0; } .pv-sep.lg { padding: .45rem 0; }
+        .pv-sec { display: flex; gap: .9rem; align-items: center; justify-content: space-between; } .pv-sec > .pv-text { flex: 1; min-width: 0; }
+        .pv-sec .pv-btn { flex: none; white-space: nowrap; }
+        .pv-sec img { flex: none; width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+        .pv-gal { display: grid; gap: 4px; grid-template-columns: 1fr 1fr; border-radius: 8px; overflow: hidden; } .pv-gal img { width: 100%; height: 100%; max-height: 260px; object-fit: cover; display: block; }
+        .pv-gal.one { grid-template-columns: 1fr; } .pv-gal img:first-child:nth-last-child(odd):not(:only-child) { grid-column: span 2; }
+        .pv-btns { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .pv-btn { background: #4e5058; color: #fff !important; border-radius: 8px; padding: .3rem .8rem; font-size: .8rem; font-weight: 500; text-decoration: none; display: inline-block; } .pv a.pv-btn:hover { background: #6d6f78; }
+        .pv a { color: #00a8fc; } .pv code { background: #1e1f22; border-radius: 3px; padding: 0 .25em; }
+    </style>
+</head>
+<body class="avo-ui">
+<nav class="site-nav" id="site-nav">
+    <a class="avocloud-logo" href="/" aria-label="AVOCLOUD.NET"><span class="avocloud-logo__rest-wrap"><span class="avocloud-logo__rest">BAXI</span></span></a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><svg id="theme-icon" viewBox="0 0 24 24"></svg></button>
+</nav>
+
+<main class="ee-wrap">
+    <h1 class="text-3xl font-semibold" style="margin-bottom:.35rem;">Message editor</h1>
+    <p class="text-muted" style="margin-bottom:1.25rem;">{{ guild_name }} · messages are sent by Baxi. Your draft stays in this browser.</p>
+
+    <div class="ee-grid">
+        <div class="ee-col" id="editor">
+            <div class="card" style="padding:1rem 1.25rem;">
+                <label class="ee-lbl" for="channel">Channel</label>
+                <select id="channel" class="select">
+                    {% for c in channels %}<option value="{{ c.id }}">#{{ c.name }}</option>{% endfor %}
+                </select>
+                {% if not channels %}<p class="text-muted text-xs" style="margin-top:.4rem;">No channel where both you and Baxi can send messages and embeds.</p>{% endif %}
+            </div>
+            <div id="messages" class="ee-col"></div>
+            <div class="ee-bar">
+                <button type="button" class="btn" data-variant="outline" data-size="default" onclick="addMessage()"><span class="btn-label">Add message</span></button>
+                <button type="button" class="btn" data-variant="outline" data-size="default" onclick="clearAll()"><span class="btn-label">Clear all</span></button>
+            </div>
+            <details class="ee-embed">
+                <summary>JSON data</summary>
+                <textarea id="json" class="input" spellcheck="false" style="min-height:10rem; font-family:'IBM Plex Mono',monospace; margin-top:.5rem;"></textarea>
+                <div class="ee-bar" style="margin-top:.5rem;"><button type="button" class="btn" data-variant="outline" data-size="default" onclick="importJson()"><span class="btn-label">Load JSON</span></button></div>
+            </details>
+            <div class="ee-bar">
+                <button type="button" id="send" class="btn" data-variant="primary" data-size="default" onclick="sendAll()"><span class="btn-label">Send</span></button>
+                <span id="status" class="ee-status" role="status"></span>
+            </div>
+        </div>
+        <div class="pv" id="preview" aria-label="Preview"></div>
+    </div>
+</main>
+
+<dialog id="tpl" class="ee-tpl" aria-labelledby="tpl-title">
+    <div class="ee-tpl-head">
+        <div><h2 id="tpl-title" class="text-xl font-semibold">New message</h2>
+            <p class="text-muted text-sm">Start from a template and make it your own. This replaces the message you picked.</p></div>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            <div class="ee-seg" role="group" aria-label="Message type">
+                <button type="button" id="tpl-v1" onclick="setTplMode('v1')">Embeds V1</button>
+                <button type="button" id="tpl-v2" onclick="setTplMode('v2')">Components V2</button>
+            </div>
+            <button type="button" class="btn" data-variant="outline" data-size="default" onclick="$('tpl').close()"><span class="btn-label">Close</span></button>
+        </div>
+    </div>
+    <div class="ee-tpl-grid" id="tpl-grid"></div>
+</dialog>
+
+<script>
+const TOKEN = {{ token|tojson }};
+const KEY = 'baxi-embed-' + {{ guild_id|tojson }};
+const MAX_C = 40, MAX_T = 4000;
+const BRAND = '#ff6b4a';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const safeUrl = u => /^https?:\/\/\S+$/i.test(u || '') ? esc(u) : '';
+const okColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : BRAND;
+
+/* ---------- data model ---------- */
+const blankEmbed = () => ({title:'', description:'', url:'', color:BRAND, author:{name:'',url:'',icon_url:''}, footer:{text:'',icon_url:''}, image:'', thumbnail:'', fields:[], timestamp:false});
+function normBlock(b, inContainer) {
+    if (!b || typeof b !== 'object') return null;
+    const str = v => String(v ?? ''), arr = v => Array.isArray(v) ? v : [];
+    const btn = x => ({label: str(x && x.label), url: str(x && x.url)});
+    switch (b.type) {
+        case 'text': return {type:'text', content:str(b.content)};
+        case 'separator': return {type:'separator', divider:b.divider !== false, large:!!b.large};
+        case 'gallery': return {type:'gallery', items: arr(b.items).slice(0, 10).map(i => ({url:str(i && i.url), description:str(i && i.description)}))};
+        case 'buttons': return {type:'buttons', buttons: arr(b.buttons).slice(0, 5).map(btn)};
+        case 'section': return {type:'section', content:str(b.content), accessory: b.accessory === 'button' ? 'button' : 'image', image:str(b.image), description:str(b.description), button:btn(b.button)};
+        case 'container': return inContainer ? null : {type:'container', color:okColor(b.color), spoiler:!!b.spoiler, children: arr(b.children).map(c => normBlock(c, true)).filter(Boolean)};
+    }
+    return null;
+}
+const blankContainer = () => ({type:'container', color:BRAND, spoiler:false, children:[{type:'text', content:''}]});
+const blankMsg = (mode = 'v2') => ({mode, content:'', embeds:[], components: mode === 'v2' ? [blankContainer()] : []});
+function normMsg(m) {
+    m = m && typeof m === 'object' ? m : {};
+    return {
+        mode: m.mode === 'v2' ? 'v2' : 'v1',
+        content: String(m.content || ''),
+        embeds: (Array.isArray(m.embeds) ? m.embeds : []).slice(0, 10).map(e => Object.assign(blankEmbed(), e, {author: Object.assign({name:'',url:'',icon_url:''}, e.author), footer: Object.assign({text:'',icon_url:''}, e.footer), fields: Array.isArray(e.fields) ? e.fields : []})),
+        components: (Array.isArray(m.components) ? m.components : []).map(c => normBlock(c, false)).filter(Boolean),
+    };
+}
+let state = {messages:[blankMsg()]};
+try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && Array.isArray(s.messages) && s.messages.length) state = {messages: s.messages.slice(0, 5).map(normMsg)}; } catch (e) {}
+
+/* ---------- Discord-ish markdown ---------- */
+function md(s) {
+    let t = esc(s);
+    t = t.replace(/```([\s\S]*?)```/g, '<code>$1</code>').replace(/`([^`\n]+)`/g, '<code>$1</code>')
+         .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+         .replace(/__([^_]+)__/g, '<u>$1</u>').replace(/~~([^~]+)~~/g, '<s>$1</s>')
+         .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+         .replace(/&lt;t:(\d{1,12})(?::([tTdDfFR]))?&gt;/g, (_, n, f) => `<span class="ts">${fmtTs(+n, f || 'f')}</span>`);
+    return t.replace(/^-# (.*)$/gm, '<span class="sub">$1</span>')
+            .replace(/^### (.*)$/gm, '<b style="font-size:1.05em">$1</b>').replace(/^## (.*)$/gm, '<b style="font-size:1.15em">$1</b>').replace(/^# (.*)$/gm, '<b style="font-size:1.3em">$1</b>')
+            .replace(/^[-*] (.*)(?:\n|$)/gm, '<span class="li">$1</span>');
+}
+function fmtTs(n, f) {
+    const d = new Date(n * 1000);
+    const o = {t:{timeStyle:'short'}, T:{timeStyle:'medium'}, d:{dateStyle:'short'}, D:{dateStyle:'long'}, f:{dateStyle:'long', timeStyle:'short'}, F:{dateStyle:'full', timeStyle:'short'}}[f];
+    if (o) return esc(d.toLocaleString(undefined, o));
+    const diff = Math.round((n * 1000 - Date.now()) / 1000), a = Math.abs(diff);
+    const [v, u] = a < 60 ? [a, 'second'] : a < 3600 ? [Math.round(a / 60), 'minute'] : a < 86400 ? [Math.round(a / 3600), 'hour'] : [Math.round(a / 86400), 'day'];
+    return diff >= 0 ? `in ${v} ${u}${v === 1 ? '' : 's'}` : `${v} ${u}${v === 1 ? '' : 's'} ago`;
+}
+
+/* ---------- preview ---------- */
+function pvBlock(b) {
+    switch (b.type) {
+        case 'text': return b.content ? `<div class="pv-text">${md(b.content)}</div>` : '';
+        case 'separator': return `<div class="pv-sep ${b.large ? 'lg' : ''}">${b.divider ? '<hr>' : ''}</div>`;
+        case 'gallery': {
+            const im = b.items.filter(i => safeUrl(i.url));
+            return im.length ? `<div class="pv-gal ${im.length === 1 ? 'one' : ''}">${im.map(i => `<img src="${safeUrl(i.url)}" alt="${esc(i.description)}">`).join('')}</div>` : '';
+        }
+        case 'buttons': {
+            const bt = b.buttons.filter(x => x.label);
+            return bt.length ? `<div class="pv-btns">${bt.map(x => `<a class="pv-btn" ${safeUrl(x.url) ? `href="${safeUrl(x.url)}" target="_blank" rel="noopener noreferrer"` : ''}>${esc(x.label)} ↗</a>`).join('')}</div>` : '';
+        }
+        case 'section': {
+            if (!b.content) return '';
+            const acc = b.accessory === 'button'
+                ? (b.button.label ? `<a class="pv-btn" ${safeUrl(b.button.url) ? `href="${safeUrl(b.button.url)}" target="_blank" rel="noopener noreferrer"` : ''}>${esc(b.button.label)} ↗</a>` : '')
+                : (safeUrl(b.image) ? `<img src="${safeUrl(b.image)}" alt="${esc(b.description)}">` : '');
+            return `<div class="pv-sec"><div class="pv-text">${md(b.content)}</div>${acc}</div>`;
+        }
+        case 'container': {
+            const inner = b.children.map(pvBlock).join('');
+            return inner ? `<div class="pv-c" style="border-left-color:${okColor(b.color)}">${inner}</div>` : '';
+        }
+    }
+    return '';
+}
+function pvEmbed(e) {
+    const au = e.author.name ? `<div class="a">${safeUrl(e.author.icon_url) ? `<img src="${safeUrl(e.author.icon_url)}" alt="">` : ''}${esc(e.author.name)}</div>` : '';
+    const ti = e.title ? `<div class="t">${safeUrl(e.url) ? `<a href="${safeUrl(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.title)}</a>` : esc(e.title)}</div>` : '';
+    const fs = e.fields.filter(f => f.name && f.value);
+    const fl = fs.length ? `<div class="pv-fields">${fs.map(f => `<div class="${f.inline ? 'in' : ''}"><b>${esc(f.name)}</b><span>${md(f.value)}</span></div>`).join('')}</div>` : '';
+    const ft = (e.footer.text || e.timestamp) ? `<div class="f">${safeUrl(e.footer.icon_url) && e.footer.text ? `<img src="${safeUrl(e.footer.icon_url)}" alt="">` : ''}${esc(e.footer.text)}${e.footer.text && e.timestamp ? ' • ' : ''}${e.timestamp ? 'now' : ''}</div>` : '';
+    return `<div class="pv-embed" style="border-left-color:${okColor(e.color)}">${au}${ti}${e.description ? `<div class="d">${md(e.description)}</div>` : ''}${fl}${safeUrl(e.thumbnail) ? `<img class="th" src="${safeUrl(e.thumbnail)}" alt="">` : ''}${safeUrl(e.image) ? `<img class="img" src="${safeUrl(e.image)}" alt="">` : ''}${ft}</div>`;
+}
+function pvMsg(m) {
+    const body = m.mode === 'v2'
+        ? `<div class="pv-top">${m.components.map(pvBlock).join('')}</div>`
+        : `${m.content ? `<div class="pv-content">${md(m.content)}</div>` : ''}${m.embeds.map(pvEmbed).join('')}`;
+    return `<div class="pv-msg"><div class="pv-head"><span class="pv-name">Baxi</span><span class="pv-tag">APP</span></div>${body}</div>`;
+}
+const renderPreview = () => { $('preview').innerHTML = state.messages.map(pvMsg).join(''); };
+
+/* ---------- limits ---------- */
+function v2Stats(m) {
+    let comps = 0, chars = 0;
+    const text = t => { chars += (t || '').trim().length; };
+    const count = (b, top) => {
+        switch (b.type) {
+            case 'text': if (b.content.trim()) { comps++; text(b.content); } break;
+            case 'separator': comps++; break;
+            case 'gallery': if (b.items.some(i => i.url)) comps++; break;
+            case 'buttons': { const n = b.buttons.filter(x => x.label && x.url).length; if (n) comps += 1 + n; break; }
+            case 'section': if (b.content.trim()) { text(b.content); const ok = b.accessory === 'button' ? (b.button.label && b.button.url) : b.image; comps += ok ? 3 : 1; } break;
+            case 'container': { const before = comps; b.children.forEach(c => count(c)); if (comps > before) comps++; break; }
+        }
+    };
+    m.components.forEach(c => count(c, true));
+    return {comps, chars};
+}
+function updateStats() {
+    state.messages.forEach((m, i) => {
+        const el = document.querySelector(`[data-stats="${i}"]`); if (!el) return;
+        const s = v2Stats(m);
+        el.textContent = `${s.comps}/${MAX_C} components · ${s.chars}/${MAX_T} characters`;
+        el.classList.toggle('bad', s.comps > MAX_C || s.chars > MAX_T);
+    });
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} $('json').value = JSON.stringify(state, null, 2); }
+
+/* ---------- editor ---------- */
+const btn = (label, onclick, variant = 'outline', size = 'sm', extra = '') => `<button type="button" class="btn" data-variant="${variant}" data-size="${size}" ${extra} onclick="${onclick}"><span class="btn-label">${label}</span></button>`;
+const inp = (lbl, path, val, ph = '', up = false) => `<div><label class="ee-lbl">${lbl}</label>${up ? `<div class="ee-bar" style="flex-wrap:nowrap"><input type="text" data-p="${path}" value="${esc(val)}" placeholder="${esc(ph)}"><button type="button" class="btn" data-variant="outline" data-size="default" onclick="pickUpload('${path}')"><span class="btn-label">Upload</span></button></div>` : `<input type="text" data-p="${path}" value="${esc(val)}" placeholder="${esc(ph)}">`}</div>`;
+const chk = (lbl, path, on) => `<label class="text-sm"><input type="checkbox" data-p="${path}" ${on ? 'checked' : ''}> ${lbl}</label>`;
+const TYPE_NAME = {text:'Text', section:'Section', gallery:'Pictures', separator:'Separator', buttons:'Link buttons', container:'Container'};
+
+function pickUpload(path) {
+    const el = document.createElement('input'); el.type = 'file'; el.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    el.onchange = async () => {
+        const file = el.files[0]; if (!file) return;
+        if (file.size > 8 * 1024 * 1024) { setStatus('The image is larger than 8 MB.', false); return; }
+        setStatus('Uploading…', true);
+        const fd = new FormData(); fd.append('file', file);
+        try {
+            const r = await fetch('/api/embed/' + encodeURIComponent(TOKEN) + '/upload', {method:'POST', body: fd});
+            const d = await r.json();
+            if (d.success) { setPath(path, d.url); redraw(); setStatus('Image uploaded.', true); } else setStatus(d.message || 'Upload failed.', false);
+        } catch (e) { setStatus('Could not reach Baxi.', false); }
+    };
+    el.click();
+}
+
+function addBar(listPath, withContainer) {
+    const types = ['text', 'section', 'gallery', 'separator', 'buttons'].concat(withContainer ? ['container'] : []);
+    return `<div class="ee-bar"><span class="ee-stats">Add:</span>${types.map(t => btn(TYPE_NAME[t], `addB('${listPath}','${t}')`, 'outline', 'sm')).join('')}</div>`;
+}
+function blockEditor(b, listPath, i, n) {
+    const path = `${listPath}.${i}`;
+    let body = '';
+    if (b.type === 'text') {
+        body = `<div><label class="ee-lbl">Text <span class="num">${b.content.length}</span> · supports # headings, **bold**, -# small text, lists and links</label><textarea class="input" data-p="${path}.content">${esc(b.content)}</textarea></div>`;
+    } else if (b.type === 'separator') {
+        body = `<div class="ee-bar">${chk('Show a line', `${path}.divider`, b.divider)}${chk('Extra space', `${path}.large`, b.large)}</div>`;
+    } else if (b.type === 'section') {
+        body = `<div><label class="ee-lbl">Text</label><textarea class="input" data-p="${path}.content">${esc(b.content)}</textarea></div>
+            <div><label class="ee-lbl">Next to the text</label><select class="select" data-p="${path}.accessory" data-redraw="1"><option value="image" ${b.accessory === 'image' ? 'selected' : ''}>A small picture</option><option value="button" ${b.accessory === 'button' ? 'selected' : ''}>A link button</option></select></div>
+            ${b.accessory === 'button'
+                ? `<div class="ee-row">${inp('Button label', `${path}.button.label`, b.button.label)}${inp('Button link', `${path}.button.url`, b.button.url, 'https://')}</div>`
+                : `<div class="ee-row">${inp('Picture', `${path}.image`, b.image, 'https://', true)}${inp('Picture description', `${path}.description`, b.description)}</div>`}`;
+    } else if (b.type === 'gallery') {
+        body = b.items.map((it, k) => `<div class="ee-field"><div class="ee-row">${inp('Picture', `${path}.items.${k}.url`, it.url, 'https://', true)}${inp('Description', `${path}.items.${k}.description`, it.description)}</div>
+            <div class="ee-bar">${btn('Remove picture', `rm('${path}.items',${k})`, 'ghost')}</div></div>`).join('')
+            + (b.items.length < 10 ? `<div>${btn('Add picture', `addTo('${path}.items',{url:'',description:''},10)`)}</div>` : '');
+    } else if (b.type === 'buttons') {
+        body = b.buttons.map((x, k) => `<div class="ee-field"><div class="ee-row">${inp('Label', `${path}.buttons.${k}.label`, x.label)}${inp('Link', `${path}.buttons.${k}.url`, x.url, 'https://')}</div>
+            <div class="ee-bar">${btn('Remove button', `rm('${path}.buttons',${k})`, 'ghost')}</div></div>`).join('')
+            + (b.buttons.length < 5 ? `<div>${btn('Add button', `addTo('${path}.buttons',{label:'',url:''},5)`)}</div>` : '');
+    } else if (b.type === 'container') {
+        body = `<div class="ee-row"><div><label class="ee-lbl">Accent color</label><input type="color" data-p="${path}.color" value="${esc(okColor(b.color))}" style="height:2.75rem; width:100%;"></div>
+              <div style="align-self:end; padding-bottom:.6rem;">${chk('Hide behind a spoiler', `${path}.spoiler`, b.spoiler)}</div></div>
+            <div class="ee-kids">${b.children.map((c, k) => blockEditor(c, `${path}.children`, k, b.children.length)).join('')}${addBar(`${path}.children`, false)}</div>`;
+    }
+    return `<div class="ee-blk"><header><b>${TYPE_NAME[b.type]}</b><span class="ee-bar" style="gap:.25rem;">
+        ${i > 0 ? btn('↑', `mv('${listPath}',${i},-1)`, 'ghost', 'sm', 'aria-label="Move up"') : ''}${i < n - 1 ? btn('↓', `mv('${listPath}',${i},1)`, 'ghost', 'sm', 'aria-label="Move down"') : ''}
+        ${btn('Remove', `rm('${listPath}',${i})`, 'ghost')}</span></header>${body}</div>`;
+}
+function embedEditor(m, mi) {
+    return `<div><label class="ee-lbl">Message text <span class="num">${m.content.length}/2000</span></label><textarea class="input" maxlength="2000" data-p="${mi}.content">${esc(m.content)}</textarea></div>
+    ${m.embeds.map((e, ei) => `
+      <details class="ee-embed" open><summary>Embed ${ei + 1}${e.title ? ' - ' + esc(e.title.slice(0, 30)) : ''}</summary>
+        <div style="display:grid; gap:.5rem; margin-top:.5rem;">
+          <div class="ee-row">${inp('Author', `${mi}.embeds.${ei}.author.name`, e.author.name)}${inp('Author link', `${mi}.embeds.${ei}.author.url`, e.author.url, 'https://')}${inp('Author icon', `${mi}.embeds.${ei}.author.icon_url`, e.author.icon_url, 'https://', true)}</div>
+          <div class="ee-row">${inp('Title', `${mi}.embeds.${ei}.title`, e.title)}${inp('Title link', `${mi}.embeds.${ei}.url`, e.url, 'https://')}<div><label class="ee-lbl">Color</label><input type="color" data-p="${mi}.embeds.${ei}.color" value="${esc(okColor(e.color))}" style="height:2.75rem; width:100%;"></div></div>
+          <div><label class="ee-lbl">Description <span class="num">${e.description.length}/4096</span></label><textarea class="input" maxlength="4096" data-p="${mi}.embeds.${ei}.description">${esc(e.description)}</textarea></div>
+          ${e.fields.map((f, fi) => `<div class="ee-field"><div class="ee-row">${inp('Field name', `${mi}.embeds.${ei}.fields.${fi}.name`, f.name)}${inp('Field value', `${mi}.embeds.${ei}.fields.${fi}.value`, f.value)}</div>
+             <div class="ee-bar">${chk('Inline', `${mi}.embeds.${ei}.fields.${fi}.inline`, f.inline)}${btn('Remove field', `rm('${mi}.embeds.${ei}.fields',${fi})`, 'ghost')}</div></div>`).join('')}
+          <div>${btn('Add field', `addTo('${mi}.embeds.${ei}.fields',{name:'',value:'',inline:false},25)`)}</div>
+          <div class="ee-row">${inp('Image', `${mi}.embeds.${ei}.image`, e.image, 'https://', true)}${inp('Thumbnail', `${mi}.embeds.${ei}.thumbnail`, e.thumbnail, 'https://', true)}</div>
+          <div class="ee-row">${inp('Footer', `${mi}.embeds.${ei}.footer.text`, e.footer.text)}${inp('Footer icon', `${mi}.embeds.${ei}.footer.icon_url`, e.footer.icon_url, 'https://', true)}</div>
+          <div class="ee-bar">${chk('Show time', `${mi}.embeds.${ei}.timestamp`, e.timestamp)}${btn('Remove embed', `rm('${mi}.embeds',${ei})`, 'ghost')}</div>
+        </div></details>`).join('')}
+    ${m.embeds.length < 10 ? `<div>${btn('Add embed', `addTo('${mi}.embeds',blankEmbed(),10)`, 'outline', 'default')}</div>` : ''}`;
+}
+function renderEditor() {
+    $('messages').innerHTML = state.messages.map((m, mi) => `
+      <div class="card" style="padding:1rem 1.25rem; display:grid; gap:.7rem;">
+        <div class="ee-bar" style="justify-content:space-between;"><h2 class="text-base font-semibold">Message ${mi + 1}</h2>
+          <span class="ee-bar">
+            <span class="ee-seg" role="group" aria-label="Message type">
+              <button type="button" aria-pressed="${m.mode === 'v1'}" onclick="setMode(${mi},'v1')">Embeds V1</button>
+              <button type="button" aria-pressed="${m.mode === 'v2'}" onclick="setMode(${mi},'v2')">Components V2</button>
+            </span>
+            ${btn('Templates', `openTpl(${mi})`, 'outline', 'sm')}
+            ${state.messages.length > 1 ? btn('Remove', `rmMessage(${mi})`, 'outline', 'sm', 'style="color:var(--avo-error);border-color:var(--avo-error);"') : ''}
+          </span></div>
+        ${m.mode === 'v2'
+            ? `<p class="text-muted text-xs">Components V2: containers with text, pictures, separators and link buttons. Text and embeds cannot be mixed with it in one message.</p>
+               ${m.components.map((c, i) => blockEditor(c, `${mi}.components`, i, m.components.length)).join('')}
+               ${addBar(`${mi}.components`, true)}
+               <span class="ee-stats" data-stats="${mi}"></span>`
+            : embedEditor(m, mi)}
+      </div>`).join('');
+    updateStats();
+}
+
+/* ---------- state helpers ---------- */
+const getPath = p => p.split('.').reduce((o, k) => o[k], state.messages);
+function setPath(path, val) {
+    const keys = path.split('.'); let o = state.messages;
+    for (let i = 0; i < keys.length - 1; i++) o = o[keys[i]];
+    o[keys[keys.length - 1]] = val;
+}
+$('editor').addEventListener('input', ev => {
+    const p = ev.target.dataset && ev.target.dataset.p; if (!p) return;
+    setPath(p, ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value);
+    if (ev.target.dataset.redraw) { redraw(); return; }
+    save(); renderPreview(); updateStats();
+});
+function redraw() { save(); renderEditor(); renderPreview(); }
+function mv(list, i, d) { const a = getPath(list), j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; redraw(); }
+function rm(list, i) { getPath(list).splice(i, 1); redraw(); }
+function addTo(list, item, max) { const a = getPath(list); if (a.length >= max) return; a.push(item); redraw(); }
+function addB(list, type) {
+    const b = normBlock({type}, list.endsWith('.children'));
+    if (type === 'container') b.children = [{type:'text', content:''}];
+    if (type === 'gallery') b.items = [{url:'', description:''}];
+    if (type === 'buttons') b.buttons = [{label:'', url:''}];
+    addTo(list, b, 40);
+}
+function setMode(i, mode) {
+    const m = state.messages[i]; m.mode = mode;
+    if (mode === 'v2' && !m.components.length) m.components = [blankContainer()];
+    redraw();
+}
+function addMessage() { if (state.messages.length >= 5) return; state.messages.push(blankMsg()); redraw(); }
+function rmMessage(i) { state.messages.splice(i, 1); redraw(); }
+function clearAll() { if (!confirm('Discard everything in the editor?')) return; state = {messages:[blankMsg()]}; redraw(); }
+function importJson() {
+    try {
+        const s = JSON.parse($('json').value);
+        if (!s || !Array.isArray(s.messages)) throw new Error();
+        state = {messages: s.messages.slice(0, 5).map(normMsg)};
+        if (!state.messages.length) state = {messages:[blankMsg()]};
+        redraw(); setStatus('JSON loaded.', true);
+    } catch (e) { setStatus('That is not valid editor JSON.', false); }
+}
+function setStatus(t, ok) { const s = $('status'); s.textContent = t; s.className = 'ee-status ' + (ok ? 'good' : 'bad'); }
+async function sendAll() {
+    if (!$('channel').value) { setStatus('Pick a channel.', false); return; }
+    const btn = $('send'); btn.disabled = true; setStatus('Sending…', true);
+    try {
+        const r = await fetch('/api/embed/' + encodeURIComponent(TOKEN) + '/send', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({channel: $('channel').value, messages: state.messages})});
+        const d = await r.json(); setStatus(d.message || 'Done.', !!d.success);
+    } catch (e) { setStatus('Could not reach Baxi.', false); }
+    btn.disabled = false;
+}
+
+/* ---------- templates ---------- */
+const T = (mode, o) => Object.assign(blankMsg(mode), o);
+const ts = () => Math.floor(Date.now() / 3600000) * 3600 + 7 * 86400;
+const C = (color, ...children) => ({type:'container', color, spoiler:false, children});
+const tx = content => ({type:'text', content});
+const sep = (divider = true, large = false) => ({type:'separator', divider, large});
+const emb = (color, o) => Object.assign(blankEmbed(), {color}, o);
+const TEMPLATES = [
+    {name:'Server rules', desc:'A numbered list of rules with a footer',
+     v2: () => T('v2', {components:[C('#e5484d', tx('# 📜 Server rules\nTo keep this place enjoyable for everyone, please follow these rules. The moderators have the final say.'), sep(),
+         tx('**1. Be respectful**\nTreat everyone kindly. No harassment, hate or insults.\n\n**2. No spam or ads**\nNo unrequested self-promotion or invite links.\n\n**3. Keep it on topic**\nUse the channel that fits what you want to say.'), sep(false), tx('-# Not sure about something? Ask a moderator.'))]}),
+     v1: () => T('v1', {embeds:[emb('#e5484d', {title:'📜 Server rules', description:'To keep this place enjoyable for everyone, please follow these rules. The moderators have the final say.',
+         fields:[{name:'1. Be respectful', value:'Treat everyone kindly. No harassment, hate or insults.', inline:false}, {name:'2. No spam or ads', value:'No unrequested self-promotion or invite links.', inline:false}, {name:'3. Keep it on topic', value:'Use the channel that fits what you want to say.', inline:false}],
+         footer:{text:'Not sure about something? Ask a moderator.', icon_url:''}})]})},
+    {name:'Welcome', desc:'Greets new members and points them around',
+     v2: () => T('v2', {components:[C('#5865f2', tx('# Welcome to the server!\nWe\'re glad you\'re here. Here\'s everything you need to get started.'), sep(),
+         tx('### 📜 Rules\nRead them before you start chatting.\n### 👋 Say hello\nIntroduce yourself and find people with the same interests.'), {type:'buttons', buttons:[{label:'Rules', url:''}, {label:'Website', url:''}]})]}),
+     v1: () => T('v1', {embeds:[emb('#5865f2', {title:'Welcome to the server!', description:'We\'re glad you\'re here. Here\'s everything you need to get started.',
+         fields:[{name:'📜 Rules', value:'Read them before you start chatting.', inline:true}, {name:'👋 Say hello', value:'Introduce yourself and find people with the same interests.', inline:true}]})]})},
+    {name:'Announcement', desc:'News for your members with a link',
+     v2: () => T('v2', {components:[C('#f5c542', {type:'section', content:'-# NEW\n# 📣 Big news\nDescribe what\'s happening here. You can use **bold**, *italics*, [links](https://example.com) and lists:\n- What changes\n- When it happens', accessory:'button', image:'', description:'', button:{label:'Read more', url:''}})]}),
+     v1: () => T('v1', {embeds:[emb('#f5c542', {title:'📣 Big news', description:'Describe what\'s happening here. You can use **bold**, *italics*, [links](https://example.com) and lists:\n- What changes\n- When it happens'})]})},
+    {name:'Patch notes', desc:'What\'s new, changed and fixed in an update',
+     v2: () => T('v2', {components:[C('#3fb950', tx('# ✨ Update 1.2.0\nHere\'s everything that changed in this update.'), sep(),
+         tx('### ✨ New\n- The first new feature\n- Another new feature\n### 🔧 Changed\n- Something that works differently now\n### 🐛 Fixed\n- A bug that is gone'), sep(false), tx(`-# Released <t:${ts() - 7 * 86400}:D>`))]}),
+     v1: () => T('v1', {embeds:[emb('#3fb950', {title:'✨ Update 1.2.0', description:'Here\'s everything that changed in this update.',
+         fields:[{name:'✨ New', value:'- The first new feature\n- Another new feature', inline:false}, {name:'🔧 Changed', value:'- Something that works differently now', inline:false}, {name:'🐛 Fixed', value:'- A bug that is gone', inline:false}], timestamp:true})]})},
+    {name:'Event', desc:'Time and place, shown in each member\'s timezone',
+     v2: () => T('v2', {components:[C('#a371f7', tx('# 🎲 Game night\nJoin us for a night of games! Everyone\'s welcome, no matter your skill level.'), sep(),
+         tx(`📅 **When:** <t:${ts()}:F> (<t:${ts()}:R>)\n📍 **Where:** #voice-chat`))]}),
+     v1: () => T('v1', {embeds:[emb('#a371f7', {title:'🎲 Game night', description:'Join us for a night of games! Everyone\'s welcome, no matter your skill level.',
+         fields:[{name:'📅 When', value:`<t:${ts()}:F> (<t:${ts()}:R>)`, inline:false}, {name:'📍 Where', value:'#voice-chat', inline:false}]})]})},
+];
+let tplFor = 0, tplMode = 'v2';
+function setTplMode(m) { tplMode = m; renderTpl(); }
+function renderTpl() {
+    $('tpl-v1').setAttribute('aria-pressed', tplMode === 'v1'); $('tpl-v2').setAttribute('aria-pressed', tplMode === 'v2');
+    $('tpl-grid').innerHTML = TEMPLATES.map((t, i) => `<button type="button" class="ee-tpl-card" onclick="useTpl(${i})"><div class="pv-box">${pvMsg(normMsg(t[tplMode]()))}</div><div class="meta"><b>${esc(t.name)}</b><span>${esc(t.desc)}</span></div></button>`).join('');
+}
+function openTpl(i) { tplFor = i; tplMode = state.messages[i].mode; renderTpl(); $('tpl').showModal(); }
+function useTpl(i) {
+    const m = state.messages[tplFor];
+    if ((m.content || m.embeds.length || m.components.length) && !confirm('This replaces the message in the editor. Continue?')) return;
+    state.messages[tplFor] = normMsg(TEMPLATES[i][tplMode]());
+    $('tpl').close(); redraw();
+}
+$('tpl').addEventListener('click', ev => { if (ev.target === $('tpl')) $('tpl').close(); });
+redraw();
+</script>
+</body>
+</html>
