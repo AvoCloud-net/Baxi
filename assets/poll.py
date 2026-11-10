@@ -7,7 +7,10 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 import assets.data as datasys
+import assets.v2 as v2
 import config.config as cfg
+
+_NO_PINGS = discord.AllowedMentions.none()   # V2 text pings (embed text never did)
 
 
 # ── Embed builder ──────────────────────────────────────────────────────────────
@@ -70,34 +73,40 @@ def build_poll_view(
     vote_counts: list[int],
     show_votes: bool,
     closed: bool = False,
-) -> discord.ui.View:
-    view = discord.ui.View(timeout=None)
+    embed: Optional[discord.Embed] = None,
+) -> discord.ui.LayoutView | discord.ui.View:
+    """The poll buttons. With ``embed`` it is the V2 card (text, divider, button rows in one container);
+    without it the classic button view (polls posted before the V2 switch)."""
+    votes: list[discord.ui.Button] = []
     for i, ans in enumerate(answers):
         letter = "ABCDEFGHIJ"[i]
-        vote_row = i // 5
         _MAX_ANS = 20
         ans_short = ans[:_MAX_ANS] + ("…" if len(ans) > _MAX_ANS else "")
-        if show_votes:
-            btn_label = f"{letter}. {ans_short} ({vote_counts[i]})"
-        else:
-            btn_label = f"{letter}. {ans_short}"
-        view.add_item(discord.ui.Button(
+        btn_label = f"{letter}. {ans_short} ({vote_counts[i]})" if show_votes else f"{letter}. {ans_short}"
+        votes.append(discord.ui.Button(
             label=btn_label,
             style=discord.ButtonStyle.secondary,
             custom_id=f"poll:vote:{i}",
-            row=vote_row,
             disabled=closed,
         ))
+    close = None if closed else discord.ui.Button(
+        label="Close Poll", style=discord.ButtonStyle.danger, custom_id="poll:close")
 
-    if not closed:
-        close_row = min((len(answers) - 1) // 5 + 1, 4)
-        view.add_item(discord.ui.Button(
-            label="Close Poll",
-            style=discord.ButtonStyle.danger,
-            custom_id="poll:close",
-            row=close_row,
-        ))
+    if embed is not None:
+        rows = [discord.ui.ActionRow(*votes[i:i + 5]) for i in range(0, len(votes), 5)]
+        if close is not None:
+            rows.append(discord.ui.ActionRow(close))
+        view = discord.ui.LayoutView(timeout=None)
+        view.add_item(v2.card_container(embed, extra=[discord.ui.Separator(visible=True), *rows]))
+        return view
 
+    view = discord.ui.View(timeout=None)
+    for i, btn in enumerate(votes):
+        btn.row = i // 5
+        view.add_item(btn)
+    if close is not None:
+        close.row = min((len(answers) - 1) // 5 + 1, 4)
+        view.add_item(close)
     return view
 
 
@@ -136,9 +145,9 @@ async def _close_poll(
         entry["question"], answers, vote_counts, entry.get("show_votes", True),
         entry.get("image_url"), entry.get("end_time"), closed=True,
     )
-    view = build_poll_view(answers, vote_counts, show_votes=True, closed=True)
+    view = build_poll_view(answers, vote_counts, show_votes=True, closed=True, embed=embed)
     try:
-        await msg.edit(embed=embed, view=view)
+        await v2.edit(msg, view)   # a poll posted before the V2 switch becomes V2 here
     except (discord.Forbidden, discord.HTTPException):
         pass
 
@@ -190,8 +199,10 @@ async def _handle_vote(interaction: discord.Interaction, answer_idx: int) -> Non
         entry["question"], answers, vote_counts, show_votes,
         entry.get("image_url"), entry.get("end_time"),
     )
-    new_view = build_poll_view(answers, vote_counts, show_votes)
-    await interaction.response.edit_message(embed=new_embed, view=new_view)
+    if interaction.message.flags.components_v2:
+        await interaction.response.edit_message(view=build_poll_view(answers, vote_counts, show_votes, embed=new_embed))
+    else:
+        await interaction.response.edit_message(embed=new_embed, view=build_poll_view(answers, vote_counts, show_votes))
     await interaction.followup.send(msg, ephemeral=True)
 
 
@@ -232,8 +243,10 @@ async def _handle_close(interaction: discord.Interaction) -> None:
         entry["question"], answers, vote_counts, show_votes=True,
         image_url=entry.get("image_url"), end_time=entry.get("end_time"), closed=True,
     )
-    view = build_poll_view(answers, vote_counts, show_votes=True, closed=True)
-    await interaction.response.edit_message(embed=embed, view=view)
+    if interaction.message.flags.components_v2:
+        await interaction.response.edit_message(view=build_poll_view(answers, vote_counts, True, closed=True, embed=embed))
+    else:
+        await interaction.response.edit_message(embed=embed, view=build_poll_view(answers, vote_counts, True, closed=True))
 
 
 # ── Persistent dynamic buttons ─────────────────────────────────────────────────
@@ -384,10 +397,10 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
 
         vote_counts = [0] * len(answers)
         embed = _make_poll_embed(question, answers, vote_counts, show_votes, image_url, end_time)
-        view = build_poll_view(answers, vote_counts, show_votes)
+        view = build_poll_view(answers, vote_counts, show_votes, embed=embed)
 
         try:
-            msg = await channel.send(embed=embed, view=view)
+            msg = await channel.send(view=view, allowed_mentions=_NO_PINGS)
         except (discord.Forbidden, discord.HTTPException):
             await interaction.edit_original_response(content="Failed to send poll.")
             return
@@ -452,7 +465,7 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
             if channel_id:
                 embed.description = f"[Jump to poll](https://discord.com/channels/{gid}/{channel_id}/{poll})"
             # 6000 chars cap for the whole embed → share the budget between answers
-            budget = min(1024, 5000 // max(len(answers), 1))
+            budget = min(1024, 3000 // max(len(answers), 1))   # one V2 message: 4000 chars of text
             for i, (ans, uids) in enumerate(zip(answers, voters)):
                 pct = int(len(uids) / total * 100) if total else 0
                 ans_short = ans[:60] + ("…" if len(ans) > 60 else "")
@@ -472,7 +485,7 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
                     inline=False,
                 )
             embed.set_footer(text=f"Baxi · {total} votes")
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
             return
 
         def _is_closed(e: dict) -> bool:
@@ -521,26 +534,31 @@ def poll_commands(bot: commands.AutoShardedBot) -> None:
             embed.set_footer(text=f"Baxi · {total} votes · counts {vis}")
             embeds.append(embed)
 
-        # Discord caps a message at 10 embeds / 6000 chars in total
+        # one V2 message holds at most 40 components / 4000 characters of text: a few cards per message
         chunk: list[discord.Embed] = []
         size = 0
         first = True
+
+        async def _flush() -> None:
+            nonlocal first
+            view = discord.ui.LayoutView(timeout=None)
+            for e in chunk:
+                view.add_item(v2.card_container(e))
+            if first:
+                await interaction.edit_original_response(view=view)
+                first = False
+            else:
+                await interaction.followup.send(view=view, ephemeral=True)
+
         for e in embeds:
             e_len = len(e)
-            if chunk and (len(chunk) >= 10 or size + e_len > 5500):
-                if first:
-                    await interaction.edit_original_response(embeds=chunk)
-                    first = False
-                else:
-                    await interaction.followup.send(embeds=chunk, ephemeral=True)
+            if chunk and (len(chunk) >= 5 or size + e_len > 3300):
+                await _flush()
                 chunk, size = [], 0
             chunk.append(e)
             size += e_len
         if chunk:
-            if first:
-                await interaction.edit_original_response(embeds=chunk)
-            else:
-                await interaction.followup.send(embeds=chunk, ephemeral=True)
+            await _flush()
 
     @pollstatus_cmd.autocomplete("poll")
     async def pollstatus_poll_autocomplete(interaction: discord.Interaction, current: str):

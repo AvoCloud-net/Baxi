@@ -10,6 +10,7 @@ from typing import cast
 from reds_simple_logger import Logger
 
 import config.config as config
+import assets.v2 as v2
 
 logger = Logger()
 
@@ -21,7 +22,9 @@ def _icon(emoji_str: str) -> discord.PartialEmoji | None:
         return None
 
 
-class MCLinkConfirmView(discord.ui.View):
+class MCLinkConfirmView(v2.CardView):
+    row = discord.ui.ActionRow()
+
     def __init__(
         self,
         bot,
@@ -55,9 +58,7 @@ class MCLinkConfirmView(discord.ui.View):
         return True
 
     async def _disable(self):
-        for child in self.children:
-            if isinstance(child, discord.ui.Button):
-                child.disabled = True
+        self.disable_buttons()
 
     async def on_timeout(self):
         # Drop session, disable buttons. Message edit not possible without stored message ref.
@@ -65,7 +66,7 @@ class MCLinkConfirmView(discord.ui.View):
         consume_link_session(self.token)
         await self._disable()
 
-    @discord.ui.button(label="Accept Link", style=discord.ButtonStyle.success)
+    @row.button(label="Accept Link", style=discord.ButtonStyle.success)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         from assets import mc_link as mcl
         from assets import mc_link_card as card
@@ -144,7 +145,7 @@ class MCLinkConfirmView(discord.ui.View):
             mc_name=mc_name,
         )
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    @row.button(label="Cancel", style=discord.ButtonStyle.secondary)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         from assets import mc_link as mcl
         await interaction.response.defer()
@@ -163,7 +164,8 @@ class MCLinkConfirmView(discord.ui.View):
             file = discord.File(buf, filename="mc_link_success.png")
             embed = discord.Embed(title=title, description=subtitle, color=0x22C55E)
             embed.set_image(url="attachment://mc_link_success.png")
-            await interaction.edit_original_response(attachments=[file], embed=embed, view=self)
+            self.set_card(embed)
+            await interaction.edit_original_response(attachments=[file], view=self)
         except Exception:
             logger.exception("[mc_link_view] render_success failed")
             await self._fallback_text(interaction, f"✅ {title}\n{subtitle}")
@@ -176,7 +178,8 @@ class MCLinkConfirmView(discord.ui.View):
             file = discord.File(buf, filename="mc_link_cancel.png")
             embed = discord.Embed(title=title, description=subtitle, color=0xA5A5AA)
             embed.set_image(url="attachment://mc_link_cancel.png")
-            await interaction.edit_original_response(attachments=[file], embed=embed, view=self)
+            self.set_card(embed)
+            await interaction.edit_original_response(attachments=[file], view=self)
         except Exception:
             logger.exception("[mc_link_view] render_cancel failed")
             await self._fallback_text(interaction, f"❌ {title}\n{subtitle}")
@@ -184,6 +187,7 @@ class MCLinkConfirmView(discord.ui.View):
     async def _fallback_text(self, interaction: discord.Interaction, content: str):
         try:
             await self._disable()
-            await interaction.edit_original_response(content=content, embed=None, attachments=[], view=self)
+            self.set_card(discord.Embed(description=content, color=0xA5A5AA))
+            await interaction.edit_original_response(attachments=[], view=self)
         except Exception:
             logger.exception("[mc_link_view] fallback edit failed")

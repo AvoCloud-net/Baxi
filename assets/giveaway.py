@@ -6,10 +6,13 @@ from discord import app_commands
 from discord.ext import tasks, commands
 
 import assets.data as datasys
+import assets.v2 as v2
 import config.config as cfg
 from reds_simple_logger import Logger
 
 logger = Logger()
+
+_NO_PINGS = discord.AllowedMentions.none()   # V2 text pings (embed text never did)
 
 
 # ── Embed builder ─────────────────────────────────────────────────────────────
@@ -19,7 +22,7 @@ def _make_embed(
     reward: str,
     end_ts: int,
     winner_count: int,
-    host: discord.Member | discord.User,
+    host_mention: str,
     participant_count: int,
     image_url: str | None = None,
     ended: bool = False,
@@ -34,7 +37,7 @@ def _make_embed(
     time_value = f"<t:{end_ts}:f>" if ended else f"<t:{end_ts}:R>"
     embed.add_field(name=time_label, value=time_value, inline=True)
     embed.add_field(name=t["field_winners"], value=str(winner_count), inline=True)
-    embed.add_field(name=t["field_host"], value=host.mention, inline=True)
+    embed.add_field(name=t["field_host"], value=host_mention, inline=True)
     if image_url:
         embed.set_image(url=image_url)
     embed.set_footer(text=t["footer"])
@@ -43,24 +46,33 @@ def _make_embed(
 
 # ── Persistent view ───────────────────────────────────────────────────────────
 
-class GiveawayView(discord.ui.View):
-    """Persistent view — survives bot restarts."""
-    def __init__(self):
-        super().__init__(timeout=None)
+class GiveawayView(v2.CardView):
+    """Persistent view: survives bot restarts. A giveaway message is ``GiveawayView(card_embed)``
+    (Components V2); ``GiveawayView()`` only registers the button (custom_id)."""
+    row = discord.ui.ActionRow()
 
-    @discord.ui.button(
-        label="0",
-        emoji=cfg.Icons.celebrate,
-        style=discord.ButtonStyle.primary,
-        custom_id="giveaway:enter",
-    )
+    def __init__(self, embed: discord.Embed | None = None):
+        super().__init__(embed, timeout=None)
+
+    @row.button(label="0", emoji=cfg.Icons.celebrate, style=discord.ButtonStyle.primary, custom_id="giveaway:enter")
     async def enter(self, interaction: discord.Interaction, button: discord.ui.Button):
         await _handle_enter(interaction)
 
 
-def _make_enter_view(count: int, ended: bool = False) -> GiveawayView:
-    v = GiveawayView()
-    for item in v.children:
+class _ClassicGiveawayView(discord.ui.View):
+    """Embed + button layout, only to keep giveaways posted before the V2 switch working."""
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="0", emoji=cfg.Icons.celebrate, style=discord.ButtonStyle.primary, custom_id="giveaway:enter")
+    async def enter(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _handle_enter(interaction)
+
+
+def _make_enter_view(count: int, ended: bool = False, embed: discord.Embed | None = None):
+    """The enter button with the current count; V2 card with ``embed``, classic (old messages) without."""
+    v = GiveawayView(embed) if embed is not None else _ClassicGiveawayView()
+    for item in v.walk_children():
         if isinstance(item, discord.ui.Button) and item.custom_id == "giveaway:enter":
             item.label = str(count)
             item.disabled = ended
@@ -101,7 +113,13 @@ async def _handle_enter(interaction: discord.Interaction) -> None:
     giveaways[msg_id] = entry
     datasys.save_data(interaction.guild.id, "giveaways", giveaways)
 
-    view = _make_enter_view(len(participants))
+    if interaction.message.flags.components_v2:
+        embed = _make_embed(t, str(entry.get("reward", "")), int(entry.get("end_time", 0)),
+                            int(entry.get("winner_count", 1)), f"<@{int(entry.get('host_id', 0))}>",
+                            len(participants), entry.get("image_url"))
+        view = _make_enter_view(len(participants), embed=embed)
+    else:
+        view = _make_enter_view(len(participants))
     await interaction.response.edit_message(view=view)
     await interaction.followup.send(msg, ephemeral=True)
 
@@ -147,17 +165,13 @@ async def _end_giveaway(
     winner_message: str = str(entry.get("winner_message", ""))
     image_url: str | None = entry.get("image_url")
 
-    host = guild.get_member(host_id) or bot.get_user(host_id)
-
-    # Update embed to ended state
-    if msg.embeds and host:
-        embed = _make_embed(t, reward, end_ts, winner_count, host,
-                            len(participants), image_url, ended=True)
-        disabled_view = _make_enter_view(len(participants), ended=True)
-        try:
-            await msg.edit(embed=embed, view=disabled_view)
-        except (discord.Forbidden, discord.HTTPException):
-            pass
+    # Update the card to the ended state (a giveaway posted before the V2 switch becomes V2 here)
+    embed = _make_embed(t, reward, end_ts, winner_count, f"<@{host_id}>",
+                        len(participants), image_url, ended=True)
+    try:
+        await v2.edit(msg, _make_enter_view(len(participants), ended=True, embed=embed))
+    except (discord.Forbidden, discord.HTTPException):
+        pass
 
     # Pick winners
     actual_count = min(winner_count, len(participants))
@@ -169,7 +183,7 @@ async def _end_giveaway(
         )
         no_winner_embed.set_footer(text=t["footer"])
         try:
-            await channel.send(embed=no_winner_embed)
+            await channel.send(view=v2.from_embed(no_winner_embed), allowed_mentions=_NO_PINGS)
         except (discord.Forbidden, discord.HTTPException):
             pass
         return
@@ -195,7 +209,7 @@ async def _end_giveaway(
         )
     announce_embed.set_footer(text=t["footer"])
     try:
-        await channel.send(embed=announce_embed)
+        await channel.send(view=v2.from_embed(announce_embed), allowed_mentions=_NO_PINGS)
     except (discord.Forbidden, discord.HTTPException):
         pass
 
@@ -220,7 +234,7 @@ async def _end_giveaway(
                 )
             dm_embed.set_footer(text=t["footer"])
             try:
-                await member.send(embed=dm_embed)
+                await member.send(view=v2.from_embed(dm_embed))
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -305,11 +319,11 @@ def giveaway_commands(bot: commands.AutoShardedBot) -> None:
             await interaction.edit_original_response(content=t["channel_only"])
             return
 
-        embed = _make_embed(t, reward, end_ts, winners, interaction.user, 0, image_url)
-        view = _make_enter_view(0)
+        embed = _make_embed(t, reward, end_ts, winners, interaction.user.mention, 0, image_url)
+        view = _make_enter_view(0, embed=embed)
 
         try:
-            msg = await channel.send(embed=embed, view=view)
+            msg = await channel.send(view=view, allowed_mentions=_NO_PINGS)
         except (discord.Forbidden, discord.HTTPException):
             await interaction.edit_original_response(content=t["send_error"])
             return

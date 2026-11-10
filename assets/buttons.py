@@ -4,6 +4,7 @@ import string
 import os
 
 import assets.data as datasys
+import assets.v2 as v2
 import discord
 from assets.moderation import cases
 from assets.views import (
@@ -33,7 +34,7 @@ def _case_fields(embed: discord.Embed, lang: dict, case_no, dm_ok: bool, user, g
         embed.add_field(name="\u200b", value=cases.dm_failed_note(lang, user, guild_id), inline=False)
 
 
-class _ModeratorOnly(ui.View):
+class _ModeratorOnly(v2.CardView):
     """Confirmation views are posted in the open channel: only the moderator who started the
     action may confirm or cancel it. Subclasses set self.moderator."""
     moderator: discord.abc.User
@@ -48,6 +49,8 @@ class _ModeratorOnly(ui.View):
 
 
 class BanConfirmView(_ModeratorOnly):
+    row = ui.ActionRow()
+
     def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str, duration: Optional[datetime.timedelta] = None):
         super().__init__(timeout=None)
         self.user = user
@@ -55,17 +58,17 @@ class BanConfirmView(_ModeratorOnly):
         self.reason = reason
         self.duration = duration
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="ban_admin_confirm"
     )
     async def confirm_ban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         case_no = None
@@ -132,11 +135,10 @@ class BanConfirmView(_ModeratorOnly):
             embed.add_field(name=lang["commands"]["admin"]["field_duration"], value=duration_str, inline=False)
             _case_fields(embed, lang, case_no, dm_ok, self.user, interaction.guild.id)
 
-            for item in self.children:
-                button = cast(discord.ui.Button, item)
-                button.disabled = True
+            self.set_card(embed)
+            self.disable_buttons()
 
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
         except discord.Forbidden:
             if not acted:
@@ -153,15 +155,15 @@ class BanConfirmView(_ModeratorOnly):
                 ephemeral=True,
             )
 
-    @ui.button(style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="ban_admin_cancel")
+    @row.button(style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="ban_admin_cancel")
     async def cancel_ban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
@@ -170,31 +172,32 @@ class BanConfirmView(_ModeratorOnly):
             color=config.Discord.warn_color,
         )
 
-        for item in self.children:
-            button = cast(discord.ui.Button, item)
-            button.disabled = True
+        self.set_card(embed)
+        self.disable_buttons()
 
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(view=self)
 
 
 class KickConfirmView(_ModeratorOnly):
+    row = ui.ActionRow()
+
     def __init__(self, user: discord.Member, moderator: discord.abc.User, reason: str):
         super().__init__(timeout=None)
         self.user = user
         self.moderator = moderator
         self.reason = reason
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="kick_admin_confirm"
     )
     async def confirm_kick(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         case_no = None
@@ -239,11 +242,10 @@ class KickConfirmView(_ModeratorOnly):
             )
             _case_fields(embed, lang, case_no, dm_ok, self.user, interaction.guild.id)
 
-            for item in self.children:
-                button = cast(discord.ui.Button, item)
-                button.disabled = True
+            self.set_card(embed)
+            self.disable_buttons()
 
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
         except discord.Forbidden:
             if not acted:
@@ -260,17 +262,17 @@ class KickConfirmView(_ModeratorOnly):
                 ephemeral=True,
             )
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="kick_admin_cancel"
     )
     async def cancel_kick(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
@@ -279,14 +281,15 @@ class KickConfirmView(_ModeratorOnly):
             color=config.Discord.warn_color,
         )
 
-        for item in self.children:
-            button = cast(discord.ui.Button, item)
-            button.disabled = True
+        self.set_card(embed)
+        self.disable_buttons()
 
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(view=self)
 
 
 class UbanConfirmView(_ModeratorOnly):
+    row = ui.ActionRow()
+
     def __init__(
         self,
         user: Union[discord.Member, discord.User],
@@ -298,17 +301,17 @@ class UbanConfirmView(_ModeratorOnly):
         self.moderator = moderator
         self.reason = reason
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="unban_admin_confirm"
     )
     async def confirm_uban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
@@ -349,11 +352,10 @@ class UbanConfirmView(_ModeratorOnly):
             if case_no:
                 embed.add_field(name=lang["moderation"]["dm"]["f_case"], value=f"#{case_no}", inline=False)
 
-            for item in self.children:
-                button = cast(discord.ui.Button, item)
-                button.disabled = True
+            self.set_card(embed)
+            self.disable_buttons()
 
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
@@ -366,17 +368,17 @@ class UbanConfirmView(_ModeratorOnly):
                 ephemeral=True,
             )
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="unban_admin_cancel"
     )
     async def cancel_unban(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
@@ -385,14 +387,15 @@ class UbanConfirmView(_ModeratorOnly):
             color=config.Discord.warn_color,
         )
 
-        for item in self.children:
-            button = cast(discord.ui.Button, item)
-            button.disabled = True
+        self.set_card(embed)
+        self.disable_buttons()
 
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(view=self)
 
 
 class ClearConfirmView(_ModeratorOnly):
+    row = ui.ActionRow()
+
     def __init__(
         self,
         amount: int,
@@ -404,17 +407,17 @@ class ClearConfirmView(_ModeratorOnly):
         self.moderator = moderator
         self.channel = channel
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.danger, emoji=config.Icons.check, custom_id="clear_admin_confirm"
     )
     async def confirm_clear(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         try:
@@ -442,16 +445,15 @@ class ClearConfirmView(_ModeratorOnly):
                 inline=False,
             )
 
-            for item in self.children:
-                button = cast(discord.ui.Button, item)
-                button.disabled = True
+            self.set_card(embed)
+            self.disable_buttons()
 
             if isinstance(
                 interaction.channel, (discord.TextChannel, discord.DMChannel)
             ):
-                await interaction.channel.send(embed=embed, view=self)
+                await interaction.channel.send(view=self)
             else:
-                await interaction.response.send_message(embed=embed, view=self)
+                await interaction.response.send_message(view=self)
 
         except discord.Forbidden:
             await interaction.response.send_message(
@@ -464,17 +466,17 @@ class ClearConfirmView(_ModeratorOnly):
                 ephemeral=True,
             )
 
-    @ui.button(
+    @row.button(
         style=discord.ButtonStyle.gray, emoji=config.Icons.cross, custom_id="clear_admin_cancel"
     )
     async def cancel_clear(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         embed = discord.Embed(
@@ -483,26 +485,44 @@ class ClearConfirmView(_ModeratorOnly):
             color=config.Discord.warn_color,
         )
 
-        for item in self.children:
-            button = cast(discord.ui.Button, item)
-            button.disabled = True
+        self.set_card(embed)
+        self.disable_buttons()
 
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.response.edit_message(view=self)
 
 
-class VerifyView(ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
+def verify_panel_embed(cfg: dict) -> discord.Embed:
+    """The verify panel's card content from the server's verify config."""
+    try:
+        color = discord.Color.from_str(str(cfg.get("color") or "#FF6B4A"))
+    except Exception:
+        color = discord.Color.from_rgb(255, 107, 74)
+    embed = discord.Embed(
+        title=cfg.get("title", "Verification"),
+        description=cfg.get("description", "Click the button below to verify."),
+        color=color,
+    )
+    embed.set_footer(text="Baxi · Verification")
+    return embed
 
-    @ui.button(style=discord.ButtonStyle.success, emoji=config.Icons.check, custom_id="verify_user")
+
+class VerifyView(v2.CardView):
+    """Persistent verify panel. ``bot.add_view(VerifyView())`` registers the button; a panel is
+    ``VerifyView(embed)`` sent with ``view=`` only."""
+    row = ui.ActionRow()
+
+    def __init__(self, embed: Optional[discord.Embed] = None):
+        super().__init__(embed, timeout=None)
+
+    @row.button(style=discord.ButtonStyle.success, emoji=config.Icons.check, custom_id="verify_user")
     async def verify(self, interaction: Interaction, button: ui.Button):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         verify_data: dict = dict(datasys.load_data(interaction.guild.id, "verify"))
@@ -517,7 +537,7 @@ class VerifyView(ui.View):
                 color=config.Discord.danger_color,
             )
             embed.set_footer(text="Baxi · avocloud.net")
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(view=v2.from_embed(embed))
             return
 
         if verify_data.get("enabled", False):
@@ -549,7 +569,7 @@ class VerifyView(ui.View):
             if option == 0:
                 await user.add_roles(role)
                 await interaction.response.send_message(
-                    embed=embed_success, ephemeral=True
+                    view=v2.from_embed(embed_success), ephemeral=True
                 )
             elif option == 1:
                 characters = string.ascii_letters + string.digits
@@ -577,7 +597,7 @@ class VerifyView(ui.View):
                 description=lang["systems"]["verify"]["description_not_enabled"],
                 color=config.Discord.danger_color,
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(view=v2.from_embed(embed), ephemeral=True)
 
 
 _BUTTON_STYLE_MAP: dict[str, discord.ButtonStyle] = {
@@ -676,6 +696,20 @@ def build_ticket_panel_view(buttons: list, style: str = "buttons") -> ui.View:
     return view
 
 
+def build_ticket_panel(embed: discord.Embed, buttons: list, style: str = "buttons") -> ui.LayoutView:
+    """The ticket panel as a V2 card with its buttons (5 per row) or its dropdown inside the card.
+    The items carry the same custom_ids as ``build_ticket_panel_view``, so the dynamic items answer."""
+    classic = build_ticket_panel_view(buttons, style)
+    items = [c for c in classic.children]
+    if style == "dropdown":
+        rows = [ui.ActionRow(*items)] if items else []
+    else:
+        rows = [ui.ActionRow(*items[i:i + 5]) for i in range(0, len(items), 5)]
+    view = ui.LayoutView(timeout=None)
+    view.add_item(v2.card_container(embed, extra=rows))
+    return view
+
+
 class TicketSelect(ui.DynamicItem[ui.Select], template=r"ticket_select"):
     """Persistent dropdown of the ticket panel; the chosen value is the ticket button id."""
 
@@ -701,7 +735,11 @@ class TicketSelect(ui.DynamicItem[ui.Select], template=r"ticket_select"):
             if message is not None and interaction.guild is not None:
                 cfg = dict(datasys.load_data(interaction.guild.id, sys="ticket"))
                 if cfg.get("panel_style") == "dropdown":
-                    await message.edit(view=build_ticket_panel_view(cfg.get("buttons", []), "dropdown"))
+                    if message.flags.components_v2:
+                        await message.edit(view=build_ticket_panel(
+                            ticket_panel_embed(interaction.guild, cfg), cfg.get("buttons", []), "dropdown"))
+                    else:
+                        await message.edit(view=build_ticket_panel_view(cfg.get("buttons", []), "dropdown"))
         except discord.HTTPException:
             pass
 
@@ -750,7 +788,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
                 color=config.Discord.danger_color,
             )
             embed.set_footer(text="Baxi · avocloud.net")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(view=v2.from_embed(embed), ephemeral=True)
             return
 
         guild_data: dict = dict(datasys.load_data(guild.id, sys="ticket"))
@@ -786,7 +824,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
                         ).format(channel=ch.mention),
                         color=config.Discord.warn_color,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    await interaction.response.send_message(view=v2.from_embed(embed), ephemeral=True)
                     return
                 except (discord.NotFound, discord.Forbidden):
                     del tickets[tid]
@@ -879,7 +917,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             ),
             color=config.Discord.color,
         )
-        await interaction.response.send_message(embed=success_embed, ephemeral=True)
+        await interaction.response.send_message(view=v2.from_embed(success_embed), ephemeral=True)
 
         ticket_label = button_def.get("label") or "Ticket"
         ticket_embed = discord.Embed(
@@ -890,9 +928,7 @@ async def _open_ticket_from_button(interaction: discord.Interaction, btn_id: str
             color=config.Discord.color,
         )
         await channel.send(
-            content=f"{user.mention} " + " ".join(r.mention for r in staff_roles),
-            embed=ticket_embed,
-            view=TicketAdminButtons(),
+            view=TicketAdminButtons(ticket_embed, header=f"{user.mention} " + " ".join(r.mention for r in staff_roles)),
         )
     except Exception as e:
         print(f"Error in ticket button: {e}")
@@ -937,7 +973,7 @@ async def _ticket_delete_now(
     if transcript_channel is not None and isinstance(
         transcript_channel, discord.TextChannel
     ):
-        await transcript_channel.send(embed=embed)
+        await transcript_channel.send(view=v2.from_embed(embed))
 
     try:
         member = interaction.guild.get_member(
@@ -950,7 +986,7 @@ async def _ticket_delete_now(
         else:
             dm_channel = member.dm_channel
 
-        await dm_channel.send(embed=embed)
+        await dm_channel.send(view=v2.from_embed(embed))
         if transcript_channel is not None and isinstance(
             transcript_channel, discord.TextChannel
         ):
@@ -973,12 +1009,14 @@ async def _ticket_delete_now(
     )
 
 
-class TicketDeleteConfirmView(ui.View):
+class TicketDeleteConfirmView(v2.CardView):
     """Confirm / Cancel buttons under the delete prompt; only the staff member who clicked
     delete may answer. No answer within 30 s counts as cancelled."""
 
-    def __init__(self, moderator: discord.abc.User, t: dict) -> None:
-        super().__init__(timeout=30)
+    row = ui.ActionRow()
+
+    def __init__(self, moderator: discord.abc.User, t: dict, embed: Optional[discord.Embed] = None) -> None:
+        super().__init__(embed, timeout=30)
         self.moderator = moderator
         self.t = t
         self.message: discord.Message | None = None
@@ -995,9 +1033,7 @@ class TicketDeleteConfirmView(ui.View):
 
     def _lock(self) -> None:
         self.stop()
-        for child in self.children:
-            if isinstance(child, ui.Button):
-                child.disabled = True
+        self.disable_buttons()
 
     async def _note_cancel(self, channel: discord.abc.Messageable, guild: discord.Guild, user_name: str) -> None:
         lang = datasys.load_lang_file(guild.id)
@@ -1015,7 +1051,7 @@ class TicketDeleteConfirmView(ui.View):
             })
             datasys.save_data(guild.id, "open_tickets", tickets)
 
-    @ui.button(style=discord.ButtonStyle.danger, custom_id="ticket_delete_confirm")
+    @row.button(style=discord.ButtonStyle.danger, custom_id="ticket_delete_confirm")
     async def confirm(self, interaction: discord.Interaction, button: ui.Button):
         try:
             self._lock()
@@ -1035,7 +1071,7 @@ class TicketDeleteConfirmView(ui.View):
         except Exception as e:
             print(f"error in ticket delete confirm: {e}")
 
-    @ui.button(style=discord.ButtonStyle.secondary, custom_id="ticket_delete_cancel")
+    @row.button(style=discord.ButtonStyle.secondary, custom_id="ticket_delete_cancel")
     async def cancel(self, interaction: discord.Interaction, button: ui.Button):
         try:
             self._lock()
@@ -1055,11 +1091,15 @@ class TicketDeleteConfirmView(ui.View):
             pass
 
 
-class TicketAdminButtons(ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
+class TicketAdminButtons(v2.CardView):
+    """Persistent buttons of the first message in a ticket channel (``bot.add_view(TicketAdminButtons())``);
+    the message itself is ``TicketAdminButtons(embed, header=pings)``."""
+    row = ui.ActionRow()
 
-    @ui.button(
+    def __init__(self, embed: Optional[discord.Embed] = None, *, header: str = ""):
+        super().__init__(embed, timeout=None, header=header)
+
+    @row.button(
         emoji=config.Icons.trash, style=discord.ButtonStyle.danger, custom_id="ticket_admin_delete"
     )
     async def delete(self, interaction: discord.Interaction, button: ui.Button):
@@ -1067,10 +1107,10 @@ class TicketAdminButtons(ui.View):
             if interaction.guild is None:
                 lang = datasys.load_lang_file(1001)
                 return await interaction.response.send_message(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         title="ERROR // SERVER ONLY",
                         color=config.Discord.warn_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
 
@@ -1110,24 +1150,25 @@ class TicketAdminButtons(ui.View):
 
                 if _is_ticket_staff(member, guild_settings):
                     await interaction.response.send_message(
-                        embed=discord.Embed(
-                            title=lang["systems"]["ticket"]["title"],
-                            description=lang["systems"]["ticket"]["wait_delete_confirm"],
-                            color=config.Discord.danger_color,
-                        ),
-                        view=(confirm_view := TicketDeleteConfirmView(interaction.user, lang["systems"]["ticket"])),
+                        view=(confirm_view := TicketDeleteConfirmView(
+                            interaction.user, lang["systems"]["ticket"],
+                            discord.Embed(
+                                title=lang["systems"]["ticket"]["title"],
+                                description=lang["systems"]["ticket"]["wait_delete_confirm"],
+                                color=config.Discord.danger_color,
+                            ))),
                     )
                     confirm_view.message = await interaction.original_response()
 
                 else:
                     await interaction.response.send_message(
-                        embed=discord.Embed(
+                        view=v2.from_embed(discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
                             description=lang["systems"]["ticket"][
                                 "description_no_permission_delete"
                             ],
                             color=config.Discord.danger_color,
-                        ),
+                        )),
                         ephemeral=True,
                     )
             else:
@@ -1138,7 +1179,7 @@ class TicketAdminButtons(ui.View):
         except Exception as e:
             print(f"error in ticket delete: {e}")
 
-    @ui.button(
+    @row.button(
         emoji=config.Icons.hand, style=discord.ButtonStyle.primary, custom_id="ticket_admin_claim"
     )
     async def claim(self, interaction: discord.Interaction, button: ui.Button):
@@ -1146,10 +1187,10 @@ class TicketAdminButtons(ui.View):
             if interaction.guild is None:
                 lang = datasys.load_lang_file(1001)
                 return await interaction.response.send_message(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         title="ERROR // SERVER ONLY",
                         color=config.Discord.warn_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
 
@@ -1204,24 +1245,24 @@ class TicketAdminButtons(ui.View):
                     datasys.save_data(interaction.guild.id, "open_tickets", tickets)
 
                     await interaction.response.send_message(
-                        embed=discord.Embed(
+                        view=v2.from_embed(discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
                             description=str(
                                 lang["systems"]["ticket"]["description_claimed"]
                             ).format(user=interaction.user.mention),
                             color=config.Discord.success_color,
-                        )
+                        ))
                     )
                 else:
                     print([role.id for role in member.roles])
                     await interaction.response.send_message(
-                        embed=discord.Embed(
+                        view=v2.from_embed(discord.Embed(
                             title=lang["systems"]["ticket"]["title"],
                             description=lang["systems"]["ticket"][
                                 "description_no_permission_claim"
                             ],
                             color=config.Discord.danger_color,
-                        ),
+                        )),
                         ephemeral=True,
                     )
             else:

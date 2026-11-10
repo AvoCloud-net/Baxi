@@ -22,7 +22,8 @@ import random
 import re
 from typing import cast
 import config.config as config
-from assets.buttons import build_ticket_panel_view, ticket_panel_embed, TICKET_PANEL_STYLES
+from assets.buttons import build_ticket_panel, ticket_panel_embed, TICKET_PANEL_STYLES
+import assets.v2 as v2
 import time
 import json
 import os
@@ -150,6 +151,22 @@ def get_feature_adoption() -> dict:
             pass
 
     return {k: round(v / total * 100) for k, v in counts.items()}
+
+
+async def _fetch_channels_tolerant(guild: discord.Guild) -> list:
+    """``guild.fetch_channels()``, but a channel type this discord.py does not know yet (Discord adds
+    some, e.g. type 20) is skipped instead of failing the whole guild."""
+    try:
+        return list(await guild.fetch_channels())
+    except discord.errors.InvalidData:
+        pass
+    from discord.channel import _guild_channel_factory
+    out = []
+    for d in await guild._state.http.get_all_guild_channels(guild.id):
+        factory, _ = _guild_channel_factory(d["type"])
+        if factory is not None:
+            out.append(factory(guild=guild, state=guild._state, data=d))
+    return out
 
 
 def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
@@ -788,7 +805,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
             guild_conf["name"] = guild.name
             guild_conf["icon_url"] = str(guild.icon.url) if guild.icon else ""
 
-            channels = await guild.fetch_channels()
+            channels = await _fetch_channels_tolerant(guild)
 
             text_channels = {
                 str(channel.id): channel.name
@@ -1602,17 +1619,17 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
                 embed = ticket_panel_embed(guild, settings)
 
-                panel_view = build_ticket_panel_view(cleaned_buttons, settings["panel_style"])
+                panel_view = build_ticket_panel(embed, cleaned_buttons, settings["panel_style"])
                 existing_msg_id = str(settings.get("panel_message_id", "")).strip()
                 panel_msg = None
                 if existing_msg_id:
                     try:
                         panel_msg = await channel.fetch_message(int(existing_msg_id))
-                        await panel_msg.edit(embed=embed, view=panel_view)
+                        await v2.edit(panel_msg, panel_view)
                     except (discord.NotFound, discord.HTTPException, ValueError):
                         panel_msg = None
                 if panel_msg is None:
-                    panel_msg = await channel.send(embed=embed, view=panel_view)
+                    panel_msg = await channel.send(view=panel_view)
                 settings["panel_message_id"] = str(panel_msg.id)
 
                 save_data(guild.id, "ticket", settings)
@@ -3201,7 +3218,7 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
                         color=embed_color,
                     )
                     embed.set_footer(text="Baxi · Verification")
-                    panel_msg = await ch.send(embed=embed, view=VerifyView())
+                    panel_msg = await ch.send(view=VerifyView(embed))
                     current["panel_message_id"] = str(panel_msg.id)
                 except discord.Forbidden:
                     return quart.jsonify({"success": False, "message": "Bot does not have permission to send messages in that channel."}), 403

@@ -216,6 +216,17 @@ def _scoped(cls, name: str, guild_of) -> None:
     setattr(cls, name, wrapper)
 
 
+def thumbnail_url(embed) -> str | None:
+    """The dither thumbnail an embed would get (None: it has its own picture, is Plain, or dither is off).
+    Used by the embed hook below and by ``assets.v2`` for V2 cards."""
+    if isinstance(embed, Plain) or embed.thumbnail.url or embed.image.url or not (embed.title or embed.fields):
+        return None
+    shape = _shape_for(embed)
+    if shape == "alert" or isinstance(embed, Sticky) or _in_command.get() or _guild_enabled(_guild.get()):
+        return url(shape)
+    return None
+
+
 def install(bot, web) -> None:
     """Serve the GIFs, follow the running command, and decorate every embed."""
     from quart import Response, abort
@@ -261,11 +272,11 @@ def install(bot, web) -> None:
 
     def to_dict(self):
         d = orig(self)
-        if isinstance(self, Plain) or "thumbnail" in d or "image" in d or not (d.get("title") or d.get("fields")):
+        if "thumbnail" in d or "image" in d:
             return d
-        shape = _shape_for(self)
-        if shape == "alert" or isinstance(self, Sticky) or _in_command.get() or _guild_enabled(_guild.get()):
-            d["thumbnail"] = {"url": url(shape)}
+        u = thumbnail_url(self)
+        if u:
+            d["thumbnail"] = {"url": u}
         return d
 
     discord.Embed.to_dict = to_dict

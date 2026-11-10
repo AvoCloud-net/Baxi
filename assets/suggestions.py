@@ -1,9 +1,10 @@
-import re
+import copy
 import discord
 from pathlib import Path
 from discord.ext import commands
 import assets.data as datasys
 import config.config as cfg
+import assets.v2 as v2
 from reds_simple_logger import Logger
 
 logger = Logger()
@@ -52,12 +53,96 @@ class SuggestionDecisionModal(discord.ui.Modal):
 
 # ── Persistent view ───────────────────────────────────────────────────────────
 
-class SuggestionView(discord.ui.View):
-    """Registered at startup so all custom_ids survive bot restarts.
+class _SplitCard(v2.CardView):
+    """Suggestion card: the text (with the decision on top once there is one), a vote line, the member
+    buttons, a divider and a "Staff" label, then the staff buttons, all inside one container so the
+    two groups read as two groups."""
+    staff_label = "Staff"
+    status_field: str | None = None   # name of the embed field that holds the decision
+    votes_text = ""                   # "▰▰▰▱▱ 60 % · 5 votes", empty while nobody voted
 
-    Row 0: upvote | downvote | join discussion
-    Row 1: accept | decline | comment
+    def _render(self, embed: discord.Embed) -> discord.Embed:
+        """The decision field moves from the bottom of the card to the top of the text."""
+        if not self.status_field:
+            return embed
+        status = [f for f in embed.fields if f.name == self.status_field]
+        if not status:
+            return embed
+        e = discord.Embed.from_dict(copy.deepcopy(embed.to_dict()))   # copy() shares the fields list
+        e.clear_fields()
+        for f in embed.fields:
+            if f.name != self.status_field:
+                e.add_field(name=f.name, value=f.value, inline=f.inline)
+        e.description = f"{status[0].value}\n\n{embed.description}" if embed.description else status[0].value
+        return e
+
+    def set_card(self, embed: discord.Embed, *, header: str = "") -> None:
+        rows = [c for c in self.children if isinstance(c, discord.ui.ActionRow)]
+        self.clear_items()
+        extra: list[discord.ui.Item] = []
+        if len(rows) >= 2:
+            extra = [discord.ui.Separator(visible=True)]
+            if self.votes_text:
+                extra.append(discord.ui.TextDisplay(self.votes_text))
+            extra += [rows[0], discord.ui.Separator(visible=True),
+                      discord.ui.TextDisplay(f"-# {self.staff_label}"), *rows[1:]]
+        else:
+            extra = list(rows)
+        self.add_item(v2.card_container(self._render(embed), extra=extra))
+
+
+def _votes_line(up: int, down: int, t: dict) -> str:
+    total = up + down
+    if not total:
+        return ""
+    filled = round(up / total * 10)
+    return f"{'▰' * filled}{'▱' * (10 - filled)}  **{round(up / total * 100)} %**  ·  {total} {t.get('votes_label', 'votes')}"
+
+
+class SuggestionView(_SplitCard):
+    """Registered at startup so all custom_ids survive bot restarts. A suggestion message is
+    ``SuggestionView(card_embed)`` (Components V2); ``SuggestionView()`` only registers the buttons.
+
+    Members: upvote | downvote | join discussion      Staff: accept | decline | comment
     """
+    row0 = discord.ui.ActionRow()
+    row1 = discord.ui.ActionRow()
+
+    def __init__(self, embed: discord.Embed | None = None, staff_label: str = "Staff",
+                 status_field: str | None = None, votes_text: str = ""):
+        self.staff_label = staff_label
+        self.status_field = status_field
+        self.votes_text = votes_text
+        super().__init__(embed, timeout=None)
+
+    @row0.button(label="0", emoji=cfg.Icons.thumbsup, style=discord.ButtonStyle.secondary, custom_id="suggestion:upvote")
+    async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _handle_public_vote(interaction, upvoted=True)
+
+    @row0.button(label="0", emoji=cfg.Icons.thumbsdown, style=discord.ButtonStyle.secondary, custom_id="suggestion:downvote")
+    async def downvote(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _handle_public_vote(interaction, upvoted=False)
+
+    @row0.button(label="Join Discussion", emoji=cfg.Icons.message, style=discord.ButtonStyle.secondary, custom_id="suggestion:join_thread")
+    async def join_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _handle_join_thread(interaction)
+
+    @row1.button(label="Accept", emoji=cfg.Icons.check, style=discord.ButtonStyle.success, custom_id="suggestion:accept")
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _open_decision_modal(interaction, accepted=True)
+
+    @row1.button(label="Decline", emoji=cfg.Icons.cross, style=discord.ButtonStyle.danger, custom_id="suggestion:decline")
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _open_decision_modal(interaction, accepted=False)
+
+    @row1.button(label="Comment", emoji=cfg.Icons.message, style=discord.ButtonStyle.secondary, custom_id="suggestion:comment")
+    async def comment(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await _open_comment_modal(interaction)
+
+
+class _ClassicView(discord.ui.View):
+    """The old (embed + buttons) layout, kept only to update suggestions that were posted before the
+    Components V2 switch (their message is still a classic embed message). Same custom_ids as above."""
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -88,10 +173,18 @@ class SuggestionView(discord.ui.View):
 
 # ── View helpers ──────────────────────────────────────────────────────────────
 
-def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False) -> SuggestionView:
-    """SuggestionView with current vote counts, translated labels, optional disabled state."""
-    v = SuggestionView()
-    for item in v.children:
+def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False,
+               embed: discord.Embed | None = None):
+    """The vote view with current counts, translated labels, optional disabled state.
+    With ``embed`` it is the V2 card view, without it the classic one (old messages)."""
+    v = (SuggestionView(embed, t.get("staff_label", "Staff"), t.get("status_field"), _votes_line(upvotes, downvotes, t))
+         if embed is not None else _ClassicView())
+    if embed is not None and decided:   # decided: accept / decline are gone, comments stay possible
+        for row in [c for c in v.walk_children() if isinstance(c, discord.ui.ActionRow)]:
+            for item in [i for i in row.children if isinstance(i, discord.ui.Button)
+                         and i.custom_id in ("suggestion:accept", "suggestion:decline")]:
+                row.remove_item(item)
+    for item in v.walk_children():
         if not isinstance(item, discord.ui.Button):
             continue
         if item.custom_id == "suggestion:upvote":
@@ -119,41 +212,28 @@ def _make_view(upvotes: int, downvotes: int, t: dict, decided: bool = False) -> 
     return v
 
 
-def _make_staff_only_view(t: dict, decided: bool = False) -> discord.ui.View:
-    """View with Join Discussion (row 0) + Accept / Decline / Comment (row 1) when public voting is disabled."""
-    v = discord.ui.View(timeout=None)
-    v.add_item(discord.ui.Button(
-        label=t.get("btn_join_thread", "Join Discussion"),
-        emoji=cfg.Icons.message,
-        style=discord.ButtonStyle.secondary,
-        custom_id="suggestion:join_thread",
-        disabled=False,
-        row=0,
-    ))
-    v.add_item(discord.ui.Button(
-        label=t.get("btn_accept", "Accept"),
-        emoji=cfg.Icons.check,
-        style=discord.ButtonStyle.success,
-        custom_id="suggestion:accept",
-        disabled=decided,
-        row=1,
-    ))
-    v.add_item(discord.ui.Button(
-        label=t.get("btn_decline", "Decline"),
-        emoji=cfg.Icons.cross,
-        style=discord.ButtonStyle.danger,
-        custom_id="suggestion:decline",
-        disabled=decided,
-        row=1,
-    ))
-    v.add_item(discord.ui.Button(
-        label=t.get("btn_comment", "Comment"),
-        emoji=cfg.Icons.message,
-        style=discord.ButtonStyle.secondary,
-        custom_id="suggestion:comment",
-        disabled=False,
-        row=1,
-    ))
+def _make_staff_only_view(t: dict, decided: bool = False, embed: discord.Embed | None = None):
+    """View with Join Discussion (row 0) + Accept / Decline / Comment (row 1) when public voting is
+    disabled; V2 card with ``embed``, classic (old messages) without."""
+    def btn(key: str, default: str, emoji, style, cid: str, disabled: bool) -> discord.ui.Button:
+        return discord.ui.Button(label=t.get(key, default), emoji=emoji, style=style, custom_id=cid, disabled=disabled)
+
+    join = btn("btn_join_thread", "Join Discussion", cfg.Icons.message, discord.ButtonStyle.secondary, "suggestion:join_thread", False)
+    accept = btn("btn_accept", "Accept", cfg.Icons.check, discord.ButtonStyle.success, "suggestion:accept", decided)
+    decline = btn("btn_decline", "Decline", cfg.Icons.cross, discord.ButtonStyle.danger, "suggestion:decline", decided)
+    comment = btn("btn_comment", "Comment", cfg.Icons.message, discord.ButtonStyle.secondary, "suggestion:comment", False)
+    if embed is None:   # classic message
+        v = discord.ui.View(timeout=None)
+        for b, row in ((join, 0), (accept, 1), (decline, 1), (comment, 1)):
+            b.row = row
+            v.add_item(b)
+        return v
+    v = _SplitCard(timeout=None)
+    v.staff_label = t.get("staff_label", "Staff")
+    v.status_field = t.get("status_field")
+    v.add_item(discord.ui.ActionRow(join))
+    v.add_item(discord.ui.ActionRow(comment) if decided else discord.ui.ActionRow(accept, decline, comment))
+    v.set_card(embed)
     return v
 
 
@@ -185,6 +265,37 @@ def _get_suggestion_thread(guild: discord.Guild, msg_id: str) -> discord.Thread 
 
 def _is_decided(embed: discord.Embed, status_field_name: str) -> bool:
     return any(f.name == status_field_name for f in embed.fields)
+
+
+def _is_v2(msg: discord.Message) -> bool:
+    """True for suggestions posted as Components V2; older ones are still classic embed messages."""
+    return bool(msg.flags.components_v2)
+
+
+def _card_embed(msg: discord.Message, guild_id: int) -> discord.Embed | None:
+    """The suggestion's content as an embed: read from the classic message, or from the copy kept in
+    ``suggestion_votes[msg_id]["card"]`` (a V2 message has no embeds to read back)."""
+    if not _is_v2(msg) and msg.embeds:
+        return msg.embeds[0].copy()
+    d = dict(datasys.load_data(guild_id, "suggestion_votes")).get(str(msg.id), {}).get("card")
+    return discord.Embed.from_dict(d) if d else None
+
+
+def _store_card(guild_id: int, msg_id: str, embed: discord.Embed) -> None:
+    votes: dict = dict(datasys.load_data(guild_id, "suggestion_votes"))
+    entry = votes.get(msg_id, {})
+    entry["card"] = embed.to_dict()
+    votes[msg_id] = entry
+    datasys.save_data(guild_id, "suggestion_votes", votes)
+
+
+def _build_view(guild_id: int, channel_id: int | None, data: dict, t: dict, msg_id: str,
+                embed: discord.Embed | None, decided: bool):
+    """Vote view or staff-only view for the channel's setting; V2 when ``embed`` is given."""
+    if _get_channel_config(data, channel_id or 0).get("votes_enabled", True):
+        up, down = _get_vote_counts(guild_id, msg_id)
+        return _make_view(len(up), len(down), t, decided, embed)
+    return _make_staff_only_view(t, decided, embed)
 
 
 def _check_permission(interaction: discord.Interaction, data: dict) -> bool:
@@ -267,8 +378,9 @@ async def _handle_join_thread(interaction: discord.Interaction) -> None:
         return
 
     thread_name = ""
-    if interaction.message.embeds:
-        thread_name = (interaction.message.embeds[0].description or "").strip()
+    card = _card_embed(interaction.message, interaction.guild.id)
+    if card is not None:
+        thread_name = (card.description or "").strip()
     if len(thread_name) > 80:
         thread_name = thread_name[:77] + "..."
     if not thread_name:
@@ -336,7 +448,8 @@ async def _open_decision_modal(interaction: discord.Interaction, accepted: bool)
         await interaction.response.send_message(t["no_permission"], ephemeral=True)
         return
 
-    if interaction.message.embeds and _is_decided(interaction.message.embeds[0], t["status_field"]):
+    card = _card_embed(interaction.message, interaction.guild.id)
+    if card is not None and _is_decided(card, t["status_field"]):
         await interaction.response.send_message(t["already_decided"], ephemeral=True)
         return
 
@@ -371,12 +484,12 @@ async def _process_comment(
 
     data: dict = dict(datasys.load_data(interaction.guild.id, "suggestions"))
     msg = interaction.message
-    if not msg.embeds:
+    embed = _card_embed(msg, interaction.guild.id)
+    if embed is None:
         return
 
     msg_id = str(msg.id)
     ts = f"<t:{int(discord.utils.utcnow().timestamp())}:f>"
-    embed = msg.embeds[0].copy()
     embed.add_field(
         name=t.get("comment_field", "Staff Update"),
         value=f"{cfg.Icons.message} " + str(t.get("comment_value", "{user}\n> {comment}")).format(
@@ -385,7 +498,13 @@ async def _process_comment(
         inline=False,
     )
 
-    await interaction.response.edit_message(embed=embed)
+    if _is_v2(msg):
+        _store_card(interaction.guild.id, msg_id, embed)
+        view = _build_view(interaction.guild.id, interaction.channel_id, data, t, msg_id, embed,
+                           _is_decided(embed, t["status_field"]))
+        await interaction.response.edit_message(view=view)
+    else:
+        await interaction.response.edit_message(embed=embed)
 
     # Thread update
     thread = _get_suggestion_thread(interaction.guild, msg_id)
@@ -414,7 +533,7 @@ async def _process_comment(
             )
             log_embed.set_footer(text=t["footer"])
             try:
-                await log_ch.send(embed=log_embed)
+                await log_ch.send(view=v2.from_embed(log_embed))
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -432,10 +551,9 @@ async def _process_decision(
 
     data: dict = dict(datasys.load_data(interaction.guild.id, "suggestions"))
     msg = interaction.message
-    if not msg.embeds:
+    embed = _card_embed(msg, interaction.guild.id)
+    if embed is None:
         return
-
-    embed = msg.embeds[0].copy()
 
     # Build status value (with or without reason)
     if accepted:
@@ -459,14 +577,13 @@ async def _process_decision(
 
     # Disabled view preserving current vote counts
     msg_id = str(msg.id)
-    up, down = _get_vote_counts(interaction.guild.id, msg_id)
-    ch_cfg = _get_channel_config(data, interaction.channel_id or 0)
-    if ch_cfg.get("votes_enabled", True):
-        disabled_view = _make_view(len(up), len(down), t, decided=True)
+    if _is_v2(msg):
+        _store_card(interaction.guild.id, msg_id, embed)
+        await interaction.response.edit_message(view=_build_view(
+            interaction.guild.id, interaction.channel_id, data, t, msg_id, embed, decided=True))
     else:
-        disabled_view = _make_staff_only_view(t, decided=True)
-
-    await interaction.response.edit_message(embed=embed, view=disabled_view)
+        await interaction.response.edit_message(embed=embed, view=_build_view(
+            interaction.guild.id, interaction.channel_id, data, t, msg_id, None, decided=True))
 
     # Thread update
     thread = _get_suggestion_thread(interaction.guild, msg_id)
@@ -515,7 +632,7 @@ async def _process_decision(
             )
             log_embed.set_footer(text=t["footer"])
             try:
-                await log_ch.send(embed=log_embed)
+                await log_ch.send(view=v2.from_embed(log_embed))
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
@@ -535,10 +652,11 @@ async def _handle_public_vote(interaction: discord.Interaction, upvoted: bool) -
         await interaction.response.send_message(t["voting_disabled"], ephemeral=True)
         return
 
-    if not interaction.message.embeds:
+    card = _card_embed(interaction.message, interaction.guild.id)
+    if card is None:
         return
 
-    if _is_decided(interaction.message.embeds[0], t["status_field"]):
+    if _is_decided(card, t["status_field"]):
         await interaction.response.send_message(t["already_decided"], ephemeral=True)
         return
 
@@ -562,7 +680,7 @@ async def _handle_public_vote(interaction: discord.Interaction, upvoted: bool) -
                 up.remove(uid)
 
     _save_vote_counts(interaction.guild.id, msg_id, up, down)
-    view = _make_view(len(up), len(down), t, decided=False)
+    view = _make_view(len(up), len(down), t, decided=False, embed=card if _is_v2(interaction.message) else None)
     await interaction.response.edit_message(view=view)
 
     # Auto-forward when upvote threshold is crossed (optional feature)
@@ -608,10 +726,9 @@ async def _maybe_auto_forward(
     if not isinstance(fwd_ch, discord.TextChannel):
         return
 
-    if not interaction.message.embeds:
+    fwd_embed = _card_embed(interaction.message, interaction.guild.id)
+    if fwd_embed is None:
         return
-
-    fwd_embed = interaction.message.embeds[0].copy()
     fwd_embed.title = t.get("auto_forward_title", f"{cfg.Icons.fire} Popular Suggestion")
     fwd_embed.set_footer(
         text=t.get("auto_forward_footer", "Baxi · Suggestions | {votes} upvotes").format(votes=len(up))
@@ -619,7 +736,7 @@ async def _maybe_auto_forward(
     fwd_embed.add_field(name="", value=f"[{t.get('embed_title', 'Suggestion')}]({interaction.message.jump_url})", inline=False)
 
     try:
-        await fwd_ch.send(embed=fwd_embed)
+        await fwd_ch.send(view=v2.from_embed(fwd_embed))
         logger.debug.info(f"[Suggestions] Auto-forwarded msg={msg_id} to channel={fwd_ch_id} ({len(up)} upvotes)")
     except (discord.Forbidden, discord.HTTPException) as e:
         logger.error(f"[Suggestions] Auto-forward failed: {e}")
@@ -690,17 +807,18 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
         name=message.author.display_name,
         icon_url=str(message.author.display_avatar.url),
     )
+    embed.set_thumbnail(url=str(message.author.display_avatar.url))   # V2 card: the avatar sits beside the text
     if first_image_name:
         embed.set_image(url=f"attachment://{first_image_name}")
     embed.set_footer(text=t["footer"])
 
-    view = _make_view(0, 0, t, decided=False) if votes_enabled else _make_staff_only_view(t)
+    view = _make_view(0, 0, t, decided=False, embed=embed) if votes_enabled else _make_staff_only_view(t, embed=embed)
 
     try:
         if files:
-            sent = await message.channel.send(embed=embed, view=view, files=files)
+            sent = await message.channel.send(view=view, files=files)
         else:
-            sent = await message.channel.send(embed=embed, view=view)
+            sent = await message.channel.send(view=view)
     except Exception as e:
         logger.error(f"[Suggestions] Could not post suggestion embed: {e}")
         return True
@@ -710,6 +828,7 @@ async def check_suggestion(message: discord.Message, bot: commands.AutoShardedBo
     msg_id = str(sent.id)
     entry = votes.get(msg_id, {})
     entry["author_id"] = message.author.id
+    entry["card"] = embed.to_dict()   # V2 messages carry no embed to read back
     votes[msg_id] = entry
     datasys.save_data(message.guild.id, "suggestion_votes", votes)
 

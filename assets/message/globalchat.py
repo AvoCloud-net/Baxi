@@ -19,6 +19,52 @@ from urllib.parse import urlparse
 import aiohttp
 
 
+# Relayed text must never ping anyone: Components V2 text (unlike an embed description) does.
+_NO_PINGS = discord.AllowedMentions.none()
+
+
+def _card_view(embed: discord.Embed) -> discord.ui.LayoutView:
+    """The chat message as a Components V2 card: optional reply line, the author with the avatar
+    beside the text, the picture, and a small footer (server | id, time). One view per send."""
+    avatar = embed.thumbnail.url
+    items: list[discord.ui.Item] = []
+    for f in embed.fields:   # the "Replies to ..." quote
+        quote = "\n".join(f"> {line}" for line in str(f.value).splitlines())
+        items.append(discord.ui.TextDisplay(f"-# {f.name}\n{quote}"))
+    head = [discord.ui.TextDisplay(f"**{embed.author.name or 'Unknown'}**")]
+    if embed.description:
+        head.append(discord.ui.TextDisplay(embed.description))
+    if avatar:
+        items.append(discord.ui.Section(*head, accessory=discord.ui.Thumbnail(avatar)))
+    else:
+        items.extend(head)
+    if embed.image.url:
+        items.append(discord.ui.MediaGallery(discord.MediaGalleryItem(embed.image.url)))
+    foot = [embed.footer.text] if embed.footer and embed.footer.text else []
+    if embed.timestamp:
+        foot.append(f"<t:{int(embed.timestamp.timestamp())}:t>")
+    if foot:
+        items.append(discord.ui.TextDisplay("-# " + " · ".join(foot)))
+    view = discord.ui.LayoutView(timeout=None)
+    view.add_item(discord.ui.Container(*items, accent_colour=embed.color))
+    return view
+
+
+def _referenced(replied: discord.Message) -> tuple[str, str, str] | None:
+    """(gcmid, author, text) of the global-chat message that ``replied`` is a relay of.
+    V2 relays carry no embed, so they are found by message id in the message record; relays posted
+    before the V2 switch also carry the ids in their embed footer."""
+    for gcmid, entry in globalchat_message_data.items():
+        if any(m.get("mid") == replied.id for m in entry.get("messages", [])):
+            return gcmid, str(entry.get("author_name") or "Unknown"), str(entry.get("content") or "")
+    if replied.embeds:
+        old = replied.embeds[0]
+        parts = (old.footer.text or "").split(" | ") if old.footer else []
+        if len(parts) >= 2:
+            return parts[1], (old.author.name if old.author else "Unknown"), (old.description or "")
+    return None
+
+
 async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: dict):
     try:
         reply: bool = True if message.reference else False
@@ -427,30 +473,22 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                 message.reference.message_id
             )
 
-            if replied_message and replied_message.embeds:
-                referenced_embed = replied_message.embeds[0]
-                if referenced_embed.footer and referenced_embed.footer.text:
-                    referenced_mid = referenced_embed.footer.text.split(" | ")[1]
-                    embed.set_footer(
-                        text=(f"{message.guild.name} | {gcmid} | {referenced_mid}")
+            ref = _referenced(replied_message) if replied_message else None
+            if ref:
+                referenced_mid, replied_author, reply_preview = ref
+                embed.set_footer(
+                    text=(f"{message.guild.name} | {gcmid} | {referenced_mid}")
+                )
+
+                if reply_preview and len(reply_preview) > 60:
+                    reply_preview = reply_preview[:60] + "..."
+
+                if reply_preview:
+                    embed.add_field(
+                        name=f"{config.Icons.message} Replies to {config.Icons.user} {replied_author}'s message:",
+                        value=reply_preview,
+                        inline=False,
                     )
-
-                    replied_author = (
-                        referenced_embed.author.name
-                        if referenced_embed.author
-                        else "Unknown"
-                    )
-
-                    reply_preview = referenced_embed.description
-                    if reply_preview and len(reply_preview) > 60:
-                        reply_preview = reply_preview[:60] + "..."
-
-                    if reply_preview:
-                        embed.add_field(
-                            name=f"{config.Icons.message} Replies to {config.Icons.user} {replied_author}'s message:",
-                            value=reply_preview,
-                            inline=False,
-                        )
 
         #sent_message = await message.channel.send(embed=embed)
         reply_message_id = get_reply_message_for_server(
@@ -459,10 +497,10 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
         if reply and referenced_mid is not None and reply_message_id is not None:
             reply_message = await message.channel.fetch_message(reply_message_id)
             sent_message = await reply_message.reply(
-                embed=embed, mention_author=False
+                view=_card_view(embed), mention_author=False, allowed_mentions=_NO_PINGS
             )
         else:
-            sent_message = await message.channel.send(embed=embed)
+            sent_message = await message.channel.send(view=_card_view(embed), allowed_mentions=_NO_PINGS)
         
         guild_id = sent_message.guild.id if sent_message.guild else None
         channel_id = sent_message.channel.id if sent_message.channel else None
@@ -509,7 +547,6 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
                     print(f"[WARN] Channel {server['channel']} is not a TextChannel")
                     continue
 
-                server_embed = embed.copy()
                 reply_message_id = None
 
                 if reply and referenced_mid is not None:
@@ -523,20 +560,20 @@ async def globalchat(bot: commands.AutoShardedBot, message: Message, gc_data: di
 
                         reply_message = await channel.fetch_message(reply_message_id)
                         sent_message = await reply_message.reply(
-                            embed=server_embed, mention_author=False
+                            view=_card_view(embed), mention_author=False, allowed_mentions=_NO_PINGS
                         )
 
                     else:
 
-                        sent_message = await channel.send(embed=server_embed)
+                        sent_message = await channel.send(view=_card_view(embed), allowed_mentions=_NO_PINGS)
 
                 except discord.NotFound:
 
-                    sent_message = await channel.send(embed=server_embed)
+                    sent_message = await channel.send(view=_card_view(embed), allowed_mentions=_NO_PINGS)
                 except discord.HTTPException as e:
 
                     print(f"Error replying to message: {e}")
-                    sent_message = await channel.send(embed=server_embed)
+                    sent_message = await channel.send(view=_card_view(embed), allowed_mentions=_NO_PINGS)
 
                 assert sent_message.guild is not None, "Guild none"
 

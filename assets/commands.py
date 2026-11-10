@@ -5,6 +5,7 @@ from discord import Embed, Interaction, app_commands
 import config.config as config
 import assets.data as datasys
 import assets.repo as repo
+import assets.v2 as v2
 from typing import cast, Optional
 import datetime
 from datetime import timezone
@@ -57,7 +58,7 @@ def base_commands(bot: commands.AutoShardedBot):
             ),
             color=config.Discord.color,
         )
-        await interaction.edit_original_response(embed=embed)
+        await interaction.edit_original_response(view=v2.from_embed(embed))
 
     @bot.tree.command(name="dashboard", description="Link to the Baxi dashboard")
     async def dashboard_cmd(interaction: Interaction):
@@ -88,16 +89,13 @@ def base_commands(bot: commands.AutoShardedBot):
             color=discord.Color.from_rgb(255, 84, 84),
         )
         embed.set_footer(text="Baxi · avocloud.net")
-        view = discord.ui.View()
-        view.add_item(
-            discord.ui.Button(
-                label="Vote on top.gg",
-                style=discord.ButtonStyle.link,
-                url=vote_url,
-                emoji="🔼",
-            )
+        button = discord.ui.Button(
+            label="Vote on top.gg",
+            style=discord.ButtonStyle.link,
+            url=vote_url,
+            emoji="🔼",
         )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(view=v2.from_embed(embed, [button]), ephemeral=True)
 
     @bot.tree.command(
         name="my_data",
@@ -163,16 +161,16 @@ def base_commands(bot: commands.AutoShardedBot):
                 inline=False,
             )
             embed.set_footer(text="Baxi · avocloud.net")
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
 
         except Exception as e:
             logger.error(f"[my_data] {e}")
             await interaction.edit_original_response(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR",
                     description="Could not load your data overview. Please try again later.",
                     color=config.Discord.danger_color,
-                )
+                ))
             )
 
     @bot.tree.command(
@@ -205,16 +203,16 @@ def base_commands(bot: commands.AutoShardedBot):
                 color=color,
             )
             embed.set_footer(text=t["footer"])
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
 
         except Exception as e:
             logger.error(f"[prism_optout] {e}")
             await interaction.edit_original_response(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR",
                     description="Could not update your opt-out preference. Please try again later.",
                     color=config.Discord.danger_color,
-                )
+                ))
             )
 
     @bot.tree.command(
@@ -233,13 +231,13 @@ def base_commands(bot: commands.AutoShardedBot):
                     description="This command can only be used in a server.",
                     color=config.Discord.warn_color
                 )
-                return await interaction.response.send_message(embed=embed)
+                return await interaction.response.send_message(view=v2.from_embed(embed))
             
             guild_terms: bool = bool(datasys.load_data(sid=interaction.guild.id, sys="terms"))
             if not guild_terms:
                     embed = discord.Embed(description=str(lang["systems"]["terms"]["description"]).format(url=f"https://{config.Web.url}"), color=config.Discord.danger_color)
                     embed.set_footer(text="Baxi · avocloud.net")
-                    await interaction.response.send_message(embed=embed)
+                    await interaction.response.send_message(view=v2.from_embed(embed))
                     return
             if interaction.user.avatar is None:
                 user_avatar = ""
@@ -302,7 +300,7 @@ def base_commands(bot: commands.AutoShardedBot):
                     inline=False
                 )
 
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
 
         except Exception as e:
             logger.error(str(e))
@@ -311,7 +309,7 @@ def base_commands(bot: commands.AutoShardedBot):
                 description="Failed to complete the scan. Please try again later.",
                 color=config.Discord.danger_color
             )
-            await interaction.edit_original_response(embed=error_embed)
+            await interaction.edit_original_response(view=v2.from_embed(error_embed))
 
     # ── User reports (slash + context menus) ─────────────────────────────────────
     # Anyone can report a user/message. Reports land in the per-guild moderation review
@@ -433,7 +431,7 @@ def base_commands(bot: commands.AutoShardedBot):
             ),
             color=config.Discord.warn_color,
         ).set_footer(text="Baxi · pending in the moderation review queue")
-        await channel.send(embed=embed)
+        await channel.send(view=v2.from_embed(embed))
 
     async def _notify_report_central(interaction, guild, reported, context):
         """Mirror the report to the central avocloud oversight channel."""
@@ -455,7 +453,7 @@ def base_commands(bot: commands.AutoShardedBot):
             ),
             color=config.Discord.warn_color,
         ).set_footer(text="Baxi · avocloud network oversight")
-        await channel.send(embed=embed)
+        await channel.send(view=v2.from_embed(embed))
 
     class ReportModal(discord.ui.Modal, title="Report user"):
         reason = discord.ui.TextInput(
@@ -519,10 +517,10 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -568,7 +566,8 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         view = BanConfirmView(user, member, reason, parsed_duration)
 
-        await interaction.response.send_message(embed=embed, view=view)
+        view.set_card(embed)
+        await interaction.response.send_message(view=view)
 
     ticket_group = app_commands.Group(name="ticket", description="Ticket tools (staff)", guild_only=True)
 
@@ -625,10 +624,10 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -663,7 +662,8 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         view = KickConfirmView(user, member, reason)
 
-        await interaction.response.send_message(embed=embed, view=view)
+        view.set_card(embed)
+        await interaction.response.send_message(view=view)
 
     @bot.tree.command(name="unban", description="Unban a user")
     @app_commands.checks.has_permissions(ban_members=True)
@@ -672,10 +672,10 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -699,7 +699,8 @@ def utility_commands(bot: commands.AutoShardedBot):
             inline=False,
         )
         view = UbanConfirmView(user_member, interaction.user)
-        await interaction.response.send_message(embed=embed, view=view)
+        view.set_card(embed)
+        await interaction.response.send_message(view=view)
 
     @bot.tree.command(name="clear", description="Delete messages in this channel")
     @app_commands.checks.has_permissions(manage_messages=True)
@@ -709,10 +710,10 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title="ERROR // SERVER ONLY",
                     color=config.Discord.warn_color,
-                )
+                ))
             )
 
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -739,7 +740,8 @@ def utility_commands(bot: commands.AutoShardedBot):
                 "Dieser Befehl kann nur in Textkanälen genutzt werden.", ephemeral=True
             )
             return
-        await interaction.response.send_message(embed=embed, view=view)
+        view.set_card(embed)
+        await interaction.response.send_message(view=view)
 
     @bot.tree.command(name="mute", description="Mute a member (timeout)")
     @app_commands.checks.has_permissions(moderate_members=True)
@@ -748,7 +750,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color))
             )
         await interaction.response.defer(ephemeral=True)
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -756,17 +758,17 @@ def utility_commands(bot: commands.AutoShardedBot):
 
         if member.top_role <= user.top_role:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} You cannot mute someone with an equal or higher role.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} You cannot mute someone with an equal or higher role.", color=config.Discord.danger_color))
             )
 
         parsed = datasys.parse_duration(duration)
         if not parsed:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} Invalid duration format. Use e.g. `10m`, `1h`, `7d`.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} Invalid duration format. Use e.g. `10m`, `1h`, `7d`.", color=config.Discord.danger_color))
             )
         if parsed.total_seconds() > 28 * 86400:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} Maximum timeout duration is 28 days.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} Maximum timeout duration is 28 days.", color=config.Discord.danger_color))
             )
 
         duration_str = datasys.format_duration(parsed)
@@ -776,7 +778,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         blocked = cases.can_act(interaction.guild, user, "mute", lang)
         if blocked:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} {blocked}", color=config.Discord.danger_color))
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {blocked}", color=config.Discord.danger_color)))
         case_no = cases.record(interaction.guild.id, "mute", user, interaction.user, reason,
                                duration_s=int(parsed.total_seconds()))
         try:
@@ -784,13 +786,13 @@ def utility_commands(bot: commands.AutoShardedBot):
         except discord.Forbidden:
             cases.discard(interaction.guild.id, case_no)
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} Missing permissions to timeout this user.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} Missing permissions to timeout this user.", color=config.Discord.danger_color))
             )
         except Exception as e:   # no phantom case, no command left "thinking"
             cases.discard(interaction.guild.id, case_no)
             logger.error(f"[mute] timeout failed @ {interaction.guild.id}: {type(e).__name__}: {e}")
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} {lang['moderation']['cannot']['failed']}", color=config.Discord.danger_color))
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {lang['moderation']['cannot']['failed']}", color=config.Discord.danger_color)))
         dm_ok = await cases.notify(interaction.guild, user, case_no, "mute", reason,
                                    seconds=int(parsed.total_seconds()))
 
@@ -818,7 +820,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if not dm_ok:
             embed.add_field(name="\u200b", value=cases.dm_failed_note(lang, user, interaction.guild.id), inline=False)
         embed.set_footer(text="Baxi · avocloud.net")
-        await interaction.edit_original_response(embed=embed)
+        await interaction.edit_original_response(view=v2.from_embed(embed))
 
     @bot.tree.command(name="unmute", description="Unmute a member")
     @app_commands.checks.has_permissions(moderate_members=True)
@@ -827,7 +829,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color))
             )
         await interaction.response.defer(ephemeral=True)
 
@@ -835,7 +837,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             await user.timeout(None, reason=reason)
         except discord.Forbidden:
             return await interaction.edit_original_response(
-                embed=discord.Embed(description=f"{config.Icons.cross} Missing permissions to unmute this user.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} Missing permissions to unmute this user.", color=config.Discord.danger_color))
             )
 
         # Remove stored timeout entry + DM user
@@ -853,7 +855,7 @@ def utility_commands(bot: commands.AutoShardedBot):
             color=config.Discord.success_color,
         )
         embed.set_footer(text="Baxi · avocloud.net")
-        await interaction.edit_original_response(embed=embed)
+        await interaction.edit_original_response(view=v2.from_embed(embed))
 
     # --- Warning System ---
 
@@ -864,7 +866,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color))
             )
         await interaction.response.defer()
         lang = datasys.load_lang_file(interaction.guild.id)
@@ -880,11 +882,11 @@ def utility_commands(bot: commands.AutoShardedBot):
             await interaction.delete_original_response()
         except Exception as e:
             await interaction.edit_original_response(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     title=f'WARN FAILED // {user.name}',
                     description=str(lang["commands"]["admin"]["warn"]["error"]).format(error=str(e)),
                     color=config.Discord.danger_color,
-                )
+                ))
             )
 
     @bot.tree.command(name="unwarn", description="Remove a warning")
@@ -894,7 +896,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         removed = await remove_warning(interaction.guild.id, user.id, warn_id)
@@ -910,7 +912,7 @@ def utility_commands(bot: commands.AutoShardedBot):
                 description=str(lang["commands"]["admin"]["unwarn"]["not_found"]).format(id=warn_id),
                 color=config.Discord.danger_color,
             )
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(view=v2.from_embed(embed))
 
     @bot.tree.command(name="warnings", description="List a member's warnings")
     @app_commands.checks.has_permissions(moderate_members=True)
@@ -919,7 +921,7 @@ def utility_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             lang = datasys.load_lang_file(1001)
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color))
             )
         lang = datasys.load_lang_file(interaction.guild.id)
         warns = get_warnings(interaction.guild.id, user.id)
@@ -942,7 +944,7 @@ def utility_commands(bot: commands.AutoShardedBot):
                 color=config.Discord.warn_color,
             )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(view=v2.from_embed(embed))
 
     # --- BaxiInsights ---
 
@@ -950,12 +952,12 @@ def utility_commands(bot: commands.AutoShardedBot):
     async def insights_stats(interaction: discord.Interaction):
         if interaction.guild is None:
             return await interaction.response.send_message(
-                embed=discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color),
+                view=v2.from_embed(discord.Embed(title="ERROR // SERVER ONLY", color=config.Discord.warn_color)),
                 ephemeral=True,
             )
         if not interaction.user.guild_permissions.manage_guild:
             return await interaction.response.send_message(
-                embed=discord.Embed(description=f"{config.Icons.cross} You need Manage Server permission to use this command.", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} You need Manage Server permission to use this command.", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
         await interaction.response.defer(ephemeral=True)
@@ -998,11 +1000,11 @@ def utility_commands(bot: commands.AutoShardedBot):
             color_health = config.Discord.success_color if health >= 70 else (config.Discord.warn_color if health >= 40 else config.Discord.danger_color)
             embed.add_field(name=f"{config.Icons.health} Health Score", value=f"{health}/100", inline=True)
             embed.set_footer(text="Baxi · avocloud.net")
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
         except Exception as e:
             logger.error(f"[insights stats] {e}")
             await interaction.edit_original_response(
-                embed=discord.Embed(title="ERROR", description="Could not load insights.", color=config.Discord.danger_color)
+                view=v2.from_embed(discord.Embed(title="ERROR", description="Could not load insights.", color=config.Discord.danger_color))
             )
 
 
@@ -1041,11 +1043,11 @@ def leveling_commands(bot: commands.AutoShardedBot):
             t_fq: dict = lang["games"]["flag_quiz"]
             entries = quiz_sys.get_leaderboard(guild_id, bot)[:10]
             if not entries:
-                await interaction.edit_original_response(embed=Embed(
+                await interaction.edit_original_response(view=v2.from_embed(Embed(
                     title=f"{config.Icons.trophy} " + t_fq["leaderboard_title"],
                     description=t_fq["leaderboard_empty"],
                     color=config.Discord.color,
-                ))
+                )))
                 return
 
             medals = [config.Icons.medal, config.Icons.medal, config.Icons.medal]
@@ -1061,18 +1063,18 @@ def leveling_commands(bot: commands.AutoShardedBot):
                 color=config.Discord.color,
             )
             embed.set_footer(text="Baxi · avocloud.net")
-            await interaction.edit_original_response(embed=embed)
+            await interaction.edit_original_response(view=v2.from_embed(embed))
             return
 
         t: dict = lang["leveling"]
 
         if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
-            await interaction.edit_original_response(embed=_disabled_embed(t))
+            await interaction.edit_original_response(view=v2.from_embed(_disabled_embed(t)))
             return
 
         source = {"level_text": "text", "level_voice": "voice"}.get(sys.value, "total")
         await interaction.edit_original_response(
-            embed=leveling_sys.leaderboard_embed(interaction.guild, t, source),
+            view=v2.from_embed(leveling_sys.leaderboard_embed(interaction.guild, t, source)),
         )
 
     @bot.tree.command(name="rank", description="Level card of you or another member")
@@ -1089,7 +1091,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
         t: dict = lang["leveling"]
 
         if not _check_enabled(dict(datasys.load_data(guild_id, "leveling"))):
-            await interaction.edit_original_response(embed=_disabled_embed(t))
+            await interaction.edit_original_response(view=v2.from_embed(_disabled_embed(t)))
             return
 
         target = user or interaction.user
@@ -1112,17 +1114,17 @@ def leveling_commands(bot: commands.AutoShardedBot):
             return None
         t, data = _ows_context(interaction)
         if not data.get("enabled", False):
-            await interaction.followup.send(embed=Embed(
+            await interaction.followup.send(view=v2.from_embed(Embed(
                 title=t["story_title"],
                 description=t["story_not_enabled"],
                 color=config.Discord.danger_color,
-            ), ephemeral=True)
+            )), ephemeral=True)
             return None
         if staff_only and not interaction.user.guild_permissions.manage_messages:
-            await interaction.followup.send(embed=Embed(
+            await interaction.followup.send(view=v2.from_embed(Embed(
                 description=t["no_permission"],
                 color=config.Discord.danger_color,
-            ), ephemeral=True)
+            )), ephemeral=True)
             return None
         return t, data
 
@@ -1157,7 +1159,7 @@ def leveling_commands(bot: commands.AutoShardedBot):
             color=config.Discord.color,
         )
         embed.set_footer(text=t["footer"])
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(view=v2.from_embed(embed))
 
     @ows_group.command(name="end", description="Finish the story and start a new one")
     async def ows_end(interaction: discord.Interaction):
@@ -1168,17 +1170,17 @@ def leveling_commands(bot: commands.AutoShardedBot):
         t, data = ctx
 
         if not data.get("words"):
-            await interaction.followup.send(embed=Embed(
+            await interaction.followup.send(view=v2.from_embed(Embed(
                 description=t["end_empty"],
                 color=config.Discord.warn_color,
-            ), ephemeral=True)
+            )), ephemeral=True)
             return
 
         count = await onewordstory_game.end_story(bot, interaction.guild.id)
-        await interaction.followup.send(embed=Embed(
+        await interaction.followup.send(view=v2.from_embed(Embed(
             description=str(t["end_done"]).format(count=count),
             color=config.Discord.success_color,
-        ), ephemeral=True)
+        )), ephemeral=True)
 
     @ows_group.command(name="undo", description="Remove the last word")
     async def ows_undo(interaction: discord.Interaction):
@@ -1190,16 +1192,16 @@ def leveling_commands(bot: commands.AutoShardedBot):
 
         removed = onewordstory_game.undo_word(interaction.guild.id)
         if removed is None:
-            await interaction.followup.send(embed=Embed(
+            await interaction.followup.send(view=v2.from_embed(Embed(
                 description=t["end_empty"],
                 color=config.Discord.warn_color,
-            ), ephemeral=True)
+            )), ephemeral=True)
             return
 
-        await interaction.followup.send(embed=Embed(
+        await interaction.followup.send(view=v2.from_embed(Embed(
             description=str(t["undo_done"]).format(word=discord.utils.escape_markdown(removed)),
             color=config.Discord.success_color,
-        ), ephemeral=True)
+        )), ephemeral=True)
 
     bot.tree.add_command(ows_group)
 
@@ -1233,7 +1235,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                     color=config.Discord.success_color,
                 )
                 embed.set_footer(text=t["footer"])
-                await channel.send(embed=embed)
+                await channel.send(view=v2.from_embed(embed))
         except Exception:
             pass
 
@@ -1248,7 +1250,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 color=config.Discord.success_color,
             )
             embed.set_footer(text=t["footer"])
-            await interaction.user.send(embed=embed)
+            await interaction.user.send(view=v2.from_embed(embed))
         except Exception:
             pass
 
@@ -1266,7 +1268,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 lang = datasys.load_lang_file(1001)
                 t = lang["systems"]["mc_link"]
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color)),
                     ephemeral=True,
                 )
 
@@ -1278,7 +1280,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             err = _check_enabled(guild_conf, t)
             if err:
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
                     ephemeral=True,
                 )
 
@@ -1298,7 +1300,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 else:
                     msg = t["invalid_code"]
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {msg}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {msg}", color=config.Discord.danger_color)),
                     ephemeral=True,
                 )
 
@@ -1355,17 +1357,18 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 author_id=interaction.user.id,
                 kind=kind,
             )
+            view.set_card(embed)
             await interaction.followup.send(
-                embed=embed, file=file, view=view, ephemeral=True
+                file=file, view=view, ephemeral=True
             )
         except Exception as e:
             logger.error(f"[mc_link_cmd] crashed: {type(e).__name__}: {e}", exc_info=True)
             try:
                 await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} Internal error: `{type(e).__name__}`",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
             except Exception:
@@ -1386,7 +1389,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             t = lang["systems"]["mc_link"]
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1398,7 +1401,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         err = _check_enabled(guild_conf, t)
         if err:
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1406,13 +1409,13 @@ def mc_link_commands(bot: commands.AutoShardedBot):
 
         if not is_linked(guild_id, interaction.user.id):
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
         if not guild_conf.get("allow_self_unlink", True):
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['unlink_disabled']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['unlink_disabled']}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1443,11 +1446,11 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         if not mc_success:
             desc += f"\n{config.Icons.alert} MC server unreachable — removed locally. Ask an admin to de-whitelist manually."
         await interaction.followup.send(
-            embed=discord.Embed(
+            view=v2.from_embed(discord.Embed(
                 title=f"{config.Icons.check} {t['unlink_success_title']}",
                 description=desc,
                 color=config.Discord.success_color,
-            ),
+            )),
             ephemeral=True,
         )
 
@@ -1464,7 +1467,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 lang = datasys.load_lang_file(1001)
                 t = lang["systems"]["mc_link"]
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color)),
                 )
 
             guild_id = interaction.guild.id
@@ -1475,7 +1478,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             err = _check_enabled(guild_conf, t)
             if err:
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
                 )
 
             api_url: str = guild_conf.get("api_url", "").strip()
@@ -1490,10 +1493,10 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 else:
                     msg = t.get("list_unreachable", "Minecraft server unreachable.")
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {msg}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                 )
 
             count = int(data.get("count", 0))
@@ -1513,15 +1516,15 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 color=config.Discord.color,
             )
             embed.set_footer(text=footer_text)
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(view=v2.from_embed(embed))
         except Exception as e:
             logger.error(f"[mc_list_cmd] crashed: {type(e).__name__}: {e}", exc_info=True)
             try:
                 await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} Internal error: `{type(e).__name__}`",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                 )
             except Exception:
                 logger.exception("[mc_list_cmd] followup error-send also failed")
@@ -1537,7 +1540,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         if interaction.guild is None:
             t = datasys.load_lang_file(1001)["systems"]["mc_link"]
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color)),
             )
 
         guild_id = interaction.guild.id
@@ -1547,14 +1550,14 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         err = _check_enabled(guild_conf, t)
         if err:
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
             )
 
         from assets.mc_link import fetch_server_stats, render_status_embed
 
         # None = offline, {"outdated": True} = plugin too old; the renderer covers both.
         stats = await fetch_server_stats(guild_conf["api_url"].strip(), guild_conf["api_secret"].strip())
-        await interaction.followup.send(embed=render_status_embed(stats, t))
+        await interaction.followup.send(view=v2.from_embed(render_status_embed(stats, t)))
 
     @mc_group.command(name="whois", description="Linked Minecraft account of a member, or who owns a name")
     @app_commands.describe(
@@ -1572,7 +1575,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             lang = datasys.load_lang_file(1001)
             t = lang["systems"]["mc_link"]
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['server_only']}", color=config.Discord.danger_color)),
             )
 
         guild_id = interaction.guild.id
@@ -1586,26 +1589,26 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             user = interaction.user
         elif user is not None and mc_name is not None:
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color)),
             )
 
         if user is not None:
             if not is_linked(guild_id, user.id):
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {t['whois_user_not_linked'].format(mention=user.mention)}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                 )
             target_id, link = user.id, get_link(guild_id, user.id)
         else:
             match = find_by_mc_name(guild_id, mc_name)
             if match is None:
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {t['lookup_no_match'].format(mc_name=mc_name)}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                 )
             target_id, link = match
 
@@ -1632,7 +1635,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             embed.set_thumbnail(url=f"https://mc-heads.net/avatar/{uuid}/128")
 
         embed.set_footer(text=t["footer"])
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(view=v2.from_embed(embed))
 
     @mc_admin_group.command(name="unlink", description="Force-unlink a member")
     @app_commands.describe(user="The Discord user to unlink.")
@@ -1651,7 +1654,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         err = _check_enabled(guild_conf, t)
         if err:
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1659,7 +1662,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
 
         if not is_linked(guild_id, user.id):
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1682,10 +1685,10 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 pass
 
         await interaction.followup.send(
-            embed=discord.Embed(
+            view=v2.from_embed(discord.Embed(
                 description=t["admin_unlink_success"].format(mention=user.mention, mc_name=mc_name),
                 color=config.Discord.success_color,
-            ),
+            )),
             ephemeral=True,
         )
 
@@ -1706,7 +1709,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         err = _check_enabled(guild_conf, t)
         if err:
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {err}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
@@ -1718,10 +1721,10 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         result = await admin_link_player(api_url, secret, mc_name.strip(), user.id, user.name)
         if result is None:
             return await interaction.followup.send(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     description=f"{config.Icons.cross} Failed — MC server unreachable or player has never joined.",
                     color=config.Discord.danger_color,
-                ),
+                )),
                 ephemeral=True,
             )
 
@@ -1749,10 +1752,10 @@ def mc_link_commands(bot: commands.AutoShardedBot):
                 pass
 
         await interaction.followup.send(
-            embed=discord.Embed(
+            view=v2.from_embed(discord.Embed(
                 description=link_desc,
                 color=config.Discord.success_color,
-            ),
+            )),
             ephemeral=True,
         )
 
@@ -1781,14 +1784,14 @@ def mc_link_commands(bot: commands.AutoShardedBot):
         # Exactly one of the two inputs must be given.
         if (user is None) == (mc_name is None):
             return await interaction.followup.send(
-                embed=discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color),
+                view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['lookup_specify_one']}", color=config.Discord.danger_color)),
                 ephemeral=True,
             )
 
         if user is not None:
             if not is_linked(guild_id, user.id):
                 return await interaction.followup.send(
-                    embed=discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color),
+                    view=v2.from_embed(discord.Embed(description=f"{config.Icons.cross} {t['not_linked']}", color=config.Discord.danger_color)),
                     ephemeral=True,
                 )
             target_id = user.id
@@ -1797,10 +1800,10 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             match = find_by_mc_name(guild_id, mc_name)
             if match is None:
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {t['lookup_no_match'].format(mc_name=mc_name)}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
             target_id, link = match
@@ -1817,7 +1820,7 @@ def mc_link_commands(bot: commands.AutoShardedBot):
             color=config.Discord.info_color,
         )
         embed.set_footer(text=t["footer"])
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(view=v2.from_embed(embed), ephemeral=True)
 
     bot.tree.add_command(mc_group)
 
@@ -1843,10 +1846,10 @@ def tempvoice_commands(bot: commands.AutoShardedBot):
             guild = interaction.guild
             if guild is None:
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} This command can only be used in a server.",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
 
@@ -1860,10 +1863,10 @@ def tempvoice_commands(bot: commands.AutoShardedBot):
                     "Use this in your temporary voice channel's text chat.",
                 )
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {msg}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
 
@@ -1873,10 +1876,10 @@ def tempvoice_commands(bot: commands.AutoShardedBot):
                     "Only the channel owner can use this control panel.",
                 )
                 return await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} {msg}",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
 
@@ -1884,20 +1887,20 @@ def tempvoice_commands(bot: commands.AutoShardedBot):
 
             msg = tempvoice._t(lang, "panel_resent", "Control panel re-posted below.")
             await interaction.followup.send(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     description=f"{config.Icons.check} {msg}",
                     color=config.Discord.success_color,
-                ),
+                )),
                 ephemeral=True,
             )
         except Exception:
             logger.error("[tempvoice_panel] failed", exc_info=True)
             try:
                 await interaction.followup.send(
-                    embed=discord.Embed(
+                    view=v2.from_embed(discord.Embed(
                         description=f"{config.Icons.cross} Something went wrong.",
                         color=config.Discord.danger_color,
-                    ),
+                    )),
                     ephemeral=True,
                 )
             except Exception:
@@ -1913,10 +1916,10 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
     async def owner_cmd(interaction: Interaction):
         if not await bot.is_owner(interaction.user):
             await interaction.response.send_message(
-                embed=discord.Embed(
+                view=v2.from_embed(discord.Embed(
                     description=f"{config.Icons.cross} This command is only for the owner of Baxi.",
                     color=config.Discord.danger_color,
-                ),
+                )),
                 ephemeral=True,
             )
             return
@@ -1936,7 +1939,7 @@ def bot_admin_commands(bot: commands.AutoShardedBot):
         embed.add_field(name="Shards", value=str(bot.shard_count or 1))
         embed.add_field(name="Latency", value=f"{round(bot.latency * 1000)} ms")
         embed.set_footer(text=f"Baxi v{config.Discord.version}")
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(view=v2.from_embed(embed))
 
     logger.debug.info("Bot admin commands: all admin actions are now handled via the web dashboard at /admin/.")
 
