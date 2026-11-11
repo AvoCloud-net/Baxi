@@ -119,7 +119,7 @@ Baxi follows a strict **minimal data collection** principle -  every feature is 
 
 - 🌐 [Discord Support Server](https://avocloud.net/discord/)
 - 📧 [support@avocloud.net](mailto:support@avocloud.net)
-- 🐛 [Open an Issue](https://github.com/AvoCloud-net/Baxi/issues)
+- 🐛 [Report a bug](https://bugs.avocloud.net/) (log in with Discord, then create a bug report)
 
 ---
 

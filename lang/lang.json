@@ -21,7 +21,7 @@
           },
           "bugs": {
             "title": "Bugs",
-            "content": "Wenn du auf Fehler stößt, würden wir dich bitten, diese mit dem Befehl </report:1227394011715735582> zu melden. Dies hilft uns sehr bei der Entwicklung und Fehlerbehebung. Vielen Dank für deine Unterstützung!"
+            "content": "Wenn du auf Fehler stößt, melde sie bitte auf [bugs.avocloud.net](https://bugs.avocloud.net/): Melde dich dort mit Discord an und erstelle einen Bug Report. Das hilft uns sehr bei der Entwicklung und Fehlerbehebung. Danke!"
           }
         },
         "scan_users": {
@@ -1173,7 +1173,7 @@
           },
           "bugs": {
             "title": "Bugs",
-            "content": "If you encounter any errors, please report them using the command </report:1227394011715735582>. This helps us greatly in development and troubleshooting. Thank you for your support!"
+            "content": "If you run into a bug, please report it at [bugs.avocloud.net](https://bugs.avocloud.net/): log in with Discord and create a bug report. This helps us a lot with development and troubleshooting. Thanks!"
           }
         },
         "scan_users": {

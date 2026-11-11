@@ -528,7 +528,7 @@ One shared **staff roles** setting (General) used by tickets and suggestions; th
 - Returns the link to the Baxi web dashboard for server configuration
 
 ### Help (`/help`)
-- Displays information about bot prefix, about section, icon sources and bug reporting
+- Displays information about bot prefix, about section, icon sources and bug reporting (link to bugs.avocloud.net, Discord login)
 
 ### User Management (Dashboard)
 - Flag/unflag users globally with reason tracking
