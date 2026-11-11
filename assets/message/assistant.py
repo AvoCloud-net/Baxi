@@ -983,6 +983,15 @@ async def handle_assistant(message: discord.Message, bot: discord.Client) -> Non
                 f"role_mentions={[r.id for r in message.role_mentions]}, bot={bot.user.id})"
             )
             return
+
+        # Never in the global chat channel: replying to a relayed message (authored by Baxi)
+        # pings the bot, which would otherwise trigger the assistant on normal chat.
+        try:
+            gc_entry = dict(datasys.load_data(1001, "globalchat")).get(str(message.guild.id))
+            if gc_entry and str(message.channel.id) == str(gc_entry.get("channel", "")):
+                return
+        except Exception as e:
+            logger.error(f"[Assistant] globalchat check failed: {type(e).__name__}: {e}")
         logger.info(f"[Assistant] mention by {message.author} in {message.guild.id}/#{getattr(message.channel,'name','?')}")
 
         cfg: dict = dict(datasys.load_data(message.guild.id, "assistant"))
