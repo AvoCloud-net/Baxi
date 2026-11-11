@@ -184,11 +184,26 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
     PENDING_VOTE_TTL = share.PENDING_VOTE_TTL
     _cleanup_pending_votes = share.cleanup_pending_votes
 
+    def _api_login_required():
+        """JSON for API calls whose login is gone: a redirect to the login page would hand the
+        page's fetch() HTML ("Unexpected token '<'"). theme.js reloads the page on this header."""
+        resp = quart.jsonify({"success": False, "login_required": True,
+                              "message": "Your login expired. Reload the page and log in again."})
+        resp.status_code = 401
+        resp.headers["X-Login-Required"] = "1"
+        return resp
+
     def _stale_login_redirect(e: Exception):
         """Discord refused the stored token (invalid_grant: expired or revoked): drop the
         session, remember the page and send the user through the login again."""
         if "invalid_grant" not in str(e) and "invalid_token" not in str(e):
             return None
+        if quart.request.path.startswith("/api/"):
+            try:
+                discord_auth.revoke()
+            except Exception:
+                pass
+            return _api_login_required()
         try:
             discord_auth.revoke()
             if quart.request.method == "GET":
@@ -330,6 +345,8 @@ def dash_web(app: quart.Quart, bot: commands.AutoShardedBot):
 
     @app.errorhandler(Unauthorized)
     async def redirect_unauthorized(e):
+        if quart.request.path.startswith("/api/"):
+            return _api_login_required()
         # Remember where the user wanted to go so we can send them back
         # after login (callback pops session["next_url"]).
         try:

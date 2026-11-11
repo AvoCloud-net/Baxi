@@ -78,3 +78,20 @@
         });
     } catch (e) { /* older Safari: no addEventListener on MediaQueryList */ }
 })();
+
+/* Session expired while a page was open: API routes answer 401 + X-Login-Required (dash.py,
+ * _api_login_required) instead of redirecting to the login page, whose HTML made every fetch()
+ * fail with "Unexpected token '<'". Reload once: the page itself then sends the user through the
+ * login and back to the same page. */
+(function () {
+    const nativeFetch = window.fetch;
+    let reloading = false;
+    window.fetch = async function (...args) {
+        const res = await nativeFetch.apply(this, args);
+        if (res.status === 401 && res.headers.get('X-Login-Required') && !reloading) {
+            reloading = true;
+            location.reload();
+        }
+        return res;
+    };
+})();
